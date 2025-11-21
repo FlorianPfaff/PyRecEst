@@ -12,6 +12,7 @@ from .hyperspherical_dirac_distribution import HypersphericalDiracDistribution
 from .spherical_harmonics_distribution_complex import (
     SphericalHarmonicsDistributionComplex,
 )
+from ...sampling.hyperspherical_sampler import LeopardiSampler
 
 import numpy as np
 import warnings
@@ -220,27 +221,10 @@ class HyperhemisphericalGridDistribution(
     # Internal helper: "eq_point_set_symm" style grid
     # ------------------------------------------------------------------
     @staticmethod
-    def _eq_point_set_symm(dim, n_points, rng):
-        """
-        Simple symmetric 'equal point set' replacement.
-
-        Generates `n_points` approximately uniformly distributed points on the
-        upper hemisphere of S^(dim-1). The associated full-sphere grid is
-        {grid, -grid}.
-
-        The exact algorithm is not MATLAB's eq_point_set_symm, but it matches
-        the *interface* and the symmetry properties.
-        """
-        pts = rng.normal(size=(n_points, dim))
-        norms = np.linalg.norm(pts, axis=1, keepdims=True)
-        norms[norms == 0] = 1.0  # avoid divide-by-zero
-        pts = pts / norms
-
-        # Enforce hemisphere constraint (last coordinate >= 0).
-        mask = pts[:, -1] < 0
-        pts[mask] *= -1.0
-
-        return pts.T  # (dim, n_points)
+    def _eq_point_set_symm(dim, n_points, _):
+        ls = LeopardiSampler()
+        grid, _ = ls.get_grid(n_points * 2, dim)
+        return grid
 
     # ------------------------------------------------------------------
     # Construction from other distributions
