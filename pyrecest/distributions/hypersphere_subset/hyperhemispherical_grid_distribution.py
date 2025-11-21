@@ -5,7 +5,6 @@ from .abstract_hyperhemispherical_distribution import (
     AbstractHyperhemisphericalDistribution,
 )
 from .abstract_hyperspherical_distribution import AbstractHypersphericalDistribution
-from .hyperspherical_grid_distribution import HypersphericalGridDistribution
 from .custom_hyperspherical_distribution import CustomHypersphericalDistribution
 from .custom_hyperhemispherical_distribution import CustomHyperhemisphericalDistribution
 from .hyperspherical_dirac_distribution import HypersphericalDiracDistribution
@@ -64,6 +63,7 @@ class HyperhemisphericalGridDistribution(
         The grid is mirrored, and the values are halved to keep the resulting
         hyperspherical distribution normalized (just like MATLAB's toFullSphere).
         """
+        from .hyperspherical_grid_distribution import HypersphericalGridDistribution
         grid_ = np.hstack((self.grid, -self.grid))
         grid_values_ = 0.5 * np.hstack((self.grid_values, self.grid_values))
         hgd = HypersphericalGridDistribution(grid_, grid_values_)
@@ -237,6 +237,7 @@ class HyperhemisphericalGridDistribution(
         from .bingham_distribution import BinghamDistribution
         from .hyperspherical_mixture import HypersphericalMixture
         from .watson_distribution import WatsonDistribution
+        from .hyperspherical_grid_distribution import HypersphericalGridDistribution
 
         if isinstance(distribution, AbstractHyperhemisphericalDistribution):
             fun = distribution.pdf
