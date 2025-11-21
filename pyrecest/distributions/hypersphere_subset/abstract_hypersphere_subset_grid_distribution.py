@@ -3,8 +3,6 @@ import warnings
 
 from ..abstract_grid_distribution import AbstractGridDistribution 
 from .abstract_hypersphere_subset_distribution import AbstractHypersphereSubsetDistribution
-from .hyperhemispherical_grid_distribution import HyperhemisphericalGridDistribution
-from .hyperspherical_grid_distribution import HypersphericalGridDistribution
 from .abstract_hyperhemispherical_distribution import AbstractHyperhemisphericalDistribution
 from .abstract_hyperspherical_distribution import AbstractHypersphericalDistribution
 from .von_mises_fisher_distribution import VonMisesFisherDistribution
@@ -73,7 +71,9 @@ class AbstractHypersphereSubsetGridDistribution(AbstractGridDistribution, Abstra
 
     @staticmethod
     def from_distribution(distribution, no_of_grid_points, grid_type='healpix'):
-
+        # Import here to avoid circular imports
+        from .hyperhemispherical_grid_distribution import HyperhemisphericalGridDistribution
+        from .hyperspherical_grid_distribution import HypersphericalGridDistribution
         if isinstance(distribution, AbstractHyperhemisphericalDistribution):
             fun = distribution.pdf
         # pylint: disable=too-many-boolean-expressions
