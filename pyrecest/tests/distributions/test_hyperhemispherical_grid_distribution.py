@@ -196,8 +196,8 @@ class HyperhemisphericalGridDistributionTest(unittest.TestCase):
                 hgd_filtered = hgd1.multiply(hgd2)
 
                 dim = hhgd_filtered.dim
-                hemi_grid = _standardize_grid(hhgd_filtered.get_grid(), dim)
-                full_grid = _standardize_grid(hgd_filtered.get_grid(), dim)
+                hemi_grid = hhgd_filtered.get_grid()
+                full_grid = hgd_filtered.get_grid()
 
                 n_hemi = hemi_grid.shape[0]
 
@@ -221,11 +221,6 @@ class HyperhemisphericalGridDistributionTest(unittest.TestCase):
                 )
 
     def test_multiply_vmf_mixture_s3(self):
-        """
-        MATLAB: testMultiplyVMFMixtureS3
-
-        Same as above, but on S^3 (dim=4).
-        """
         kappas = [0.1 + 0.3 * i for i in range(14)]  # 0.1:0.3:4
 
         for kappa1 in kappas:
@@ -266,8 +261,8 @@ class HyperhemisphericalGridDistributionTest(unittest.TestCase):
                 hgd_filtered = hgd1.multiply(hgd2)
 
                 dim = hhgd_filtered.dim
-                hemi_grid = _standardize_grid(hhgd_filtered.get_grid(), dim)
-                full_grid = _standardize_grid(hgd_filtered.get_grid(), dim)
+                hemi_grid = hhgd_filtered.get_grid()
+                full_grid = hgd_filtered.get_grid()
 
                 n_hemi = hemi_grid.shape[0]
 
@@ -323,7 +318,6 @@ class HyperhemisphericalGridDistributionTest(unittest.TestCase):
 
     def test_to_full_sphere(self):
         """
-        MATLAB: testToFullSphere
 
         Convert a hemisphere grid distribution back to a full-sphere one and
         compare with a direct HypersphericalGridDistribution approximation.

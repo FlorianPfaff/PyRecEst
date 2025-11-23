@@ -210,8 +210,8 @@ class HyperhemisphericalGridDistribution(
 
         # 3. Restrict to hemisphere and rescale:
         # p_H(x) = 2 * p_S(x) for x on the hemisphere.
-        n_hemi = self.grid.shape[1]
-        hemi_grid = hgd_filtered.grid[:, :n_hemi]
+        n_hemi = self.grid.shape[0]
+        hemi_grid = hgd_filtered.grid[:n_hemi]
         hemi_values = 2.0 * hgd_filtered.grid_values[:n_hemi]
 
         return HyperhemisphericalGridDistribution(
