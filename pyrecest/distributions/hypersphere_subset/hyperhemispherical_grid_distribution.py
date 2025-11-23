@@ -1,3 +1,4 @@
+from matplotlib.pyplot import grid
 from .abstract_hypersphere_subset_grid_distribution import (
     AbstractHypersphereSubsetGridDistribution,
 )
@@ -18,22 +19,19 @@ import warnings
 
 
 class HyperhemisphericalGridDistribution(
-    AbstractHypersphereSubsetGridDistribution, AbstractHyperhemisphericalDistribution
+    AbstractHyperhemisphericalDistribution, AbstractHypersphereSubsetGridDistribution
 ):
 
-    def __init__(self, grid_, grid_values_, enforce_pdf_nonnegative=True):
-        grid_ = np.asarray(grid_, dtype=float)
-        grid_values_ = np.asarray(grid_values_, dtype=float)
-
-        # Close to the MATLAB constructor behaviour
-        assert np.all(np.abs(grid_) <= 1 + 1e-12), (
-            "Grid points must lie on / inside the unit hypersphere."
+    def __init__(self, grid, grid_values, enforce_pdf_nonnegative=True):
+        # Do not test norm precisely, only quick test if any coordinate exceeds 1.
+        assert np.all(np.abs(grid) <= 1 + 1e-12), (
+            "Grid points must not lie outside the unit ball."
         )
         assert np.all(
-            grid_[-1, :] >= 0
+            grid[:, -1] >= -1e-12
         ), "Always using upper hemisphere (along last dimension)."
 
-        super().__init__(grid_, grid_values_, enforce_pdf_nonnegative)
+        super().__init__(grid, grid_values, enforce_pdf_nonnegative)
 
     # ------------------------------------------------------------------
     # Basic functionality
@@ -217,14 +215,14 @@ class HyperhemisphericalGridDistribution(
             hemi_grid, hemi_values, enforce_pdf_nonnegative=True
         )
 
-    # ------------------------------------------------------------------
-    # Internal helper: "eq_point_set_symm" style grid
-    # ------------------------------------------------------------------
     @staticmethod
-    def _eq_point_set_symm(dim, n_points, _):
+    def _eq_point_set_upper_half(dim, n_points, _):
         ls = LeopardiSampler()
         grid, _ = ls.get_grid(n_points * 2, dim)
-        return grid
+        grid_upper_half = grid[:grid.shape[0]//2]
+        # To have upper half along last dim instead of first
+        grid_upper_half[:, [0, -1]] = grid_upper_half[:, [-1, 0]]
+        return grid_upper_half
 
     # ------------------------------------------------------------------
     # Construction from other distributions
@@ -320,7 +318,7 @@ class HyperhemisphericalGridDistribution(
             # Deterministic pseudo-random grid that depends only on (dim, N, grid_type)
             seed = hash((dim, int(no_of_grid_points), grid_type)) & 0xFFFFFFFF
             rng = np.random.default_rng(seed)
-            grid = HyperhemisphericalGridDistribution._eq_point_set_symm(
+            grid = HyperhemisphericalGridDistribution._eq_point_set_upper_half(
                 dim, int(no_of_grid_points), rng
             )
 
@@ -364,8 +362,7 @@ class HyperhemisphericalGridDistribution(
         else:
             raise ValueError("Grid scheme not recognized")
 
-        # Respect your Python pdf convention: x has shape (batch_dim, space_dim).
-        grid_values = np.asarray(fun(grid.T), dtype=float).reshape(-1)
+        grid_values = fun(grid)
 
         sgd = HyperhemisphericalGridDistribution(grid, grid_values)
         return sgd

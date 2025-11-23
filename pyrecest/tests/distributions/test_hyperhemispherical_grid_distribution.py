@@ -54,8 +54,6 @@ class HyperhemisphericalGridDistributionTest(unittest.TestCase):
 
     def test_warning_asymm(self):
         """
-        Python analogue of MATLAB testWarningAsymm:
-
         - Asymmetric VMF on S^2
         - Asymmetric mixture of two VMFs on S^2
 

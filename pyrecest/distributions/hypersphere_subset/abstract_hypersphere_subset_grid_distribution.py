@@ -17,8 +17,8 @@ class AbstractHypersphereSubsetGridDistribution(AbstractGridDistribution, Abstra
         # Matlab convention: grid_ is (dim, N), grid_values_ is (N,)
         
         # Check size consistency
-        if grid_.shape[1] != grid_values_.shape[0]:
-            raise ValueError("Grid columns must match number of grid values.")
+        if grid_.shape[0] != grid_values_.shape[0]:
+            raise ValueError("Grid size must match number of grid values.")
             
         self.dim = grid_.shape[0]
         self.grid = grid_
