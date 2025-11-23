@@ -81,18 +81,6 @@ class HyperhemisphericalGridDistribution(
         )
         h = hhgd_interp.plot()
         return h
-
-    def plot_full_sphere_interpolated(self):
-        if self.dim != 3:
-            raise ValueError("Can currently only plot for hemisphere of S2 sphere.")
-        hgd = self.to_full_sphere()
-        shd = SphericalHarmonicsDistributionComplex.from_grid(
-            hgd.grid_values, hgd.grid, "identity"
-        )
-        chhd = CustomHypersphericalDistribution.from_distribution(shd)
-        h = chhd.plot()
-        return h
-
     # ------------------------------------------------------------------
     # Grid geometry utilities
     # ------------------------------------------------------------------
@@ -248,7 +236,8 @@ class HyperhemisphericalGridDistribution(
             )
         ):
             # Symmetric on the full sphere -> pdf on hemisphere is 2*pdf_full.
-            fun = lambda x: 2 * distribution.pdf(x)
+            def fun(x):
+                return 2 * distribution.pdf(x)
         elif isinstance(distribution, HypersphericalGridDistribution):
             raise ValueError(
                 "Converting a HypersphericalGridDistribution to a "
