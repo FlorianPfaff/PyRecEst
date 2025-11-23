@@ -72,8 +72,6 @@ class HyperhemisphericalGridDistributionTest(unittest.TestCase):
 
     def test_approx_vmf_mixture_s2(self):
         """
-        MATLAB: testApproxVMMixtureS2
-
         Verify that for a symmetric VMF mixture on S^2, the hemisphere
         grid pdf values equal 2 * dist.pdf(grid).
         """
@@ -95,9 +93,7 @@ class HyperhemisphericalGridDistributionTest(unittest.TestCase):
 
     def test_approx_bingham_s2(self):
         """
-        MATLAB: testApproxBinghamS2
-
-        Bingham on S^2 (dim=3).
+        Bingham on S^2.
         """
         M = np.eye(3)
         Z = np.array([-2.0, -1.0, 0.0])
@@ -121,9 +117,7 @@ class HyperhemisphericalGridDistributionTest(unittest.TestCase):
 
     def test_approx_bingham_s3(self):
         """
-        MATLAB: testApproxBinghamS3
-
-        Bingham on S^3 (dim=4).
+        Bingham on S^3.
         """
         M = np.eye(4)
         Z = np.array([-2.0, -1.0, -0.5, 0.0])
@@ -151,8 +145,6 @@ class HyperhemisphericalGridDistributionTest(unittest.TestCase):
 
     def test_multiply_vmf_mixture_s2(self):
         """
-        MATLAB: testMultiplyVMFMixtureS2
-
         Compare HyperhemisphericalGridDistribution.multiply with
         HypersphericalGridDistribution.multiply on S^2 (dim=3).
         """
@@ -289,8 +281,6 @@ class HyperhemisphericalGridDistributionTest(unittest.TestCase):
 
     def test_multiply_error(self):
         """
-        MATLAB: testMultiplyError
-
         Make two hemisphere grid distributions with incompatible grids and
         ensure multiply raises an error.
         """
@@ -318,7 +308,6 @@ class HyperhemisphericalGridDistributionTest(unittest.TestCase):
 
     def test_to_full_sphere(self):
         """
-
         Convert a hemisphere grid distribution back to a full-sphere one and
         compare with a direct HypersphericalGridDistribution approximation.
         """
