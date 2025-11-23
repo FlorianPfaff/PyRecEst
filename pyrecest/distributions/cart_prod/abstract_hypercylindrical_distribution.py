@@ -6,34 +6,7 @@ import matplotlib.pyplot as plt
 import pyrecest.backend
 import scipy.integrate
 import scipy.optimize
-from matplotlib import cm
-
-# pylint: disable=redefined-builtin,no-name-in-module,no-member
-# pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import (
-    allclose,
-    any,
-    arange,
-    array,
-    column_stack,
-    concatenate,
-    cos,
-    empty,
-    full,
-    int32,
-    int64,
-    isnan,
-    linspace,
-    meshgrid,
-    mod,
-    ndim,
-    ones,
-    sin,
-    sqrt,
-    tile,
-    vstack,
-    zeros,
-)
+from beartype import beartype
 from scipy.integrate import nquad
 
 from ..hypertorus.custom_hypertoroidal_distribution import (
@@ -65,7 +38,7 @@ class AbstractHypercylindricalDistribution(AbstractLinPeriodicCartProdDistributi
         def f(*args):
             return self.pdf(array(args))
 
-        integration_result = nquad(f, integration_boundaries)[0]
+        integration_result = nquad(f, integration_boundaries.T)[0]
 
         return integration_result
 
@@ -88,6 +61,42 @@ class AbstractHypercylindricalDistribution(AbstractLinPeriodicCartProdDistributi
             )
 
         return vstack((left, right))
+    
+    def hybrid_moment_numerical(self):
+        assert self.bound_dim == 1, "Only implemented for bound_dim = 1"
+        m = np.empty(2 * self.bound_dim + self.lin_dim)  # Initialize the results array
+
+        # Integration boundaries
+        left, right = self.get_reasonable_integration_boundaries()
+
+        if self.lin_dim == 1:
+            m[0] = dblquad(lambda x, y: np.cos(x) * self.pdf(np.array([x, y])),
+                           left[0], right[0], lambda _: left[1], lambda _: right[1])[0]
+            m[1] = dblquad(lambda x, y: np.sin(x) * self.pdf(np.array([x, y])),
+                           left[0], right[0], lambda _: left[1], lambda _: right[1])[0]
+            m[2] = dblquad(lambda x, y: y * self.pdf(np.array([x, y])),
+                           left[0], right[0], lambda _: left[1], lambda _: right[1])[0]
+        elif self.lin_dim == 2:
+            def integrand1(x, y, z):
+                return np.cos(x) * self.pdf(np.array([x, y, z]))
+
+            def integrand2(x, y, z):
+                return np.sin(x) * self.pdf(np.array([x, y, z]))
+
+            def integrand3(x, y, z):
+                return y * self.pdf(np.array([x, y, z]))
+
+            def integrand4(x, y, z):
+                return z * self.pdf(np.array([x, y, z]))
+
+            m[0] = nquad(integrand1, [[left[0], right[0]], [left[1], right[1]], [left[2], right[2]]])[0]
+            m[1] = nquad(integrand2, [[left[0], right[0]], [left[1], right[1]], [left[2], right[2]]])[0]
+            m[2] = nquad(integrand3, [[left[0], right[0]], [left[1], right[1]], [left[2], right[2]]])[0]
+            m[3] = nquad(integrand4, [[left[0], right[0]], [left[1], right[1]], [left[2], right[2]]])[0]
+        else:
+            raise ValueError("lin_dim>2 not supported.")
+
+        return m
 
     def mode(self):
         """Find the mode of the distribution by calling mode_numerical."""
