@@ -314,7 +314,6 @@ class HyperhemisphericalGridDistributionTest(unittest.TestCase):
 
         hhgd2hgd = hhgd.to_full_sphere()
 
-        dim = hgd.dim
         grid_hgd = hgd.get_grid()
         grid_hhgd2hgd = hhgd2hgd.get_grid()
 

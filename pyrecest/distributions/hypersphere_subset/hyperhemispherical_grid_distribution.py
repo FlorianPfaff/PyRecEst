@@ -307,11 +307,8 @@ class HyperhemisphericalGridDistribution(
 
         # --- eq_point_set-style grids (default) ---
         if grid_type in {"eq_point_set", "eq_point_set_symm", "eq_point_set_symmetric"}:
-            # Deterministic pseudo-random grid that depends only on (dim, N, grid_type)
-            seed = hash((dim, int(no_of_grid_points), grid_type)) & 0xFFFFFFFF
-            rng = np.random.default_rng(seed)
             grid = HyperhemisphericalGridDistribution._eq_point_set_upper_half(
-                dim, int(no_of_grid_points), rng
+                dim, int(no_of_grid_points)
             )
 
         # --- healpix grid (S^2 only, optional) ---
