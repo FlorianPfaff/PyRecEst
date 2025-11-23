@@ -59,7 +59,7 @@ class HyperhemisphericalGridDistribution(
         Convert hemisphere to full sphere.
 
         The grid is mirrored, and the values are halved to keep the resulting
-        hyperspherical distribution normalized (just like MATLAB's toFullSphere).
+        hyperspherical distribution normalized.
         """
         from .hyperspherical_grid_distribution import HypersphericalGridDistribution
         grid_ = np.vstack((self.grid, -self.grid))
@@ -67,9 +67,6 @@ class HyperhemisphericalGridDistribution(
         hgd = HypersphericalGridDistribution(grid_, grid_values_)
         return hgd
 
-    # ------------------------------------------------------------------
-    # Plotting (same semantics as MATLAB)
-    # ------------------------------------------------------------------
     def plot(self):
         hdd = HypersphericalDiracDistribution(self.grid, self.grid_values.T)
         h = hdd.plot()
@@ -80,8 +77,6 @@ class HyperhemisphericalGridDistribution(
         hhgd_interp = CustomHyperhemisphericalDistribution(
             lambda x: 2 * hdgd.pdf(x), 3
         )
-        # MATLAB temporarily disables a PDF:UseInterpolated warning here.
-        # In Python we just let any interpolation warnings pass through.
         h = hhgd_interp.plot()
         return h
 
@@ -102,18 +97,18 @@ class HyperhemisphericalGridDistribution(
     def get_closest_point(self, xs):
         """
         Return the closest grid point(s) on the hemisphere, taking the symmetry
-        x ~ -x into account (like the MATLAB getClosestPoint).
+        x ~ -x into account.
 
         Parameters
         ----------
         xs : array_like
             Either a single point of shape (dim,),
-            or an array of shape (n_points, dim) or (dim, n_points).
+            or an array of shape (n_points, dim).
 
         Returns
         -------
         points : ndarray
-            Closest grid point(s), shape (dim,) or (dim, n_points).
+            Closest grid point(s), shape (dim,).
         indices : ndarray or int
             Indices of the closest grid points.
         """
@@ -126,25 +121,20 @@ class HyperhemisphericalGridDistribution(
                 )
             xs = xs[None, :]  # (1, dim)
         elif xs.ndim == 2:
-            # Allow both (n_points, dim) and (dim, n_points).
-            # We treat (n_points, dim) as the default "batch, dim" layout.
             if xs.shape[1] == self.dim:
                 pass  # already (batch, dim)
             elif xs.shape[0] == self.dim:
                 xs = xs.T  # (batch, dim)
             else:
                 raise ValueError(
-                    f"xs must have shape (dim, n) or (n, dim) with dim={self.dim}."
+                    f"xs must have shape (n, dim) with dim={self.dim}."
                 )
         else:
             raise ValueError("xs must be a 1D or 2D array.")
 
-        # xs: (batch, dim), grid: (dim, n_grid)
-        grid_T = self.grid.T  # (n_grid, dim)
-
         # Distances to each grid point and its antipode.
-        diff1 = xs[:, None, :] - grid_T[None, :, :]  # (batch, n_grid, dim)
-        diff2 = xs[:, None, :] + grid_T[None, :, :]  # (batch, n_grid, dim)
+        diff1 = xs[:, None, :] - grid[None, :, :]  # (batch, n_grid, dim)
+        diff2 = xs[:, None, :] + grid[None, :, :]  # (batch, n_grid, dim)
 
         dists1 = np.linalg.norm(diff1, axis=2)  # (batch, n_grid)
         dists2 = np.linalg.norm(diff2, axis=2)  # (batch, n_grid)
@@ -157,7 +147,7 @@ class HyperhemisphericalGridDistribution(
         # For a single query, return 1D outputs for convenience.
         if points.ndim == 2 and points.shape[1] == 1:
             points = points[:, 0]
-            indices = int(indices[0])
+            indices = indices[0]
 
         return points, indices
     
@@ -171,10 +161,9 @@ class HyperhemisphericalGridDistribution(
         """
         Multiply two hyperhemispherical grid distributions that share the same grid.
 
-        This mirrors the MATLAB behaviour by:
-          1. Converting both to full-sphere grid distributions.
-          2. Multiplying them as HypersphericalGridDistribution objects.
-          3. Restricting back to the hemisphere and rescaling.
+          1. Convert both to full-sphere grid distributions.
+          2. Multiply them as HypersphericalGridDistribution objects.
+          3. Restrict back to the hemisphere and rescale.
 
         Parameters
         ----------
@@ -187,8 +176,7 @@ class HyperhemisphericalGridDistribution(
         Raises
         ------
         ValueError
-            If the grids are not identical (up to numerical tolerance); message
-            matches MATLAB's identifier: 'Multiply:IncompatibleGrid'.
+            If the grids are not identical (up to numerical tolerance).
         """
         if not isinstance(other, HyperhemisphericalGridDistribution):
             raise TypeError(
@@ -200,7 +188,6 @@ class HyperhemisphericalGridDistribution(
             or self.grid.shape != other.grid.shape
             or not np.allclose(self.grid, other.grid)
         ):
-            # Mirror MATLAB error identifier
             raise ValueError("Multiply:IncompatibleGrid")
 
         # 1–2. Multiply on the full sphere using the full-sphere implementation.
@@ -209,7 +196,6 @@ class HyperhemisphericalGridDistribution(
         hgd_filtered = hgd1.multiply(hgd2)
 
         # 3. Restrict to hemisphere and rescale:
-        # p_H(x) = 2 * p_S(x) for x on the hemisphere.
         n_hemi = self.grid.shape[0]
         hemi_grid = hgd_filtered.grid[:n_hemi]
         hemi_values = 2.0 * hgd_filtered.grid_values[:n_hemi]
@@ -219,7 +205,7 @@ class HyperhemisphericalGridDistribution(
         )
 
     @staticmethod
-    def _eq_point_set_upper_half(dim, n_points, _):
+    def _eq_point_set_upper_half(dim, n_points):
         ls = LeopardiSampler()
         grid, _ = ls.get_grid(n_points * 2, dim)
         grid_upper_half = grid[:grid.shape[0]//2]
@@ -275,7 +261,8 @@ class HyperhemisphericalGridDistribution(
                 "intentional.",
                 UserWarning,
             )
-            fun = lambda x: 2 * distribution.pdf(x)
+            def fun(x):
+                return 2 * distribution.pdf(x)
         else:
             raise ValueError("Distribution currently not supported.")
 
@@ -288,7 +275,7 @@ class HyperhemisphericalGridDistribution(
     # Construction from a function handle
     # ------------------------------------------------------------------
     @staticmethod
-    def from_function(fun, no_of_grid_points, dim=3, grid_type="eq_point_set_symm"):
+    def from_function(fun, no_of_grid_points, dim=2, grid_type="eq_point_set_symm"):
         """
         Construct a hyperhemispherical grid distribution from a callable.
 
@@ -301,7 +288,7 @@ class HyperhemisphericalGridDistribution(
         no_of_grid_points : int
             Number of grid points on the hemisphere.
         dim : int, optional
-            Ambient dimension (space_dim). Default is 3 (S^2).
+            Ambient dimension (space_dim). Default is 2 for S^2.
         grid_type : {'eq_point_set', 'eq_point_set_symm',
                      'eq_point_set_symmetric', 'healpix'}
             Type of grid to use. The default matches the MATLAB class

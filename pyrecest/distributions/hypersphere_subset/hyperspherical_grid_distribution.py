@@ -1,6 +1,8 @@
 import numpy as np
 import warnings
 
+from pyrecest.sampling.hyperspherical_sampler import LeopardiSampler
+
 from .abstract_hypersphere_subset_grid_distribution import (
     AbstractHypersphereSubsetGridDistribution,
 )
@@ -14,10 +16,7 @@ class HypersphericalGridDistribution(
     AbstractHypersphereSubsetGridDistribution, AbstractHypersphericalDistribution
 ):
     """
-    Hyperspherical grid distribution (full sphere), Python port of the
-    MATLAB class HypersphericalGridDistribution.
-
-    Internal convention:
+    Convention:
     - `self.grid` is shape (n_points, dim)
     - `self.grid_values` is shape (n_points,)
     - `pdf(x)` expects x of shape (batch_dim, space_dim)
@@ -32,7 +31,7 @@ class HypersphericalGridDistribution(
     ):
 
         if grid_.ndim != 2:
-            raise ValueError("grid_ must be a 2D array of shape (dim, n_points).")
+            raise ValueError("grid_ must be a 2D array of shape (n_points, dim).")
 
         if grid_.shape[0] != grid_values_.shape[0]:
             raise ValueError(
@@ -57,11 +56,9 @@ class HypersphericalGridDistribution(
     # ------------------------------------------------------------------
     def mean_direction(self):
         """
-        Mean direction on the hypersphere, analogous to MATLAB meanDirection.
-
-        mu = sum_j grid[:, j] * grid_values[j]
+        Mean direction on the hypersphere.
         """
-        mu = self.grid @ self.grid_values  # (dim,)
+        mu = (self.grid.T @ self.grid_values).reshape((-1,))  # (dim,)
         norm_mu = np.linalg.norm(mu)
 
         if norm_mu < 1e-8:
@@ -85,7 +82,6 @@ class HypersphericalGridDistribution(
         xs can be:
         - shape (dim,)
         - shape (batch, dim)
-        - shape (dim, batch)
 
         Returns:
         - scalar if input is 1D
@@ -136,34 +132,6 @@ class HypersphericalGridDistribution(
         if single:
             return float(vals[0])
         return vals
-
-    # ------------------------------------------------------------------
-    # Plotting
-    # ------------------------------------------------------------------
-    def plot(self):
-        """
-        Simple plot using a dirac mixture on the grid.
-
-        For S^2 (dim=3), if your AbstractHypersphericalDistribution has a
-        helper to draw the sphere, you can plug it in here.
-        """
-        if self.dim == 3:
-            # If such a helper exists, you might want:
-            # AbstractHypersphericalDistribution.plot_sphere()
-            pass
-
-        # Normalize weights for plotting
-        weights = self.grid_values / np.sum(self.grid_values)
-        hdd = HypersphericalDiracDistribution(self.grid, weights.T)
-        return hdd.plot()
-
-    def plot_interpolated(self):
-        """
-        Plot an interpolated version of the grid pdf using a
-        CustomHypersphericalDistribution wrapper.
-        """
-        chd = CustomHypersphericalDistribution(lambda x: self.pdf(x), self.dim)
-        return chd.plot()
 
     # ------------------------------------------------------------------
     # Symmetrization & hemisphere operations
@@ -251,7 +219,6 @@ class HypersphericalGridDistribution(
         xs can be:
         - shape (dim,)
         - shape (batch, dim)
-        - shape (dim, batch)
 
         Returns
         -------
@@ -260,7 +227,6 @@ class HypersphericalGridDistribution(
         indices : int or ndarray
             Index/indices of closest grid points.
         """
-        xs = np.asarray(xs, dtype=float)
         single = xs.ndim == 1
 
         if xs.ndim == 1:
@@ -270,22 +236,11 @@ class HypersphericalGridDistribution(
                 )
             xs = xs[None, :]  # (1, dim)
         elif xs.ndim == 2:
-            if xs.shape[1] == self.dim and xs.shape[0] != self.dim:
-                pass  # (batch, dim)
-            elif xs.shape[0] == self.dim and xs.shape[1] != self.dim:
-                xs = xs.T  # (batch, dim)
-            elif xs.shape[0] == self.dim and xs.shape[1] == self.dim:
-                pass
-            else:
-                raise ValueError(
-                    f"xs must have shape (dim,), (batch, dim) or (dim, batch) with "
-                    f"dim={self.dim}, got {xs.shape}."
-                )
+            assert xs.shape[-1] == self.dim
         else:
             raise ValueError("xs must be 1D or 2D array.")
 
-        grid_T = self.grid.T  # (n_grid, dim)
-        diff = xs[:, None, :] - grid_T[None, :, :]  # (batch, n_grid, dim)
+        diff = xs[:, None, :] - self.grid[None, :, :]  # (batch, n_grid, dim)
         dists = np.linalg.norm(diff, axis=2)  # (batch, n_grid)
         indices = np.argmin(dists, axis=1)  # (batch,)
         points = self.get_grid_point(indices)
@@ -302,12 +257,9 @@ class HypersphericalGridDistribution(
         Multiply two hyperspherical grid distributions defined on the same grid.
 
         This method simply checks grid compatibility and then delegates to the
-        superclass multiply implementation. If the grids are incompatible, a
-        ValueError with message 'Multiply:IncompatibleGrid' is raised (to
-        mirror MATLAB's error identifier used in the tests).
+        superclass multiply implementation.
         """
         if not isinstance(other, HypersphericalGridDistribution):
-            # Let the base class handle other types, if supported.
             return super().multiply(other)
 
         if (
@@ -318,21 +270,6 @@ class HypersphericalGridDistribution(
             raise ValueError("Multiply:IncompatibleGrid")
 
         return super().multiply(other)
-
-    # ------------------------------------------------------------------
-    # Static helpers: eq_point_set-style grids
-    # ------------------------------------------------------------------
-    @staticmethod
-    def _uniform_points_on_sphere(dim, n_points, rng):
-        """
-        Sample n_points approximately uniformly from S^(dim-1).
-        Returns an array of shape (n_points, dim).
-        """
-        pts = rng.normal(size=(n_points, dim))
-        norms = np.linalg.norm(pts, axis=1, keepdims=True)
-        norms[norms == 0] = 1.0
-        pts = pts / norms
-        return pts
 
     # ------------------------------------------------------------------
     # Construction from other distributions
@@ -383,11 +320,8 @@ class HypersphericalGridDistribution(
             raise ValueError("dim must be >= 2")
 
         if grid_type == "eq_point_set":
-            seed = hash((dim, no_of_grid_points, grid_type)) & 0xFFFFFFFF
-            rng = np.random.default_rng(seed)
-            grid = HypersphericalGridDistribution._uniform_points_on_sphere(
-                dim, no_of_grid_points, rng
-            )
+            ls = LeopardiSampler()
+            grid, _ = ls.get_grid(no_of_grid_points, dim)
 
         elif grid_type in {"eq_point_set_symm", "eq_point_set_symmetric"}:
             if no_of_grid_points % 2 != 0:
@@ -396,26 +330,10 @@ class HypersphericalGridDistribution(
                     "(grid consists of antipodal pairs)."
                 )
             n_hemi = no_of_grid_points // 2
-            seed = hash((dim, n_hemi, grid_type)) & 0xFFFFFFFF
-            rng = np.random.default_rng(seed)
             hemi_grid = HyperhemisphericalGridDistribution._eq_point_set_upper_half(
-                dim, n_hemi, rng
-            )  # (n_points, dim)
-            grid = np.vstack((hemi_grid, -hemi_grid))  # (2 * n_hemi, dim)
-
-        elif grid_type == "eq_point_set_symm_plane":
-            # Simple placeholder: treat it like a symmetric grid for now.
-            if no_of_grid_points % 2 != 0:
-                raise ValueError(
-                    "eq_point_set_symm_plane requires an even no_of_grid_points."
-                )
-            n_hemi = no_of_grid_points // 2
-            seed = hash((dim, n_hemi, grid_type)) & 0xFFFFFFFF
-            rng = np.random.default_rng(seed)
-            hemi_grid = HyperhemisphericalGridDistribution._eq_point_set_upper_half(
-                dim, n_hemi, rng
-            )
-            grid = np.vstack((hemi_grid, -hemi_grid))
+                dim, n_hemi
+            )  # (n_points//2, dim)
+            grid = np.vstack((hemi_grid, -hemi_grid))  # (n_points, dim)
 
         else:
             raise ValueError("Grid scheme not recognized")

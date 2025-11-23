@@ -27,34 +27,6 @@ from pyrecest.distributions.hypersphere_subset.spherical_grid_distribution impor
     SphericalGridDistribution,
 )
 
-
-def _grid_for_pdf(grid, dim):
-    """
-    Return grid in (batch_dim, space_dim) form for pdf evaluation.
-    Accepts either:
-    - (n_points, dim)  -> returned as-is
-    - (dim, n_points)  -> transposed
-    """
-    grid = np.asarray(grid)
-    if grid.ndim != 2:
-        raise ValueError(f"grid must be 2D, got shape {grid.shape}")
-    if grid.shape[1] == dim and grid.shape[0] != dim:
-        return grid
-    if grid.shape[0] == dim and grid.shape[1] != dim:
-        return grid.T
-    if grid.shape[0] == dim and grid.shape[1] == dim:
-        # ambiguous, but return as-is
-        return grid
-    raise ValueError(
-        f"Grid shape {grid.shape} not compatible with dimension {dim}"
-    )
-
-
-def _standardize_grid(grid, dim):
-    """Standardize grid orientation to (n_points, dim) for comparisons."""
-    return _grid_for_pdf(grid, dim)
-
-
 class HypersphericalGridDistributionTest(unittest.TestCase):
     # --------------------------------------------------------------
     # Helper: PDF equality on a small cartesian grid (S^2)
@@ -88,14 +60,8 @@ class HypersphericalGridDistributionTest(unittest.TestCase):
     # --------------------------------------------------------------
     # Approximation tests
     # --------------------------------------------------------------
-    @unittest.skipIf(
-        SphericalGridDistribution is None,
-        "SphericalGridDistribution not available",
-    )
     def test_approx_vmf_mixture_s2(self):
         """
-        MATLAB: testApproxVMMixtureS2
-
         Compare HypersphericalGridDistribution with SphericalGridDistribution
         on S^2 for a VMF mixture.
         """
@@ -109,8 +75,8 @@ class HypersphericalGridDistributionTest(unittest.TestCase):
         sgd = SphericalGridDistribution.from_distribution(dist, 1012)
 
         dim = hgd.dim
-        grid_hgd = _standardize_grid(hgd.get_grid(), dim)
-        grid_sgd = _standardize_grid(sgd.get_grid(), dim)
+        grid_hgd = hgd.get_grid()
+        grid_sgd = sgd.get_grid()
 
         np.testing.assert_allclose(grid_hgd, grid_sgd, atol=1e-12, rtol=0)
         np.testing.assert_allclose(
@@ -119,13 +85,11 @@ class HypersphericalGridDistributionTest(unittest.TestCase):
 
     def test_approx_vmf_mixture_sd(self):
         """
-        MATLAB: testApproxVMMixtureSd
-
         For dimensions 2..6:
         - Sample two random VMFs
-        - Multiply them analytically (VMF.multiply)
+        - Multiply them analytically (.multiply)
         - HypersphericalGridDistribution approximating the mixture of the two
-          should have mean direction close to vmfMult.mu.
+          should have mean direction close to vmf_mult.mu.
         """
         for dim in range(2, 7):
             # Re-seed to mimic MATLAB rng(1) per dimension
@@ -152,14 +116,8 @@ class HypersphericalGridDistributionTest(unittest.TestCase):
                 rtol=0,
             )
 
-    @unittest.skipIf(
-        SphericalGridDistribution is None,
-        "SphericalGridDistribution not available",
-    )
     def test_approx_bingham_s2(self):
         """
-        MATLAB: testApproxBinghamS2
-
         Bingham on S^2: first verify SphericalGridDistribution approximates it,
         then check that HypersphericalGridDistribution matches SphericalGridDistribution.
         """
@@ -168,10 +126,7 @@ class HypersphericalGridDistributionTest(unittest.TestCase):
         dist = BinghamDistribution(Z, M)
 
         # Optional: improve normalization constant if present
-        if hasattr(dist, "integralNumerical"):
-            dist.F = dist.F * dist.integralNumerical
-        elif hasattr(dist, "integral_numerical"):
-            dist.F = dist.F * dist.integral_numerical
+        dist.F = dist.F * dist.integrate_numerically()
 
         hgd = HypersphericalGridDistribution.from_distribution(dist, 1012)
         sgd = SphericalGridDistribution.from_distribution(dist, 1012)
@@ -180,8 +135,8 @@ class HypersphericalGridDistributionTest(unittest.TestCase):
         self.verify_pdf_equal(sgd, dist, tol=1e-6)
 
         dim = hgd.dim
-        grid_hgd = _standardize_grid(hgd.get_grid(), dim)
-        grid_sgd = _standardize_grid(sgd.get_grid(), dim)
+        grid_hgd = hgd.get_grid()
+        grid_sgd = sgd.get_grid()
 
         np.testing.assert_allclose(grid_hgd, grid_sgd, atol=1e-12, rtol=0)
         np.testing.assert_allclose(
@@ -194,24 +149,19 @@ class HypersphericalGridDistributionTest(unittest.TestCase):
     )
     def test_approx_bingham_s3(self):
         """
-        MATLAB: testApproxBinghamS3
-
         Bingham on S^3 (dim=4).
         """
         M = np.eye(4)
         Z = np.array([-2.0, -1.0, -0.5, 0.0])
         dist = BinghamDistribution(Z, M)
 
-        if hasattr(dist, "integralNumerical"):
-            dist.F = dist.F * dist.integralNumerical
-        elif hasattr(dist, "integral_numerical"):
-            dist.F = dist.F * dist.integral_numerical
+        dist.F = dist.F * dist.integrate_numerically()
 
         hgd = HypersphericalGridDistribution.from_distribution(dist, 1012)
         # No SphericalGridDistribution in S^3 here in MATLAB; they only checked
         # S^3 via hemisphere tests elsewhere. We'll just check that the grid is
         # consistent with its own pdf:  pdf(grid) ~ grid_values.
-        grid = _grid_for_pdf(hgd.get_grid(), hgd.dim)
+        grid = hgd.get_grid()
         np.testing.assert_allclose(
             hgd.grid_values,
             dist.pdf(grid),
@@ -221,8 +171,6 @@ class HypersphericalGridDistributionTest(unittest.TestCase):
 
     def test_mean_direction_sd(self):
         """
-        MATLAB: testMeanDirectionSd
-
         For each dimension, VMF mean direction ~ mu used to build it.
         """
         for dim in range(2, 6):
@@ -249,8 +197,6 @@ class HypersphericalGridDistributionTest(unittest.TestCase):
     )
     def test_multiply_vmf_s2(self):
         """
-        MATLAB: testMultiplyVMFS2
-
         Validate HypersphericalGridDistribution.multiply against
         SphericalGridDistribution.multiply for VMFs on S^2.
         """
@@ -328,8 +274,6 @@ class HypersphericalGridDistributionTest(unittest.TestCase):
 
     def test_multiply_error(self):
         """
-        MATLAB: testMultiplyError
-
         Two grid distributions with incompatible grids must trigger
         a 'Multiply:IncompatibleGrid' error.
         """
@@ -347,7 +291,7 @@ class HypersphericalGridDistributionTest(unittest.TestCase):
         f2.grid_values = f2.grid_values[:-1]
         grid_full = f2.get_grid()
         # Standardize then drop last point
-        grid_full_std = _standardize_grid(grid_full, f2.dim)
+        grid_full_std = grid_full
         # convert back to (dim, n_points-1)
         if grid_full_std.shape[1] == f2.dim:
             # (n_points, dim)
@@ -364,9 +308,6 @@ class HypersphericalGridDistributionTest(unittest.TestCase):
     # Symmetrize tests
     # --------------------------------------------------------------
     def test_symmetrize_vmf_mixture_s2(self):
-        """
-        MATLAB: testSymmetrizeVMFMixtureS2
-        """
         dist = HypersphericalMixture(
             [
                 VonMisesFisherDistribution(np.array([0.0, 1.0, 0.0]), 2.0),
@@ -461,9 +402,6 @@ class HypersphericalGridDistributionTest(unittest.TestCase):
         )
 
     def test_symmetrize_error(self):
-        """
-        MATLAB: testSymmetrizeError
-        """
         dist = VonMisesFisherDistribution(
             1 / np.sqrt(2) * np.array([-1.0, 0.0, 1.0]), 1.0
         )
@@ -499,8 +437,8 @@ class HypersphericalGridDistributionTest(unittest.TestCase):
         hgd_back = hhgd.to_full_sphere()
 
         dim = hgd.dim
-        grid_hgd = _standardize_grid(hgd.get_grid(), dim)
-        grid_back = _standardize_grid(hgd_back.get_grid(), dim)
+        grid_hgd = hgd.get_grid()
+        grid_back = hgd_back.get_grid()
 
         np.testing.assert_allclose(grid_back, grid_hgd, atol=1e-12, rtol=0)
         np.testing.assert_allclose(

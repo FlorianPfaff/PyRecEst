@@ -66,8 +66,7 @@ class HyperhemisphericalGridDistributionTest(unittest.TestCase):
         )
 
     # ------------------------------------------------------------------ #
-    # Approximation tests: VMF mixture and Bingham (testApproxVMMixtureS2,
-    # testApproxBinghamS2, testApproxBinghamS3)
+    # Approximation tests: VMF mixture and Bingham.
     # ------------------------------------------------------------------ #
 
     def test_approx_vmf_mixture_s2(self):
@@ -99,11 +98,8 @@ class HyperhemisphericalGridDistributionTest(unittest.TestCase):
         Z = np.array([-2.0, -1.0, 0.0])
         dist = BinghamDistribution(Z, M)
 
-        # Optional: improve normalization constant if the API exposes it
-        if hasattr(dist, "integralNumerical"):
-            dist.F = dist.F * dist.integralNumerical
-        elif hasattr(dist, "integral_numerical"):
-            dist.F = dist.F * dist.integral_numerical
+        # Improve normalization constant.
+        dist.F = dist.F * dist.integrate_numerically()
 
         hhgd = HyperhemisphericalGridDistribution.from_distribution(dist, 1012)
         grid = hhgd.get_grid()
@@ -123,11 +119,8 @@ class HyperhemisphericalGridDistributionTest(unittest.TestCase):
         Z = np.array([-2.0, -1.0, -0.5, 0.0])
         dist = BinghamDistribution(Z, M)
 
-        # Optional normalization improvement as above
-        if hasattr(dist, "integralNumerical"):
-            dist.F = dist.F * dist.integralNumerical
-        elif hasattr(dist, "integral_numerical"):
-            dist.F = dist.F * dist.integral_numerical
+        # Improve normalization constant.
+        dist.F = dist.F * dist.integrate_numerically()
 
         hhgd = HyperhemisphericalGridDistribution.from_distribution(dist, 1012)
         grid = hhgd.get_grid()
@@ -140,15 +133,15 @@ class HyperhemisphericalGridDistributionTest(unittest.TestCase):
         )
 
     # ------------------------------------------------------------------ #
-    # Multiply tests (testMultiplyVMFMixtureS2 and S3)
+    # Multiply tests
     # ------------------------------------------------------------------ #
 
     def test_multiply_vmf_mixture_s2(self):
         """
         Compare HyperhemisphericalGridDistribution.multiply with
-        HypersphericalGridDistribution.multiply on S^2 (dim=3).
+        HypersphericalGridDistribution.multiply on S^2.
         """
-        kappas = [0.1 + 0.3 * i for i in range(14)]  # 0.1:0.3:4 in MATLAB
+        kappas = [0.1 + 0.3 * i for i in range(14)]
 
         for kappa1 in kappas:
             for kappa2 in kappas:
@@ -262,7 +255,7 @@ class HyperhemisphericalGridDistributionTest(unittest.TestCase):
                     hemi_grid,
                     full_grid[:n_hemi, :],
                     rtol=0,
-                    atol=1e-10,  # slightly looser than S2 test (matches MATLAB AbsTol=1e-4)
+                    atol=1e-10,  # slightly looser than S2 test
                 )
 
                 hemi_values = np.asarray(hhgd_filtered.grid_values)
@@ -276,7 +269,7 @@ class HyperhemisphericalGridDistributionTest(unittest.TestCase):
                 )
 
     # ------------------------------------------------------------------ #
-    # Multiply error (testMultiplyError) and to_full_sphere (testToFullSphere)
+    # Multiply error
     # ------------------------------------------------------------------ #
 
     def test_multiply_error(self):
@@ -302,8 +295,6 @@ class HyperhemisphericalGridDistributionTest(unittest.TestCase):
         with self.assertRaises(ValueError) as cm:
             f1.multiply(f2)
 
-        # If you implement multiply to raise a ValueError with message
-        # "Multiply:IncompatibleGrid" (as in the MATLAB test), this will check it:
         self.assertIn("IncompatibleGrid", str(cm.exception))
 
     def test_to_full_sphere(self):
