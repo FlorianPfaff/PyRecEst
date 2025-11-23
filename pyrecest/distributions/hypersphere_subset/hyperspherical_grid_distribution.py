@@ -1,7 +1,7 @@
 import numpy as np
 import warnings
 
-from pyrecest.sampling.hyperspherical_sampler import LeopardiSampler
+from ...sampling.hyperspherical_sampler import LeopardiSampler
 
 from .abstract_hypersphere_subset_grid_distribution import (
     AbstractHypersphereSubsetGridDistribution,
@@ -15,9 +15,9 @@ class HypersphericalGridDistribution(
 ):
     """
     Convention:
-    - `self.grid` is shape (n_points, dim)
+    - `self.grid` is shape (n_points, input_dim)
     - `self.grid_values` is shape (n_points,)
-    - `pdf(x)` expects x of shape (batch_dim, space_dim)
+    - `pdf(x)` expects x of shape (batch_dim, input_dim)
     """
 
     def __init__(
@@ -29,7 +29,7 @@ class HypersphericalGridDistribution(
     ):
 
         if grid_.ndim != 2:
-            raise ValueError("grid_ must be a 2D array of shape (n_points, dim).")
+            raise ValueError("grid_ must be a 2D array of shape (n_points, input_dim).")
 
         if grid_.shape[0] != grid_values_.shape[0]:
             raise ValueError(

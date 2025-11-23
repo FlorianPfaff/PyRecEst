@@ -7,6 +7,8 @@ from .spherical_harmonics_distribution_complex import SphericalHarmonicsDistribu
 from .custom_hyperspherical_distribution import CustomHypersphericalDistribution
 from ..abstract_grid_distribution import AbstractGridDistribution
 
+from ...sampling.hyperspherical_sampler import LeopardiSampler
+
 
 class SphericalGridDistribution(HypersphericalGridDistribution, AbstractSphericalDistribution):
     """
@@ -176,8 +178,8 @@ class SphericalGridDistribution(HypersphericalGridDistribution, AbstractSpherica
         """
         if grid_type == "eq_point_set":
             # Reuse HypersphericalGridDistribution's generator in 3D
-            grid = HypersphericalGridDistribution._eq_point_set(dim=3, n_points=no_of_grid_points,
-                                                                rng=np.random.default_rng(0))
+            ls = LeopardiSampler()
+            grid, _ = ls.get_grid(no_of_grid_points, 2)
         elif grid_type == "sh_grid":
             warnings.warn(
                 "Transformation:notEq_Point_set: Not using eq_point_set. "
