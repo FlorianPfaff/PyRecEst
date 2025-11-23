@@ -7,8 +7,6 @@ from .abstract_hypersphere_subset_grid_distribution import (
     AbstractHypersphereSubsetGridDistribution,
 )
 from .abstract_hyperspherical_distribution import AbstractHypersphericalDistribution
-from .hyperspherical_dirac_distribution import HypersphericalDiracDistribution
-from .custom_hyperspherical_distribution import CustomHypersphericalDistribution
 from .hyperhemispherical_grid_distribution import HyperhemisphericalGridDistribution
 
 

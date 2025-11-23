@@ -14,9 +14,6 @@ from pyrecest.distributions.hypersphere_subset.watson_distribution import (
 from pyrecest.distributions.hypersphere_subset.hyperspherical_grid_distribution import (
     HypersphericalGridDistribution,
 )
-from pyrecest.distributions.hypersphere_subset.hyperhemispherical_grid_distribution import (
-    HyperhemisphericalGridDistribution,
-)
 from pyrecest.distributions.hypersphere_subset.hyperspherical_uniform_distribution import (
     HypersphericalUniformDistribution,
 )
@@ -74,7 +71,6 @@ class HypersphericalGridDistributionTest(unittest.TestCase):
         hgd = HypersphericalGridDistribution.from_distribution(dist, 1012)
         sgd = SphericalGridDistribution.from_distribution(dist, 1012)
 
-        dim = hgd.dim
         grid_hgd = hgd.get_grid()
         grid_sgd = sgd.get_grid()
 
@@ -134,7 +130,6 @@ class HypersphericalGridDistributionTest(unittest.TestCase):
         # First verify that SphericalGridDistribution approximates Bingham
         self.verify_pdf_equal(sgd, dist, tol=1e-6)
 
-        dim = hgd.dim
         grid_hgd = hgd.get_grid()
         grid_sgd = sgd.get_grid()
 
@@ -436,7 +431,6 @@ class HypersphericalGridDistributionTest(unittest.TestCase):
         hhgd = hgd.to_hemisphere()
         hgd_back = hhgd.to_full_sphere()
 
-        dim = hgd.dim
         grid_hgd = hgd.get_grid()
         grid_back = hgd_back.get_grid()
 

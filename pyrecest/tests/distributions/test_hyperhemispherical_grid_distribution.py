@@ -180,7 +180,6 @@ class HyperhemisphericalGridDistributionTest(unittest.TestCase):
                 )
                 hgd_filtered = hgd1.multiply(hgd2)
 
-                dim = hhgd_filtered.dim
                 hemi_grid = hhgd_filtered.get_grid()
                 full_grid = hgd_filtered.get_grid()
 
@@ -245,7 +244,6 @@ class HyperhemisphericalGridDistributionTest(unittest.TestCase):
                 )
                 hgd_filtered = hgd1.multiply(hgd2)
 
-                dim = hhgd_filtered.dim
                 hemi_grid = hhgd_filtered.get_grid()
                 full_grid = hgd_filtered.get_grid()
 

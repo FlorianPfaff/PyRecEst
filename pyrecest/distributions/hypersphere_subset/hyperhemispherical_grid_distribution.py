@@ -74,8 +74,10 @@ class HyperhemisphericalGridDistribution(
 
     def plot_interpolated(self):
         hdgd = self.to_full_sphere()
+        def pdf_doubled(x):
+            return 2 * hdgd.pdf(x)
         hhgd_interp = CustomHyperhemisphericalDistribution(
-            lambda x: 2 * hdgd.pdf(x), 3
+            pdf_doubled, 3
         )
         h = hhgd_interp.plot()
         return h
