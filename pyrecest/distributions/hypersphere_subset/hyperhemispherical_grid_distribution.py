@@ -62,8 +62,8 @@ class HyperhemisphericalGridDistribution(
         hyperspherical distribution normalized (just like MATLAB's toFullSphere).
         """
         from .hyperspherical_grid_distribution import HypersphericalGridDistribution
-        grid_ = np.hstack((self.grid, -self.grid))
-        grid_values_ = 0.5 * np.hstack((self.grid_values, self.grid_values))
+        grid_ = np.vstack((self.grid, -self.grid))
+        grid_values_ = 0.5 * np.concatenate((self.grid_values, self.grid_values))
         hgd = HypersphericalGridDistribution(grid_, grid_values_)
         return hgd
 

@@ -84,7 +84,7 @@ class HyperhemisphericalGridDistributionTest(unittest.TestCase):
         dist = HypersphericalMixture([dist1, dist2], [0.5, 0.5])
 
         hhgd = HyperhemisphericalGridDistribution.from_distribution(dist, 1012)
-        grid = _grid_for_pdf(hhgd.get_grid(), dist.dim)
+        grid = hhgd.get_grid()
 
         np.testing.assert_allclose(
             hhgd.grid_values,
@@ -136,7 +136,7 @@ class HyperhemisphericalGridDistributionTest(unittest.TestCase):
             dist.F = dist.F * dist.integral_numerical
 
         hhgd = HyperhemisphericalGridDistribution.from_distribution(dist, 1012)
-        grid = _grid_for_pdf(hhgd.get_grid(), dist.dim)
+        grid = hhgd.get_grid()
 
         np.testing.assert_allclose(
             hhgd.grid_values,
@@ -343,8 +343,8 @@ class HyperhemisphericalGridDistributionTest(unittest.TestCase):
         hhgd2hgd = hhgd.to_full_sphere()
 
         dim = hgd.dim
-        grid_hgd = _standardize_grid(hgd.get_grid(), dim)
-        grid_hhgd2hgd = _standardize_grid(hhgd2hgd.get_grid(), dim)
+        grid_hgd = hgd.get_grid()
+        grid_hhgd2hgd = hhgd2hgd.get_grid()
 
         np.testing.assert_allclose(
             grid_hhgd2hgd,

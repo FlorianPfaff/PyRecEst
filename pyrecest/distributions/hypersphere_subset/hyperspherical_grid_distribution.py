@@ -18,10 +18,9 @@ class HypersphericalGridDistribution(
     MATLAB class HypersphericalGridDistribution.
 
     Internal convention:
-    - `self.grid` is shape (dim, n_points)
+    - `self.grid` is shape (n_points, dim)
     - `self.grid_values` is shape (n_points,)
     - `pdf(x)` expects x of shape (batch_dim, space_dim)
-      (i.e. (N, dim) in your Python convention)
     """
 
     def __init__(
@@ -31,26 +30,27 @@ class HypersphericalGridDistribution(
         enforce_pdf_nonnegative=True,
         grid_type="unknown",
     ):
-        grid_ = np.asarray(grid_, dtype=float)
-        grid_values_ = np.asarray(grid_values_, dtype=float).reshape(-1)
 
         if grid_.ndim != 2:
             raise ValueError("grid_ must be a 2D array of shape (dim, n_points).")
 
-        if grid_.shape[1] != grid_values_.shape[0]:
+        if grid_.shape[0] != grid_values_.shape[0]:
             raise ValueError(
                 "grid_values_ must have length equal to the number of grid points "
-                "(columns of grid_)."
+                "(rows of grid_)."
             )
 
         if not np.all(np.abs(grid_) <= 1 + 1e-12):
             raise ValueError(
-                "Grid points must lie on or inside the unit hypersphere "
+                "Grid points must not lie outside the unit square (otherwise they are outside the domain)"
                 "(-1 <= coordinates <= 1)."
             )
 
         super().__init__(grid_, grid_values_, enforce_pdf_nonnegative)
         self.grid_type = grid_type
+
+    def get_manifold_size(self):
+        return AbstractHypersphericalDistribution.get_manifold_size(self)
 
     # ------------------------------------------------------------------
     # Basic statistics
@@ -334,31 +334,6 @@ class HypersphericalGridDistribution(
         pts = pts / norms
         return pts
 
-    @staticmethod
-    def _eq_point_set_symm_hemisphere(dim, n_points, rng):
-        """
-        Hemisphere version of eq_point_set_symm.
-
-        This is intentionally identical to the helper used in
-        HyperhemisphericalGridDistribution so that:
-
-        - HyperhemisphericalGridDistribution.from_function(..., 'eq_point_set_symm')
-        - HypersphericalGridDistribution.from_function(..., 'eq_point_set_symm')
-
-        generate compatible grids for the test that converts a hemisphere grid
-        back to a full-sphere grid.
-        """
-        pts = rng.normal(size=(n_points, dim))
-        norms = np.linalg.norm(pts, axis=1, keepdims=True)
-        norms[norms == 0] = 1.0
-        pts = pts / norms
-
-        # force points onto upper hemisphere (last coordinate >= 0)
-        mask = pts[:, -1] < 0
-        pts[mask] *= -1.0
-
-        return pts.T  # (dim, n_points)
-
     # ------------------------------------------------------------------
     # Construction from other distributions
     # ------------------------------------------------------------------
@@ -407,15 +382,12 @@ class HypersphericalGridDistribution(
         if dim < 2:
             raise ValueError("dim must be >= 2")
 
-        no_of_grid_points = int(no_of_grid_points)
-
         if grid_type == "eq_point_set":
             seed = hash((dim, no_of_grid_points, grid_type)) & 0xFFFFFFFF
             rng = np.random.default_rng(seed)
-            pts = HypersphericalGridDistribution._uniform_points_on_sphere(
+            grid = HypersphericalGridDistribution._uniform_points_on_sphere(
                 dim, no_of_grid_points, rng
             )
-            grid = pts.T  # (dim, n_points)
 
         elif grid_type in {"eq_point_set_symm", "eq_point_set_symmetric"}:
             if no_of_grid_points % 2 != 0:
@@ -426,10 +398,10 @@ class HypersphericalGridDistribution(
             n_hemi = no_of_grid_points // 2
             seed = hash((dim, n_hemi, grid_type)) & 0xFFFFFFFF
             rng = np.random.default_rng(seed)
-            hemi_grid = HypersphericalGridDistribution._eq_point_set_symm_hemisphere(
+            hemi_grid = HyperhemisphericalGridDistribution._eq_point_set_upper_half(
                 dim, n_hemi, rng
-            )  # (dim, n_hemi)
-            grid = np.hstack((hemi_grid, -hemi_grid))  # (dim, 2 * n_hemi)
+            )  # (n_points, dim)
+            grid = np.vstack((hemi_grid, -hemi_grid))  # (2 * n_hemi, dim)
 
         elif grid_type == "eq_point_set_symm_plane":
             # Simple placeholder: treat it like a symmetric grid for now.
@@ -440,16 +412,16 @@ class HypersphericalGridDistribution(
             n_hemi = no_of_grid_points // 2
             seed = hash((dim, n_hemi, grid_type)) & 0xFFFFFFFF
             rng = np.random.default_rng(seed)
-            hemi_grid = HypersphericalGridDistribution._eq_point_set_symm_hemisphere(
+            hemi_grid = HyperhemisphericalGridDistribution._eq_point_set_upper_half(
                 dim, n_hemi, rng
             )
-            grid = np.hstack((hemi_grid, -hemi_grid))
+            grid = np.vstack((hemi_grid, -hemi_grid))
 
         else:
             raise ValueError("Grid scheme not recognized")
 
         # Call user pdf with X of shape (batch_dim, space_dim) = (n_points, dim)
-        grid_values = np.asarray(fun(grid.T), dtype=float).reshape(-1)
+        grid_values = fun(grid)
 
         return HypersphericalGridDistribution(
             grid, grid_values, enforce_pdf_nonnegative=enforce_pdf_nonnegative, grid_type=grid_type
