@@ -170,8 +170,7 @@ class HypersphericalGridDistributionTest(unittest.TestCase):
         """
         for dim in range(2, 6):
             np.random.seed(1)
-            mu_raw = HypersphericalUniformDistribution(dim).sample(1)
-            mu = np.asarray(mu_raw, dtype=float).reshape(-1)[:dim]
+            mu = HypersphericalUniformDistribution(dim).sample(1)
 
             vmf = VonMisesFisherDistribution(mu, 2.0)
             hgd = HypersphericalGridDistribution.from_distribution(vmf, 1012)

@@ -43,7 +43,7 @@ class SphericalGridDistribution(HypersphericalGridDistribution, AbstractSpherica
                 "SphericalGridDistribution:CannotNormalizeShGrid: "
                 "Cannot properly normalize for sh_grid; using generic normalization anyway."
             )
-        return AbstractGridDistribution.normalize(self, tol=tol, warnUnnorm=warn_unnorm)
+        return AbstractGridDistribution.normalize(self, tol=tol, warn_unnorm=warn_unnorm)
 
     # ------------------------------------------------------------------
     # Plotting

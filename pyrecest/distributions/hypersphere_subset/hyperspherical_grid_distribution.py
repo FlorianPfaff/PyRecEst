@@ -143,14 +143,14 @@ class HypersphericalGridDistribution(
 
         New grid_values are the average of each pair, copied to both points.
         """
-        n = self.grid.shape[1]
+        n = self.grid.shape[0]
         if n % 2 != 0:
             raise ValueError(
                 "Symmetrize:AsymmetricGrid: grid must have an even number of points."
             )
 
         half = n // 2
-        if not np.allclose(self.grid[:, :half], -self.grid[:, half:], atol=1e-12):
+        if not np.allclose(self.grid[:half], -self.grid[half:], atol=1e-12):
             raise ValueError(
                 "Symmetrize:AsymmetricGrid: "
                 "Can only use symmetrize for symmetric grids. "
