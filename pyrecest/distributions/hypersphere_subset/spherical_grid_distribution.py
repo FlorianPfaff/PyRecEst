@@ -19,19 +19,12 @@ class SphericalGridDistribution(HypersphericalGridDistribution, AbstractSpherica
     - grid_values: shape (n_points,)
     - pdf(x): x has shape (batch_dim, space_dim) = (N, 3)
     """
-
     def __init__(self, grid, grid_values, enforce_pdf_nonnegative: bool = True, grid_type: str = "unknown"):
-        if self.dim != 2:
+        AbstractSphericalDistribution.__init__(self)
+        super().__init__(grid, grid_values, enforce_pdf_nonnegative=enforce_pdf_nonnegative, grid_type=grid_type)
+        if self.dim != 3:
             raise AssertionError("SphericalGridDistribution must have dimension 3")
 
-        # Initialize hyperspherical part first
-        HypersphericalGridDistribution.__init__(
-            self,
-            grid,
-            grid_values,
-            enforce_pdf_nonnegative=enforce_pdf_nonnegative,
-            grid_type=grid_type,
-        )
 
 
     # ------------------------------------------------------------------
