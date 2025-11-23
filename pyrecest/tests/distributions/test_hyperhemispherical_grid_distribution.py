@@ -17,36 +17,6 @@ from pyrecest.distributions.hypersphere_subset.hyperspherical_grid_distribution 
 from pyrecest.distributions import HypersphericalMixture
 
 
-def _grid_for_pdf(grid, dim):
-    """
-    Return grid in (batch_dim, space_dim) form for pdf evaluation.
-
-    Accepts either:
-    - (n_points, dim)  -> returned as-is
-    - (dim, n_points)  -> transposed
-    """
-    grid = np.asarray(grid)
-    if grid.ndim != 2:
-        raise ValueError(f"grid must be 2D, got shape {grid.shape}")
-    if grid.shape[1] == dim and grid.shape[0] != dim:
-        return grid
-    if grid.shape[0] == dim and grid.shape[1] != dim:
-        return grid.T
-    if grid.shape[0] == dim and grid.shape[1] == dim:
-        # ambiguous; just return as-is
-        return grid
-    raise ValueError(
-        f"Grid shape {grid.shape} not compatible with dimension {dim}"
-    )
-
-
-def _standardize_grid(grid, dim):
-    """
-    Standardize grid orientation to (n_points, dim) for comparisons.
-    """
-    return _grid_for_pdf(grid, dim)
-
-
 class HyperhemisphericalGridDistributionTest(unittest.TestCase):
     # ------------------------------------------------------------------ #
     # Warning tests (testWarningAsymm)
@@ -140,7 +110,7 @@ class HyperhemisphericalGridDistributionTest(unittest.TestCase):
             dist.F = dist.F * dist.integral_numerical
 
         hhgd = HyperhemisphericalGridDistribution.from_distribution(dist, 1012)
-        grid = _grid_for_pdf(hhgd.get_grid(), dist.dim)
+        grid = hhgd.get_grid()
 
         np.testing.assert_allclose(
             hhgd.grid_values,

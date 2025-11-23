@@ -19,7 +19,7 @@ import warnings
 
 
 class HyperhemisphericalGridDistribution(
-    AbstractHyperhemisphericalDistribution, AbstractHypersphereSubsetGridDistribution
+    AbstractHypersphereSubsetGridDistribution, AbstractHyperhemisphericalDistribution
 ):
 
     def __init__(self, grid, grid_values, enforce_pdf_nonnegative=True):
@@ -160,6 +160,9 @@ class HyperhemisphericalGridDistribution(
             indices = int(indices[0])
 
         return points, indices
+    
+    def get_manifold_size(self):
+        return AbstractHyperhemisphericalDistribution.get_manifold_size(self)
 
     # ------------------------------------------------------------------
     # Multiplication on the hemisphere

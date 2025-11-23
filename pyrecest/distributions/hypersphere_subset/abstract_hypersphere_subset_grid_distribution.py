@@ -20,7 +20,7 @@ class AbstractHypersphereSubsetGridDistribution(AbstractGridDistribution, Abstra
         if grid_.shape[0] != grid_values_.shape[0]:
             raise ValueError("Grid size must match number of grid values.")
             
-        self.dim = grid_.shape[0]
+        self.dim = grid_.shape[1]
         self.grid = grid_
         self.grid_values = grid_values_
         self.enforce_pdf_nonnegative = enforce_pdf_nonnegative
