@@ -52,27 +52,15 @@ class SphericalGridDistribution(HypersphericalGridDistribution, AbstractSpherica
         """
         Plot interpolated pdf.
 
-        use_harmonics = True  -> spherical harmonics interpolation.
         use_harmonics = False -> piecewise constant interpolation via self.pdf(..., False).
+        use_harmonics = True  -> spherical harmonics interpolation (currently unsupported).
         """
-        if use_harmonics:
-            if self.enforce_pdf_nonnegative:
-                transformation = "sqrt"
-            else:
-                transformation = "identity"
-
-            shd = SphericalHarmonicsDistributionComplex.from_grid(
-                self.grid_values,
-                self.grid,
-                transformation,
-            )
-            return shd.plot()
-        else:
-            chd = CustomHypersphericalDistribution(
-                lambda x: self.pdf(x, use_harmonics=False),
-                3,
-            )
-            return chd.plot()
+        assert not use_harmonics, "Using spherical harmonics currently unsupported"
+        chd = CustomHypersphericalDistribution(
+            lambda x: self.pdf(x, use_harmonics=False),
+            3,
+        )
+        return chd.plot()
 
     # ------------------------------------------------------------------
     # Pdf
@@ -92,49 +80,7 @@ class SphericalGridDistribution(HypersphericalGridDistribution, AbstractSpherica
         xa = np.asarray(xa, dtype=float)
 
         assert xa.shape[0] != self.input_dim
-
-        if use_harmonics:
-            warnings.warn(
-                "PDF:UseInterpolated: pdf is not defined in closed form for "
-                "SphericalGridDistribution; using interpolation with spherical harmonics.",
-                UserWarning,
-            )
-
-            if self.enforce_pdf_nonnegative:
-                transformation = "sqrt"
-            else:
-                transformation = "identity"
-
-            if self.grid_type != "sh_grid":
-                shd = SphericalHarmonicsDistributionComplex.from_grid(
-                    self.grid_values,
-                    self.grid,
-                    transformation,
-                )
-            else:
-                warn_state = warnings.catch_warnings()
-                with warn_state:
-                    warnings.filterwarnings("ignore", message="Normalization:notNormalized")
-                    warnings.warn(
-                        "PDF:NeedNormalizationShGrid: Need to normalize for pdf "
-                        "because it is unnormalized since sh_grid is used.",
-                        UserWarning,
-                    )
-                    shd = SphericalHarmonicsDistributionComplex.from_grid(
-                        self.grid_values,
-                        self.grid,
-                        transformation,
-                    )
-
-            return shd.pdf(xa)
-
-        # use_harmonics == False: piecewise constant interpolation like Hyper/HypersphericalGridDistribution
-        warnings.warn(
-            "PDF:UseInterpolated: Interpolating the pdf with constant values "
-            "in each region is not very efficient, but it is good enough for "
-            "visualization purposes.",
-            UserWarning,
-        )
+        assert not use_harmonics, "Using spherical harmonics currently unsupported"
 
         dots = self.grid @ xa.T
         max_index = np.argmax(dots, axis=0)
