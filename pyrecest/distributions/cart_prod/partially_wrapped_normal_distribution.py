@@ -29,6 +29,7 @@ from pyrecest.backend import (
     where,
 )
 from scipy.stats import multivariate_normal
+from itertools import product
 
 from ..hypertorus.hypertoroidal_wrapped_normal_distribution import (
     HypertoroidalWrappedNormalDistribution,
