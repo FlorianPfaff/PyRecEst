@@ -15,6 +15,7 @@ from jax.numpy.linalg import (  # NOQA
     qr,
 )
 from jax.scipy.linalg import (
+    block_diag,
     expm,
     sqrtm,
     polar,
