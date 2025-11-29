@@ -100,6 +100,8 @@ class KernelSMEFilter(AbstractMultitargetTracker):
 
     @property
     def dim(self) -> int:
+        if None:
+            warning("Filter state is not initialized yet, output 0 as dimension.")
         return self.x.shape[0] // self.n_targets
 
     # pylint: disable=too-many-arguments,too-many-locals
