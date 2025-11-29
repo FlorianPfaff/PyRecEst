@@ -1,5 +1,28 @@
 import bayesian_filters
-from pyrecest.backend import eye, hstack, mean, ones, zeros, sum, linalg, hsplit, reshape, any, vstack, array, zeros_like, sqrt, full, diag, dot, empty, triu_indices, random, stack, einsum
+from pyrecest.backend import (
+    any,
+    array,
+    diag,
+    dot,
+    einsum,
+    empty,
+    eye,
+    full,
+    hsplit,
+    hstack,
+    linalg,
+    mean,
+    ones,
+    random,
+    reshape,
+    sqrt,
+    stack,
+    sum,
+    triu_indices,
+    vstack,
+    zeros,
+    zeros_like,
+)
 from pyrecest.distributions import GaussianDistribution
 
 from .abstract_multitarget_tracker import AbstractMultitargetTracker
@@ -54,7 +77,7 @@ class KernelSMEFilter(AbstractMultitargetTracker):
         self,
         system_matrix,
         sys_noise,
-        inputs = None,
+        inputs=None,
     ):
         assert (
             inputs is None
@@ -108,7 +131,10 @@ class KernelSMEFilter(AbstractMultitargetTracker):
             AssertionError: If `enableGating=True` and `gatingThreshold` is None.
 
         """
-        from scipy.stats import chi2  # Just a simple calculation, do not need to use backend
+        from scipy.stats import (  # Just a simple calculation, do not need to use backend
+            chi2,
+        )
+
         assert (
             not gating_threshold or enable_gating
         ), "Changed gating threshold without enabling gating, this does not make sense."
@@ -133,12 +159,15 @@ class KernelSMEFilter(AbstractMultitargetTracker):
             mu = (measurement_matrix @ self.get_point_estimate()).T  # shape (T, m)
 
             # inverse covariances per target: shape (T, m, m)
-            VI = stack([
-                linalg.inv(
-                    measurement_matrix @ C @ measurement_matrix.T + cov_mat_meas
-                )
-                for C in C_blocks_list
-            ], axis=0)
+            VI = stack(
+                [
+                    linalg.inv(
+                        measurement_matrix @ C @ measurement_matrix.T + cov_mat_meas
+                    )
+                    for C in C_blocks_list
+                ],
+                axis=0,
+            )
 
             # differences: (T, N, m) where N = number of measurements
             diff = measurements.T[None, :, :] - mu[:, None, :]  # (T, N, m)
@@ -253,7 +282,7 @@ class KernelSMEFilter(AbstractMultitargetTracker):
         C_blocks_list = [
             C_prior[
                 i * state_dim : (i + 1) * state_dim,  # noqa: E203
-                i * state_dim : (i + 1) * state_dim  # noqa: E203
+                i * state_dim : (i + 1) * state_dim,  # noqa: E203
             ]
             for i in range(n_targets)
         ]
@@ -333,7 +362,9 @@ class KernelSMEFilter(AbstractMultitargetTracker):
                 )
 
                 # --- term 2: kernel_between * sum_l (lambda_l^2 P_l^{Gamma/2}(midpoint)) ---
-                term2 = kernel_between * sum((lambda_vec**2) * Pij[i, j, :])  # noqa: E203
+                term2 = kernel_between * sum(
+                    (lambda_vec**2) * Pij[i, j, :]
+                )  # noqa: E203
 
                 # --- clutter-related terms (3)–(6) ---
                 clutter_i = clutter_pdf[i]
