@@ -372,9 +372,6 @@ def get_partition_points_polar_north(
         For dim=2 these are (azimuth, colatitude).
     """
 
-    if dim != 2:
-        raise ValueError("Only dim=2 is currently supported for symmetric partitions.")
-
     if N % 2 != 0:
         raise ValueError("Number of points N must be even for symmetric partitions.")
     if N < 2:

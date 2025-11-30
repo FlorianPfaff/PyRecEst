@@ -198,6 +198,7 @@ BACKEND_ATTRIBUTES = {
         "vmap",
         "gammaln",
         "round",
+        "array_equal",
         # For Riemannian score-based SDE
         "log1p"
     ],
