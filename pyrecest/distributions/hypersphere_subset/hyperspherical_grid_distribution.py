@@ -11,7 +11,7 @@ from .hyperhemispherical_grid_distribution import HyperhemisphericalGridDistribu
 import copy
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
-from pyrecest.backend import abs, all, linalg, concatenate, allclose, argmax, argmin
+from pyrecest.backend import abs, all, linalg, concatenate, allclose, argmax, argmin, any, isclose
 
 class HypersphericalGridDistribution(
     AbstractHypersphereSubsetGridDistribution, AbstractHypersphericalDistribution
@@ -155,26 +155,44 @@ class HypersphericalGridDistribution(
                 "ToHemisphere:AsymmetricGrid: grid must have an even number of points."
             )
 
-        half = n // 2
-        if not allclose(self.grid[:half, :], -self.grid[half:, :], atol=1e-12):
+        n_half = n // 2
+        # Test for antipodal symmetry of the grid
+        if not allclose(self.grid[:n_half, :], -self.grid[n_half:, :], atol=1e-12):
+            # If not, test for plane symmetry
+            # For every non-polar point v, there exists a point w with:
+            #   w[:-1] ≈ v[:-1]  and  w[-1] ≈ -v[-1]
+            for i in range(n_half):
+                v = self.grid[i, :]
+
+                # Skip poles (z ≈ ±1)
+                if isclose(v[-1], 1.0, atol=tol) or isclose(v[-1], -1.0, atol=tol):
+                    continue
+
+                # Find candidates whose first dim coordinates match v's (within tol)
+                same_xy = all(abs(self.grid[:, :-1] - v[None, :-1]) < 5 * tol, axis=1)
+                candidates = self.grid[same_xy, :]
+
+                # Among those, at least one must have opposite z
+                self.assertTrue(any(isclose(candidates[:, -1], -v[-1], atol=5 * tol)))
+
             raise ValueError(
                 "ToHemisphere:AsymmetricGrid: "
-                "Can only use to_hemisphere for symmetric grids. "
-                "Use grid_type 'leopardi_symm' when calling from_distribution "
-                "or from_function."
+                "Can only use to_hemisphere for antipodally symmetric grids. "
+                "Use grid_type 'leopardi_symm_antipodal' or 'leopardi_symm_plane'"
+                "when calling from_distribution or from_function."
             )
 
-        if allclose(self.grid_values[:half], self.grid_values[half:], atol=tol):
-            grid_values_hemisphere = 2.0 * self.grid_values[:half]
+        if allclose(self.grid_values[:n_half], self.grid_values[n_half:], atol=tol):
+            grid_values_hemisphere = 2.0 * self.grid_values[:n_half]
         else:
             warnings.warn(
                 "ToHemisphere:AsymmetricDensity: Density appears to be asymmetric. "
                 "Using sum of symmetric pairs instead of 2*first_half.",
                 UserWarning,
             )
-            grid_values_hemisphere = self.grid_values[:half] + self.grid_values[half:]
+            grid_values_hemisphere = self.grid_values[:n_half] + self.grid_values[n_half:]
 
-        hemi_grid = self.grid[:half]
+        hemi_grid = self.grid[:n_half]
         return HyperhemisphericalGridDistribution(hemi_grid, grid_values_hemisphere)
 
     # ------------------------------------------------------------------

@@ -48,6 +48,19 @@ def get_grid_hypersphere(method: str, grid_density_parameter: int, dim: int):
         samples, grid_specific_description = HealpixHopfSampler().get_grid(
             grid_density_parameter, dim=dim
         )
+    elif method == "fibonacci_hopf":
+        samples, grid_specific_description = FibonacciHopfSampler().get_grid(
+            grid_density_parameter, dim=dim
+        )
+    elif method == "leopardi":
+        ls = LeopardiSampler(original_code_column_order=True)
+        samples, grid_specific_description = ls.get_grid(grid_density_parameter, dim)
+    elif method in ("leopardi_symm_antipodal",):
+        ls = SymmetricLeopardiSampler(original_code_column_order=True, delete_half=False, symmetry_type="antipodal")
+        samples, grid_specific_description = ls.get_grid(grid_density_parameter, dim)
+    elif method in ("leopardi_symm_plane",):
+        ls = SymmetricLeopardiSampler(original_code_column_order=True, delete_half=False, symmetry_type="plane")
+        samples, grid_specific_description = ls.get_grid(grid_density_parameter, dim)
     else:
         raise ValueError(f"Unknown method {method}")
 
