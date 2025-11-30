@@ -102,23 +102,23 @@ class SphericalGridDistribution(HypersphericalGridDistribution, AbstractSpherica
 
     # pylint: disable=too-many-locals
     @staticmethod
-    def from_function(fun, no_of_grid_points: int, dim = 2, grid_type: str = "eq_point_set",
+    def from_function(fun, no_of_grid_points: int, dim = 2, grid_type: str = "leopardi",
                       enforce_pdf_nonnegative: bool = True):
         """
         Construct from a function fun(x) where x has shape (batch_dim, 3).
 
         grid_type:
-            - 'eq_point_set' : equal point set on S²
+            - 'leopardi' : Leopardi equal point set on S²
             - 'sh_grid'      : spherical harmonics grid (lat/lon mesh).
         """
         assert dim == 2, 'Use HypersphericalGridDistribution for dimensions other than 2.'
-        if grid_type == "eq_point_set":
+        if grid_type == "leopardi":
             # Reuse HypersphericalGridDistribution's generator in 3D
             ls = LeopardiSampler()
             grid, _ = ls.get_grid(no_of_grid_points, 2)
         elif grid_type == "driscoll_healy":
             warnings.warn(
-                "Transformation:notEq_Point_set: Not using eq_point_set. "
+                "Transformation:notLeopardi: Not using leopardi. "
                 "This may lead to problems in the normalization (and filters "
                 "based thereon should not be used because the transition may "
                 "not be valid).",
