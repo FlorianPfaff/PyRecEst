@@ -147,6 +147,9 @@ from pyrecest.distributions.hypersphere_subset.custom_hemispherical_distribution
 from pyrecest.distributions.hypersphere_subset.custom_hyperhemispherical_distribution import (
     CustomHyperhemisphericalDistribution,
 )
+from pyrecest.distributions.hypersphere_subset.hyperspherical_dirac_distribution import (
+    HypersphericalDiracDistribution,
+)
 from pyrecest.distributions.hypersphere_subset.hyperhemispherical_dirac_distribution import (
     HyperhemisphericalDiracDistribution,
 )
@@ -254,6 +257,7 @@ aliases = [
 ]
 
 __all__ = aliases + [
+    "HypersphericalDiracDistribution",
     "GeneralizedKSineSkewedVonMisesDistribution",
     "AbstractBoundedDomainDistribution",
     "AbstractBoundedNonPeriodicDistribution",
