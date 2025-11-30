@@ -371,11 +371,17 @@ class TestSymmetricLeopardiSampler(unittest.TestCase):
         self.assertTrue(half_set.isdisjoint(neg_half_set))
         self.assertEqual(full_set, half_set | neg_half_set)
 
+    @parameterized.expand(
+        [
+            (2, 40),
+            (3, 80),
+        ]
+    )
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ == "jax",
         reason="Not supported on this backend",
     )
-    def test_plane_reflection_sampling(self):
+    def test_plane_reflection_sampling(self, dim, N):
         """
         Check that plane-refelection sampling is symmetric w.r.t. the
         equatorial hyperplane (last coordinate flips sign, others stay).
