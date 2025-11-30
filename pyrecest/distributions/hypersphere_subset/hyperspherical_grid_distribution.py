@@ -260,7 +260,7 @@ class HypersphericalGridDistribution(
     def from_distribution(
         distribution,
         no_of_grid_points,
-        grid_type="eq_point_set",
+        grid_type="leopardi",
         enforce_pdf_nonnegative=True,
     ):
         """
@@ -278,7 +278,7 @@ class HypersphericalGridDistribution(
 
     @staticmethod
     def from_function(
-        fun, no_of_grid_points, dim, grid_type="eq_point_set", enforce_pdf_nonnegative=True
+        fun, no_of_grid_points, dim, grid_type="leopardi", enforce_pdf_nonnegative=True
     ):
         """
         Construct a HypersphericalGridDistribution from a callable.
@@ -289,7 +289,7 @@ class HypersphericalGridDistribution(
             Function taking an array of shape (batch_dim, space_dim) and
             returning a 1D array of pdf values.
         no_of_grid_points : int
-            Grid parameter (interpreted as number of points for 'eq_point_set'
+            Grid parameter (interpreted as number of points for 'leopardi'
             and total number of points for symmetric schemes).
         dim : int
             Ambient space dimension (>= 2).
@@ -301,7 +301,11 @@ class HypersphericalGridDistribution(
         if dim < 2:
             raise ValueError("dim must be >= 2")
 
-        grid, _ = get_grid_hypersphere(grid_type, no_of_grid_points, dim)
+        if "symm" in grid_type:
+            grid, _ = get_grid_hypersphere(grid_type, 2 * no_of_grid_points, dim)
+        else:
+            grid, _ = get_grid_hypersphere(grid_type, no_of_grid_points, dim)
+        
         # Call user pdf with X of shape (batch_dim, space_dim) = (n_points, dim)
         grid_values = fun(grid)
 

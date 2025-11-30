@@ -414,7 +414,7 @@ class HypersphericalGridDistributionTest(unittest.TestCase):
         )
 
         hgd = HypersphericalGridDistribution.from_distribution(
-            dist, 84, "leopardi_symm"
+            dist, 84, "leopardi_symm_antipodal"
         )
         hhgd = hgd.to_hemisphere()
         hgd_back = hhgd.to_full_sphere()
