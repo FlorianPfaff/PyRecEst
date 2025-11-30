@@ -198,7 +198,6 @@ class HyperhemisphericalGridDistribution(
         distribution, no_of_grid_points, grid_type="leopardi_symm"
     ):
         from .hyperspherical_grid_distribution import HypersphericalGridDistribution
-
         # pylint: disable=too-many-boolean-expressions
         if isinstance(distribution, AbstractHyperhemisphericalDistribution):
             fun = distribution.pdf
@@ -266,10 +265,13 @@ class HyperhemisphericalGridDistribution(
 
         Notes
         -----
-        For 'eq_point_set*' types, the grid is deterministic and only
+        For 'leopardi*' types, the grid is deterministic and only
         depends on (dim, no_of_grid_points, grid_type). For 'healpix',
         only dim == 3 is supported and `healpy` must be installed.
         """
+        assert grid_type in ("leopardi_symm", "healpix"), (
+            "For hyperhemispheres, use one of the symmetric grid types 'leopardi_symm' or 'healpix'."
+        )
         grid, _ = get_grid_hyperhemisphere(grid_type, no_of_grid_points, dim=dim)
 
         grid_values = fun(grid)

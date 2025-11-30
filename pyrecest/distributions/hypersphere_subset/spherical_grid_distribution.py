@@ -87,7 +87,7 @@ class SphericalGridDistribution(HypersphericalGridDistribution, AbstractSpherica
     # Factory methods
     # ------------------------------------------------------------------
     @staticmethod
-    def from_distribution(distribution, no_of_grid_points: int, grid_type: str = "eq_point_set",
+    def from_distribution(distribution, no_of_grid_points: int, grid_type: str = "leopardi",
                           enforce_pdf_nonnegative: bool = True):
         """
         Construct a SphericalGridDistribution from an AbstractHypersphericalDistribution.

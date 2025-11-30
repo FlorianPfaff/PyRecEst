@@ -204,18 +204,18 @@ class HypersphericalGridDistributionTest(unittest.TestCase):
                 )
 
                 hgd1 = HypersphericalGridDistribution.from_distribution(
-                    dist1, 1000, "eq_point_set"
+                    dist1, 1000, "leopardi"
                 )
                 hgd2 = HypersphericalGridDistribution.from_distribution(
-                    dist2, 1000, "eq_point_set"
+                    dist2, 1000, "leopardi"
                 )
                 hgd_filtered = hgd1.multiply(hgd2)
 
                 sgd1 = SphericalGridDistribution.from_distribution(
-                    dist1, 1000, "eq_point_set"
+                    dist1, 1000, "leopardi"
                 )
                 sgd2 = SphericalGridDistribution.from_distribution(
-                    dist2, 1000, "eq_point_set"
+                    dist2, 1000, "leopardi"
                 )
                 sgd_filtered = sgd1.multiply(sgd2)
 
@@ -244,10 +244,10 @@ class HypersphericalGridDistributionTest(unittest.TestCase):
             vmf_mult = vmf1.multiply(vmf2)
 
             hgd1 = HypersphericalGridDistribution.from_distribution(
-                vmf1, 1000, "eq_point_set"
+                vmf1, 1000, "leopardi"
             )
             hgd2 = HypersphericalGridDistribution.from_distribution(
-                vmf2, 1000, "eq_point_set"
+                vmf2, 1000, "leopardi"
             )
             hgd_mult = hgd1.multiply(hgd2)
 
@@ -267,7 +267,7 @@ class HypersphericalGridDistributionTest(unittest.TestCase):
             1 / sqrt(2) * array([-1.0, 0.0, 1.0]), 1.0
         )
         f1 = HypersphericalGridDistribution.from_distribution(
-            dist1, 84, "eq_point_set"
+            dist1, 84, "leopardi"
         )
 
         # Make an independent copy and truncate its grid
@@ -389,7 +389,7 @@ class HypersphericalGridDistributionTest(unittest.TestCase):
             1 / sqrt(2) * array([-1.0, 0.0, 1.0]), 1.0
         )
         f = HypersphericalGridDistribution.from_distribution(
-            dist, 84, "eq_point_set"
+            dist, 84, "leopardi"
         )
         with self.assertRaises(ValueError) as cm:
             f.symmetrize()

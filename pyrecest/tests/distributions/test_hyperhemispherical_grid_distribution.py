@@ -283,7 +283,7 @@ class HyperhemisphericalGridDistributionTest(unittest.TestCase):
         dist1 = HypersphericalMixture([dist1_comp1, dist1_comp2], array([0.5, 0.5]))
 
         f1 = HyperhemisphericalGridDistribution.from_distribution(
-            dist1, 84, "eq_point_set"
+            dist1, 84, "leopardi"
         )
         # Make an *independent* copy of f1 with truncated grid
         f2 = HyperhemisphericalGridDistribution(
