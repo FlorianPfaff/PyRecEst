@@ -250,6 +250,9 @@ BACKEND_ATTRIBUTES = {
     "fft": [  # For PyRecEst
         "rfft",
         "irfft",
+        "fftshift",
+        "ifftshift",
+        "fftn",
     ],
      "spatial": [  # For PyRecEst
         "Rotation",
