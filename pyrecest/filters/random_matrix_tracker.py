@@ -14,6 +14,7 @@ from pyrecest.backend import (
 from pyrecest.utils.plotting import plot_ellipsoid
 
 from .abstract_extended_object_tracker import AbstractExtendedObjectTracker
+import warnings
 
 
 class RandomMatrixTracker(AbstractExtendedObjectTracker):
@@ -55,7 +56,7 @@ class RandomMatrixTracker(AbstractExtendedObjectTracker):
             return self.extent.flatten()
         return self.extent
 
-    def predict(self, dt, Cw, tau, system_matrix):
+    def predict_linear(self, sys_noise_cov, system_matrix, delta_t:float|int = 1.0, tau:float|int = 1.0):
         F = system_matrix
         x_rows = self.kinematic_state.shape[0]
         y_rows = x_rows // 2
@@ -64,15 +65,22 @@ class RandomMatrixTracker(AbstractExtendedObjectTracker):
             Cw = Cw * eye(x_rows)
 
         self.kinematic_state = F @ self.kinematic_state
-        self.covariance = F @ self.covariance @ F.T + Cw
+        self.covariance = F @ self.covariance @ F.T + sys_noise_cov
 
-        self.alpha = y_rows + exp(-dt / tau) * (self.alpha - y_rows)
+        self.alpha = y_rows + exp(-delta_t / tau) * (self.alpha - y_rows)
 
+    def update_using_position_measurements(self, measurement, meas_noise_cov):
+        assert self.kinematic_state_to_pos_matrix is not None
+        self.update_linear(measurement, self.kinematic_state_to_pos_matrix, meas_noise_cov)
+    
     # pylint: disable=too-many-locals
-    def update(self, measurements, meas_mat, meas_noise_cov):
+    def update_linear(self, measurements, meas_mat, meas_noise_cov):
         if self.kinematic_state_to_pos_matrix is None:
             # Usually, the measurement matrix is mapping the kinematic state to the position.
             self.kinematic_state_to_pos_matrix = meas_mat
+        if np.size(measurements) == 0:
+            warnings.warn("No measurements given, skipping update step.")
+            return
 
         Cv = meas_noise_cov
         ys = measurements
