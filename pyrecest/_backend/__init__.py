@@ -233,6 +233,7 @@ BACKEND_ATTRIBUTES = {
         "sqrtm",
         "svd",
         "matrix_rank",
+        "block_diag",  # For pyrecest
     ],
     "random": [
         "choice",
