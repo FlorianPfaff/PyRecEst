@@ -116,7 +116,7 @@ class HyperhemisphericalGridDistributionTest(unittest.TestCase):
 
     def test_approx_bingham_s3(self):
         """
-        Bingham on S^3.
+        Bingham on S³.
         """
         M = eye(4)
         Z = array([-2.0, -1.0, -0.5, 0.0])
