@@ -98,6 +98,7 @@ from numpy import (
     roll,
     dstack,
     round,
+    array_equal,
     # For Riemannian score-based SDE
     log1p,
 )

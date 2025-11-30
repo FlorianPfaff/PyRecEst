@@ -72,6 +72,8 @@ from torch import (
     # For Riemannian score-based SDE
     log1p,
 )
+from torch import equal as array_equal  # For PyRecEst
+
 from torch import broadcast_tensors as broadcast_arrays
 from torch import repeat_interleave as repeat
 from torch.special import gammaln as _gammaln

@@ -73,6 +73,7 @@ from jax.numpy import (
     vstack,
     where,
     zeros_like,
+    # For pyrecest
     diag,
     diff,
     apply_along_axis,
@@ -139,6 +140,7 @@ from jax.numpy import (
     linspace,
     ones,
     round,
+    array_equal,
     # For Riemannian score-based SDE
     log1p,
 )
