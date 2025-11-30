@@ -302,7 +302,7 @@ class HypersphericalGridDistributionTest(unittest.TestCase):
             array([0.5, 0.5]),
         )
         f = HypersphericalGridDistribution.from_distribution(
-            dist, 50, "eq_point_set_symm"
+            dist, 50, "leopardi_symm"
         )
 
         n = f.grid_values.shape[0]
@@ -348,7 +348,7 @@ class HypersphericalGridDistributionTest(unittest.TestCase):
             1 / sqrt(2) * array([1.0, 1.0, 0.0]), 1.0
         )
         f = HypersphericalGridDistribution.from_distribution(
-            dist, 50, "eq_point_set_symm"
+            dist, 50, "leopardi_symm"
         )
         n = f.grid_values.shape[0]
         half = n // 2
@@ -414,7 +414,7 @@ class HypersphericalGridDistributionTest(unittest.TestCase):
         )
 
         hgd = HypersphericalGridDistribution.from_distribution(
-            dist, 84, "eq_point_set_symm"
+            dist, 84, "leopardi_symm"
         )
         hhgd = hgd.to_hemisphere()
         hgd_back = hhgd.to_full_sphere()

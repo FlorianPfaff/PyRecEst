@@ -165,21 +165,19 @@ class HyperhemisphericalGridDistributionTest(unittest.TestCase):
                     [dist2_comp1, dist2_comp2], array([0.5, 0.5])
                 )
 
-                # Hemisphere grids
                 hhgd1 = HyperhemisphericalGridDistribution.from_distribution(
-                    dist1, 1000, "eq_point_set"
+                    dist1, 1000, "leopardi_symm"
                 )
                 hhgd2 = HyperhemisphericalGridDistribution.from_distribution(
-                    dist2, 1000, "eq_point_set"
+                    dist2, 1000, "leopardi_symm"
                 )
                 hhgd_filtered = hhgd1.multiply(hhgd2)
 
-                # Full-sphere grids
                 hgd1 = HypersphericalGridDistribution.from_distribution(
-                    dist1, 2000, "eq_point_set_symm"
+                    dist1, 2000, "leopardi_symm"
                 )
                 hgd2 = HypersphericalGridDistribution.from_distribution(
-                    dist2, 2000, "eq_point_set_symm"
+                    dist2, 2000, "leopardi_symm"
                 )
                 hgd_filtered = hgd1.multiply(hgd2)
 
@@ -232,19 +230,19 @@ class HyperhemisphericalGridDistributionTest(unittest.TestCase):
 
                 # Hemisphere grids
                 hhgd1 = HyperhemisphericalGridDistribution.from_distribution(
-                    dist1, 1000, "eq_point_set"
+                    dist1, 1000, "leopardi_symm"
                 )
                 hhgd2 = HyperhemisphericalGridDistribution.from_distribution(
-                    dist2, 1000, "eq_point_set"
+                    dist2, 1000, "leopardi_symm"
                 )
                 hhgd_filtered = hhgd1.multiply(hhgd2)
 
                 # Full-sphere grids
                 hgd1 = HypersphericalGridDistribution.from_distribution(
-                    dist1, 2000, "eq_point_set_symm"
+                    dist1, 2000, "leopardi_symm"
                 )
                 hgd2 = HypersphericalGridDistribution.from_distribution(
-                    dist2, 2000, "eq_point_set_symm"
+                    dist2, 2000, "leopardi_symm"
                 )
                 hgd_filtered = hgd1.multiply(hgd2)
 
@@ -310,10 +308,10 @@ class HyperhemisphericalGridDistributionTest(unittest.TestCase):
         dist = HypersphericalMixture([dist_comp1, dist_comp2], array([0.5, 0.5]))
 
         hgd = HypersphericalGridDistribution.from_distribution(
-            dist, 84, "eq_point_set_symm"
+            dist, 84, "leopardi_symm"
         )
         hhgd = HyperhemisphericalGridDistribution.from_distribution(
-            dist, 42, "eq_point_set_symm"
+            dist, 42, "leopardi_symm"
         )
 
         hhgd2hgd = hhgd.to_full_sphere()

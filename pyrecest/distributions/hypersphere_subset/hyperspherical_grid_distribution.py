@@ -127,7 +127,7 @@ class HypersphericalGridDistribution(
             raise ValueError(
                 "Symmetrize:AsymmetricGrid: "
                 "Can only use symmetrize for symmetric grids. "
-                "Use grid_type 'eq_point_set_symm' when calling from_distribution "
+                "Use grid_type 'leopardi_symm' when calling from_distribution "
                 "or from_function."
             )
 
@@ -160,7 +160,7 @@ class HypersphericalGridDistribution(
             raise ValueError(
                 "ToHemisphere:AsymmetricGrid: "
                 "Can only use to_hemisphere for symmetric grids. "
-                "Use grid_type 'eq_point_set_symm' when calling from_distribution "
+                "Use grid_type 'leopardi_symm' when calling from_distribution "
                 "or from_function."
             )
 
