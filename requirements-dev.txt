@@ -1,5 +1,5 @@
 astropy-iers-data==0.2025.11.24.0.39.11 ; python_version >= "3.11" and python_version < "3.15"
-astropy==6.1.7 ; python_version >= "3.11" and python_version < "3.15"
+astropy==7.2.0 ; python_version >= "3.11" and python_version < "3.15"
 autograd==1.8.0 ; python_version >= "3.11" and python_version < "3.15"
 autopep8==2.3.2 ; python_version >= "3.11" and python_version < "3.15"
 bayesian-filters==1.4.5 ; python_version >= "3.11" and python_version < "3.15"
