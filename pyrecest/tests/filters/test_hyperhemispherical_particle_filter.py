@@ -13,6 +13,7 @@ from pyrecest.filters.hyperhemispherical_particle_filter import (
     HyperhemisphericalParticleFilter,
 )
 
+
 class HyperhemisphericalParticleFilterTest(unittest.TestCase):
     def setUp(self):
         random.seed(1)

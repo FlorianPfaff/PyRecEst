@@ -9,11 +9,11 @@ from pyrecest.backend import (
     int64,
     linspace,
     mod,
+    pi,
     random,
     sum,
     tile,
     zeros_like,
-    pi,
 )
 from pyrecest.distributions import (
     AbstractHypertoroidalDistribution,

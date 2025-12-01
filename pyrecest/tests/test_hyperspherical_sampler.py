@@ -8,8 +8,22 @@ import pyrecest.backend
 from parameterized import parameterized
 
 # pylint: disable=no-name-in-module,no-member,redefined-builtin
-from pyrecest.backend import array, linalg, linspace, pi, random, isclose, all, column_stack, zeros, any
-from pyrecest.sampling.hyperspherical_sampler import get_grid_hypersphere, get_grid_hyperhemisphere
+from pyrecest.backend import (
+    all,
+    any,
+    array,
+    column_stack,
+    isclose,
+    linalg,
+    linspace,
+    pi,
+    random,
+    zeros,
+)
+from pyrecest.sampling.hyperspherical_sampler import (
+    get_grid_hyperhemisphere,
+    get_grid_hypersphere,
+)
 
 from ..sampling.hyperspherical_sampler import (
     AbstractHopfBasedS3Sampler,
@@ -71,7 +85,7 @@ class TestHypersphericalGridGenerationFunction(unittest.TestCase):
             4,
             f"Expected 4-dimensional-output but got {samples.shape[1]}-dimensional output",
         )
-        
+
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ == "jax",
         reason="Not supported on this backend",
@@ -91,9 +105,7 @@ class TestHypersphericalGridGenerationFunction(unittest.TestCase):
 
         # Description fields
         self.assertEqual(grid_specific_description["scheme"], "leopardi_hemisphere")
-        self.assertEqual(
-            grid_specific_description["n_side"], grid_density_parameter
-        )
+        self.assertEqual(grid_specific_description["n_side"], grid_density_parameter)
 
         # Points should lie on the unit sphere
         norms = linalg.norm(samples, axis=1)
@@ -109,6 +121,8 @@ class TestHypersphericalGridGenerationFunction(unittest.TestCase):
     def test_get_grid_hyperhemisphere_invalid_method(self):
         with self.assertRaises(ValueError):
             get_grid_hyperhemisphere("unknown_method", 10, dim=10)
+
+
 class TestHypersphericalSampler(unittest.TestCase):
     @parameterized.expand(
         [
@@ -277,6 +291,7 @@ class TestHypersphericalSampler(unittest.TestCase):
 
     # jscpd:ignore-end
 
+
 class TestSphericalCoordinatesBasedFixedResolutionSampler(unittest.TestCase):
     def test_get_grid_spherical_coordinates(self):
         # Create an instance of the sampler
@@ -337,11 +352,17 @@ class TestSymmetricLeopardiSampler(unittest.TestCase):
         tol = 1e-10
 
         # Half set: one representative from each ± pair
-        ls_full = SymmetricLeopardiSampler(delete_half=True, original_code_column_order=True, symmetry_type="antipodal")
+        ls_full = SymmetricLeopardiSampler(
+            delete_half=True, original_code_column_order=True, symmetry_type="antipodal"
+        )
         pts_half, _ = ls_full.get_grid(N, dim=dim)
 
         # Full set: all ± pairs
-        ls_half = SymmetricLeopardiSampler(delete_half=False, original_code_column_order=True, symmetry_type="antipodal")
+        ls_half = SymmetricLeopardiSampler(
+            delete_half=False,
+            original_code_column_order=True,
+            symmetry_type="antipodal",
+        )
         pts_full, _ = ls_half.get_grid(N, dim=dim)
 
         # Shape checks
@@ -389,8 +410,10 @@ class TestSymmetricLeopardiSampler(unittest.TestCase):
         dim, N = 2, 40  # N must be even
         tol = 1e-10
 
-        ls = SymmetricLeopardiSampler(delete_half=False, original_code_column_order=True, symmetry_type="plane")
-        pts , _ = ls.get_grid(N, dim=dim)
+        ls = SymmetricLeopardiSampler(
+            delete_half=False, original_code_column_order=True, symmetry_type="plane"
+        )
+        pts, _ = ls.get_grid(N, dim=dim)
 
         self.assertEqual(pts.shape, (N, dim + 1))
 

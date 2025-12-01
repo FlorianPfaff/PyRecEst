@@ -5,7 +5,7 @@ import unittest
 import pyrecest.backend
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import allclose, linalg, ones, random, reshape, pi
+from pyrecest.backend import allclose, linalg, ones, pi, random, reshape
 from pyrecest.distributions import HyperhemisphericalUniformDistribution
 
 

@@ -22,8 +22,8 @@ from pyrecest.backend import (
 )
 from pyrecest.distributions import (
     AbstractSphericalDistribution,
-    HypersphericalUniformDistribution,
     HyperhemisphericalUniformDistribution,
+    HypersphericalUniformDistribution,
 )
 
 from .abstract_sampler import AbstractSampler
@@ -53,12 +53,16 @@ def get_grid_hypersphere(method: str, grid_density_parameter: int, dim: int):
 
     return samples, grid_specific_description
 
+
 def get_grid_sphere(method: str, grid_density_parameter: int):
     return get_grid_hypersphere(method, grid_density_parameter, dim=2)
 
+
 def get_grid_hyperhemisphere(method: str, grid_density_parameter: int, dim: int):
     if method == "leopardi":
-        ls = SymmetricLeopardiSampler(original_code_column_order=True, delete_half=True, symmetry_type="plane")
+        ls = SymmetricLeopardiSampler(
+            original_code_column_order=True, delete_half=True, symmetry_type="plane"
+        )
         samples, _ = ls.get_grid(grid_density_parameter * 2, dim)
         # To have upper half along last dim instead of first
         grid_specific_description = {
@@ -70,6 +74,7 @@ def get_grid_hyperhemisphere(method: str, grid_density_parameter: int, dim: int)
 
     return samples, grid_specific_description
 
+
 class AbstractHypersphericalUniformSampler(AbstractSampler):
     def sample_stochastic(self, n_samples: int, dim: int):
         return HypersphericalUniformDistribution(dim).sample(n_samples)
@@ -77,7 +82,8 @@ class AbstractHypersphericalUniformSampler(AbstractSampler):
     @abstractmethod
     def get_grid(self, grid_density_parameter, dim: int):
         raise NotImplementedError()
-    
+
+
 class AbstractHyperhemisphericalUniformSampler(AbstractSampler):
     def sample_stochastic(self, n_samples: int, dim: int):
         return HyperhemisphericalUniformDistribution(dim).sample(n_samples)
@@ -155,7 +161,9 @@ class LeopardiSampler(AbstractHypersphericalUniformSampler):
 
     def get_grid(self, grid_density_parameter, dim: int):
         # Use [::-1] due to different convention
-        grid_eucl = get_partition_points_cartesian(dim, grid_density_parameter, delete_half=False, symmetry_type="asymm")
+        grid_eucl = get_partition_points_cartesian(
+            dim, grid_density_parameter, delete_half=False, symmetry_type="asymm"
+        )
 
         if self.original_code_column_order:
             grid_eucl = flip(grid_eucl, axis=1)
@@ -166,9 +174,12 @@ class LeopardiSampler(AbstractHypersphericalUniformSampler):
             "n_side": grid_density_parameter,
         }
         return grid_eucl, grid_specific_description
-    
+
+
 class SymmetricLeopardiSampler(AbstractHypersphericalUniformSampler):
-    def __init__(self, original_code_column_order=True, delete_half=False, symmetry_type='plane'):
+    def __init__(
+        self, original_code_column_order=True, delete_half=False, symmetry_type="plane"
+    ):
         self.original_code_column_order = original_code_column_order
         self.delete_half = delete_half
         self.symmetry_type = symmetry_type
@@ -176,8 +187,13 @@ class SymmetricLeopardiSampler(AbstractHypersphericalUniformSampler):
 
     def get_grid(self, grid_density_parameter, dim: int):
         # Use [::-1] due to different convention
-        grid_eucl = get_partition_points_cartesian(dim, grid_density_parameter, delete_half=self.delete_half, symmetry_type=self.symmetry_type)
-        
+        grid_eucl = get_partition_points_cartesian(
+            dim,
+            grid_density_parameter,
+            delete_half=self.delete_half,
+            symmetry_type=self.symmetry_type,
+        )
+
         if self.original_code_column_order:
             grid_eucl = flip(grid_eucl, axis=1)
             grid_eucl[:, [0, 1]] = grid_eucl[:, [1, 0]]

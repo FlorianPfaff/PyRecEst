@@ -2,18 +2,16 @@ astropy-iers-data
 astropy
 autograd
 autopep8
+bayesian-filters
 beartype
 certifi
 charset-normalizer
 colorama
 contourpy
 cycler
-exceptiongroup
 filelock
-filterpy
 fonttools
 fsspec
-future
 healpy
 idna
 iniconfig
@@ -24,7 +22,6 @@ matplotlib
 ml-dtypes
 mpmath
 networkx
-numpy-quaternion
 numpy
 opt-einsum
 packaging
@@ -36,6 +33,7 @@ pluggy
 pooch
 pycodestyle
 pyerfa
+pygments
 pyparsing
 pyshtools
 pytest
@@ -44,10 +42,10 @@ pytz
 pyyaml
 requests
 scipy
+setuptools
 shapely
 six
 sympy
-tomli
 tqdm
 typing-extensions
 tzdata

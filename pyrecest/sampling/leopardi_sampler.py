@@ -6,11 +6,14 @@ output by get_partition_points_polar follow Leopardi's convention and not that u
 For obtaning Cartesian coordinates, see LeopardiSampler in hyperspherical_sampler.py.
 """
 
+import copy
+
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
 from pyrecest.backend import (
     abs,
     arange,
     array,
+    flip,
     int32,
     linspace,
     max,
@@ -19,14 +22,12 @@ from pyrecest.backend import (
     reshape,
     round,
     sin,
+    vstack,
     zeros,
     zeros_like,
-    flip,
-    vstack,
 )
 from scipy.optimize import root_scalar
 from scipy.special import betainc  # pylint: disable=E0611
-import copy
 
 from ..distributions import (
     AbstractHypersphereSubsetDistribution,
@@ -297,7 +298,6 @@ def get_equal_area_caps(dim, N, symmetric: bool = False):
     return cap_colatitudes, n_regions
 
 
-
 # pylint: disable=R0914
 def get_partition_points_polar(dim, N, extra_offset=False):
     """
@@ -362,7 +362,7 @@ def get_partition_points_polar_north(
         Dimension of the sphere S^dim. Currently only dim=2 is supported.
     N : int
         Total number of regions on the full sphere. Must be even.
-        
+
     Returns
     -------
     points_s : ndarray
@@ -413,6 +413,7 @@ def get_partition_points_polar_north(
             point_idx += 1
 
     return points_half
+
 
 def get_partition_points_cartesian(
     dim: int,

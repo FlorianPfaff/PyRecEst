@@ -6,7 +6,7 @@ import numpy.testing as npt
 import pyrecest.backend
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import arange, array, eye, linspace, meshgrid, random, pi
+from pyrecest.backend import arange, array, eye, linspace, meshgrid, pi, random
 from pyrecest.distributions import (
     GaussianDistribution,
     PartiallyWrappedNormalDistribution,

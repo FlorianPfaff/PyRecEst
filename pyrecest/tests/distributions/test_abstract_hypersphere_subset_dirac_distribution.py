@@ -1,6 +1,10 @@
 import unittest
 
+import numpy.testing as npt
 import pyrecest.backend
+
+# pylint: disable=no-name-in-module,no-member
+from pyrecest.backend import allclose, array, linalg, random, spatial, stack
 from pyrecest.distributions import BinghamDistribution
 from pyrecest.distributions.hypersphere_subset.hyperhemispherical_bingham_distribution import (
     HyperhemisphericalBinghamDistribution,
@@ -11,10 +15,7 @@ from pyrecest.distributions.hypersphere_subset.hyperhemispherical_dirac_distribu
 from pyrecest.distributions.hypersphere_subset.hyperspherical_dirac_distribution import (
     HypersphericalDiracDistribution,
 )
-# pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import array, random, linalg, spatial, stack, allclose
 
-import numpy.testing as npt
 
 class AbstractHypersphereSubsetDiracDistributionTest(unittest.TestCase):
     @unittest.skipIf(

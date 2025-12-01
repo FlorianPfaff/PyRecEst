@@ -10,11 +10,11 @@ from parameterized import parameterized
 from pyrecest.backend import (
     array,
     diag,
-    pi,
     exp,
     eye,
     ones,
     ones_like,
+    pi,
     random,
     sum,
     zeros_like,

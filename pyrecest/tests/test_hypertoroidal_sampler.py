@@ -1,9 +1,10 @@
 import unittest
+
 import numpy.testing as npt
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import all, diff, std, pi
+from pyrecest.backend import all, diff, pi, std
 from pyrecest.sampling.hypertoroidal_sampler import CircularUniformSampler
 
 

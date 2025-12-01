@@ -2,7 +2,7 @@ import numpy as np
 from beartype import beartype
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
-from pyrecest.backend import mod, squeeze, sum, tile, zeros, pi
+from pyrecest.backend import mod, pi, squeeze, sum, tile, zeros
 from pyrecest.distributions import (
     AbstractHypertoroidalDistribution,
     GaussianDistribution,

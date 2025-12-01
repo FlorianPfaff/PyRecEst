@@ -4,7 +4,7 @@ import numpy.testing as npt
 import pyrecest.backend
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import array, random, zeros, zeros_like, pi
+from pyrecest.backend import array, pi, random, zeros, zeros_like
 from pyrecest.distributions import HypertoroidalWNDistribution
 from pyrecest.filters import HypertoroidalParticleFilter
 

@@ -7,7 +7,16 @@ import numpy.testing as npt
 import pyrecest.backend
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import allclose, arange, array, column_stack, diff, ones, zeros, pi
+from pyrecest.backend import (
+    allclose,
+    arange,
+    array,
+    column_stack,
+    diff,
+    ones,
+    pi,
+    zeros,
+)
 from pyrecest.distributions.cart_prod.partially_wrapped_normal_distribution import (
     PartiallyWrappedNormalDistribution,
 )

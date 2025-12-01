@@ -5,7 +5,7 @@ import pyrecest.backend
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import array, linalg, ones, sum, zeros, pi
+from pyrecest.backend import array, linalg, ones, pi, sum, zeros
 from pyrecest.distributions import (
     HyperhemisphericalWatsonDistribution,
     VonMisesFisherDistribution,

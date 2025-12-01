@@ -8,7 +8,7 @@ import pyrecest.backend
 from parameterized import parameterized
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import arange, array, ceil, linspace, sqrt, pi
+from pyrecest.backend import arange, array, ceil, linspace, pi, sqrt
 from pyrecest.distributions import (
     CircularFourierDistribution,
     VonMisesDistribution,

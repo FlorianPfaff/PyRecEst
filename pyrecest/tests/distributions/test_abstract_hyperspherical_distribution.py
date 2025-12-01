@@ -4,7 +4,7 @@ import matplotlib
 import pyrecest.backend
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import array, linalg, log, sqrt, pi
+from pyrecest.backend import array, linalg, log, pi, sqrt
 from pyrecest.distributions import (
     AbstractHypersphericalDistribution,
     VonMisesFisherDistribution,

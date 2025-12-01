@@ -7,7 +7,6 @@ from parameterized import parameterized
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
 from pyrecest.backend import (
     all,
-    pi,
     allclose,
     array,
     column_stack,
@@ -18,6 +17,7 @@ from pyrecest.backend import (
     linspace,
     meshgrid,
     ones_like,
+    pi,
     random,
     sin,
     sqrt,

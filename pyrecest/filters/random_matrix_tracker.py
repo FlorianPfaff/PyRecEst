@@ -4,11 +4,11 @@ from pyrecest.backend import (
     concatenate,
     cos,
     exp,
-    pi,
     eye,
     linalg,
     linspace,
     mean,
+    pi,
     sin,
 )
 from pyrecest.utils.plotting import plot_ellipsoid

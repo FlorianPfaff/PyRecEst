@@ -7,7 +7,7 @@ import pyrecest.backend
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import array, linalg, mod, ones, random, sqrt, sum, allclose, pi
+from pyrecest.backend import allclose, array, linalg, mod, ones, pi, random, sqrt, sum
 from pyrecest.distributions import VonMisesFisherDistribution
 from pyrecest.distributions.hypersphere_subset.hyperspherical_dirac_distribution import (
     HypersphericalDiracDistribution,
@@ -80,10 +80,12 @@ class HypersphericalDiracDistributionTest(unittest.TestCase):
 
     def test_mean_axis_symmetric_two_point_distribution(self):
         # Two antipodal points on S²: ±e_x
-        d = array([
-            [1.0, 0.0, 0.0],
-            [-1.0, 0.0, 0.0],
-        ])
+        d = array(
+            [
+                [1.0, 0.0, 0.0],
+                [-1.0, 0.0, 0.0],
+            ]
+        )
         w = array([0.5, 0.5])
 
         dist = HypersphericalDiracDistribution(d, w)
@@ -97,6 +99,7 @@ class HypersphericalDiracDistributionTest(unittest.TestCase):
         v = array([1.0, 0.0, 0.0])
         dot = float(axis @ v)
         assert abs(dot) > 1.0 - 1e-6
+
 
 if __name__ == "__main__":
     unittest.main()

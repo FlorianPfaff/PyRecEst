@@ -5,7 +5,7 @@ import unittest
 import numpy.testing as npt
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import array, concatenate, ones, sqrt, zeros, pi
+from pyrecest.backend import array, concatenate, ones, pi, sqrt, zeros
 from pyrecest.distributions import DiskUniformDistribution
 
 
