@@ -25,12 +25,13 @@ backend.jax_global_random_state = jax.random.PRNGKey(seed=0)
 def global_random_state():
     return backend.jax_global_random_state
 
-
 def set_global_random_state(state):
     backend.jax_global_random_state = state
 
+get_state = global_random_state
+set_state = set_global_random_state
 
-def get_state(**kwargs):
+def _get_state(**kwargs):
     has_state = 'state' in kwargs
     state = kwargs.pop('state', backend.jax_global_random_state)
     return state, has_state, kwargs
@@ -51,7 +52,7 @@ def _rand(state, size, *args, **kwargs):
 
 def rand(size, *args, **kwargs):
     size = size if hasattr(size, "__iter__") else (size,)
-    state, has_state, kwargs = get_state(**kwargs)
+    state, has_state, kwargs = _get_state(**kwargs)
     state, res = _rand(state, size, *args, **kwargs)
     return set_state_return(has_state, state, res)
 
@@ -66,7 +67,7 @@ def _randint(state, size, *args, **kwargs):
 
 def randint(size, *args, **kwargs):
     size = size if hasattr(size, "__iter__") else (size,)
-    state, has_state, kwargs = get_state(**kwargs)
+    state, has_state, kwargs = _get_state(**kwargs)
     state, res = _randint(state, size, *args, **kwargs)
     return set_state_return(has_state, state, res)
 
@@ -78,7 +79,7 @@ def _normal(state, size, *args, **kwargs):
 
 def normal(size, *args, **kwargs):
     size = size if hasattr(size, "__iter__") else (size,)
-    state, has_state, kwargs = get_state(**kwargs)
+    state, has_state, kwargs = _get_state(**kwargs)
     
     # Check and remove 'mean' and 'cov' from kwargs
     mean = kwargs.pop('mean', None)
@@ -102,7 +103,7 @@ def _choice(state, a, n, *args, **kwargs):
 
 
 def choice(a, n, *args, **kwargs):
-    state, has_state, kwargs = get_state(**kwargs)
+    state, has_state, kwargs = _get_state(**kwargs)
     state, res = _choice(state, a, n, *args, **kwargs)
     return set_state_return(has_state, state, res)
 
@@ -114,7 +115,7 @@ def _multivariate_normal(state, size, *args, **kwargs):
 
 def multivariate_normal(size, *args, **kwargs):
     size = size if hasattr(size, "__iter__") else (size,)
-    state, has_state, kwargs = get_state(**kwargs)
+    state, has_state, kwargs = _get_state(**kwargs)
     state, res = _multivariate_normal(state, size, *args, **kwargs)
     return set_state_return(has_state, state, res)
    
