@@ -15,6 +15,7 @@ from pyrecest.backend import (
     random,
     sum,
 )
+from beartype import beartype
 
 from .abstract_distribution_type import AbstractDistributionType
 
@@ -52,7 +53,8 @@ class AbstractDiracDistribution(AbstractDistributionType):
         dist.normalize_in_place()
         return dist
 
-    def apply_function(self, f: Callable, f_supports_multiple: bool = True):
+    @beartype
+    def apply_function(self, f: Callable, function_is_vectorized: bool = True):
         """
         Apply a function to the Dirac locations and return a new distribution.
 
@@ -60,7 +62,7 @@ class AbstractDiracDistribution(AbstractDistributionType):
         :returns: A new distribution with the function applied to the locations.
         """
         dist = copy.deepcopy(self)
-        if f_supports_multiple:
+        if function_is_vectorized:
             dist.d = f(dist.d)
         else:
             dist.d = apply_along_axis(f, 1, dist.d)
