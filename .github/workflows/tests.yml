@@ -18,7 +18,7 @@ jobs:
     strategy:
       matrix:
         backend: [numpy, pytorch, jax]
-        python-version: ["3.11", "3.12", "3.13"]
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
     permissions:
       checks: write
       pull-requests: write
@@ -33,7 +33,7 @@ jobs:
           sudo apt-get install -y \
           gfortran pkg-config ninja-build \
           libopenblas-dev liblapack-dev \
-          libfftw3-dev
+          libfftw3-dev libhealpix-cxx-dev
         
       - name: Set up Python
         uses: actions/setup-python@v6
