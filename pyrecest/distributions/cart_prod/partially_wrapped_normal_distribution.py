@@ -1,8 +1,10 @@
 import copy
 from typing import Union
+from itertools import product
+# pylint: disable=no-name-in-module,no-member
+import pyrecest.backend
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
-# pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import (
     allclose,
     arange,
@@ -11,12 +13,12 @@ from pyrecest.backend import (
     concatenate,
     cos,
     diag,
+    empty,
     exp,
     hstack,
     int32,
     int64,
     linalg,
-    meshgrid,
     mod,
     ndim,
     pi,
@@ -25,8 +27,8 @@ from pyrecest.backend import (
     sin,
     stack,
     sum,
-    tile,
     where,
+    zeros,
 )
 from scipy.stats import multivariate_normal
 
@@ -56,49 +58,95 @@ class PartiallyWrappedNormalDistribution(AbstractHypercylindricalDistribution):
         self.mu = where(arange(mu.shape[0]) < bound_dim, mod(mu, 2.0 * pi), mu)
         self.C = C
 
-    def pdf(self, xs, m: Union[int, int32, int64] = 3):
-        xs = atleast_2d(xs)
-        condition = (
-            arange(xs.shape[1]) < self.bound_dim
-        )  # Create a condition based on column indices
-        xs = where(
-            # Broadcast the condition to match the shape of xs
-            condition[None, :],  # noqa: E203
-            mod(xs, 2.0 * pi),  # Compute the modulus where the condition is True
-            xs,  # Keep the original values where the condition is False
-        )
+    # pylint: disable=too-many-locals
+    def pdf(self, xs, m=3):
+        """
+        Evaluate the PDF of the Hypercylindrical Wrapped Normal Distribution at given points.
 
-        assert xs.shape[-1] == self.input_dim
+        Parameters:
+            xs (array-like): Input points of shape (n, d), where d = bound_dim + lin_dim.
+            m (int, optional): Number of summands in each direction for wrapping. Default is 3.
 
-        # generate multiples for wrapping
-        multiples = array(range(-m, m + 1)) * 2.0 * pi
+        Returns:
+            p (ndarray): PDF values at each input point of shape (n,).
+        """
+        assert (
+            pyrecest.backend.__backend_name__ == "numpy"
+        ), "Only supported for numpy backend"
 
-        # create meshgrid for all combinations of multiples
-        mesh = array(meshgrid(*[multiples] * self.bound_dim)).reshape(
-            -1, self.bound_dim
-        )
+        xs = atleast_2d(xs)  # Ensure xs is 2D
+        n, d = xs.shape
+        assert (
+            d == self.dim
+        ), f"Input dimensionality {d} does not match distribution dimensionality {self.dim}."
 
-        # reshape xs for broadcasting
-        xs_reshaped = tile(xs[:, : self.bound_dim], (mesh.shape[0], 1))  # noqa: E203
+        # Initialize the PDF values array
+        p = zeros(n)
 
-        # prepare data for wrapping (not applied to linear dimensions)
-        xs_wrapped = xs_reshaped + repeat(mesh, xs.shape[0], axis=0)
-        xs_wrapped = concatenate(
-            [
-                xs_wrapped,
-                tile(xs[:, self.bound_dim :], (mesh.shape[0], 1)),  # noqa: E203
-            ],
-            axis=1,
-        )
+        # Define batch size to manage memory usage
+        batch_size = 1000
 
-        # evaluate normal for all xs_wrapped
-        mvn = multivariate_normal(self.mu, self.C)
-        evals = array(mvn.pdf(xs_wrapped))  # For being compatible with all backends
+        # Generate all possible offset combinations for periodic dimensions
+        multiples = arange(-m, m + 1) * 2.0 * pi
+        offset_combinations = list(
+            product(multiples, repeat=self.bound_dim)
+        )  # Total combinations: (2m+1)^bound_dim
+        num_offsets = len(offset_combinations)
 
-        # sum evaluations for the wrapped dimensions
-        summed_evals = sum(evals.reshape(-1, (2 * m + 1) ** self.bound_dim), axis=1)
+        # Pre-convert offset combinations to a NumPy array for efficient computation
+        offset_array = array(offset_combinations)  # Shape: (num_offsets, bound_dim)
 
-        return summed_evals
+        # Process input data in batches
+        for start in range(0, n, batch_size):
+            end = min(start + batch_size, n)
+            batch = xs[start:end]  # Shape: (batch_size, d)
+
+            # Wrap periodic dimensions using modulus
+            batch_wrapped = batch.copy()
+            if self.bound_dim > 0:
+                batch_wrapped[:, : self.bound_dim] = mod(
+                    batch_wrapped[:, : self.bound_dim], 2.0 * pi
+                )  # noqa: E203
+
+            if self.bound_dim > 0:
+                # Correct broadcasting: batch_wrapped becomes (batch_size, 1, bound_dim)
+                # offset_array becomes (1, num_offsets, bound_dim)
+                wrapped_periodic = batch_wrapped[:, :self.bound_dim][:, None, :] + offset_array[None, :, :]
+                # Now wrapped_periodic has shape (batch_size, num_offsets, bound_dim)
+                wrapped_periodic = wrapped_periodic.reshape(-1, self.bound_dim)
+            else:
+                wrapped_periodic = empty((0, 0))  # No periodic dimensions
+
+            # Repeat linear dimensions for each offset
+            if self.lin_dim > 0:
+                linear_part = repeat(
+                    batch_wrapped[:, self.bound_dim :],  # noqa: E203
+                    num_offsets,
+                    axis=0,
+                )  # Shape: (batch_size * num_offsets, lin_dim)
+                # Concatenate wrapped periodic and linear parts
+                if self.bound_dim > 0:
+                    wrapped_points = hstack(
+                        (wrapped_periodic, linear_part)
+                    )  # Shape: (batch_size * num_offsets, d)
+                else:
+                    wrapped_points = linear_part  # Shape: (batch_size * num_offsets, d)
+            else:
+                wrapped_points = (
+                    wrapped_periodic  # Shape: (batch_size * num_offsets, d)
+                )
+
+            mvn = multivariate_normal(mean=self.mu, cov=self.C)
+            # Evaluate the multivariate normal PDF at all wrapped points
+            pdf_vals = mvn.pdf(wrapped_points)  # Shape: (batch_size * num_offsets,)
+
+            # Reshape and sum the PDF values for each original point
+            pdf_vals = pdf_vals.reshape(
+                end - start, num_offsets
+            )  # Shape: (batch_size, num_offsets)
+            p[start:end] = sum(pdf_vals, axis=1)  # Shape: (batch_size,)
+
+        return p
 
     def mode(self):
         """
@@ -160,7 +208,7 @@ class PartiallyWrappedNormalDistribution(AbstractHypercylindricalDistribution):
         """
         assert n > 0, "n must be positive"
         s = random.multivariate_normal(mean=self.mu, cov=self.C, size=(n,))
-        wrapped_values = mod(s[:, : self.bound_dim], 2.0 * pi)
+        wrapped_values = mod(s[:, : self.bound_dim], 2.0 * pi)  # noqa: E203
         unbounded_values = s[:, self.bound_dim :]  # noqa: E203
 
         # Concatenate the modified section with the unmodified section
