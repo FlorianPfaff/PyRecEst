@@ -3,6 +3,7 @@ from pyrecest.filters import (
     HypertoroidalParticleFilter,
     KalmanFilter,
 )
+from pyrecest.filters.random_matrix_tracker import RandomMatrixTracker
 
 
 # pylint: disable=too-many-branches
@@ -141,6 +142,14 @@ def configure_for_filter(filter_config, scenario_config, precalculated_params=No
     elif filter_name == "gnn":
         raise NotImplementedError("GNN not implemented yet")
 
+    elif filter_name == "random_matrix":
+        
+        filter_obj = RandomMatrixTracker(scenario_config["initial_prior"].mean(), scenario_config["initial_prior"].covariance(),
+                                         scenario_config["initial_extent_matrix"], scenario_config["kinematic_state_to_pos_matrix"])
+        def prediction_routine():  # type: ignore[misc]
+            return filter_obj.predict_linear(scenario_config["sys_noise_cov"], scenario_config["sys_mat"])
+        
+        
     else:
         raise ValueError("Filter currently unsupported")
 

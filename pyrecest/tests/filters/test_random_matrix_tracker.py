@@ -57,7 +57,7 @@ class TestRandomMatrixTracker(unittest.TestCase):
         system_matrix = eye(2)  # 2-D random walk
 
         # Call the predict method
-        self.tracker.predict(dt, Cw, tau, system_matrix)
+        self.tracker.predict(dt, Cw, system_matrix, tau)
 
         # Check if state and state covariance are updated correctly
         expected_state = array([1.0, 2.0])
