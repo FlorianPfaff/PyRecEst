@@ -78,15 +78,21 @@ class WrappedNormalDistribution(
 
             for i in range(n_inputs):
                 old_result = 0.0
-                result[i] = exp(x[i] * x[i] * tmp)
+                xi = x[i]
+                if hasattr(xi, "item"):
+                    xi = xi.item()
+                result[i] = exp(xi * xi * tmp)
 
                 for k in range(1, max_iterations + 1):
-                    xp = x[i] + 2 * pi * k
-                    xm = x[i] - 2 * pi * k
+                    xp = xi + 2 * pi * k
+                    xm = xi - 2 * pi * k
                     tp = xp * xp * tmp
                     tm = xm * xm * tmp
                     old_result = result[i]
-                    result[i] += (exp(tp) + exp(tm)).squeeze()
+                    addendum = exp(tp) + exp(tm)
+                    if hasattr(addendum, "item"):
+                        addendum = addendum.item()
+                    result[i] += addendum
 
                     if result[i] == old_result:
                         break
