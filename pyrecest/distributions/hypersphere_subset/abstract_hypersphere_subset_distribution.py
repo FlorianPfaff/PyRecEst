@@ -256,7 +256,9 @@ class AbstractHypersphereSubsetDistribution(AbstractBoundedDomainDistribution):
                 # Applying the multiplicative factors for each additional dimension
                 for i in range(2, dim + 1):
                     result *= sin(phis[i - 1]) ** (i - 1)
-            return result
+            if hasattr(result, "item"):
+                return result.item()
+            return float(result)
 
         int_result, _ = nquad(integrand, integration_boundaries)
 
