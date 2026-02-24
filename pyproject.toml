@@ -36,3 +36,27 @@ check_untyped_defs = true
 
 [tool.ruff]
 line-length = 180
+
+[tool.pylint.MAIN]
+py-version = "3.13"
+fail-under = 10
+ignore = ["CVS"]
+ignored-modules = ["pyrecest.backend"]
+
+[tool.pylint."MESSAGES CONTROL"]
+disable = [
+  "raw-checker-failed",
+  "bad-inline-option",
+  "locally-disabled",
+  "file-ignored",
+  "suppressed-message",
+  "useless-suppression",
+  "deprecated-pragma",
+  "use-symbolic-message-instead",
+  "C",
+  "W0221",
+  "cyclic-import",
+]
+
+[tool.pylint.FORMAT]
+max-line-length = 180
