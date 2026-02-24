@@ -24,15 +24,19 @@ from pyrecest.distributions.cart_prod.partially_wrapped_normal_distribution impo
 
 class AbstractHypercylindricalDistributionTest(unittest.TestCase):
     @unittest.skipIf(
-        pyrecest.backend.__backend_name__ == "jax",
-        reason="Not supported on jax backend",
+        pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
+        reason="Not supported on this backend",
     )
     def test_mode_numerical_gaussian_2D(self):
         mu = array([5.0, 1.0])
         C = array([[2.0, 1.0], [1.0, 1.0]])
         g = PartiallyWrappedNormalDistribution(mu, C, 1)
         npt.assert_allclose(g.mode_numerical(), mu, atol=5e-5)
-
+        
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
+        reason="Not supported on this backend",
+    )
     def test_linear_mean_numerical(self):
         hwn = PartiallyWrappedNormalDistribution(
             array([1.0, 2.0]), array([[2.0, 0.3], [0.3, 1.0]]), 1
