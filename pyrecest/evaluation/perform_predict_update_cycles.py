@@ -20,19 +20,22 @@ def perform_predict_update_cycles(
         all_estimates = np.empty_like(groundtruth)
     else:
         all_estimates = None
-
+    if cumulated_updates_preferred is None:
+        # Turn on cumulated updates if eot or mtt is turned on
+        cumulated_updates_preferred = scenario_config.get("eot", False) or scenario_config.get("mtt", False)
     # Configure filter
     filter_obj, prediction_routine, _, meas_noise_for_filter = configure_for_filter(
         filter_config, scenario_config, precalculated_params
     )
 
+    n_meas_at_individual_time_step = [1 if elem.ndim == 1 else elem.shape[0] for elem in measurements]
+
     # Check conditions for cumulative updates
-    perform_cumulative_updates = cumulated_updates_preferred and any(
-        np.array(scenario_config["n_meas_at_individual_time_step"]) > 1
-    )
+    perform_cumulative_updates = (cumulated_updates_preferred
+                                  and any(np.array(n_meas_at_individual_time_step) > 1)
+                                  or scenario_config.get("eot", False))
     if (
-        cumulated_updates_preferred
-        and any(np.array(scenario_config["n_meas_at_individual_time_step"]) > 1)
+        perform_cumulative_updates
         and scenario_config.get("plot", False)
     ):
         warnings.warn("When plotting, measurements are fused sequentially.")
@@ -46,22 +49,29 @@ def perform_predict_update_cycles(
         # Update
         if scenario_config.get("mtt", False):
             raise NotImplementedError("MTT not implemented yet.")
-        if perform_cumulative_updates:
-            raise NotImplementedError("Cumulative updates not implemented yet.")
+        if scenario_config.get("eot", False):
+            assert perform_cumulative_updates
 
         all_meas_curr_time_step = np.atleast_2d(measurements[t])
         n_updates = all_meas_curr_time_step.shape[0]
-        for m in range(n_updates):
-            curr_meas = all_meas_curr_time_step[m, :]
+        if perform_cumulative_updates:
+            if scenario_config.get("eot", False):
+                assert scenario_config["kinematic_state_to_pos_matrix"] is not None
+                filter_obj.update_linear(all_meas_curr_time_step, meas_noise_cov=meas_noise_for_filter)
+            else:
+                raise NotImplementedError("Cumulative updates not implemented yet.")
+        else:
+            for m in range(n_updates):
+                curr_meas = all_meas_curr_time_step[m, :]
 
-            if not scenario_config.get("use_likelihood", False):
-                filter_obj.update_identity(
-                    meas_noise=meas_noise_for_filter, measurement=np.squeeze(curr_meas)
-                )
+                if not scenario_config.get("use_likelihood", False):
+                    filter_obj.update_identity(
+                        meas_noise=meas_noise_for_filter, measurement=np.squeeze(curr_meas)
+                    )
 
-            # If plotting is required
-            if scenario_config.get("plot", False):
-                raise NotImplementedError("Plotting is not implemented yet.")
+                # If plotting is required
+                if scenario_config.get("plot", False):
+                    raise NotImplementedError("Plotting is not implemented yet.")
 
         # Save results only if required (takes time)
         if extract_all_estimates:

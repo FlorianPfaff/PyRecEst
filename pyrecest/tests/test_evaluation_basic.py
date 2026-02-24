@@ -124,13 +124,13 @@ class TestEvalationBasics(TestEvalationBase):
             )
 
     @parameterized.expand([("boundary",), ("within",)])
-    def test_generate_measurements_eot(self, eot_sampling_style: str):
+    def test_generate_measurements_eot(self, eot_sample_from: str):
         np.random.seed(0)
         simulation_param = {
             "eot": True,
             "intensity_lambda": 0.2,
             "target_shape": Polygon([(0, 0), (1, 0), (1, 1), (0, 1)]),
-            "eot_sampling_style": eot_sampling_style,
+            "eot_sample_from": eot_sample_from,
             "n_timesteps": self.n_timesteps_default,
         }
         state_dim = 2
