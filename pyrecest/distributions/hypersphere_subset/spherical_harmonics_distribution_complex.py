@@ -160,19 +160,23 @@ class SphericalHarmonicsDistributionComplex(AbstractSphericalHarmonicsDistributi
 
         coeff_mat = full((degree + 1, 2 * degree + 1), float("NaN"), dtype=complex128)
 
+        def _to_scalar(val):
+            if hasattr(val, "item"):
+                return val.item()
+            return float(val)
+
+        def _fun_scalar(phi, theta):
+            return _to_scalar(fun_with_trans(array(phi), array(theta)))
+
         def real_part(phi, theta, n, m):
-            return real(
-                fun_with_trans(array(phi), array(theta))
-                * conj(array(sph_harm_y(n, m, theta, phi)))
-                * sin(theta)
-            )
+            val = _fun_scalar(phi, theta)
+            val = val * conj(sph_harm_y(n, m, theta, phi)) * sin(theta)
+            return float(real(val))
 
         def imag_part(phi, theta, n, m):
-            return imag(
-                fun_with_trans(array(phi), array(theta))
-                * conj(array(sph_harm_y(n, m, theta, phi)))
-                * sin(theta)
-            )
+            val = _fun_scalar(phi, theta)
+            val = val * conj(sph_harm_y(n, m, theta, phi)) * sin(theta)
+            return float(imag(val))
 
         for n in range(degree + 1):  # Use n instead of l to comply with PEP 8
             for m in range(-n, n + 1):
