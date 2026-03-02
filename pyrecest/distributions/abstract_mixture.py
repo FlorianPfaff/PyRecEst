@@ -3,6 +3,8 @@ import copy
 import warnings
 from typing import Union
 
+import pyrecest.backend
+
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
 from pyrecest.backend import (
     count_nonzero,
@@ -67,12 +69,28 @@ class AbstractMixture(AbstractDistributionType):
 
     def sample(self, n: Union[int, int32, int64]):
         occurrences = random.multinomial(n, self.w)
+        if pyrecest.backend.__backend_name__ == "jax":
+            samples = []
+            for i, occ in enumerate(occurrences):
+                occ_val = occ.item() if hasattr(occ, "item") else int(occ)
+                if occ_val != 0:
+                    try:
+                        sample_i = self.dists[i].sample(occ_val)
+                    except (NotImplementedError, AssertionError, ValueError):
+                        sample_i = self.dists[i].sample_metropolis_hastings(occ_val)
+                    sample_i = pyrecest.backend.atleast_2d(sample_i)
+                    samples.append(sample_i)
+            if not samples:
+                return empty((0, self.input_dim))
+            return pyrecest.backend.concatenate(samples, axis=0)
+
         count = 0
         s = empty((n, self.input_dim))
         for i, occ in enumerate(occurrences):
-            if occ != 0:
-                s[count : count + occ, :] = self.dists[i].sample(occ)  # noqa: E203
-                count += occ
+            occ_val = occ.item() if hasattr(occ, "item") else int(occ)
+            if occ_val != 0:
+                s[count : count + occ_val, :] = self.dists[i].sample(occ_val)  # noqa: E203
+                count += occ_val
 
         return s
 
