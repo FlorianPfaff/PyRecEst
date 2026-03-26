@@ -31,6 +31,14 @@ from .hypertoroidal_sampler import CircularUniformSampler
 from .leopardi_sampler import get_partition_points_cartesian
 
 
+def _ensure_numpy_in1d_compat():
+    # astropy versions pulled in by healpy/pyshtools may still reference np.in1d.
+    import numpy as np
+
+    if not hasattr(np, "in1d"):
+        np.in1d = np.isin
+
+
 def get_grid_hypersphere(method: str, grid_density_parameter: int, dim: int):
     if method == "healpix":
         assert dim == 2, "HealpixSampler is only implemented for S2 (dim=2)"
@@ -173,6 +181,7 @@ class SphericalCoordinatesBasedFixedResolutionSampler(
 
 class HealpixSampler(AbstractHypersphericalUniformSampler):
     def get_grid(self, grid_density_parameter, dim: int = 2):
+        _ensure_numpy_in1d_compat()
         import healpy as hp
 
         assert (
@@ -247,6 +256,7 @@ class SymmetricLeopardiSampler(AbstractHypersphericalUniformSampler):
 
 class DriscollHealySampler(AbstractSphericalCoordinatesBasedSampler):
     def get_grid_spherical_coordinates(self, grid_density_parameter: int):
+        _ensure_numpy_in1d_compat()
         import pyshtools as pysh
 
         grid = pysh.SHGrid.from_zeros(grid_density_parameter)
@@ -324,6 +334,7 @@ class HealpixHopfSampler(AbstractHopfBasedS3Sampler):
         Hopf coordinates are (θ, ϕ, ψ) where θ and ϕ are the angles for the sphere and ψ is the angle on the circle
         First parameter is the number of points on the sphere, second parameter is the number of points on the circle.
         """
+        _ensure_numpy_in1d_compat()
         import healpy as hp
 
         if isinstance(grid_density_parameter, int):
