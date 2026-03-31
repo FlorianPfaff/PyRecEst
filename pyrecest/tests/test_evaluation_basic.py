@@ -1,7 +1,7 @@
-import warnings
 import os
 import tempfile
 import unittest
+import warnings
 from typing import Optional
 
 import matplotlib
