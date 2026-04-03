@@ -36,8 +36,10 @@ class ToroidalVonMisesCosineDistribution(AbstractToroidalBivarVMDistribution):
         def s(p):
             return iv(p, self.kappa[0]) * iv(p, self.kappa[1]) * iv(p, -self.kappa3)
 
-        Cinv = 4.0 * pi**2 * (
-            s(0) + 2.0 * sum(array([s(p) for p in range(1, _SERIES_TERMS + 1)]))
+        Cinv = (
+            4.0
+            * pi**2
+            * (s(0) + 2.0 * sum(array([s(p) for p in range(1, _SERIES_TERMS + 1)])))
         )
         return Cinv
 
@@ -46,6 +48,7 @@ class ToroidalVonMisesCosineDistribution(AbstractToroidalBivarVMDistribution):
 
     def trigonometric_moment(self, n):
         if n == 1:
+
             def s1(m):
                 return (
                     (iv(m + 1, self.kappa[0]) + iv(m - 1, self.kappa[0]))
