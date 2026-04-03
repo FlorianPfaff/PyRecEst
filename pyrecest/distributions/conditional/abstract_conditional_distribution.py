@@ -114,9 +114,7 @@ class AbstractConditionalDistribution(ABC):
         """
         d = self.grid.shape[1]
         if point.shape[0] != d:
-            raise ValueError(
-                f"point must have length {d} (grid dimension)."
-            )
+            raise ValueError(f"point must have length {d} (grid dimension).")
         diffs = linalg.norm(self.grid - point[None, :], axis=1)
         locb = argmin(diffs)
         if diffs[locb] > 1e-10:
@@ -161,4 +159,3 @@ class AbstractConditionalDistribution(ABC):
                 "Set fun_does_cartesian_product=True."
             )
         return fvals.reshape(n, n)
-

@@ -24,9 +24,7 @@ class ToroidalVMCosineDistributionTest(ToroidalBivarVMTestMixin, unittest.TestCa
         self.mu = array([1.0, 2.0])
         self.kappa = array([0.7, 1.4])
         self.kappa3 = array(0.5)
-        self.tvm = ToroidalVonMisesCosineDistribution(
-            self.mu, self.kappa, self.kappa3
-        )
+        self.tvm = ToroidalVonMisesCosineDistribution(self.mu, self.kappa, self.kappa3)
 
     def test_instance(self):
         self.assertIsInstance(self.tvm, ToroidalVonMisesCosineDistribution)
@@ -40,8 +38,7 @@ class ToroidalVMCosineDistributionTest(ToroidalBivarVMTestMixin, unittest.TestCa
         return exp(
             self.kappa[0] * cos(xs[..., 0] - self.mu[0])
             + self.kappa[1] * cos(xs[..., 1] - self.mu[1])
-            - self.kappa3
-            * cos(xs[..., 0] - self.mu[0] - xs[..., 1] + self.mu[1])
+            - self.kappa3 * cos(xs[..., 0] - self.mu[0] - xs[..., 1] + self.mu[1])
         )
 
     @unittest.skipIf(
@@ -57,9 +54,7 @@ class ToroidalVMCosineDistributionTest(ToroidalBivarVMTestMixin, unittest.TestCa
         shift_by = array([4.0, 2.0])
         tvm2 = self.tvm.shift(shift_by)
         self.assertIsInstance(tvm2, ToroidalVonMisesCosineDistribution)
-        x_test = column_stack(
-            (arange(0.0, 2.0 * pi, 0.3), arange(0.0, 2.0 * pi, 0.3))
-        )
+        x_test = column_stack((arange(0.0, 2.0 * pi, 0.3), arange(0.0, 2.0 * pi, 0.3)))
         npt.assert_allclose(
             tvm2.pdf(x_test),
             self.tvm.pdf(x_test - shift_by),

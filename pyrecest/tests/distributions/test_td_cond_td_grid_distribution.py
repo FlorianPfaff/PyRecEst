@@ -1,7 +1,6 @@
 import unittest
 
 import numpy.testing as npt
-
 from pyrecest.backend import (  # pylint: disable=redefined-builtin
     abs,
     array,
@@ -49,9 +48,7 @@ class TdCondTdGridDistributionTest(unittest.TestCase):
         grid = zeros((n, 1))
         with self.assertRaises(ValueError):
             # Non-square grid_values
-            TdCondTdGridDistribution(
-                grid, ones((n, n + 1)) / (n * 2 * pi)
-            )
+            TdCondTdGridDistribution(grid, ones((n, n + 1)) / (n * 2 * pi))
 
     def test_construction_wrong_order_raises(self):
         """Transposed (row-normalized) matrix should raise an error."""
@@ -123,7 +120,11 @@ class TdCondTdGridDistributionTest(unittest.TestCase):
             return exp(-0.5 * minimum(diff**2, (2 * pi - abs(diff)) ** 2))
 
         td = TdCondTdGridDistribution.from_function(
-            cond_fun, n, fun_does_cartesian_product=False, grid_type="CartesianProd", dim=dim
+            cond_fun,
+            n,
+            fun_does_cartesian_product=False,
+            grid_type="CartesianProd",
+            dim=dim,
         )
         self.assertIsInstance(td, TdCondTdGridDistribution)
         self.assertEqual(td.dim, dim)

@@ -27,4 +27,6 @@ class ToroidalVonMisesSineDistribution(AbstractToroidalBivarVMDistribution):
         return Cinv
 
     def _coupling_term(self, xs):
-        return self.lambda_ * sin(xs[..., 0] - self.mu[0]) * sin(xs[..., 1] - self.mu[1])
+        return (
+            self.lambda_ * sin(xs[..., 0] - self.mu[0]) * sin(xs[..., 1] - self.mu[1])
+        )
