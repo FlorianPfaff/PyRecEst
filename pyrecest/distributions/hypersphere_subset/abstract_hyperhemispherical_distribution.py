@@ -19,6 +19,11 @@ from pyrecest.backend import (
     random,
     vstack,
     zeros,
+    sqrt,
+    cos,
+    sin,
+    linalg,
+    stack,
 )
 from scipy.optimize import minimize
 
@@ -60,9 +65,44 @@ class AbstractHyperhemisphericalDistribution(AbstractHypersphereSubsetDistributi
             from .hyperhemispherical_uniform_distribution import (
                 HyperhemisphericalUniformDistribution,
             )
+            if pyrecest.backend.__backend_name__ in ("numpy", "pytorch"):
+                def proposal(_):
+                    return HyperhemisphericalUniformDistribution(self.dim).sample(1)
+            else:
+                # JAX backend: proposal(key, x) -> x_prop
+                import jax as _jax
+                import jax.numpy as _jnp
 
-            def proposal(_):
-                return HyperhemisphericalUniformDistribution(self.dim).sample(1)
+                def proposal(key, _):
+                    """JAX independence proposal: uniform on upper hemisphere."""
+                    if self.dim == 2:
+                        # Explicit S² sampling
+                        key, key_phi = _jax.random.split(key)
+                        key, key_sz = _jax.random.split(key)
+
+                        phi = 2.0 * _jnp.pi * _jax.random.uniform(key_phi, shape=(1,))
+                        sz = 2.0 * _jax.random.uniform(key_sz, shape=(1,)) - 1.0
+                        r = _jnp.sqrt(1.0 - sz**2)
+
+                        # Shape (1, 3)
+                        s = _jnp.stack(
+                            [r * _jnp.cos(phi), r * _jnp.sin(phi), sz],
+                            axis=1,
+                        )
+                    else:
+                        # General S^d: sample N(0, I) in R^{d+1} and normalize
+                        key, subkey = _jax.random.split(key)
+                        samples_unnorm = _jax.random.normal(subkey, shape=(1, self.dim + 1))
+                        norms = _jnp.linalg.norm(samples_unnorm, axis=1, keepdims=True)
+                        s = samples_unnorm / norms
+
+                    # Project to upper hemisphere: last coordinate >= 0
+                    # s shape: (1, dim+1); last coord is s[..., -1:]
+                    sign = _jnp.where(s[..., -1:] < 0.0, -1.0, 1.0)
+                    s = sign * s
+
+                    return s
+
 
         if start_point is None:
             start_point = HyperhemisphericalUniformDistribution(self.dim).sample(1)
