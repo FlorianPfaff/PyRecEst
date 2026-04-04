@@ -110,12 +110,14 @@ class RandomMatrixTracker(AbstractExtendedObjectTracker):
 
     def plot_point_estimate(self, scaling_factor=1, color=(0, 0.4470, 0.7410)):
         if self.kinematic_state_to_pos_matrix is None:
-            raise ValueError("""No kinematic_state_to_pos_matrix
+            raise ValueError(
+                """No kinematic_state_to_pos_matrix
                              matrix was set, so it is unclear what
                              the individual components of the kinematic
                              state are (position, velocity, etc.).
                              Please set it directly or perform an update step
-                             before plotting.""")
+                             before plotting."""
+            )
         position_estimate = self.kinematic_state_to_pos_matrix @ self.kinematic_state
         plot_ellipsoid(position_estimate, self.extent, scaling_factor, color)
 

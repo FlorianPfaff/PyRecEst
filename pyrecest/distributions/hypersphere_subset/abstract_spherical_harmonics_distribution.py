@@ -52,7 +52,7 @@ class AbstractSphericalHarmonicsDistribution(
     def pdf(self, xs):
         return AbstractOrthogonalBasisDistribution.pdf(self, xs)
 
-    def normalize_in_place(self, warn_unnorm=True):
+    def normalize_in_place(self):
         int_val = self.integrate()
         if int_val < 0:
             warnings.warn(
@@ -66,11 +66,10 @@ class AbstractSphericalHarmonicsDistribution(
                 "this usually points to a user error"
             )
         elif abs(int_val - 1) > 1e-5:
-            if warn_unnorm:
-                warnings.warn(
-                    "Warning: Normalization:notNormalized - Coefficients apparently do not belong "
-                    "to normalized density. Normalizing..."
-                )
+            warnings.warn(
+                "Warning: Normalization:notNormalized - Coefficients apparently do not belong "
+                "to normalized density. Normalizing..."
+            )
         else:
             return
 

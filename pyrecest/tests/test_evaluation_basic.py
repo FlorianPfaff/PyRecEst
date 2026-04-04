@@ -2,7 +2,6 @@ import io
 import os
 import tempfile
 import unittest
-import warnings
 from typing import Optional
 
 import matplotlib
@@ -73,13 +72,11 @@ class TestEvalationBasics(TestEvalationBase):
         self.test_evaluate_for_simulation_config_R2_random_walk()
         filename = self._get_single_evaluation_file()
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", UserWarning)
-            figs, _ = plot_results(
-                filename=filename,
-                plot_log=False,
-                plot_stds=False,
-            )
+        figs, _ = plot_results(
+            filename=filename,
+            plot_log=False,
+            plot_stds=False,
+        )
 
         try:
             for fig in figs:
@@ -613,9 +610,7 @@ class TestEvalationBasics(TestEvalationBase):
     )
     def test_summarize_filter_results(self):
         data = self._load_evaluation_data()
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", UserWarning)
-            results_summarized = summarize_filter_results(**data)
+        results_summarized = summarize_filter_results(**data)
 
         for result in results_summarized:
             error_mean = result["error_mean"]

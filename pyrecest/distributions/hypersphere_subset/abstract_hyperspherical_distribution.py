@@ -74,8 +74,24 @@ class AbstractHypersphericalDistribution(AbstractHypersphereSubsetDistribution):
                 HypersphericalUniformDistribution,
             )
 
-            def proposal(_):
-                return HypersphericalUniformDistribution(self.dim).sample(1)
+            if pyrecest.backend.__backend_name__ in ("numpy", "pytorch"):
+                def proposal_np(_):
+                    return HypersphericalUniformDistribution(self.dim).sample(1)
+
+                proposal = proposal_np
+            else:
+                import jax as _jax  # pylint: disable=import-error
+                import jax.numpy as _jnp  # pylint: disable=import-error
+
+                def proposal_jax(key, _):
+                    """JAX independence proposal: uniform on hypersphere."""
+                    key, subkey = _jax.random.split(key)
+                    s = _jax.random.normal(subkey, shape=(1, self.dim + 1))
+                    # Ensure exact unit norm (avoids float32 rounding errors)
+                    s = s / _jnp.linalg.norm(s, axis=-1, keepdims=True)
+                    return s
+
+                proposal = proposal_jax
 
         if start_point is None:
             start_point = HypersphericalUniformDistribution(self.dim).sample(1)

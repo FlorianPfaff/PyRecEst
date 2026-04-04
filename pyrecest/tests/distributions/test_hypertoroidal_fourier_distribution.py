@@ -93,7 +93,7 @@ class HypertoroidalFourierDistributionTest(unittest.TestCase):
         unnormalizedCoeffs = fft.fftshift(fft.fftn(arr))
         unnormalizedCoeffs[index] = 1
         with warnings.catch_warnings():
-            warnings.simplefilter("ignore", RuntimeWarning)
+            warnings.simplefilter("ignore", UserWarning)
             hfd = HypertoroidalFourierDistribution(
                 unnormalizedCoeffs, transformation=transform
             )

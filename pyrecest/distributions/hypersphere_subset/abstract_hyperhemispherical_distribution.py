@@ -5,7 +5,7 @@ from typing import Union
 import matplotlib.pyplot as plt
 import pyrecest.backend
 
-# pylint: disable=no-name-in-module,no-member
+# pylint: disable=no-name-in-module,no-member,duplicate-code
 from pyrecest.backend import (
     array,
     concatenate,
@@ -61,8 +61,29 @@ class AbstractHyperhemisphericalDistribution(AbstractHypersphereSubsetDistributi
                 HyperhemisphericalUniformDistribution,
             )
 
-            def proposal(_):
-                return HyperhemisphericalUniformDistribution(self.dim).sample(1)
+            if pyrecest.backend.__backend_name__ in ("numpy", "pytorch"):
+                def proposal_np(_):
+                    return HyperhemisphericalUniformDistribution(self.dim).sample(1)
+
+                proposal = proposal_np
+            else:
+                # JAX backend: proposal(key, x) -> x_prop
+                import jax as _jax  # pylint: disable=import-error
+                import jax.numpy as _jnp  # pylint: disable=import-error
+
+                def proposal_jax(key, _):
+                    """JAX independence proposal: uniform on upper hemisphere."""
+                    key, subkey = _jax.random.split(key)
+                    s = _jax.random.normal(subkey, shape=(1, self.dim + 1))
+                    # Project to upper hemisphere: last coordinate >= 0
+                    sign = _jnp.where(s[..., -1:] < 0.0, -1.0, 1.0)
+                    s = sign * s
+
+                    # Ensure exact unit norm (avoids float32 rounding errors)
+                    s = s / _jnp.linalg.norm(s, axis=-1, keepdims=True)
+                    return s
+
+                proposal = proposal_jax
 
         if start_point is None:
             start_point = HyperhemisphericalUniformDistribution(self.dim).sample(1)

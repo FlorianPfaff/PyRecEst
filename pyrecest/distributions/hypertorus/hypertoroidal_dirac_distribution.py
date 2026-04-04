@@ -79,8 +79,8 @@ class HypertoroidalDiracDistribution(
         """
         return sum(exp(1j * n * self.d.T) * tile(self.w, (self.dim, 1)), axis=1)
 
-    def apply_function(self, f: Callable, function_is_vectorized: bool = True):
-        dist = super().apply_function(f, function_is_vectorized)
+    def apply_function(self, f: Callable, f_supports_multiple: bool = True):
+        dist = super().apply_function(f, f_supports_multiple)
         dist.d = mod(dist.d, 2.0 * pi)
         return dist
 

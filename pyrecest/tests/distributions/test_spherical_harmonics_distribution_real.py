@@ -45,8 +45,7 @@ class SphericalHarmonicsDistributionRealTest(unittest.TestCase):
     )
     def testNormalization(self):
         unnormalized_coeffs = random.uniform(size=(3, 5))
-        with self.assertWarns(UserWarning):
-            shd = SphericalHarmonicsDistributionReal(unnormalized_coeffs)
+        shd = SphericalHarmonicsDistributionReal(unnormalized_coeffs)
         self.assertAlmostEqual(shd.integrate(), 1.0, delta=1e-6)
         x, y, z = SphericalHarmonicsDistributionRealTest._gen_naive_grid(10)
 
@@ -454,9 +453,7 @@ class SphericalHarmonicsDistributionRealTest(unittest.TestCase):
         "Test not supported for this backend",
     )
     def test_conversion(self, _, coeff_mat):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", UserWarning)
-            rshd = SphericalHarmonicsDistributionReal(coeff_mat)
+        rshd = SphericalHarmonicsDistributionReal(coeff_mat)
         cshd = rshd.to_spherical_harmonics_distribution_complex()
         phi_to_test, theta_to_test = (
             random.uniform(size=10) * 2 * pi,

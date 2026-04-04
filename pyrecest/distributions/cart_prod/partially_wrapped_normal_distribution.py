@@ -111,21 +111,9 @@ class PartiallyWrappedNormalDistribution(AbstractHypercylindricalDistribution):
         """
         return self.mu
 
-    def set_mean(self, new_mean):
-        """
-        Return a copy of this distribution with the location parameter shifted to ``new_mean``.
-
-        For bounded dimensions, the mean is wrapped into [0, 2*pi) to stay on the manifold.
-        """
-        new_dist = copy.deepcopy(self)
-        wrapped_mean = where(
-            arange(new_mean.shape[0]) < self.bound_dim, mod(new_mean, 2 * pi), new_mean
-        )
-        new_dist.mu = wrapped_mean
-        return new_dist
-
     def set_mode(self, new_mode):
-        return self.set_mean(new_mode)
+        self.mu = copy.copy(new_mode)
+        return self
 
     def hybrid_moment(self):
         """

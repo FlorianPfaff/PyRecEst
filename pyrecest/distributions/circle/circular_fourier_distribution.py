@@ -100,10 +100,10 @@ class CircularFourierDistribution(AbstractCircularDistribution):
             cNew = self.c - other.c
             fdNew = CircularFourierDistribution(
                 c=cNew,
-                n=self.n,
                 transformation=self.transformation,
                 multiplied_by_n=self.multiplied_by_n,
             )
+        fdNew.n = self.n  # Preserve the original n value (should remain unchanged)
         return fdNew
 
     def pdf(self, xs):
