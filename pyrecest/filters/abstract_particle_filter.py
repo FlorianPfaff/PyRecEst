@@ -37,7 +37,7 @@ class AbstractParticleFilter(AbstractFilter):
         if function_is_vectorized:
             d_f_applied = f(self.filter_state.d)
         else:
-            self.filter_state = self.filter_state.apply_function(f)
+            self.filter_state = self.filter_state.apply_function(f, function_is_vectorized=function_is_vectorized)
             d_f_applied = self.filter_state.d
 
         n_particles = self.filter_state.w.shape[0]
@@ -61,9 +61,9 @@ class AbstractParticleFilter(AbstractFilter):
         else:
             updated_particles = vstack(updated_particles)
 
-        self.filter_state = self.filter_state.__class__(
-            updated_particles, self.filter_state.w
-        )
+        # Do not use constructor directly because some manifolds,
+        # e.g., hypercylinders, need special handling
+        self._filter_state.d = updated_particles
 
     def predict_nonlinear_nonadditive(self, f, samples, weights):
         assert (

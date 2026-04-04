@@ -17,6 +17,7 @@ from pyrecest.backend import (
     random,
     sum,
 )
+from beartype import beartype
 
 from .abstract_distribution_type import AbstractDistributionType
 
