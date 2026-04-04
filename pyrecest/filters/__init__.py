@@ -73,6 +73,8 @@ __all__ = [
     "HypertoroidalFilterMixin",
     "HypertoroidalParticleFilter",
     "KalmanFilter",
+    "EuclideanParticleFilter",
+    "VonMisesFisherFilter",
     "KernelSMEFilter",
     "LinBoundedFilterMixin",
     "LinBoundedParticleFilter",

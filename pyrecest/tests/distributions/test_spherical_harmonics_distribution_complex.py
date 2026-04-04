@@ -2,6 +2,7 @@ import unittest
 import warnings
 
 import numpy.testing as npt
+import pyrecest
 import pyrecest.backend
 from parameterized import parameterized
 
@@ -36,6 +37,10 @@ from pyrecest.distributions.hypersphere_subset.spherical_harmonics_distribution_
 )
 
 
+@unittest.skipIf(
+    pyrecest.backend.__backend_name__ == "jax",  # pylint: disable=no-member
+    reason="Not supported on the JAX backend",
+)
 class SphericalHarmonicsDistributionComplexTest(unittest.TestCase):
     def setUp(self):
         random.seed(1)

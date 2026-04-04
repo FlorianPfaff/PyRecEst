@@ -24,6 +24,14 @@ class VonMisesFisherFilter(AbstractFilter, HypersphericalFilterMixin):
         ), "filter_state must be an instance of VonMisesFisherDistribution."
         self._filter_state = filter_state
 
+    def set_state(self, state):
+        """Set the filter state."""
+        self.filter_state = state
+
+    def get_estimate_mean(self):
+        """Return the mean direction of the current filter state."""
+        return self.filter_state.mean_direction()
+
     def predict_identity(self, sys_noise):
         """
         State prediction via mulitiplication. Provide zonal density for update
