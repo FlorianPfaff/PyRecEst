@@ -25,7 +25,7 @@ python-dateutil==2.9.0.post0 ; python_version >= "3.11" and python_version < "3.
 pytz==2026.1.post1 ; python_version >= "3.11" and python_version < "3.15"
 pyyaml==6.0.3 ; python_version >= "3.11" and python_version < "3.15"
 requests==2.33.1 ; python_version >= "3.11" and python_version < "3.15"
-scipy==1.17.0 ; python_version >= "3.11" and python_version < "3.15"
+scipy==1.17.1 ; python_version >= "3.11" and python_version < "3.15"
 shapely==2.1.2 ; python_version >= "3.11" and python_version < "3.15"
 six==1.17.0 ; python_version >= "3.11" and python_version < "3.15"
 tqdm==4.67.3 ; python_version >= "3.11" and python_version < "3.15"
