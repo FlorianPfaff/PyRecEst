@@ -1,11 +1,10 @@
 import unittest
 
-import numpy as np
 import numpy.testing as npt
 import pyrecest.backend
 
-# pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import array
+# pylint: disable=no-name-in-module,no-member,redefined-builtin
+from pyrecest.backend import array, ones, all, random
 from pyrecest.distributions import SE2BinghamDistribution
 
 
@@ -28,9 +27,9 @@ class TestSE2BinghamDistribution(unittest.TestCase):
         C_full = self.dist.C
         dist2 = SE2BinghamDistribution(C_full)
         self.assertIsInstance(dist2, SE2BinghamDistribution)
-        npt.assert_array_almost_equal(np.array(dist2.C1), np.array(self.dist.C1))
-        npt.assert_array_almost_equal(np.array(dist2.C2), np.array(self.dist.C2))
-        npt.assert_array_almost_equal(np.array(dist2.C3), np.array(self.dist.C3))
+        npt.assert_array_almost_equal(dist2.C1, self.dist.C1)
+        npt.assert_array_almost_equal(dist2.C2, self.dist.C2)
+        npt.assert_array_almost_equal(dist2.C3, self.dist.C3)
 
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ == "jax",
@@ -56,7 +55,7 @@ class TestSE2BinghamDistribution(unittest.TestCase):
             ]
         )
         vals = self.dist.pdf(points)
-        self.assertTrue(np.all(np.array(vals) > 0))
+        self.assertTrue(all(vals > 0))
 
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ == "jax",
@@ -73,7 +72,7 @@ class TestSE2BinghamDistribution(unittest.TestCase):
 
         dq = AbstractSE2Distribution.angle_pos_to_dual_quaternion(angle_pos)
         p_dq = self.dist.pdf(dq)
-        npt.assert_array_almost_equal(np.array(p_ap), np.array(p_dq))
+        npt.assert_array_almost_equal(p_ap, p_dq)
 
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ == "jax",
@@ -82,7 +81,7 @@ class TestSE2BinghamDistribution(unittest.TestCase):
     def test_mode_shape(self):
         """Mode should be a 4-element array."""
         m = self.dist.mode()
-        self.assertEqual(np.array(m).shape, (4,))
+        self.assertEqual(array(m).shape, (4,))
 
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ == "jax",
@@ -93,23 +92,23 @@ class TestSE2BinghamDistribution(unittest.TestCase):
         from pyrecest.distributions import AbstractSE2Distribution
 
         # Mode is in dual-quaternion (DQ) representation
-        m_dq = array(np.array(self.dist.mode()).reshape(1, -1))
+        m_dq = self.dist.mode().reshape(1, -1)
 
         # Convert mode DQ → angle-pos
         angle_arr, pos_arr = AbstractSE2Distribution.dual_quaternion_to_angle_pos(m_dq)
-        angle0 = float(np.array(angle_arr).ravel()[0])
-        pos0 = np.array(pos_arr).ravel()
+        angle0 = float(array(angle_arr).ravel()[0])
+        pos0 = array(pos_arr).ravel()
 
-        p_mode = float(np.array(self.dist.pdf(m_dq)).ravel()[0])
+        p_mode = float(array(self.dist.pdf(m_dq)).ravel()[0])
 
-        rng = np.random.default_rng(42)
+        rng = random.default_rng(42)
         for _ in range(20):
             # Perturb angle and position (stays on S^1 x R^2 manifold)
             angle_p = angle0 + rng.normal(0, 0.15)
             pos_p = pos0 + rng.normal(0, 0.15, size=2)
-            ap = array(np.array([[angle_p, pos_p[0], pos_p[1]]]))
+            ap = array(array([[angle_p, pos_p[0], pos_p[1]]]))
             dq_p = AbstractSE2Distribution.angle_pos_to_dual_quaternion(ap)
-            p_perturbed = float(np.array(self.dist.pdf(dq_p)).ravel()[0])
+            p_perturbed = float(array(self.dist.pdf(dq_p)).ravel()[0])
             self.assertGreaterEqual(p_mode, p_perturbed - 1e-6)
 
     @unittest.skipIf(
@@ -120,7 +119,7 @@ class TestSE2BinghamDistribution(unittest.TestCase):
         """sample() must return an (n, 4) array."""
         n = 50
         s = self.dist.sample(n)
-        self.assertEqual(np.array(s).shape, (n, 4))
+        self.assertEqual(array(s).shape, (n, 4))
 
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ == "jax",
@@ -141,7 +140,7 @@ class TestSE2BinghamDistribution(unittest.TestCase):
         """fit() should accept explicit weights."""
         n = 200
         samples = self.dist.sample(n)
-        weights = np.ones(n) / n
+        weights = ones(n) / n
         fitted = SE2BinghamDistribution.fit(samples, weights)
         self.assertIsInstance(fitted, SE2BinghamDistribution)
 
