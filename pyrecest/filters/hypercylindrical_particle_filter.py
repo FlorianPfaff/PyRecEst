@@ -11,7 +11,9 @@ from .abstract_particle_filter import AbstractParticleFilter
 from .manifold_mixins import HypercylindricalFilterMixin
 
 
-class HypercylindricalParticleFilter(AbstractParticleFilter, HypercylindricalFilterMixin):
+class HypercylindricalParticleFilter(
+    AbstractParticleFilter, HypercylindricalFilterMixin
+):
     def __init__(
         self,
         n_particles: Union[int, int32, int64],
