@@ -71,9 +71,7 @@ class CircularUKF(AbstractFilter, CircularFilterMixin):
         self._alpha = alpha
         self._beta = beta
         self._kappa = kappa
-        initial_state = GaussianDistribution(
-            array([0.0]), array([[1.0]])
-        )
+        initial_state = GaussianDistribution(array([0.0]), array([[1.0]]))
         CircularFilterMixin.__init__(self)
         AbstractFilter.__init__(self, initial_state)
 
@@ -147,8 +145,16 @@ class CircularUKF(AbstractFilter, CircularFilterMixin):
             return x
 
         ukf = _make_ukf(
-            fx, hx, dim_z=1, x0=mu0, P0=C0, Q=Q_val, R=array([[C0]]),
-            alpha=self._alpha, beta=self._beta, kappa=self._kappa,
+            fx,
+            hx,
+            dim_z=1,
+            x0=mu0,
+            P0=C0,
+            Q=Q_val,
+            R=array([[C0]]),
+            alpha=self._alpha,
+            beta=self._beta,
+            kappa=self._kappa,
         )
         ukf.predict()
 
@@ -194,9 +200,7 @@ class CircularUKF(AbstractFilter, CircularFilterMixin):
         new_C = (1.0 - K) * C
 
         new_mu = float(mod(array([new_mu]), 2.0 * pi)[0])
-        self._filter_state = GaussianDistribution(
-            array([new_mu]), array([[new_C]])
-        )
+        self._filter_state = GaussianDistribution(array([new_mu]), array([[new_C]]))
 
     def update_nonlinear(  # pylint: disable=too-many-locals
         self, f, gauss_meas: GaussianDistribution, z, measurement_periodic: bool = False
@@ -251,8 +255,16 @@ class CircularUKF(AbstractFilter, CircularFilterMixin):
             return atleast_1d(array([f(x.flatten()[0])], dtype=float))
 
         ukf = _make_ukf(
-            fx, hx, dim_z=dim_z, x0=mu0, P0=C0, Q=0.0, R=R_mat,
-            alpha=self._alpha, beta=self._beta, kappa=self._kappa,
+            fx,
+            hx,
+            dim_z=dim_z,
+            x0=mu0,
+            P0=C0,
+            Q=0.0,
+            R=R_mat,
+            alpha=self._alpha,
+            beta=self._beta,
+            kappa=self._kappa,
         )
         # predict() with identity fx and Q=0 populates sigmas_f without
         # altering the mean or covariance, which is required before update().

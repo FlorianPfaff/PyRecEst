@@ -5,7 +5,6 @@ from typing import Callable
 import pyrecest.backend
 from bayesian_filters.kalman import MerweScaledSigmaPoints
 from bayesian_filters.kalman import UnscentedKalmanFilter as BayesianFiltersUKF
-
 from pyrecest.backend import atleast_1d
 from pyrecest.distributions import GaussianDistribution
 

@@ -31,7 +31,7 @@ class CustomHypercylindricalDistributionTest(unittest.TestCase):
             arange(-2, 3),
             arange(-2, 3),
             arange(-2, 3),
-            indexing="ij"
+            indexing="ij",
         )
         self.grid_flat = array(grid).reshape(6, -1).T
 

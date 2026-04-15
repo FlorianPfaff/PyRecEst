@@ -26,7 +26,9 @@ class TestCustomHyperrectangularDistribution(unittest.TestCase):
 
     def test_pdf_method(self):
         """Test that the pdf method returns correct values."""
-        x_mesh, y_mesh = meshgrid(linspace(1.0, 3.0, 50), linspace(2.0, 5.0, 50), indexing="ij")
+        x_mesh, y_mesh = meshgrid(
+            linspace(1.0, 3.0, 50), linspace(2.0, 5.0, 50), indexing="ij"
+        )
         expected_pdf = 1.0 / 6.0 * ones(50**2)
         calculated_pdf = self.cd.pdf(column_stack((x_mesh.ravel(), y_mesh.ravel())))
         self.assertTrue(

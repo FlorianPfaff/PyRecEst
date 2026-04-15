@@ -1,6 +1,18 @@
 # pylint: disable=no-name-in-module,no-member,redefined-builtin
 import pyrecest.backend
-from pyrecest.backend import mod, pi, array, arange, mean, floor, zeros, exp, sum, log, random
+from pyrecest.backend import (
+    arange,
+    array,
+    exp,
+    floor,
+    log,
+    mean,
+    mod,
+    pi,
+    random,
+    sum,
+    zeros,
+)
 
 from .abstract_circular_distribution import AbstractCircularDistribution
 
@@ -48,7 +60,10 @@ class PiecewiseConstantDistribution(AbstractCircularDistribution):
         n_intervals = len(self.w)
         xs_mod = array(mod(xs, 2.0 * pi), dtype=float)
         idx = array(
-            [min(int(floor(x / (2.0 * pi) * n_intervals)), n_intervals - 1) for x in xs_mod]
+            [
+                min(int(floor(x / (2.0 * pi) * n_intervals)), n_intervals - 1)
+                for x in xs_mod
+            ]
         )
         return self.w[idx]
 
@@ -66,7 +81,9 @@ class PiecewiseConstantDistribution(AbstractCircularDistribution):
             n-th trigonometric moment.
         """
         if pyrecest.backend.__backend_name__ == "jax":  # pylint: disable=no-member
-            raise NotImplementedError("trigonometric_moment is not supported on the JAX backend.")
+            raise NotImplementedError(
+                "trigonometric_moment is not supported on the JAX backend."
+            )
         if n == 0:
             return 1.0 + 0j
         num = len(self.w)
@@ -111,8 +128,13 @@ class PiecewiseConstantDistribution(AbstractCircularDistribution):
         # construction. Divide by sum anyway to guard against floating-point drift.
         interval_probs = self.w * interval_width
         interval_probs /= interval_probs.sum()
-        interval_indices = random.choice(arange(num_intervals), size=(n,), p=interval_probs)
-        return interval_indices * interval_width + random.uniform(size=(n,)) * interval_width
+        interval_indices = random.choice(
+            arange(num_intervals), size=(n,), p=interval_probs
+        )
+        return (
+            interval_indices * interval_width
+            + random.uniform(size=(n,)) * interval_width
+        )
 
     @staticmethod
     def left_border(m, n):
@@ -190,14 +212,14 @@ class PiecewiseConstantDistribution(AbstractCircularDistribution):
         from scipy.integrate import quad  # pylint: disable=import-outside-toplevel
 
         if pyrecest.backend.__backend_name__ == "jax":  # pylint: disable=no-member
-            raise NotImplementedError("calculate_parameters_numerically is not supported on the JAX backend.")
+            raise NotImplementedError(
+                "calculate_parameters_numerically is not supported on the JAX backend."
+            )
 
         assert n >= 1
         w = zeros(n)
         for j in range(1, n + 1):
             left = PiecewiseConstantDistribution.left_border(j, n)
             r = PiecewiseConstantDistribution.right_border(j, n)
-            w[j - 1] = quad(
-                lambda x: float(pdf_func(array([x]))), left, r
-            )[0]
+            w[j - 1] = quad(lambda x: float(pdf_func(array([x]))), left, r)[0]
         return w
