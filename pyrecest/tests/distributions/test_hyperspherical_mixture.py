@@ -21,7 +21,9 @@ class HypersphericalMixtureTest(unittest.TestCase):
         smix = HypersphericalMixture([wad, vmf], w)
 
         phi, theta = meshgrid(
-            linspace(0.0, 2.0 * pi, 10), linspace(-pi / 2.0, pi / 2.0, 10), indexing="ij"
+            linspace(0.0, 2.0 * pi, 10),
+            linspace(-pi / 2.0, pi / 2.0, 10),
+            indexing="ij",
         )
         points = AbstractHypersphereSubsetDistribution.hypersph_to_cart(
             stack([phi.ravel(), theta.ravel()], axis=-1)

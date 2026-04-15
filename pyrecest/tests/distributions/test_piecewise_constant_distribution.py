@@ -4,7 +4,7 @@ import numpy.testing as npt
 import pyrecest.backend
 
 # pylint: disable=no-name-in-module,no-member,redefined-builtin
-from pyrecest.backend import linspace, sum, exp, log, mean, pi, array
+from pyrecest.backend import array, exp, linspace, log, mean, pi, sum
 from pyrecest.distributions.circle.piecewise_constant_distribution import (
     PiecewiseConstantDistribution,
 )
@@ -33,9 +33,7 @@ class PiecewiseConstantDistributionTest(unittest.TestCase):
     def test_integral_normalized(self):
         """Verify the distribution integrates to 1 via the exact sum."""
         n = len(self.dist.w)
-        npt.assert_allclose(
-            sum(self.dist.w) * (2.0 * pi / n), 1.0, rtol=5e-7
-        )
+        npt.assert_allclose(sum(self.dist.w) * (2.0 * pi / n), 1.0, rtol=5e-7)
 
     def test_integral_partial(self):
         """Verify partial integrals sum to 1 using a fine grid."""

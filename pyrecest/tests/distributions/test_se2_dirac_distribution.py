@@ -112,7 +112,9 @@ class TestSE2DiracDistribution(unittest.TestCase):
         s = self.dist.sample(n)
         self.assertEqual(s.shape, (n, 3))
         # Angles should be in [0, 2*pi)
-        from pyrecest.backend import all as backend_all  # pylint: disable=import-outside-toplevel
+        from pyrecest.backend import (
+            all as backend_all,  # pylint: disable=import-outside-toplevel
+        )
 
         self.assertTrue(backend_all(s[:, 0] >= 0))
         self.assertTrue(backend_all(s[:, 0] < 2 * pi))

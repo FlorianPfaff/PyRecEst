@@ -26,9 +26,7 @@ class WrappedExponentialDistributionTest(unittest.TestCase):
             )
 
         for x in [0.0, 1.0, 2.0, 3.0, 4.0]:
-            npt.assert_allclose(
-                self.we.pdf(array(x)), pdftemp(array(x)), rtol=5e-7
-            )
+            npt.assert_allclose(self.we.pdf(array(x)), pdftemp(array(x)), rtol=5e-7)
 
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
@@ -66,9 +64,7 @@ class WrappedExponentialDistributionTest(unittest.TestCase):
         reason="Not supported on this backend",
     )
     def test_entropy(self):
-        npt.assert_allclose(
-            self.we.entropy(), self.we.entropy_numerical(), rtol=5e-7
-        )
+        npt.assert_allclose(self.we.entropy(), self.we.entropy_numerical(), rtol=5e-7)
 
     def test_periodicity(self):
         npt.assert_allclose(

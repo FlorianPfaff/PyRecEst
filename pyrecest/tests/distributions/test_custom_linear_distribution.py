@@ -29,7 +29,9 @@ class CustomLinearDistributionTest(unittest.TestCase):
 
     @staticmethod
     def verify_pdf_equal(dist1, dist2, tol):
-        x, y = meshgrid(linspace(0.0, 2.0 * pi, 10), linspace(0.0, 2.0 * pi, 10), indexing="ij")
+        x, y = meshgrid(
+            linspace(0.0, 2.0 * pi, 10), linspace(0.0, 2.0 * pi, 10), indexing="ij"
+        )
         npt.assert_allclose(
             dist1.pdf(concatenate((x, y)).reshape(2, -1).T),
             dist2.pdf(concatenate((x, y)).reshape(2, -1).T),

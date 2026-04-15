@@ -95,11 +95,13 @@ class TestComplexAngularCentralGaussianDistribution(unittest.TestCase):
             array([[0.0 + 0j, 1.0 + 0j]]),
             array([[inv_sqrt2 + 0j, 1j * inv_sqrt2]]),
         ]
-        za = array([
-            [1.0 + 0j, 0.0 + 0j],
-            [0.0 + 0j, 1.0 + 0j],
-            [inv_sqrt2 + 0j, 1j * inv_sqrt2],
-        ])
+        za = array(
+            [
+                [1.0 + 0j, 0.0 + 0j],
+                [0.0 + 0j, 1.0 + 0j],
+                [inv_sqrt2 + 0j, 1j * inv_sqrt2],
+            ]
+        )
 
         p_batch = self.dist_nontrivial_2d.pdf(za)
         for i, z in enumerate(z_list):

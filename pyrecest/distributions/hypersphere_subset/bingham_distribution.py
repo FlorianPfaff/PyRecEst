@@ -1,8 +1,4 @@
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
-from scipy.integrate import quad
-from scipy.optimize import fsolve
-from scipy.special import iv
-
 from pyrecest.backend import (
     abs,
     all,
@@ -15,12 +11,15 @@ from pyrecest.backend import (
     linalg,
     max,
     maximum,
-    pi,
     ones,
+    pi,
+    sort,
     sum,
     zeros,
-    sort,
 )
+from scipy.integrate import quad
+from scipy.optimize import fsolve
+from scipy.special import iv
 
 from .abstract_hyperspherical_distribution import AbstractHypersphericalDistribution
 

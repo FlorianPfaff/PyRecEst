@@ -7,9 +7,7 @@ from .cart_prod.hypercylindrical_dirac_distribution import (
 )
 
 
-class SE2DiracDistribution(
-    HypercylindricalDiracDistribution, AbstractSE2Distribution
-):
+class SE2DiracDistribution(HypercylindricalDiracDistribution, AbstractSE2Distribution):
     """Partially wrapped Dirac distribution on SE(2).
 
     Represents a distribution on SE(2) = S^1 x R^2 using weighted Dirac
@@ -56,7 +54,11 @@ class SE2DiracDistribution(
         -------
         array of shape (4, 4)
         """
-        from pyrecest.backend import column_stack, cos, sin  # pylint: disable=import-outside-toplevel
+        from pyrecest.backend import (  # pylint: disable=import-outside-toplevel
+            column_stack,
+            cos,
+            sin,
+        )
 
         S = column_stack(
             (cos(self.d[:, 0:1]), sin(self.d[:, 0:1]), self.d[:, 1:])
