@@ -29,9 +29,7 @@ class HypercylindricalParticleFilterTest(unittest.TestCase):
     def test_initialization(self):
         hpf = HypercylindricalParticleFilter(10, self.bound_dim, self.lin_dim)
         self.assertIsNotNone(hpf.filter_state)
-        self.assertEqual(
-            hpf.filter_state.d.shape, (10, self.bound_dim + self.lin_dim)
-        )
+        self.assertEqual(hpf.filter_state.d.shape, (10, self.bound_dim + self.lin_dim))
 
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ == "jax", reason="Backend not supported"
