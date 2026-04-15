@@ -4,7 +4,7 @@ import numpy.testing as npt
 import pyrecest.backend
 
 # pylint: disable=no-name-in-module,no-member,redefined-builtin
-from pyrecest.backend import array, ones, all, random
+from pyrecest.backend import all, array, ones, random
 from pyrecest.distributions import SE2BinghamDistribution
 
 

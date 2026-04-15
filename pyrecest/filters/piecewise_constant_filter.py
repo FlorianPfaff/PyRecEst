@@ -175,9 +175,7 @@ class PiecewiseConstantFilter(AbstractFilter, CircularFilterMixin):
                     return float(noise_distribution.pdf(array([w]))) * in_interval
 
                 A[j, i] = (
-                    nquad(integrand, [[l1, r1], [0.0, 2.0 * pi]])[0]
-                    * L
-                    / (2.0 * pi)
+                    nquad(integrand, [[l1, r1], [0.0, 2.0 * pi]])[0] * L / (2.0 * pi)
                 )
 
         return A
@@ -228,9 +226,7 @@ class PiecewiseConstantFilter(AbstractFilter, CircularFilterMixin):
                     return float(noise_distribution.pdf(array([v]))) * in_interval
 
                 H[i, j] = (
-                    nquad(integrand, [[l2, r2], [0.0, 2.0 * pi]])[0]
-                    * L
-                    / (2.0 * pi)
+                    nquad(integrand, [[l2, r2], [0.0, 2.0 * pi]])[0] * L / (2.0 * pi)
                 )
 
         return H
