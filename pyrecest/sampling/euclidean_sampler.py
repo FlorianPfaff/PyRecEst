@@ -3,9 +3,9 @@ import warnings
 
 import numpy as np
 from pyrecest.backend import eye, zeros
-from ..distributions.nonperiodic.gaussian_distribution import GaussianDistribution
 from scipy.special import erfinv as scipy_erfinv
 
+from ..distributions.nonperiodic.gaussian_distribution import GaussianDistribution
 from .abstract_sampler import AbstractSampler
 
 

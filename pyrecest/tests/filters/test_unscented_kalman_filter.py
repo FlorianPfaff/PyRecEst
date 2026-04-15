@@ -30,9 +30,7 @@ class UnscentedKalmanFilterTest(unittest.TestCase):
         reason="Not supported on this backend",
     )
     def test_update_linear_1d(self):
-        kf = UnscentedKalmanFilter(
-            GaussianDistribution(array([0.0]), array([[1.0]]))
-        )
+        kf = UnscentedKalmanFilter(GaussianDistribution(array([0.0]), array([[1.0]])))
         kf.update_identity(array([3.0]), array([[1.0]]))
         npt.assert_allclose(kf.get_point_estimate(), 1.5)
 
@@ -64,15 +62,11 @@ class UnscentedKalmanFilterTest(unittest.TestCase):
     )
     def test_predict_linear_2d(self):
         kf = UnscentedKalmanFilter(
-            GaussianDistribution(
-                array([0.0, 1.0]), diag(array([1.0, 2.0]))
-            )
+            GaussianDistribution(array([0.0, 1.0]), diag(array([1.0, 2.0])))
         )
         kf.predict_linear(diag(array([1.0, 2.0])), diag(array([2.0, 1.0])))
         self.assertTrue(allclose(kf.get_point_estimate(), array([0.0, 2.0])))
-        self.assertTrue(
-            allclose(kf.filter_state.covariance(), diag(array([3.0, 9.0])))
-        )
+        self.assertTrue(allclose(kf.filter_state.covariance(), diag(array([3.0, 9.0]))))
         kf.predict_linear(
             diag(array([1.0, 2.0])), diag(array([2.0, 1.0])), array([2.0, -2.0])
         )
