@@ -95,9 +95,7 @@ class SE2BinghamDistribution(AbstractSE2Distribution):
                 ]
             ).T
 
-        assert all(
-            linalg.eigvalsh(self.C3) <= 0
-        ), "C3 must be negative semi-definite."
+        assert all(linalg.eigvalsh(self.C3) <= 0), "C3 must be negative semi-definite."
 
         self._nc = None  # lazily computed
 
@@ -256,6 +254,7 @@ class SE2BinghamDistribution(AbstractSE2Distribution):
             Marginal distribution over R^2.
         """
         from pyrecest.backend import to_numpy  # pylint: disable=import-outside-toplevel
+
         C_mat = to_numpy(array(self.C, dtype=float))
         nc = self.nc
 

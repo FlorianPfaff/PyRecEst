@@ -5,7 +5,7 @@ import numpy.testing as npt
 import pyrecest.backend
 
 # pylint: disable=no-name-in-module,no-member,redefined-builtin
-from pyrecest.backend import array, ones, all
+from pyrecest.backend import all, array, ones
 from pyrecest.distributions import SE2BinghamDistribution
 
 
@@ -106,7 +106,10 @@ class TestSE2BinghamDistribution(unittest.TestCase):
         for _ in range(20):
             # Perturb angle and position (stays on S^1 x R^2 manifold)
             angle_p = angle0 + rng.normal(0, 0.15)
-            pos_p = [float(pos0[0]) + rng.normal(0, 0.15), float(pos0[1]) + rng.normal(0, 0.15)]
+            pos_p = [
+                float(pos0[0]) + rng.normal(0, 0.15),
+                float(pos0[1]) + rng.normal(0, 0.15),
+            ]
             ap = array([[angle_p, pos_p[0], pos_p[1]]])
             dq_p = AbstractSE2Distribution.angle_pos_to_dual_quaternion(ap)
             p_perturbed = float(self.dist.pdf(dq_p).reshape(-1)[0])
