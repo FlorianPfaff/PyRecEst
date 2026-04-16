@@ -3,7 +3,6 @@ import warnings
 
 import pyrecest.backend
 from pyrecest.backend import array, linalg
-
 from pyrecest.distributions import (
     HyperhemisphericalWatsonDistribution,
     SdHalfCondSdHalfGridDistribution,

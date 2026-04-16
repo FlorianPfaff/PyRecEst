@@ -17,8 +17,8 @@ from .hypercylindrical_particle_filter import HypercylindricalParticleFilter
 from .hyperhemisphere_cart_prod_particle_filter import (
     HyperhemisphereCartProdParticleFilter,
 )
-from .hyperhemispherical_particle_filter import HyperhemisphericalParticleFilter
 from .hyperhemispherical_grid_filter import HyperhemisphericalGridFilter
+from .hyperhemispherical_particle_filter import HyperhemisphericalParticleFilter
 from .hyperspherical_dummy_filter import HypersphericalDummyFilter
 from .hyperspherical_particle_filter import HypersphericalParticleFilter
 from .hypertoroidal_particle_filter import HypertoroidalParticleFilter

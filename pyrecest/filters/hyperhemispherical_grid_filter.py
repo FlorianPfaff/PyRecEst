@@ -132,9 +132,9 @@ class HyperhemisphericalGridFilter(AbstractGridFilter, HyperhemisphericalFilterM
         d_sys : AbstractDistribution
             System noise distribution with the same ``dim`` as the filter.
         """
-        assert d_sys.dim == self.dim - 1, (
-            f"d_sys.dim ({d_sys.dim}) must equal filter manifold dim ({self.dim - 1})"
-        )
+        assert (
+            d_sys.dim == self.dim - 1
+        ), f"d_sys.dim ({d_sys.dim}) must equal filter manifold dim ({self.dim - 1})"
         warnings.warn(
             "PredictIdentity:Inefficient: Using inefficient prediction. Consider "
             "precalculating the SdHalfCondSdHalfGridDistribution and using "
@@ -159,9 +159,9 @@ class HyperhemisphericalGridFilter(AbstractGridFilter, HyperhemisphericalFilterM
             SdHalfCondSdHalfGridDistribution,
         )
 
-        assert isinstance(f_trans, SdHalfCondSdHalfGridDistribution), (
-            "f_trans must be a SdHalfCondSdHalfGridDistribution"
-        )
+        assert isinstance(
+            f_trans, SdHalfCondSdHalfGridDistribution
+        ), "f_trans must be a SdHalfCondSdHalfGridDistribution"
         assert allclose(
             self._filter_state.get_grid(), f_trans.get_grid(), atol=1e-10
         ), (
@@ -173,7 +173,10 @@ class HyperhemisphericalGridFilter(AbstractGridFilter, HyperhemisphericalFilterM
         n_grid = self._filter_state.grid_values.shape[0]
         manifold_size = self._filter_state.get_manifold_size()
         grid_values_new = (
-            manifold_size / n_grid * f_trans.grid_values @ self._filter_state.grid_values
+            manifold_size
+            / n_grid
+            * f_trans.grid_values
+            @ self._filter_state.grid_values
         )
         self._filter_state = HyperhemisphericalGridDistribution(
             self._filter_state.get_grid(), grid_values_new
@@ -203,7 +206,10 @@ class HyperhemisphericalGridFilter(AbstractGridFilter, HyperhemisphericalFilterM
         if isinstance(meas_noise, HyperhemisphericalWatsonDistribution):
             meas_noise = meas_noise.set_mode(z)
         elif isinstance(meas_noise, WatsonDistribution):
-            from pyrecest.backend import linalg  # pylint: disable=import-outside-toplevel
+            from pyrecest.backend import (  # pylint: disable=import-outside-toplevel
+                linalg,
+            )
+
             standard_pole = array([*([0.0] * (self.dim - 1)), 1.0])
             if linalg.norm(meas_noise.mu - standard_pole) > 1e-6:
                 raise ValueError(
@@ -211,7 +217,10 @@ class HyperhemisphericalGridFilter(AbstractGridFilter, HyperhemisphericalFilterM
                 )
             meas_noise = WatsonDistribution(z, meas_noise.kappa)
         elif isinstance(meas_noise, VonMisesFisherDistribution) and z[-1] == 0:
-            from pyrecest.backend import linalg  # pylint: disable=import-outside-toplevel
+            from pyrecest.backend import (  # pylint: disable=import-outside-toplevel
+                linalg,
+            )
+
             standard_pole = array([*([0.0] * (self.dim - 1)), 1.0])
             if linalg.norm(meas_noise.mu - standard_pole) > 1e-6:
                 raise ValueError(
@@ -283,7 +292,9 @@ class HyperhemisphericalGridFilter(AbstractGridFilter, HyperhemisphericalFilterM
             SdHalfCondSdHalfGridDistribution,
         )
 
-        if isinstance(d_sys, (HyperhemisphericalWatsonDistribution, WatsonDistribution)):
+        if isinstance(
+            d_sys, (HyperhemisphericalWatsonDistribution, WatsonDistribution)
+        ):
             kappa = d_sys.kappa
 
             def trans_cp(grid, _grid):

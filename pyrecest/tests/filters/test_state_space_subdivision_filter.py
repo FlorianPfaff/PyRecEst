@@ -41,18 +41,14 @@ class TestStateSpaceSubdivisionFilterInit(unittest.TestCase):
     def test_init(self):
         state = _make_s1_x_r1_state()
         f = StateSpaceSubdivisionFilter(state)
-        self.assertIsInstance(
-            f.filter_state, StateSpaceSubdivisionGaussianDistribution
-        )
+        self.assertIsInstance(f.filter_state, StateSpaceSubdivisionGaussianDistribution)
 
     def test_set_state(self):
         state = _make_s1_x_r1_state()
         f = StateSpaceSubdivisionFilter(state)
         new_state = _make_s1_x_r1_state(mu_lin=array([3.0]))
         f.filter_state = new_state
-        npt.assert_allclose(
-            f.filter_state.linear_distributions[0].mu, array([3.0])
-        )
+        npt.assert_allclose(f.filter_state.linear_distributions[0].mu, array([3.0]))
 
     def test_set_state_different_size_warns(self):
         state = _make_s1_x_r1_state(n=20)
@@ -139,11 +135,11 @@ class TestStateSpaceSubdivisionFilterPredictLinear(unittest.TestCase):
         def identity_transition(xa, xb):
             # Very sharp wrapped normal centred on xa=xb
             diff = xa[:, 0] - xb[:, 0]
-            from pyrecest.backend import exp  # pylint: disable=import-outside-toplevel,no-name-in-module,no-member
-
-            return exp(-diff**2 / (2 * 0.001**2)) / (
-                0.001 * (2 * pi) ** 0.5
+            from pyrecest.backend import (  # pylint: disable=import-outside-toplevel,no-name-in-module,no-member
+                exp,
             )
+
+            return exp(-(diff**2) / (2 * 0.001**2)) / (0.001 * (2 * pi) ** 0.5)
 
         td = TdCondTdGridDistribution.from_function(
             identity_transition,
@@ -224,7 +220,9 @@ class TestStateSpaceSubdivisionFilterUpdate(unittest.TestCase):
         # Periodic estimate should be close to mu_periodic
         npt.assert_allclose(float(est[0]), mu_periodic, atol=0.3)
         # Linear estimate should be halfway between prior mean and measurement
-        npt.assert_allclose(float(est[1]), (float(mu_lin[0]) + float(mu_lin_meas[0])) / 2.0, atol=0.5)
+        npt.assert_allclose(
+            float(est[1]), (float(mu_lin[0]) + float(mu_lin_meas[0])) / 2.0, atol=0.5
+        )
 
     def test_get_estimate_returns_distribution(self):
         state = _make_s1_x_r1_state()

@@ -40,9 +40,9 @@ class StateSpaceSubdivisionFilter(AbstractFilter, HypercylindricalFilterMixin):
 
     @filter_state.setter
     def filter_state(self, new_state: StateSpaceSubdivisionGaussianDistribution):
-        assert isinstance(new_state, StateSpaceSubdivisionGaussianDistribution), (
-            "filter_state must be a StateSpaceSubdivisionGaussianDistribution."
-        )
+        assert isinstance(
+            new_state, StateSpaceSubdivisionGaussianDistribution
+        ), "filter_state must be a StateSpaceSubdivisionGaussianDistribution."
         if self._filter_state is not None and len(
             self._filter_state.linear_distributions
         ) != len(new_state.linear_distributions):
@@ -154,16 +154,12 @@ class StateSpaceSubdivisionFilter(AbstractFilter, HypercylindricalFilterMixin):
             # state.gd.grid_values has shape (n,) = P(current=j).
             # Broadcasting (n,n) * (n,) multiplies each row i by the
             # current weights, giving weights_joint[i, j] as desired.
-            weights_joint = (
-                transition_density.grid_values * state.gd.grid_values
-            )
+            weights_joint = transition_density.grid_values * state.gd.grid_values
 
             # New marginal for the periodic part (Chapman-Kolmogorov):
             # new_gd_values[i] = (manifold_size / n) * sum_j weights_joint[i, j]
             manifold_size = state.gd.get_manifold_size()
-            new_gd_values = (
-                manifold_size / n_areas * backend_sum(weights_joint, axis=1)
-            )
+            new_gd_values = manifold_size / n_areas * backend_sum(weights_joint, axis=1)
 
             # Apply linear system to each *current* (prior) linear distribution.
             x_preds = []
@@ -232,7 +228,9 @@ class StateSpaceSubdivisionFilter(AbstractFilter, HypercylindricalFilterMixin):
     # Update
     # ------------------------------------------------------------------
 
-    def update(self, likelihood_periodic_grid=None, likelihoods_linear=None):  # pylint: disable=too-many-locals
+    def update(
+        self, likelihood_periodic_grid=None, likelihoods_linear=None
+    ):  # pylint: disable=too-many-locals
         """
         Perform the measurement update step.
 
@@ -274,16 +272,16 @@ class StateSpaceSubdivisionFilter(AbstractFilter, HypercylindricalFilterMixin):
         # Flatten to 1-D to avoid shape-broadcasting surprises (e.g. when
         # pdf() returns shape (n, 1) instead of (n,)).
         if likelihood_periodic_grid is not None:
-            state.gd.grid_values = (
-                state.gd.grid_values
-                * asarray(likelihood_periodic_grid).reshape(-1)
-            )
+            state.gd.grid_values = state.gd.grid_values * asarray(
+                likelihood_periodic_grid
+            ).reshape(-1)
 
         if likelihoods_linear is not None:
             n_likelihoods = len(likelihoods_linear)
-            assert n_likelihoods in (1, n_areas), (
-                "likelihoods_linear must have 1 or n_areas elements."
-            )
+            assert n_likelihoods in (
+                1,
+                n_areas,
+            ), "likelihoods_linear must have 1 or n_areas elements."
 
             # Compute the grid-weight factor for each area i:
             #   factor_i = N(mu_pred_i; mu_like_j, C_pred_i + C_like_j)
@@ -292,9 +290,7 @@ class StateSpaceSubdivisionFilter(AbstractFilter, HypercylindricalFilterMixin):
             pdf_values = []
             for i in range(n_areas):
                 j = i if n_likelihoods > 1 else 0
-                combined_cov = (
-                    state.linear_distributions[i].C + likelihoods_linear[j].C
-                )
+                combined_cov = state.linear_distributions[i].C + likelihoods_linear[j].C
                 temp_g = GaussianDistribution(
                     likelihoods_linear[j].mu, combined_cov, check_validity=False
                 )
