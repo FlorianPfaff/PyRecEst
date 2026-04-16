@@ -1,5 +1,4 @@
 from .abstract_axial_filter import AbstractAxialFilter
-from .axial_kalman_filter import AxialKalmanFilter
 from .abstract_dummy_filter import AbstractDummyFilter
 from .abstract_extended_object_tracker import AbstractExtendedObjectTracker
 from .abstract_filter import AbstractFilter
@@ -8,6 +7,7 @@ from .abstract_multitarget_tracker import AbstractMultitargetTracker
 from .abstract_nearest_neighbor_tracker import AbstractNearestNeighborTracker
 from .abstract_particle_filter import AbstractParticleFilter
 from .abstract_tracker_with_logging import AbstractTrackerWithLogging
+from .axial_kalman_filter import AxialKalmanFilter
 from .bingham_filter import BinghamFilter
 from .circular_particle_filter import CircularParticleFilter
 from .circular_ukf import CircularUKF

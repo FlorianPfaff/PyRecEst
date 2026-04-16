@@ -46,9 +46,7 @@ class AxialKalmanFilter(AbstractAxialFilter):
             new_state, GaussianDistribution
         ), "filter_state must be a GaussianDistribution"
         assert new_state.mu.shape[0] in (2, 4), "Only 2D and 4D states are supported"
-        assert (
-            abs(linalg.norm(new_state.mu) - 1) < 1e-5
-        ), "mean must be a unit vector"
+        assert abs(linalg.norm(new_state.mu) - 1) < 1e-5, "mean must be a unit vector"
         self._filter_state = copy.deepcopy(new_state)
         self._set_composition_operator()
 

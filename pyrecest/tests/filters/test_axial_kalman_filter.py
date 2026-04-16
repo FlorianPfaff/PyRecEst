@@ -40,18 +40,14 @@ class TestAxialKalmanFilter4D(unittest.TestCase):
         """Predicting with identity-rotation noise should not change the mean."""
         self.filter.filter_state = GaussianDistribution(self.mu, self.C)
         noise_mu = array([1.0, 0.0, 0.0, 0.0])
-        self.filter.predict_identity(
-            GaussianDistribution(noise_mu, 0.1 * eye(4))
-        )
+        self.filter.predict_identity(GaussianDistribution(noise_mu, 0.1 * eye(4)))
         est = self.filter.get_point_estimate()
         npt.assert_allclose(self.mu, est, atol=1e-10)
         # Covariance should increase
         self.assertTrue(
             (self.filter.filter_state.C >= self.C).all()
             if hasattr((self.filter.filter_state.C >= self.C), "all")
-            else all(
-                self.filter.filter_state.C.flatten() >= self.C.flatten()
-            )
+            else all(self.filter.filter_state.C.flatten() >= self.C.flatten())
         )
 
     @unittest.skipIf(
@@ -61,9 +57,7 @@ class TestAxialKalmanFilter4D(unittest.TestCase):
     def test_predict_identity_nonzero_mean(self):
         """Predicting with non-identity rotation noise updates the mean correctly."""
         self.filter.filter_state = GaussianDistribution(self.mu, self.C)
-        self.filter.predict_identity(
-            GaussianDistribution(self.mu, 0.1 * eye(4))
-        )
+        self.filter.predict_identity(GaussianDistribution(self.mu, 0.1 * eye(4)))
         est = self.filter.get_point_estimate()
         expected = _quaternion_multiplication(self.mu, self.mu)
         npt.assert_allclose(est, expected, atol=1e-10)
@@ -85,9 +79,7 @@ class TestAxialKalmanFilter4D(unittest.TestCase):
         self.assertTrue(
             (self.filter.filter_state.C <= self.C).all()
             if hasattr((self.filter.filter_state.C <= self.C), "all")
-            else all(
-                self.filter.filter_state.C.flatten() <= self.C.flatten()
-            )
+            else all(self.filter.filter_state.C.flatten() <= self.C.flatten())
         )
 
     @unittest.skipIf(
@@ -118,9 +110,7 @@ class TestAxialKalmanFilter4D(unittest.TestCase):
         """After updating with a non-mode measurement the mean is a unit vector."""
         self.filter.filter_state = GaussianDistribution(self.mu, self.C)
         z = array([0.0, 0.0, 0.0, 1.0])
-        self.filter.update_identity(
-            GaussianDistribution(self.mu, self.C), z
-        )
+        self.filter.update_identity(GaussianDistribution(self.mu, self.C), z)
         est = self.filter.get_point_estimate()
         npt.assert_allclose(linalg.norm(est), 1.0, atol=1e-6)
 
@@ -152,9 +142,7 @@ class TestAxialKalmanFilter2D(unittest.TestCase):
         """Predicting with identity-rotation noise should not change the mean."""
         self.filter.filter_state = GaussianDistribution(self.mu, self.C)
         noise_mu = array([1.0, 0.0])
-        self.filter.predict_identity(
-            GaussianDistribution(noise_mu, 0.1 * eye(2))
-        )
+        self.filter.predict_identity(GaussianDistribution(noise_mu, 0.1 * eye(2)))
         est = self.filter.get_point_estimate()
         npt.assert_allclose(self.mu, est, atol=1e-10)
 
@@ -165,9 +153,7 @@ class TestAxialKalmanFilter2D(unittest.TestCase):
     def test_predict_identity_nonzero_mean(self):
         """Predicting with non-identity rotation noise updates the mean correctly."""
         self.filter.filter_state = GaussianDistribution(self.mu, self.C)
-        self.filter.predict_identity(
-            GaussianDistribution(self.mu, 0.1 * eye(2))
-        )
+        self.filter.predict_identity(GaussianDistribution(self.mu, 0.1 * eye(2)))
         est = self.filter.get_point_estimate()
         expected = _complex_multiplication(self.mu, self.mu)
         npt.assert_allclose(est, expected, atol=1e-10)
@@ -180,9 +166,7 @@ class TestAxialKalmanFilter2D(unittest.TestCase):
         """Updating with z=mu and identity noise should keep the mean and reduce C."""
         self.filter.filter_state = GaussianDistribution(self.mu, self.C)
         z = self.mu
-        self.filter.update_identity(
-            GaussianDistribution(array([1.0, 0.0]), self.C), z
-        )
+        self.filter.update_identity(GaussianDistribution(array([1.0, 0.0]), self.C), z)
         est = self.filter.get_point_estimate()
         npt.assert_allclose(self.mu, est, atol=1e-6)
 
@@ -214,9 +198,7 @@ class TestAxialKalmanFilter2D(unittest.TestCase):
         """After updating with a non-mode measurement the mean is a unit vector."""
         self.filter.filter_state = GaussianDistribution(self.mu, self.C)
         z = array([0.0, 1.0])
-        self.filter.update_identity(
-            GaussianDistribution(self.mu, self.C), z
-        )
+        self.filter.update_identity(GaussianDistribution(self.mu, self.C), z)
         est = self.filter.get_point_estimate()
         npt.assert_allclose(linalg.norm(est), 1.0, atol=1e-10)
 
