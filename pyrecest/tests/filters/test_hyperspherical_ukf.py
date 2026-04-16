@@ -184,7 +184,9 @@ class HypersphericalUKFTest(unittest.TestCase):
         def f(x, v):  # simple additive model, result will be normalized inside
             return array(np.asarray(x, dtype=float) + 0.01 * np.asarray(v, dtype=float))
 
-        self.filter_3d.predict_nonlinear_arbitrary_noise(f, noise_samples, noise_weights)
+        self.filter_3d.predict_nonlinear_arbitrary_noise(
+            f, noise_samples, noise_weights
+        )
         est = self.filter_3d.get_point_estimate()
         npt.assert_allclose(float(linalg.norm(est)), 1.0, atol=1e-10)
 

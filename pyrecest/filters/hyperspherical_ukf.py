@@ -17,7 +17,6 @@ import numpy as np
 import pyrecest.backend
 from bayesian_filters.kalman import MerweScaledSigmaPoints
 from bayesian_filters.kalman import UnscentedKalmanFilter as BayesianFiltersUKF
-
 from pyrecest.backend import array
 from pyrecest.distributions import GaussianDistribution
 
@@ -222,9 +221,7 @@ class HypersphericalUKF(AbstractFilter, HypersphericalFilterMixin):
     # Update
     # ------------------------------------------------------------------
 
-    def update_nonlinear(
-        self, f: Callable, gauss_meas: GaussianDistribution, z
-    ):
+    def update_nonlinear(self, f: Callable, gauss_meas: GaussianDistribution, z):
         """
         Update assuming a nonlinear measurement model:
             z(k) = f(normalize(x(k))) + v_k

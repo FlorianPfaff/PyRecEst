@@ -1,4 +1,5 @@
 """Tests for UKFOnManifolds."""
+
 import unittest
 
 import numpy.testing as npt
@@ -6,13 +7,12 @@ import numpy.testing as npt
 # pylint: disable=no-name-in-module,no-member,redefined-builtin
 import pyrecest.backend
 from pyrecest.backend import all, array, diag, eye, linalg, pi, random, zeros
-
 from pyrecest.filters.ukf_on_manifolds import UKFOnManifolds
-
 
 # ---------------------------------------------------------------------------
 # Helpers: Euclidean manifold (trivial phi / phi_inv, for numerical checks)
 # ---------------------------------------------------------------------------
+
 
 def _phi_euclidean(state, xi):
     return state + xi
@@ -25,6 +25,7 @@ def _phi_inv_euclidean(state_ref, state):
 # ---------------------------------------------------------------------------
 # Helpers: SO(2) minimal example
 # ---------------------------------------------------------------------------
+
 
 def _phi_so2(state, xi):
     """Retraction on SO(2): state is a scalar angle, xi is a scalar tangent."""
@@ -147,8 +148,16 @@ class TestUKFOnManifoldsEuclidean(unittest.TestCase):
         def h(s):
             return s
 
-        common = {"f": f, "h": h, "phi": _phi_euclidean, "phi_inv": _phi_inv_euclidean,
-                  "Q": Q, "R": R, "state0": state0, "P0": P0}
+        common = {
+            "f": f,
+            "h": h,
+            "phi": _phi_euclidean,
+            "phi_inv": _phi_inv_euclidean,
+            "Q": Q,
+            "R": R,
+            "state0": state0,
+            "P0": P0,
+        }
         ukf_scalar = UKFOnManifolds(alpha=1e-3, **common)
         ukf_array = UKFOnManifolds(alpha=[1e-3, 1e-3, 1e-3], **common)
 
@@ -209,11 +218,15 @@ class TestUKFOnManifoldsSO2(unittest.TestCase):
             return array([s])
 
         return UKFOnManifolds(
-            f=f, h=h,
-            phi=_phi_so2, phi_inv=_phi_inv_so2,
-            Q=Q, R=R,
+            f=f,
+            h=h,
+            phi=_phi_so2,
+            phi_inv=_phi_inv_so2,
+            Q=Q,
+            R=R,
             alpha=1e-3,
-            state0=state0, P0=P0,
+            state0=state0,
+            P0=P0,
         )
 
     def test_initialization(self):
@@ -278,7 +291,8 @@ class TestUKFOnManifoldsLinearEquivalence(unittest.TestCase):
             return s
 
         ukf = UKFOnManifolds(
-            f=f, h=h,
+            f=f,
+            h=h,
             phi=lambda s, xi: s + xi[0],
             phi_inv=lambda s_ref, s: array([s - s_ref]),
             Q=array([[Q_val]]),

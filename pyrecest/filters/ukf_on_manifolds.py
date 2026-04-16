@@ -14,7 +14,17 @@ from copy import copy
 from typing import Any, Callable
 
 import pyrecest.backend
-from pyrecest.backend import asarray, broadcast_to, eye, linalg, outer, sqrt, sum, vstack, zeros
+from pyrecest.backend import (
+    asarray,
+    broadcast_to,
+    eye,
+    linalg,
+    outer,
+    sqrt,
+    sum,
+    vstack,
+    zeros,
+)
 
 from .abstract_filter import AbstractFilter
 
@@ -165,9 +175,7 @@ class UKFOnManifolds(AbstractFilter):  # pylint: disable=too-many-instance-attri
             self._state, P = new_state
             self._P = asarray(P)
         else:
-            raise ValueError(
-                "filter_state must be a (state, covariance) tuple"
-            )
+            raise ValueError("filter_state must be a (state, covariance) tuple")
         # Keep AbstractFilter's internal reference consistent
         self._filter_state = (self._state, self._P)
 
@@ -198,7 +206,7 @@ class UKFOnManifolds(AbstractFilter):  # pylint: disable=too-many-instance-attri
         # 2. Covariance contribution from state uncertainty
         w_d = self._w_d
         chol_P = linalg.cholesky(P).T  # rows = columns of upper Chol.
-        xis = w_d.sqrt_d_lambda * chol_P   # shape (d, d)
+        xis = w_d.sqrt_d_lambda * chol_P  # shape (d, d)
 
         new_xis = zeros((2 * self.d, self.d))
         for j in range(self.d):
