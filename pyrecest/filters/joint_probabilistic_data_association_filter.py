@@ -7,10 +7,9 @@ from math import log, pi
 
 import numpy as _np
 import pyrecest.backend
+from pyrecest.distributions import GaussianDistribution
 from scipy.special import logsumexp
 from scipy.stats import chi2
-
-from pyrecest.distributions import GaussianDistribution
 
 from .abstract_nearest_neighbor_tracker import AbstractNearestNeighborTracker
 
@@ -116,11 +115,10 @@ class JointProbabilisticDataAssociationFilter(AbstractNearestNeighborTracker):
 
         identity_matrix = _np.eye(cov_prior.shape[0])
         cov_posterior = (
-            (identity_matrix - kalman_gain @ measurement_matrix)
-            @ cov_prior
-            @ (identity_matrix - kalman_gain @ measurement_matrix).T
-            + kalman_gain @ meas_cov @ kalman_gain.T
-        )
+            identity_matrix - kalman_gain @ measurement_matrix
+        ) @ cov_prior @ (
+            identity_matrix - kalman_gain @ measurement_matrix
+        ).T + kalman_gain @ meas_cov @ kalman_gain.T
         cov_posterior = 0.5 * (cov_posterior + cov_posterior.T)
 
         return mu_posterior, cov_posterior, innovation_covariance, innovation
@@ -377,15 +375,15 @@ class JointProbabilisticDataAssociationFilter(AbstractNearestNeighborTracker):
                 if curr_beta == 0.0:
                     continue
 
-                curr_mean, curr_cov = posterior_hypotheses[target_index][measurement_index]
+                curr_mean, curr_cov = posterior_hypotheses[target_index][
+                    measurement_index
+                ]
                 mean_diff = curr_mean - posterior_mean
                 posterior_covariance += curr_beta * (
                     curr_cov + _np.outer(mean_diff, mean_diff)
                 )
 
-            posterior_covariance = 0.5 * (
-                posterior_covariance + posterior_covariance.T
-            )
+            posterior_covariance = 0.5 * (posterior_covariance + posterior_covariance.T)
             self.filter_bank[target_index].filter_state = GaussianDistribution(
                 posterior_mean,
                 posterior_covariance,

@@ -9,8 +9,8 @@ from pyrecest.backend import (
     pi,
     reshape,
     signal,
-    squeeze,
     sqrt,
+    squeeze,
     stack,
     tile,
     zeros,
@@ -48,7 +48,10 @@ class HypertoroidalFourierFilter(AbstractFilter, HypertoroidalFilterMixin):
         transformation : str, optional
             Transformation to use ('sqrt' or 'identity'). Default is 'sqrt'.
         """
-        if pyrecest.backend.__backend_name__ in ("jax", "pytorch"):  # pylint: disable=no-member
+        if pyrecest.backend.__backend_name__ in (
+            "jax",
+            "pytorch",
+        ):  # pylint: disable=no-member
             raise NotImplementedError(
                 "HypertoroidalFourierFilter is not supported on the "
                 f"{pyrecest.backend.__backend_name__} backend."
@@ -174,9 +177,9 @@ class HypertoroidalFourierFilter(AbstractFilter, HypertoroidalFilterMixin):
                 self._filter_state.transformation,
             )
         z = array(z)
-        assert z.shape == (self._filter_state.dim,), (
-            f"z must have shape ({self._filter_state.dim},), got {z.shape}"
-        )
+        assert z.shape == (
+            self._filter_state.dim,
+        ), f"z must have shape ({self._filter_state.dim},), got {z.shape}"
         d_meas_shifted = d_meas.shift(z)
         self._filter_state = self._filter_state.multiply(
             d_meas_shifted, self._filter_state.coeff_mat.shape
@@ -295,12 +298,12 @@ class HypertoroidalFourierFilter(AbstractFilter, HypertoroidalFilterMixin):
                     self._filter_state.transformation,
                 )
         else:
-            assert isinstance(f_trans, HypertoroidalFourierDistribution), (
-                "f_trans must be a HypertoroidalFourierDistribution or a callable."
-            )
-            assert f_trans.transformation == self._filter_state.transformation, (
-                "f_trans must use the same transformation as the filter state."
-            )
+            assert isinstance(
+                f_trans, HypertoroidalFourierDistribution
+            ), "f_trans must be a HypertoroidalFourierDistribution or a callable."
+            assert (
+                f_trans.transformation == self._filter_state.transformation
+            ), "f_trans must use the same transformation as the filter state."
             assert f_trans.dim == 2 * dim, (
                 "f_trans must be a 2*dim-dimensional HFD (first dim dims for "
                 "x_{k+1}, last dim dims for x_k)."
@@ -337,9 +340,9 @@ class HypertoroidalFourierFilter(AbstractFilter, HypertoroidalFilterMixin):
                 # Along the first dim dimensions (x_{k+1}): pad to 3*n_i-2.
                 # Along the last dim dimensions (x_k): keep as-is.
                 joint_size = c_joint_sqrt.shape  # 2*dim-dimensional
-                pad_shape = tuple(
-                    int(3 * s - 2) for s in joint_size[:dim]
-                ) + tuple(int(s) for s in joint_size[dim:])
+                pad_shape = tuple(int(3 * s - 2) for s in joint_size[:dim]) + tuple(
+                    int(s) for s in joint_size[dim:]
+                )
                 c_joint_padded = zeros(pad_shape, dtype=c_joint_sqrt.dtype)
 
                 # Place c_joint_sqrt in the centre of the padded tensor
@@ -397,9 +400,7 @@ class HypertoroidalFourierFilter(AbstractFilter, HypertoroidalFilterMixin):
                 n_pts = grid_args[0].size
                 grid_shape = grid_args[0].shape
                 # State grid: (dim, n_pts)
-                x_flat = stack(
-                    [g.ravel() for g in grid_args], axis=0
-                )  # (dim, n_pts)
+                x_flat = stack([g.ravel() for g in grid_args], axis=0)  # (dim, n_pts)
                 z_rep = tile(z_col, (1, n_pts))  # (dim, n_pts)
                 vals = likelihood(z_rep, x_flat)  # (n_pts,)
                 return reshape(vals, grid_shape)
@@ -410,6 +411,4 @@ class HypertoroidalFourierFilter(AbstractFilter, HypertoroidalFilterMixin):
                 self._filter_state.transformation,
             )
 
-        self._filter_state = self._filter_state.multiply(
-            likelihood, n_coefficients
-        )
+        self._filter_state = self._filter_state.multiply(likelihood, n_coefficients)

@@ -13,10 +13,6 @@ from .circular_particle_filter import CircularParticleFilter
 from .circular_ukf import CircularUKF
 from .euclidean_particle_filter import EuclideanParticleFilter
 from .global_nearest_neighbor import GlobalNearestNeighbor
-from .joint_probabilistic_data_association_filter import (
-    JPDAF,
-    JointProbabilisticDataAssociationFilter,
-)
 from .goal_conditioned_replay_particle_filter import GoalConditionedReplayParticleFilter
 from .gprhm_tracker import GPRHMTracker
 from .hypercylindrical_particle_filter import HypercylindricalParticleFilter
@@ -27,10 +23,14 @@ from .hyperhemispherical_grid_filter import HyperhemisphericalGridFilter
 from .hyperhemispherical_particle_filter import HyperhemisphericalParticleFilter
 from .hyperspherical_dummy_filter import HypersphericalDummyFilter
 from .hyperspherical_particle_filter import HypersphericalParticleFilter
-from .hypertoroidal_fourier_filter import HypertoroidalFourierFilter
 from .hyperspherical_ukf import HypersphericalUKF
 from .hypertoroidal_dummy_filter import HypertoroidalDummyFilter
+from .hypertoroidal_fourier_filter import HypertoroidalFourierFilter
 from .hypertoroidal_particle_filter import HypertoroidalParticleFilter
+from .joint_probabilistic_data_association_filter import (
+    JPDAF,
+    JointProbabilisticDataAssociationFilter,
+)
 from .kalman_filter import KalmanFilter
 from .kernel_sme_filter import KernelSMEFilter
 from .lin_bounded_particle_filter import LinBoundedParticleFilter

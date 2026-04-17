@@ -49,9 +49,9 @@ class JointProbabilisticDataAssociationFilterTest(unittest.TestCase):
 
     def test_find_association_probabilities_and_map_assignment(self):
         tracker = JPDAF(self.kfs_init, association_param=self.association_param)
-        perfect_meas_ordered = self.meas_mat @ array(
-            [kf.get_point_estimate() for kf in self.kfs_init]
-        ).T
+        perfect_meas_ordered = (
+            self.meas_mat @ array([kf.get_point_estimate() for kf in self.kfs_init]).T
+        )
         association_probabilities, map_association = (
             tracker.find_association_probabilities(
                 perfect_meas_ordered,
@@ -73,18 +73,22 @@ class JointProbabilisticDataAssociationFilterTest(unittest.TestCase):
         npt.assert_array_equal(shuffled_map_association, array([1, 0]))
 
     def test_update_linear_is_robust_to_far_away_clutter(self):
-        tracker_no_clutter = JPDAF(self.kfs_init, association_param=self.association_param)
+        tracker_no_clutter = JPDAF(
+            self.kfs_init, association_param=self.association_param
+        )
         tracker_clutter = JPDAF(self.kfs_init, association_param=self.association_param)
 
-        perfect_meas_ordered = self.meas_mat @ array(
-            [kf.get_point_estimate() for kf in self.kfs_init]
-        ).T
-        cluttered_measurements = array(
-            [[-10.0, 10.0, 100.0], [0.0, 0.0, 100.0]]
+        perfect_meas_ordered = (
+            self.meas_mat @ array([kf.get_point_estimate() for kf in self.kfs_init]).T
         )
+        cluttered_measurements = array([[-10.0, 10.0, 100.0], [0.0, 0.0, 100.0]])
 
-        tracker_no_clutter.update_linear(perfect_meas_ordered, self.meas_mat, self.meas_cov)
-        tracker_clutter.update_linear(cluttered_measurements, self.meas_mat, self.meas_cov)
+        tracker_no_clutter.update_linear(
+            perfect_meas_ordered, self.meas_mat, self.meas_cov
+        )
+        tracker_clutter.update_linear(
+            cluttered_measurements, self.meas_mat, self.meas_cov
+        )
 
         self.assertTrue(
             allclose(
@@ -105,7 +109,9 @@ class JointProbabilisticDataAssociationFilterTest(unittest.TestCase):
             posterior_covariances,
             prior_covariances,
         ):
-            self.assertTrue((posterior_covariance.diagonal() < prior_covariance.diagonal()).all())
+            self.assertTrue(
+                (posterior_covariance.diagonal() < prior_covariance.diagonal()).all()
+            )
 
     def test_symmetric_ambiguous_case_leads_to_symmetric_probabilities(self):
         tracker = JPDAF(

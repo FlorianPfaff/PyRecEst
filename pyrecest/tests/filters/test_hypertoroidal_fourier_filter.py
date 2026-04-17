@@ -37,7 +37,8 @@ class TestHypertoroidalFourierFilter(unittest.TestCase):
     # -----------------------------------------------------------------
 
     @unittest.skipIf(
-        pyrecest.backend.__backend_name__ in ("jax", "pytorch"),  # pylint: disable=no-member
+        pyrecest.backend.__backend_name__
+        in ("jax", "pytorch"),  # pylint: disable=no-member
         reason="Not supported on this backend",
     )
     def test_init_1d_sqrt(self):
@@ -50,7 +51,8 @@ class TestHypertoroidalFourierFilter(unittest.TestCase):
         npt.assert_allclose(_integrate_1d(f.filter_state), 1.0, atol=1e-4)
 
     @unittest.skipIf(
-        pyrecest.backend.__backend_name__ in ("jax", "pytorch"),  # pylint: disable=no-member
+        pyrecest.backend.__backend_name__
+        in ("jax", "pytorch"),  # pylint: disable=no-member
         reason="Not supported on this backend",
     )
     def test_init_1d_identity(self):
@@ -61,7 +63,8 @@ class TestHypertoroidalFourierFilter(unittest.TestCase):
         npt.assert_allclose(_integrate_1d(f.filter_state), 1.0, atol=1e-4)
 
     @unittest.skipIf(
-        pyrecest.backend.__backend_name__ in ("jax", "pytorch"),  # pylint: disable=no-member
+        pyrecest.backend.__backend_name__
+        in ("jax", "pytorch"),  # pylint: disable=no-member
         reason="Not supported on this backend",
     )
     def test_init_int_arg(self):
@@ -70,7 +73,8 @@ class TestHypertoroidalFourierFilter(unittest.TestCase):
         self.assertEqual(f.filter_state.dim, 1)
 
     @unittest.skipIf(
-        pyrecest.backend.__backend_name__ in ("jax", "pytorch"),  # pylint: disable=no-member
+        pyrecest.backend.__backend_name__
+        in ("jax", "pytorch"),  # pylint: disable=no-member
         reason="Not supported on JAX backend",
     )
     def test_init_2d(self):
@@ -86,7 +90,8 @@ class TestHypertoroidalFourierFilter(unittest.TestCase):
     # -----------------------------------------------------------------
 
     @unittest.skipIf(
-        pyrecest.backend.__backend_name__ in ("jax", "pytorch"),  # pylint: disable=no-member
+        pyrecest.backend.__backend_name__
+        in ("jax", "pytorch"),  # pylint: disable=no-member
         reason="Not supported on this backend",
     )
     def test_set_state_hfd(self):
@@ -104,7 +109,8 @@ class TestHypertoroidalFourierFilter(unittest.TestCase):
         self.assertIsInstance(f.filter_state, HypertoroidalFourierDistribution)
 
     @unittest.skipIf(
-        pyrecest.backend.__backend_name__ in ("jax", "pytorch"),  # pylint: disable=no-member
+        pyrecest.backend.__backend_name__
+        in ("jax", "pytorch"),  # pylint: disable=no-member
         reason="Not supported on this backend",
     )
     def test_set_state_non_hfd_converts(self):
@@ -114,13 +120,12 @@ class TestHypertoroidalFourierFilter(unittest.TestCase):
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             f.filter_state = wn
-        self.assertTrue(
-            any("setState:nonFourier" in str(wi.message) for wi in w)
-        )
+        self.assertTrue(any("setState:nonFourier" in str(wi.message) for wi in w))
         self.assertIsInstance(f.filter_state, HypertoroidalFourierDistribution)
 
     @unittest.skipIf(
-        pyrecest.backend.__backend_name__ in ("jax", "pytorch"),  # pylint: disable=no-member
+        pyrecest.backend.__backend_name__
+        in ("jax", "pytorch"),  # pylint: disable=no-member
         reason="Not supported on this backend",
     )
     def test_set_state_different_transformation_warns(self):
@@ -133,34 +138,30 @@ class TestHypertoroidalFourierFilter(unittest.TestCase):
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             f.filter_state = hfd_id
-        self.assertTrue(
-            any("setState:transDiffer" in str(wi.message) for wi in w)
-        )
+        self.assertTrue(any("setState:transDiffer" in str(wi.message) for wi in w))
 
     @unittest.skipIf(
-        pyrecest.backend.__backend_name__ in ("jax", "pytorch"),  # pylint: disable=no-member
+        pyrecest.backend.__backend_name__
+        in ("jax", "pytorch"),  # pylint: disable=no-member
         reason="Not supported on this backend",
     )
     def test_set_state_different_n_coeffs_warns(self):
         """Setting state with a different number of coefficients triggers a warning."""
         f = HypertoroidalFourierFilter((11,), "sqrt")
         wn = WrappedNormalDistribution(array(1.0), array(0.5))
-        hfd_other = HypertoroidalFourierDistribution.from_distribution(
-            wn, (9,), "sqrt"
-        )
+        hfd_other = HypertoroidalFourierDistribution.from_distribution(wn, (9,), "sqrt")
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             f.filter_state = hfd_other
-        self.assertTrue(
-            any("setState:noOfCoeffsDiffer" in str(wi.message) for wi in w)
-        )
+        self.assertTrue(any("setState:noOfCoeffsDiffer" in str(wi.message) for wi in w))
 
     # -----------------------------------------------------------------
     # predict_identity - 1D
     # -----------------------------------------------------------------
 
     @unittest.skipIf(
-        pyrecest.backend.__backend_name__ in ("jax", "pytorch"),  # pylint: disable=no-member
+        pyrecest.backend.__backend_name__
+        in ("jax", "pytorch"),  # pylint: disable=no-member
         reason="Not supported on this backend",
     )
     def test_predict_identity_1d_sqrt(self):
@@ -180,7 +181,8 @@ class TestHypertoroidalFourierFilter(unittest.TestCase):
         npt.assert_allclose(_integrate_1d(f.filter_state), 1.0, atol=1e-4)
 
     @unittest.skipIf(
-        pyrecest.backend.__backend_name__ in ("jax", "pytorch"),  # pylint: disable=no-member
+        pyrecest.backend.__backend_name__
+        in ("jax", "pytorch"),  # pylint: disable=no-member
         reason="Not supported on this backend",
     )
     def test_predict_identity_1d_identity(self):
@@ -200,7 +202,8 @@ class TestHypertoroidalFourierFilter(unittest.TestCase):
         npt.assert_allclose(_integrate_1d(f.filter_state), 1.0, atol=1e-4)
 
     @unittest.skipIf(
-        pyrecest.backend.__backend_name__ in ("jax", "pytorch"),  # pylint: disable=no-member
+        pyrecest.backend.__backend_name__
+        in ("jax", "pytorch"),  # pylint: disable=no-member
         reason="Not supported on this backend",
     )
     def test_predict_identity_1d_auto_converts_noise(self):
@@ -248,7 +251,8 @@ class TestHypertoroidalFourierFilter(unittest.TestCase):
     # -----------------------------------------------------------------
 
     @unittest.skipIf(
-        pyrecest.backend.__backend_name__ in ("jax", "pytorch"),  # pylint: disable=no-member
+        pyrecest.backend.__backend_name__
+        in ("jax", "pytorch"),  # pylint: disable=no-member
         reason="Not supported on this backend",
     )
     def test_update_identity_1d_sqrt(self):
@@ -265,7 +269,8 @@ class TestHypertoroidalFourierFilter(unittest.TestCase):
         npt.assert_allclose(_integrate_1d(f.filter_state), 1.0, atol=1e-4)
 
     @unittest.skipIf(
-        pyrecest.backend.__backend_name__ in ("jax", "pytorch"),  # pylint: disable=no-member
+        pyrecest.backend.__backend_name__
+        in ("jax", "pytorch"),  # pylint: disable=no-member
         reason="Not supported on this backend",
     )
     def test_update_identity_1d_identity(self):
@@ -282,7 +287,8 @@ class TestHypertoroidalFourierFilter(unittest.TestCase):
         npt.assert_allclose(_integrate_1d(f.filter_state), 1.0, atol=1e-4)
 
     @unittest.skipIf(
-        pyrecest.backend.__backend_name__ in ("jax", "pytorch"),  # pylint: disable=no-member
+        pyrecest.backend.__backend_name__
+        in ("jax", "pytorch"),  # pylint: disable=no-member
         reason="Not supported on this backend",
     )
     def test_update_identity_1d_auto_converts_noise(self):
@@ -293,9 +299,7 @@ class TestHypertoroidalFourierFilter(unittest.TestCase):
             warnings.simplefilter("always")
             f.update_identity(meas_noise, array([1.5]))
         self.assertTrue(
-            any(
-                "update_identity:automaticConversion" in str(wi.message) for wi in w
-            )
+            any("update_identity:automaticConversion" in str(wi.message) for wi in w)
         )
         npt.assert_allclose(_integrate_1d(f.filter_state), 1.0, atol=1e-4)
 
@@ -331,7 +335,8 @@ class TestHypertoroidalFourierFilter(unittest.TestCase):
     # -----------------------------------------------------------------
 
     @unittest.skipIf(
-        pyrecest.backend.__backend_name__ in ("jax", "pytorch"),  # pylint: disable=no-member
+        pyrecest.backend.__backend_name__
+        in ("jax", "pytorch"),  # pylint: disable=no-member
         reason="Not supported on JAX backend",
     )
     def test_predict_nonlinear_identity_transform(self):
@@ -352,7 +357,8 @@ class TestHypertoroidalFourierFilter(unittest.TestCase):
         npt.assert_allclose(_integrate_1d(f.filter_state), 1.0, atol=1e-3)
 
     @unittest.skipIf(
-        pyrecest.backend.__backend_name__ in ("jax", "pytorch"),  # pylint: disable=no-member
+        pyrecest.backend.__backend_name__
+        in ("jax", "pytorch"),  # pylint: disable=no-member
         reason="Not supported on JAX backend",
     )
     def test_predict_nonlinear_sqrt_transform(self):
@@ -376,7 +382,8 @@ class TestHypertoroidalFourierFilter(unittest.TestCase):
     # -----------------------------------------------------------------
 
     @unittest.skipIf(
-        pyrecest.backend.__backend_name__ in ("jax", "pytorch"),  # pylint: disable=no-member
+        pyrecest.backend.__backend_name__
+        in ("jax", "pytorch"),  # pylint: disable=no-member
         reason="Not supported on JAX backend",
     )
     def test_predict_via_transition_density_identity(self):
@@ -393,7 +400,8 @@ class TestHypertoroidalFourierFilter(unittest.TestCase):
         npt.assert_allclose(_integrate_1d(f.filter_state), 1.0, atol=1e-3)
 
     @unittest.skipIf(
-        pyrecest.backend.__backend_name__ in ("jax", "pytorch"),  # pylint: disable=no-member
+        pyrecest.backend.__backend_name__
+        in ("jax", "pytorch"),  # pylint: disable=no-member
         reason="Not supported on JAX backend",
     )
     def test_predict_via_transition_density_sqrt(self):
@@ -410,7 +418,8 @@ class TestHypertoroidalFourierFilter(unittest.TestCase):
         npt.assert_allclose(_integrate_1d(f.filter_state), 1.0, atol=1e-3)
 
     @unittest.skipIf(
-        pyrecest.backend.__backend_name__ in ("jax", "pytorch"),  # pylint: disable=no-member
+        pyrecest.backend.__backend_name__
+        in ("jax", "pytorch"),  # pylint: disable=no-member
         reason="Not supported on JAX backend",
     )
     def test_predict_via_transition_density_sqrt_no_truncation(self):
@@ -431,7 +440,8 @@ class TestHypertoroidalFourierFilter(unittest.TestCase):
     # -----------------------------------------------------------------
 
     @unittest.skipIf(
-        pyrecest.backend.__backend_name__ in ("jax", "pytorch"),  # pylint: disable=no-member
+        pyrecest.backend.__backend_name__
+        in ("jax", "pytorch"),  # pylint: disable=no-member
         reason="Not supported on this backend",
     )
     def test_update_nonlinear_with_hfd(self):
@@ -450,7 +460,8 @@ class TestHypertoroidalFourierFilter(unittest.TestCase):
         npt.assert_allclose(_integrate_1d(f.filter_state), 1.0, atol=1e-4)
 
     @unittest.skipIf(
-        pyrecest.backend.__backend_name__ in ("jax", "pytorch"),  # pylint: disable=no-member
+        pyrecest.backend.__backend_name__
+        in ("jax", "pytorch"),  # pylint: disable=no-member
         reason="Not supported on JAX backend",
     )
     def test_update_nonlinear_with_function_and_measurement(self):
@@ -479,7 +490,8 @@ class TestHypertoroidalFourierFilter(unittest.TestCase):
     # -----------------------------------------------------------------
 
     @unittest.skipIf(
-        pyrecest.backend.__backend_name__ in ("jax", "pytorch"),  # pylint: disable=no-member
+        pyrecest.backend.__backend_name__
+        in ("jax", "pytorch"),  # pylint: disable=no-member
         reason="Not supported on this backend",
     )
     def test_get_point_estimate_1d(self):
