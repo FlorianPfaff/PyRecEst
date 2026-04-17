@@ -188,9 +188,7 @@ class SE2UKF(AbstractFilter, SE2FilterMixin):
         for i in range(9):
             for j in range(9):
                 pred_cols.append(
-                    _dual_quaternion_multiply(
-                        state_samples[:, i], noise_samples[:, j]
-                    )
+                    _dual_quaternion_multiply(state_samples[:, i], noise_samples[:, j])
                 )
         pred_samples = column_stack(pred_cols)  # 4×81
 
