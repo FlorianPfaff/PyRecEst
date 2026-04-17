@@ -279,6 +279,7 @@ class AbstractHypertoroidalDistribution(AbstractPeriodicDistribution):
 
                 proposal = proposal_jax
             else:
+
                 def proposal_np(x):
                     return mod(x + random.normal(0.0, 1.0, (self.dim,)), 2.0 * pi)
 

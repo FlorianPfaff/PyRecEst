@@ -62,6 +62,7 @@ class AbstractHyperhemisphericalDistribution(AbstractHypersphereSubsetDistributi
             )
 
             if pyrecest.backend.__backend_name__ in ("numpy", "pytorch"):
+
                 def proposal_np(_):
                     return HyperhemisphericalUniformDistribution(self.dim).sample(1)
 

@@ -1,7 +1,7 @@
+import inspect
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from typing import Union
-import inspect
 
 import pyrecest.backend
 
@@ -123,7 +123,9 @@ class AbstractManifoldSpecificDistribution(ABC):
 
         while i < total_samples:
             x_new = proposal(x)
-            assert x_new.shape == x.shape, "Proposal must return a vector of same shape as input"
+            assert (
+                x_new.shape == x.shape
+            ), "Proposal must return a vector of same shape as input"
             pdfx_new = self.pdf(x_new)
             a = pdfx_new / pdfx
             if a.item() > 1 or a.item() > random.rand(1):
@@ -135,11 +137,12 @@ class AbstractManifoldSpecificDistribution(ABC):
         relevant_samples = s[burn_in::skipping, :]
         return squeeze(relevant_samples)
 
+
 # pylint: disable=too-many-positional-arguments,too-many-locals,too-many-arguments
 def sample_metropolis_hastings_jax(
     key,
-    log_pdf,      # function: x -> log p(x)
-    proposal,     # function: (key, x) -> x_prop
+    log_pdf,  # function: x -> log p(x)
+    proposal,  # function: (key, x) -> x_prop
     start_point,
     n: int,
     burn_in: int = 10,
@@ -218,14 +221,11 @@ def _assert_proposal_supports_key(proposal: Callable):
 
     # Count positional(-or-keyword) parameters
     num_positional = sum(
-        p.kind in (inspect.Parameter.POSITIONAL_ONLY,
-                   inspect.Parameter.POSITIONAL_OR_KEYWORD)
+        p.kind
+        in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD)
         for p in params
     )
-    has_var_positional = any(
-        p.kind == inspect.Parameter.VAR_POSITIONAL
-        for p in params
-    )
+    has_var_positional = any(p.kind == inspect.Parameter.VAR_POSITIONAL for p in params)
 
     if has_var_positional or num_positional >= 2:
         # Looks compatible with (key, x)
