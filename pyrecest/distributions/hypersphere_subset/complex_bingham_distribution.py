@@ -8,9 +8,10 @@ Reference:
   Kent, J. T. "The Complex Bingham Distribution and Shape Analysis."
   Journal of the Royal Statistical Society. Series B (Methodological), 1994, 285-299.
 """
-from copy import copy
-from scipy.optimize import least_squares
 
+from copy import copy
+
+import pyrecest.backend
 from pyrecest.backend import (
     abs,
     all,
@@ -22,8 +23,8 @@ from pyrecest.backend import (
     concatenate,
     conj,
     cumsum,
-    diff,
     diag,
+    diff,
     einsum,
     empty,
     exp,
@@ -43,8 +44,7 @@ from pyrecest.backend import (
     sum,
     zeros,
 )
-
-import pyrecest.backend
+from scipy.optimize import least_squares
 
 from .abstract_complex_hyperspherical_distribution import (
     AbstractComplexHypersphericalDistribution,
@@ -160,9 +160,7 @@ class ComplexBinghamDistribution(AbstractComplexHypersphericalDistribution):
                         # Nearly-uniform truncated exponential
                         S[i] = U[i]
                     else:
-                        S[i] = -(1.0 / Lam[i]) * log(
-                            1.0 - U[i] * (1.0 - exp(-Lam[i]))
-                        )
+                        S[i] = -(1.0 / Lam[i]) * log(1.0 - U[i] * (1.0 - exp(-Lam[i])))
                 if sum(S[:-1]) < 1.0:
                     break
             S[-1] = 1.0 - sum(S[:-1])
@@ -218,9 +216,7 @@ class ComplexBinghamDistribution(AbstractComplexHypersphericalDistribution):
 
         if all(abs(eigenvalues) < 1e-3):
             # All eigenvalues near zero: use limiting uniform value C = 2*pi^d / (d-1)!
-            log_C_shifted = log(2.0) + d * log(pi) - float(
-                sum(log(arange(1, d)))
-            )
+            log_C_shifted = log(2.0) + d * log(pi) - float(sum(log(arange(1, d))))
         else:
             # Analytical formula: C = 2*pi^d * sum_j exp(lambda_j) / prod_{k!=j}(lambda_j - lambda_k)
             log_C_shifted = ComplexBinghamDistribution._log_norm_from_eigenvalues(

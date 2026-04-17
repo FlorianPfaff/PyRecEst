@@ -63,7 +63,9 @@ class GaussianMixturePHDState:
         return 0 if not self.dists else self.dists[0].dim
 
 
-class GaussianMixturePHDFilter(AbstractMultitargetTracker):  # pylint: disable=too-many-instance-attributes
+class GaussianMixturePHDFilter(
+    AbstractMultitargetTracker
+):  # pylint: disable=too-many-instance-attributes
     """
     Lightweight Gaussian-mixture PHD filter for linear/Gaussian multitarget tracking.
 
@@ -128,9 +130,7 @@ class GaussianMixturePHDFilter(AbstractMultitargetTracker):  # pylint: disable=t
     @property
     def dim(self) -> int:
         if self._dim is None:
-            warnings.warn(
-                "Filter state is not initialized yet, output 0 as dimension."
-            )
+            warnings.warn("Filter state is not initialized yet, output 0 as dimension.")
             return 0
         return self._dim
 
@@ -232,7 +232,9 @@ class GaussianMixturePHDFilter(AbstractMultitargetTracker):  # pylint: disable=t
     def _gaussian_likelihood(innovation, covariance):
         covariance = GaussianMixturePHDFilter._symmetrize(covariance)
         determinant = max(float(linalg.det(covariance)), 1e-12)
-        mahalanobis_distance = float(dot(innovation, linalg.solve(covariance, innovation)))
+        mahalanobis_distance = float(
+            dot(innovation, linalg.solve(covariance, innovation))
+        )
         normalization = (2.0 * pi) ** (innovation.shape[0] / 2.0) * determinant**0.5
         return float(exp(-0.5 * mahalanobis_distance) / normalization)
 
@@ -298,8 +300,8 @@ class GaussianMixturePHDFilter(AbstractMultitargetTracker):  # pylint: disable=t
             )
             predicted_weights.append(float(survival_probability * weight))
 
-        birth_components_resolved, birth_weights_resolved = self._resolve_birth_arguments(
-            birth_components, birth_weights
+        birth_components_resolved, birth_weights_resolved = (
+            self._resolve_birth_arguments(birth_components, birth_weights)
         )
         predicted_components.extend(copy.deepcopy(birth_components_resolved))
 
@@ -379,8 +381,7 @@ class GaussianMixturePHDFilter(AbstractMultitargetTracker):  # pylint: disable=t
 
                 posterior_mean = component.mu + kalman_gain @ innovation
                 posterior_covariance = (
-                    component.C
-                    - kalman_gain @ innovation_covariance @ kalman_gain.T
+                    component.C - kalman_gain @ innovation_covariance @ kalman_gain.T
                 )
                 posterior_covariance = self._symmetrize(posterior_covariance)
 
@@ -388,9 +389,7 @@ class GaussianMixturePHDFilter(AbstractMultitargetTracker):  # pylint: disable=t
                     innovation, innovation_covariance
                 )
                 weight = (
-                    detection_probability
-                    * self._weights[component_index]
-                    * likelihood
+                    detection_probability * self._weights[component_index] * likelihood
                 )
 
                 measurement_components.append(

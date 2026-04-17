@@ -4,7 +4,6 @@ import pyrecest.backend
 
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import array, eye, isinf, isnan, logical_or, random, zeros
-
 from pyrecest.distributions import GaussianDistribution
 from pyrecest.filters import GoalConditionedReplayParticleFilter
 

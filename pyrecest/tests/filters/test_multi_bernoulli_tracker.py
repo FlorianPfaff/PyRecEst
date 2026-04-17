@@ -83,9 +83,7 @@ class MultiBernoulliTrackerTest(unittest.TestCase):
         )
         npt.assert_array_equal(
             tracker.bernoulli_components[0].filter_state.C,
-            scipy.linalg.block_diag(
-                [[3.0, 1.0], [1.0, 2.0]], [[3.0, 1.0], [1.0, 2.0]]
-            ),
+            scipy.linalg.block_diag([[3.0, 1.0], [1.0, 2.0]], [[3.0, 1.0], [1.0, 2.0]]),
         )
         self.assertAlmostEqual(
             tracker.bernoulli_components[0].existence_probability,

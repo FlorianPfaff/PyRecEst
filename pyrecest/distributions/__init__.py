@@ -115,6 +115,9 @@ from .conditional.td_cond_td_grid_distribution import TdCondTdGridDistribution
 from .custom_hyperrectangular_distribution import CustomHyperrectangularDistribution
 from .disk_uniform_distribution import DiskUniformDistribution
 from .ellipsoidal_ball_uniform_distribution import EllipsoidalBallUniformDistribution
+from .hypersphere_subset.abstract_complex_hyperspherical_distribution import (
+    AbstractComplexHypersphericalDistribution,
+)
 from .hypersphere_subset.abstract_hemispherical_distribution import (
     AbstractHemisphericalDistribution,
 )
@@ -146,13 +149,10 @@ from .hypersphere_subset.abstract_spherical_harmonics_distribution import (
     AbstractSphericalHarmonicsDistribution,
 )
 from .hypersphere_subset.bingham_distribution import BinghamDistribution
-from .hypersphere_subset.abstract_complex_hyperspherical_distribution import (
-    AbstractComplexHypersphericalDistribution,
-)
-from .hypersphere_subset.complex_bingham_distribution import ComplexBinghamDistribution
 from .hypersphere_subset.complex_angular_central_gaussian_distribution import (
     ComplexAngularCentralGaussianDistribution,
 )
+from .hypersphere_subset.complex_bingham_distribution import ComplexBinghamDistribution
 from .hypersphere_subset.custom_hemispherical_distribution import (
     CustomHemisphericalDistribution,
 )

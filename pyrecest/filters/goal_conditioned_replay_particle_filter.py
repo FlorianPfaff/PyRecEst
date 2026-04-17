@@ -1,4 +1,3 @@
-
 """Goal-conditioned replay particle filter with sparse jumps and goal remapping.
 
 This version consolidates the strongest ideas from the earlier particle-filter
@@ -387,9 +386,7 @@ class GoalConditionedReplayParticleFilter(EuclideanParticleFilter):
 
         if isinstance(state, LinearDiracDistribution):
             if state.dim != self.state_dim:
-                raise ValueError(
-                    f"initial_state must have dimension {self.state_dim}"
-                )
+                raise ValueError(f"initial_state must have dimension {self.state_dim}")
             if state.d.shape[0] == self.n_particles:
                 return state
             samples = state.sample(self.n_particles)
@@ -403,9 +400,7 @@ class GoalConditionedReplayParticleFilter(EuclideanParticleFilter):
 
         if isinstance(state, AbstractLinearDistribution):
             if state.dim != self.state_dim:
-                raise ValueError(
-                    f"initial_state must have dimension {self.state_dim}"
-                )
+                raise ValueError(f"initial_state must have dimension {self.state_dim}")
             samples = state.sample(self.n_particles)
             samples = self._coerce_particle_matrix(
                 samples,
@@ -503,7 +498,9 @@ class GoalConditionedReplayParticleFilter(EuclideanParticleFilter):
                 )
         return self
 
-    def set_state_components(self, positions, velocities=None, goals=None, weights=None):
+    def set_state_components(
+        self, positions, velocities=None, goals=None, weights=None
+    ):
         """Directly set particle states from component samples or distributions."""
         position_samples = self._coerce_component_samples(
             positions, self.n_particles, "positions"
@@ -511,9 +508,7 @@ class GoalConditionedReplayParticleFilter(EuclideanParticleFilter):
         velocity_samples = self._coerce_component_samples(
             velocities, self.n_particles, "velocities"
         )
-        goal_samples = self._coerce_component_samples(
-            goals, self.n_particles, "goals"
-        )
+        goal_samples = self._coerce_component_samples(goals, self.n_particles, "goals")
 
         self.filter_state = LinearDiracDistribution(
             concatenate([position_samples, velocity_samples, goal_samples], axis=1),
@@ -581,7 +576,9 @@ class GoalConditionedReplayParticleFilter(EuclideanParticleFilter):
         self._candidate_goal_weights = goal_prior_weights
         return self
 
-    def sample_goals_from_candidates(self, candidate_goals=None, goal_prior_weights=None):
+    def sample_goals_from_candidates(
+        self, candidate_goals=None, goal_prior_weights=None
+    ):
         """Replace the current goal particles by samples from a goal bank."""
         if candidate_goals is None:
             if self._candidate_goals is None:
@@ -949,7 +946,9 @@ class GoalConditionedReplayParticleFilter(EuclideanParticleFilter):
         process_noise = self.process_noise if process_noise is None else process_noise
         goal_noise = self.goal_noise if goal_noise is None else goal_noise
         jump_probability = (
-            self.jump_probability if jump_probability is None else float(jump_probability)
+            self.jump_probability
+            if jump_probability is None
+            else float(jump_probability)
         )
         jump_distribution = (
             self.jump_distribution if jump_distribution is None else jump_distribution
@@ -978,9 +977,7 @@ class GoalConditionedReplayParticleFilter(EuclideanParticleFilter):
         if dt <= 0.0:
             raise ValueError("dt must be positive")
         self._validate_probability(jump_probability, "jump_probability")
-        self._validate_probability(
-            goal_reset_probability, "goal_reset_probability"
-        )
+        self._validate_probability(goal_reset_probability, "goal_reset_probability")
         self._validate_component_distribution(process_noise, "process_noise")
         self._validate_component_distribution(goal_noise, "goal_noise")
         self._validate_component_distribution(jump_distribution, "jump_distribution")
@@ -1189,14 +1186,19 @@ class GoalConditionedReplayParticleFilter(EuclideanParticleFilter):
         )
 
     def _resolve_measurement_and_noise_args(self, measurement, meas_noise):
-        if self._looks_like_measurement_distribution(measurement) and not self._looks_like_measurement_distribution(meas_noise):
+        if self._looks_like_measurement_distribution(
+            measurement
+        ) and not self._looks_like_measurement_distribution(meas_noise):
             return meas_noise, measurement
         return measurement, meas_noise
 
     def _component_measurement_matrix(self, component: str):
         if component == "position":
             return concatenate(
-                [eye(self.position_dim), zeros((self.position_dim, 2 * self.position_dim))],
+                [
+                    eye(self.position_dim),
+                    zeros((self.position_dim, 2 * self.position_dim)),
+                ],
                 axis=1,
             )
         if component == "velocity":
@@ -1210,7 +1212,10 @@ class GoalConditionedReplayParticleFilter(EuclideanParticleFilter):
             )
         if component == "goal":
             return concatenate(
-                [zeros((self.position_dim, 2 * self.position_dim)), eye(self.position_dim)],
+                [
+                    zeros((self.position_dim, 2 * self.position_dim)),
+                    eye(self.position_dim),
+                ],
                 axis=1,
             )
         raise ValueError("component must be 'position', 'velocity', or 'goal'")

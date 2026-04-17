@@ -11,14 +11,13 @@ from pyrecest.backend import (
     linalg,
     log,
     mean,
-    pi,
     ones,
+    pi,
     random,
     real,
     sort,
     sqrt,
 )
-
 from pyrecest.distributions import ComplexBinghamDistribution
 
 
@@ -41,9 +40,7 @@ class TestComplexBinghamDistribution(unittest.TestCase):
     def test_constructor_hermitian_check(self):
         """Non-Hermitian matrix should raise AssertionError."""
         with self.assertRaises(AssertionError):
-            ComplexBinghamDistribution(
-                array([[1.0, 1j], [0.0, 1.0]])
-            )
+            ComplexBinghamDistribution(array([[1.0, 1j], [0.0, 1.0]]))
 
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ == "jax",  # pylint: disable=no-member
@@ -52,6 +49,7 @@ class TestComplexBinghamDistribution(unittest.TestCase):
     def test_log_norm_const_finite(self):
         """log_norm_const must be finite."""
         import math
+
         self.assertTrue(math.isfinite(self.cB2.log_norm_const))
         self.assertTrue(math.isfinite(self.cB3.log_norm_const))
 
@@ -170,9 +168,11 @@ class TestComplexBinghamDistribution(unittest.TestCase):
     def test_log_norm_equal_eigenvalues(self):
         """Equal eigenvalues (uniform) should not raise."""
         from pyrecest.backend import zeros
+
         B = zeros((3, 3), dtype=complex)
         log_norm = ComplexBinghamDistribution.log_norm(B)
         import math
+
         self.assertTrue(math.isfinite(log_norm))
 
     @unittest.skipIf(

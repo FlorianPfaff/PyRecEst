@@ -4,13 +4,10 @@ from math import log
 from numbers import Real
 
 import pyrecest.backend
-from scipy.linalg import pinv
-from scipy.optimize import linear_sum_assignment
-from scipy.stats import chi2
 
 # pylint: disable=no-name-in-module,no-member
+from pyrecest.backend import all as backend_all
 from pyrecest.backend import (
-    all as backend_all,
     argmax,
     array,
     empty,
@@ -20,6 +17,9 @@ from pyrecest.backend import (
     stack,
 )
 from pyrecest.distributions import GaussianDistribution
+from scipy.linalg import pinv
+from scipy.optimize import linear_sum_assignment
+from scipy.stats import chi2
 
 from .abstract_multitarget_tracker import AbstractMultitargetTracker
 from .kalman_filter import KalmanFilter
@@ -169,9 +169,7 @@ class MultiBernoulliTracker(AbstractMultitargetTracker):
     def _get_gating_distance_threshold(self, measurement_dimension):
         if self.tracker_param["gating_distance_threshold"] is not None:
             return self.tracker_param["gating_distance_threshold"]
-        return chi2.ppf(
-            self.tracker_param["gating_probability"], measurement_dimension
-        )
+        return chi2.ppf(self.tracker_param["gating_probability"], measurement_dimension)
 
     def _predicted_measurement_moments(
         self, component, measurement_matrix, measurement_covariance
@@ -204,7 +202,9 @@ class MultiBernoulliTracker(AbstractMultitargetTracker):
         return likelihood, mahalanobis_distance_squared
 
     # pylint: disable=too-many-locals
-    def _build_association_matrix(self, measurements, measurement_matrix, cov_mats_meas):
+    def _build_association_matrix(
+        self, measurements, measurement_matrix, cov_mats_meas
+    ):
         num_components = self.get_number_of_components()
         num_measurements = measurements.shape[1]
         invalid_cost = 1e12
@@ -217,7 +217,9 @@ class MultiBernoulliTracker(AbstractMultitargetTracker):
         clutter_intensity = max(float(self.tracker_param["clutter_intensity"]), 1e-12)
 
         for i, component in enumerate(self.bernoulli_components):
-            predicted_existence = self._clip_probability(component.existence_probability)
+            predicted_existence = self._clip_probability(
+                component.existence_probability
+            )
             detection_probability = self._get_component_probability(
                 self.tracker_param["detection_probability"], i
             )
@@ -228,7 +230,9 @@ class MultiBernoulliTracker(AbstractMultitargetTracker):
             association_matrix[i, num_measurements + i] = -log(missed_detection_weight)
 
             for j in range(num_measurements):
-                measurement_covariance = self._get_measurement_covariance(cov_mats_meas, j)
+                measurement_covariance = self._get_measurement_covariance(
+                    cov_mats_meas, j
+                )
                 likelihood, mahalanobis_distance_squared = (
                     self._measurement_likelihood_and_distance(
                         component,
@@ -306,10 +310,7 @@ class MultiBernoulliTracker(AbstractMultitargetTracker):
     def get_existence_probabilities(self):
         """Return the existence probabilities of all Bernoulli components."""
         return array(
-            [
-                component.existence_probability
-                for component in self.bernoulli_components
-            ]
+            [component.existence_probability for component in self.bernoulli_components]
         )
 
     def get_cardinality_distribution(self):
@@ -401,7 +402,9 @@ class MultiBernoulliTracker(AbstractMultitargetTracker):
             reverse=True,
         )[:maximum_number_of_components]
 
-    def predict_linear(self, system_matrices, sys_noises, inputs=None, birth_components=None):
+    def predict_linear(
+        self, system_matrices, sys_noises, inputs=None, birth_components=None
+    ):
         """Predict all Bernoulli components with a linear/Gaussian model."""
         if isinstance(sys_noises, GaussianDistribution):
             assert backend_all(sys_noises.mu == 0)
@@ -486,7 +489,9 @@ class MultiBernoulliTracker(AbstractMultitargetTracker):
             current_detection_probability = self._get_component_probability(
                 detection_probability, i
             )
-            predicted_existence = self._clip_probability(component.existence_probability)
+            predicted_existence = self._clip_probability(
+                component.existence_probability
+            )
             assigned_column = int(association[i]) if association.size > i else -1
 
             if assigned_column < num_measurements:

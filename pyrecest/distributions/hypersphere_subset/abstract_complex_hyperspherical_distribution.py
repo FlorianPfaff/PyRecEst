@@ -3,7 +3,6 @@ from abc import abstractmethod
 
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import pi
-
 from pyrecest.distributions.abstract_manifold_specific_distribution import (
     AbstractManifoldSpecificDistribution,
 )
