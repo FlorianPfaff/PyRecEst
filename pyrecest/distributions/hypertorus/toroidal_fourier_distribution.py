@@ -226,7 +226,9 @@ class ToroidalFourierDistribution(
 
         cov = array([[float(cov_11), float(cov_12)], [float(cov_12), float(cov_22)]])
 
-        from .toroidal_wrapped_normal_distribution import ToroidalWrappedNormalDistribution
+        from .toroidal_wrapped_normal_distribution import (
+            ToroidalWrappedNormalDistribution,
+        )
 
         return ToroidalWrappedNormalDistribution(mu, cov)
 
@@ -310,5 +312,7 @@ class ToroidalFourierDistribution(
         elif len(n_coefficients) == 1:
             n_coefficients = (int(n_coefficients[0]), int(n_coefficients[0]))
         n_coefficients = tuple(int(n) for n in n_coefficients)
-        hfd = super().from_distribution(distribution, n_coefficients, desired_transformation)
+        hfd = super().from_distribution(
+            distribution, n_coefficients, desired_transformation
+        )
         return cls(hfd.coeff_mat, hfd.transformation)

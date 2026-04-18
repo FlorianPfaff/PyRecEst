@@ -1,4 +1,3 @@
-
 """Goal-conditioned replay IMM-style filter.
 
 This filter combines
@@ -35,20 +34,24 @@ from pyrecest.backend import (
     atleast_1d,
     concatenate,
     diag,
-    eye,
     exp,
+    eye,
     full,
+    linalg,
     log,
-    max as backend_max,
+)
+from pyrecest.backend import max as backend_max
+from pyrecest.backend import (
     maximum,
     ndim,
     outer,
     pi,
     reshape,
-    sum as backend_sum,
+)
+from pyrecest.backend import sum as backend_sum
+from pyrecest.backend import (
     zeros,
 )
-from pyrecest.backend import linalg
 from pyrecest.distributions import GaussianDistribution, LinearDiracDistribution
 
 from .abstract_filter import AbstractFilter
@@ -148,9 +151,16 @@ class GoalConditionedReplayIMMFilter(  # pylint: disable=too-many-instance-attri
         if candidate_goals is None:
             candidate_goals = goal_candidates
         elif goal_candidates is not None:
-            goal_candidates = self._parse_candidate_goals(goal_candidates, raw_state_dim)
-            candidate_goals = self._parse_candidate_goals(candidate_goals, raw_state_dim)
-            if candidate_goals.shape != goal_candidates.shape or backend_sum((candidate_goals - goal_candidates) ** 2) > 0:
+            goal_candidates = self._parse_candidate_goals(
+                goal_candidates, raw_state_dim
+            )
+            candidate_goals = self._parse_candidate_goals(
+                candidate_goals, raw_state_dim
+            )
+            if (
+                candidate_goals.shape != goal_candidates.shape
+                or backend_sum((candidate_goals - goal_candidates) ** 2) > 0
+            ):
                 raise ValueError(
                     "candidate_goals and goal_candidates must match when both are provided"
                 )
@@ -180,16 +190,20 @@ class GoalConditionedReplayIMMFilter(  # pylint: disable=too-many-instance-attri
         )
 
         self.smooth_sys_noise_cov = self._as_square_matrix(
-            smooth_sys_noise_cov
-            if smooth_sys_noise_cov is not None
-            else 0.05 * eye(self.state_dim),
+            (
+                smooth_sys_noise_cov
+                if smooth_sys_noise_cov is not None
+                else 0.05 * eye(self.state_dim)
+            ),
             self.state_dim,
             "smooth_sys_noise_cov",
         )
         self.jump_sys_noise_cov = self._as_square_matrix(
-            jump_sys_noise_cov
-            if jump_sys_noise_cov is not None
-            else 1.0 * eye(self.state_dim),
+            (
+                jump_sys_noise_cov
+                if jump_sys_noise_cov is not None
+                else 1.0 * eye(self.state_dim)
+            ),
             self.state_dim,
             "jump_sys_noise_cov",
         )
@@ -222,9 +236,11 @@ class GoalConditionedReplayIMMFilter(  # pylint: disable=too-many-instance-attri
             )
 
         self.goal_prior = self._validate_probability_vector(
-            full((self.n_goals,), 1.0 / self.n_goals)
-            if goal_prior is None
-            else goal_prior,
+            (
+                full((self.n_goals,), 1.0 / self.n_goals)
+                if goal_prior is None
+                else goal_prior
+            ),
             self.n_goals,
             "goal_prior",
         )
@@ -365,7 +381,9 @@ class GoalConditionedReplayIMMFilter(  # pylint: disable=too-many-instance-attri
             return distribution[0], distribution[1]
         if hasattr(distribution, "mean") and callable(distribution.mean):
             mean = distribution.mean()
-            if hasattr(distribution, "covariance") and callable(distribution.covariance):
+            if hasattr(distribution, "covariance") and callable(
+                distribution.covariance
+            ):
                 cov = distribution.covariance()
             elif hasattr(distribution, "cov") and callable(distribution.cov):
                 cov = distribution.cov()
@@ -708,9 +726,12 @@ class GoalConditionedReplayIMMFilter(  # pylint: disable=too-many-instance-attri
         for mode_index in range(self.n_modes):
             total = 0.0
             for goal_index in range(self.n_goals):
-                total = total + self._component_weights[
-                    self._component_index(goal_index, mode_index)
-                ]
+                total = (
+                    total
+                    + self._component_weights[
+                        self._component_index(goal_index, mode_index)
+                    ]
+                )
             probabilities[mode_index] = total
         return probabilities
 
@@ -802,9 +823,7 @@ class GoalConditionedReplayIMMFilter(  # pylint: disable=too-many-instance-attri
         available and only the discrete goal/mode posterior should be updated.
         """
         if (likelihoods is None) == (log_likelihoods is None):
-            raise ValueError(
-                "Provide exactly one of likelihoods or log_likelihoods"
-            )
+            raise ValueError("Provide exactly one of likelihoods or log_likelihoods")
 
         if likelihoods is not None:
             log_likelihoods = log(
@@ -814,9 +833,7 @@ class GoalConditionedReplayIMMFilter(  # pylint: disable=too-many-instance-attri
             log_likelihoods = atleast_1d(array(log_likelihoods))
 
         if log_likelihoods.shape != (self.n_components,):
-            raise ValueError(
-                f"Expected {self.n_components} component likelihoods"
-            )
+            raise ValueError(f"Expected {self.n_components} component likelihoods")
 
         raw_log_weights = log_likelihoods + log(
             maximum(self._component_weights, self.weight_floor)
@@ -941,9 +958,7 @@ class GoalConditionedReplayIMMFilter(  # pylint: disable=too-many-instance-attri
         else:
             bias = atleast_1d(array(sys_input))
             if bias.shape != (self.state_dim,):
-                raise ValueError(
-                    f"sys_input must have shape ({self.state_dim},)"
-                )
+                raise ValueError(f"sys_input must have shape ({self.state_dim},)")
         return transition, bias, noise_cov
 
     def _predict_with_models(self, model_builder: Callable[[int, int], tuple]):
@@ -1051,9 +1066,9 @@ class GoalConditionedReplayIMMFilter(  # pylint: disable=too-many-instance-attri
             delta[dim_index] = self.finite_difference_epsilon
             forward = atleast_1d(array(function(x + delta)))
             backward = atleast_1d(array(function(x - delta)))
-            jacobian[:, dim_index] = (
-                forward - backward
-            ) / (2.0 * self.finite_difference_epsilon)
+            jacobian[:, dim_index] = (forward - backward) / (
+                2.0 * self.finite_difference_epsilon
+            )
 
         return jacobian, base_value
 
@@ -1165,7 +1180,9 @@ class GoalConditionedReplayIMMFilter(  # pylint: disable=too-many-instance-attri
                 innovation, innovation_cov
             )
             raw_log_weights[component_index] = (
-                log(maximum(self._component_weights[component_index], self.weight_floor))
+                log(
+                    maximum(self._component_weights[component_index], self.weight_floor)
+                )
                 + innovation_log_density
             )
 
@@ -1203,10 +1220,9 @@ class GoalConditionedReplayIMMFilter(  # pylint: disable=too-many-instance-attri
             )
             innovation_cov = self._regularize_covariance(innovation_cov)
 
-            raw_log_weights[component_index] = (
-                log(maximum(self._component_weights[component_index], self.weight_floor))
-                + self._log_gaussian_density(innovation, innovation_cov)
-            )
+            raw_log_weights[component_index] = log(
+                maximum(self._component_weights[component_index], self.weight_floor)
+            ) + self._log_gaussian_density(innovation, innovation_cov)
 
         return self._logsumexp(raw_log_weights)
 
@@ -1215,9 +1231,7 @@ class GoalConditionedReplayIMMFilter(  # pylint: disable=too-many-instance-attri
         solved = linalg.solve(covariance, innovation)
         quadratic_form = innovation.T @ solved
         det_covariance = maximum(linalg.det(covariance), self.weight_floor)
-        return -0.5 * (
-            dim * log(2.0 * pi) + log(det_covariance) + quadratic_form
-        )
+        return -0.5 * (dim * log(2.0 * pi) + log(det_covariance) + quadratic_form)
 
     @staticmethod
     def _looks_like_measurement_distribution(value) -> bool:
@@ -1226,11 +1240,15 @@ class GoalConditionedReplayIMMFilter(  # pylint: disable=too-many-instance-attri
         )
 
     def _resolve_measurement_and_noise_args(self, measurement, meas_noise):
-        if self._looks_like_measurement_distribution(measurement) and not self._looks_like_measurement_distribution(meas_noise):
+        if self._looks_like_measurement_distribution(
+            measurement
+        ) and not self._looks_like_measurement_distribution(meas_noise):
             return meas_noise, measurement
         return measurement, meas_noise
 
-    def update_identity(self, measurement, meas_noise, return_log_marginal: bool = False):
+    def update_identity(
+        self, measurement, meas_noise, return_log_marginal: bool = False
+    ):
         measurement, meas_noise = self._resolve_measurement_and_noise_args(
             measurement,
             meas_noise,
@@ -1302,9 +1320,7 @@ class GoalConditionedReplayIMMFilter(  # pylint: disable=too-many-instance-attri
         if measurement_matrix.ndim != 2:
             raise ValueError("measurement_matrix must be two-dimensional")
         if measurement_matrix.shape[1] != self.state_dim:
-            raise ValueError(
-                f"measurement_matrix must have {self.state_dim} columns"
-            )
+            raise ValueError(f"measurement_matrix must have {self.state_dim} columns")
 
         meas_noise = self._coerce_measurement_noise_cov(
             meas_noise,
@@ -1375,7 +1391,6 @@ class GoalConditionedReplayIMMFilter(  # pylint: disable=too-many-instance-attri
             predicted_measurements=predicted_measurements,
             return_log_marginal=return_log_marginal,
         )
-
 
     def update_velocity(
         self,
@@ -1455,15 +1470,14 @@ class GoalConditionedReplayIMMFilter(  # pylint: disable=too-many-instance-attri
             measurement, measurement_matrix, meas_noise
         )
 
-
-    def association_likelihood_linear(self, measurement, measurement_matrix, meas_noise):
+    def association_likelihood_linear(
+        self, measurement, measurement_matrix, meas_noise
+    ):
         measurement_matrix = array(measurement_matrix)
         if measurement_matrix.ndim != 2:
             raise ValueError("measurement_matrix must be two-dimensional")
         if measurement_matrix.shape[1] != self.state_dim:
-            raise ValueError(
-                f"measurement_matrix must have {self.state_dim} columns"
-            )
+            raise ValueError(f"measurement_matrix must have {self.state_dim} columns")
 
         meas_noise = self._coerce_measurement_noise_cov(
             meas_noise,
@@ -1495,7 +1509,6 @@ class GoalConditionedReplayIMMFilter(  # pylint: disable=too-many-instance-attri
         return self.association_likelihood_linear(
             measurement, measurement_matrix, meas_noise
         )
-
 
     def association_likelihood_velocity(self, measurement, meas_noise):
         measurement, meas_noise = self._resolve_measurement_and_noise_args(
@@ -1531,9 +1544,8 @@ class GoalConditionedReplayIMMFilter(  # pylint: disable=too-many-instance-attri
         for component_index in range(self.n_components):
             goal_index, _mode_index = self._component_meta(component_index)
             innovation = measurement - self._candidate_goals[goal_index]
-            raw_log_weights[component_index] = (
-                log(maximum(self._component_weights[component_index], self.weight_floor))
-                + self._log_gaussian_density(innovation, meas_noise)
-            )
+            raw_log_weights[component_index] = log(
+                maximum(self._component_weights[component_index], self.weight_floor)
+            ) + self._log_gaussian_density(innovation, meas_noise)
 
         return exp(self._logsumexp(raw_log_weights))

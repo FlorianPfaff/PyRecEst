@@ -12,13 +12,15 @@ from pyrecest.backend import (
     column_stack,
     complex128,
     conj,
+    cos,
+    deg2rad,
     empty,
     full,
     imag,
     isnan,
-    zeros_like,
     linalg,
     maximum,
+    meshgrid,
     pi,
     real,
     reshape,
@@ -26,9 +28,7 @@ from pyrecest.backend import (
     sin,
     sqrt,
     zeros,
-    cos,
-    meshgrid,
-    deg2rad,
+    zeros_like,
 )
 
 # pylint: disable=E0611
@@ -298,11 +298,11 @@ class SphericalHarmonicsDistributionComplex(AbstractSphericalHarmonicsDistributi
         import pyshtools as pysh  # pylint: disable=import-error
 
         grid_vals_np = _np.asarray(grid_vals_real)
-        grid_obj = pysh.SHGrid.from_array(
-            grid_vals_np.astype(complex), grid="DH"
-        )
+        grid_obj = pysh.SHGrid.from_array(grid_vals_np.astype(complex), grid="DH")
         clm = grid_obj.expand(lmax_calc=degree, normalization="ortho", csphase=-1)
-        coeff_mat = SphericalHarmonicsDistributionComplex._pysh_to_coeff_mat(clm, degree)
+        coeff_mat = SphericalHarmonicsDistributionComplex._pysh_to_coeff_mat(
+            clm, degree
+        )
         shd = SphericalHarmonicsDistributionComplex(coeff_mat, transformation)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -355,10 +355,7 @@ class SphericalHarmonicsDistributionComplex(AbstractSphericalHarmonicsDistributi
             # Direct frequency-domain formula: h_{n,m} = sqrt(4π/(2n+1)) * f_{n,m} * g_{n,0}
             h_lm = zeros_like(self.coeff_mat)
             for n in range(degree + 1):
-                factor = (
-                    sqrt(4.0 * pi / (2 * n + 1))
-                    * other.coeff_mat[n, n]
-                )
+                factor = sqrt(4.0 * pi / (2 * n + 1)) * other.coeff_mat[n, n]
                 for m in range(-n, n + 1):
                     h_lm[n, n + m] = factor * self.coeff_mat[n, n + m]
             result = SphericalHarmonicsDistributionComplex(h_lm, "identity")
@@ -375,14 +372,17 @@ class SphericalHarmonicsDistributionComplex(AbstractSphericalHarmonicsDistributi
             f_grid = self._eval_on_grid(target_degree=degree_fine)
             p_grid = f_grid**2
 
-            g_grid = other._eval_on_grid(target_degree=degree_fine)  # pylint: disable=protected-access
+            g_grid = other._eval_on_grid(
+                target_degree=degree_fine
+            )  # pylint: disable=protected-access
             q_grid = g_grid**2
 
             import numpy as _np  # noqa: PLC0415
             import pyshtools as pysh  # pylint: disable=import-error
 
             assert (
-                pyrecest.backend.__backend_name__ == "numpy"  # pylint: disable=no-member
+                pyrecest.backend.__backend_name__
+                == "numpy"  # pylint: disable=no-member
             ), "pysh.SHGrid.from_array requires the numpy backend"
 
             def _grid_to_coeff(grid_vals):
@@ -429,9 +429,9 @@ class SphericalHarmonicsDistributionComplex(AbstractSphericalHarmonicsDistributi
         assert isinstance(
             other, SphericalHarmonicsDistributionComplex
         ), "other must be a SphericalHarmonicsDistributionComplex"
-        assert self.transformation == other.transformation, (
-            "multiply: both distributions must use the same transformation"
-        )
+        assert (
+            self.transformation == other.transformation
+        ), "multiply: both distributions must use the same transformation"
 
         degree = self.coeff_mat.shape[0] - 1
 
@@ -466,6 +466,4 @@ class SphericalHarmonicsDistributionComplex(AbstractSphericalHarmonicsDistributi
             body=True,
         )
         coeff_mat_rot = self._pysh_to_coeff_mat(clm_rot, degree)
-        return SphericalHarmonicsDistributionComplex(
-            coeff_mat_rot, self.transformation
-        )
+        return SphericalHarmonicsDistributionComplex(coeff_mat_rot, self.transformation)

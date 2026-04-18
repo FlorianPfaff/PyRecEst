@@ -1,8 +1,20 @@
 import copy
 import warnings
 
-from pyrecest.backend import zeros, sqrt, pi, linalg, abs, stack, arccos, arctan2, clip, array, ones, maximum  # pylint: disable=redefined-builtin
-
+from pyrecest.backend import (  # pylint: disable=redefined-builtin
+    abs,
+    arccos,
+    arctan2,
+    array,
+    clip,
+    linalg,
+    maximum,
+    ones,
+    pi,
+    sqrt,
+    stack,
+    zeros,
+)
 from pyrecest.distributions.hypersphere_subset.spherical_harmonics_distribution_complex import (
     SphericalHarmonicsDistributionComplex,
 )
@@ -36,9 +48,7 @@ class SphericalHarmonicsFilter(AbstractFilter, HypersphericalFilterMixin):
             coeff_mat[0, 0] = 1.0
         else:
             raise ValueError(f"Unknown transformation: '{transformation}'")
-        initial_state = SphericalHarmonicsDistributionComplex(
-            coeff_mat, transformation
-        )
+        initial_state = SphericalHarmonicsDistributionComplex(coeff_mat, transformation)
         AbstractFilter.__init__(self, initial_state)
 
     # ------------------------------------------------------------------
@@ -153,9 +163,7 @@ class SphericalHarmonicsFilter(AbstractFilter, HypersphericalFilterMixin):
                 stacklevel=2,
             )
             phi = arctan2(z[1], z[0])  # azimuth
-            theta = arccos(
-                clip(z[2] / z_norm, -1.0, 1.0)
-            )  # colatitude
+            theta = arccos(clip(z[2] / z_norm, -1.0, 1.0))  # colatitude
             meas_noise = meas_noise.rotate(0.0, theta, phi)
         self._filter_state = self._filter_state.multiply(meas_noise)
 
@@ -193,20 +201,26 @@ class SphericalHarmonicsFilter(AbstractFilter, HypersphericalFilterMixin):
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _update_nonlinear_impl(self, likelihoods, measurements):  # pylint: disable=too-many-locals
+    def _update_nonlinear_impl(
+        self, likelihoods, measurements
+    ):  # pylint: disable=too-many-locals
         """Shared implementation for single and multiple nonlinear updates."""
 
         degree = self._filter_state.coeff_mat.shape[0] - 1
 
         # DH grid coordinates
         x_c, y_c, z_c, grid_shape = (
-            SphericalHarmonicsDistributionComplex._get_dh_grid_cartesian(degree)  # pylint: disable=protected-access
+            SphericalHarmonicsDistributionComplex._get_dh_grid_cartesian(
+                degree
+            )  # pylint: disable=protected-access
         )
         # (3, N) matrix for likelihood calls
         grid_pts = stack([x_c, y_c, z_c], axis=0)
 
         # Evaluate current state on the DH grid
-        fval_curr = self._filter_state._eval_on_grid()  # pylint: disable=protected-access
+        fval_curr = (
+            self._filter_state._eval_on_grid()
+        )  # pylint: disable=protected-access
 
         # Accumulate likelihood values over all (likelihood, measurement) pairs
         likelihood_vals = ones(grid_shape, dtype=float)

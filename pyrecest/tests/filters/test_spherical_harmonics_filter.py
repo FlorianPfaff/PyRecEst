@@ -1,14 +1,17 @@
 import unittest
+
 import numpy as np
 import numpy.testing as npt
-from scipy.stats import norm
-
 import pyrecest
 import pyrecest.backend
 from pyrecest.backend import array
-from pyrecest.distributions import VonMisesFisherDistribution, SphericalHarmonicsDistributionComplex
+from pyrecest.distributions import (
+    SphericalHarmonicsDistributionComplex,
+    VonMisesFisherDistribution,
+)
 from pyrecest.filters import VonMisesFisherFilter
 from pyrecest.filters.spherical_harmonics_filter import SphericalHarmonicsFilter
+from scipy.stats import norm
 
 _skip_non_numpy = unittest.skipIf(
     pyrecest.backend.__backend_name__ != "numpy",  # pylint: disable=no-member
@@ -20,15 +23,23 @@ class SphericalHarmonicsFilterTest(unittest.TestCase):
 
     @_skip_non_numpy
     def test_update_identity(self):
-        for transformation in ['identity', 'sqrt']:
+        for transformation in ["identity", "sqrt"]:
             shd_filter = SphericalHarmonicsFilter(10, transformation)
             vmf_filter = VonMisesFisherFilter()
 
             vmf1 = VonMisesFisherDistribution(array([0.0, 1.0, 0.0]), 1)
             vmf2 = VonMisesFisherDistribution(array([0.0, 0.0, 1.0]), 0.1)
-            
-            shd1 = SphericalHarmonicsDistributionComplex.from_distribution_numerical_fast(vmf1, 10, transformation)
-            shd2 = SphericalHarmonicsDistributionComplex.from_distribution_numerical_fast(vmf2, 10, transformation)
+
+            shd1 = (
+                SphericalHarmonicsDistributionComplex.from_distribution_numerical_fast(
+                    vmf1, 10, transformation
+                )
+            )
+            shd2 = (
+                SphericalHarmonicsDistributionComplex.from_distribution_numerical_fast(
+                    vmf2, 10, transformation
+                )
+            )
 
             vmf_filter.set_state(vmf1)
             vmf_filter.update_identity(vmf2, array([1.0, 0.0, 0.0]))
@@ -36,7 +47,11 @@ class SphericalHarmonicsFilterTest(unittest.TestCase):
             shd_filter.set_state(shd1)
             shd_filter.update_identity(shd2, array([1.0, 0.0, 0.0]))
 
-            npt.assert_allclose(vmf_filter.get_estimate_mean(), shd_filter.get_estimate_mean(), atol=1e-10)
+            npt.assert_allclose(
+                vmf_filter.get_estimate_mean(),
+                shd_filter.get_estimate_mean(),
+                atol=1e-10,
+            )
 
     @_skip_non_numpy
     def test_update_using_likelihood(self):
@@ -48,21 +63,27 @@ class SphericalHarmonicsFilterTest(unittest.TestCase):
         sigma_x = 0.3
         sigma_y = 0.3
         sigma_z = 0.3
-        
+
         meas_x = self._generate_truncated_normals(pos_true[0], sigma_x, 3)
         meas_y = self._generate_truncated_normals(pos_true[1], sigma_y, 3)
         meas_z = self._generate_truncated_normals(pos_true[2], sigma_z, 3)
 
-        for transformation in ['identity', 'sqrt']:
+        for transformation in ["identity", "sqrt"]:
             sh_filter = SphericalHarmonicsFilter(7, transformation)
 
             for x in meas_x:
-                sh_filter.update_nonlinear(lambda z, x: norm.pdf(z[0], x[0], sigma_x), array([x, 0.0, 0.0]))
+                sh_filter.update_nonlinear(
+                    lambda z, x: norm.pdf(z[0], x[0], sigma_x), array([x, 0.0, 0.0])
+                )
             for y in meas_y:
-                sh_filter.update_nonlinear(lambda z, x: norm.pdf(z[1], x[1], sigma_y), array([0.0, y, 0.0]))
+                sh_filter.update_nonlinear(
+                    lambda z, x: norm.pdf(z[1], x[1], sigma_y), array([0.0, y, 0.0])
+                )
             for z in meas_z:
-                sh_filter.update_nonlinear(lambda z, x: norm.pdf(z[2], x[2], sigma_z), array([0.0, 0.0, z]))
-            
+                sh_filter.update_nonlinear(
+                    lambda z, x: norm.pdf(z[2], x[2], sigma_z), array([0.0, 0.0, z])
+                )
+
             npt.assert_allclose(sh_filter.get_estimate_mean(), pos_true, atol=0.3)
 
     @_skip_non_numpy
@@ -70,42 +91,73 @@ class SphericalHarmonicsFilterTest(unittest.TestCase):
         sigma_x = 0.3
         sigma_y = 0.3
         sigma_z = 0.3
-        for transformation in ['identity', 'sqrt']:
+        for transformation in ["identity", "sqrt"]:
             sh_filter1 = SphericalHarmonicsFilter(7, transformation)
             sh_filter2 = SphericalHarmonicsFilter(7, transformation)
 
-            sh_filter1.update_nonlinear(lambda z, x: norm.pdf(z[0], x[0], sigma_x), array([-1.0 / np.sqrt(3), 0.0, 0.0]))
-            sh_filter1.update_nonlinear(lambda z, x: norm.pdf(z[1], x[1], sigma_y), array([0.0, -1.0 / np.sqrt(3), 0.0]))
-            sh_filter1.update_nonlinear(lambda z, x: norm.pdf(z[2], x[2], sigma_z), array([0.0, 0.0, -1.0 / np.sqrt(3)]))
+            sh_filter1.update_nonlinear(
+                lambda z, x: norm.pdf(z[0], x[0], sigma_x),
+                array([-1.0 / np.sqrt(3), 0.0, 0.0]),
+            )
+            sh_filter1.update_nonlinear(
+                lambda z, x: norm.pdf(z[1], x[1], sigma_y),
+                array([0.0, -1.0 / np.sqrt(3), 0.0]),
+            )
+            sh_filter1.update_nonlinear(
+                lambda z, x: norm.pdf(z[2], x[2], sigma_z),
+                array([0.0, 0.0, -1.0 / np.sqrt(3)]),
+            )
 
             sh_filter2.update_nonlinear_multiple(
                 [
                     lambda z, x: norm.pdf(z[0], x[0], sigma_x),
                     lambda z, x: norm.pdf(z[1], x[1], sigma_y),
-                    lambda z, x: norm.pdf(z[2], x[2], sigma_z)
+                    lambda z, x: norm.pdf(z[2], x[2], sigma_z),
                 ],
                 [
                     array([-1.0 / np.sqrt(3), 0.0, 0.0]),
                     array([0.0, -1.0 / np.sqrt(3), 0.0]),
-                    array([0.0, 0.0, -1.0 / np.sqrt(3)])
-                ]
+                    array([0.0, 0.0, -1.0 / np.sqrt(3)]),
+                ],
             )
 
-            npt.assert_allclose(sh_filter2.get_estimate_mean(), sh_filter1.get_estimate_mean(), atol=2e-4)
+            npt.assert_allclose(
+                sh_filter2.get_estimate_mean(),
+                sh_filter1.get_estimate_mean(),
+                atol=2e-4,
+            )
 
     @_skip_non_numpy
     def test_prediction_sqrt_vs_id(self):
         degree = 10
-        density_init = VonMisesFisherDistribution(array([1.0, 1.0, 0.0]) / np.sqrt(2), 2)
+        density_init = VonMisesFisherDistribution(
+            array([1.0, 1.0, 0.0]) / np.sqrt(2), 2
+        )
         sys_noise = VonMisesFisherDistribution(array([0.0, 0.0, 1.0]), 1)
 
-        shd_init_id = SphericalHarmonicsDistributionComplex.from_distribution_numerical_fast(density_init, degree, 'identity')
-        shd_init_sqrt = SphericalHarmonicsDistributionComplex.from_distribution_numerical_fast(density_init, degree, 'sqrt')
-        shd_noise_id = SphericalHarmonicsDistributionComplex.from_distribution_numerical_fast(sys_noise, degree, 'identity')
-        shd_noise_sqrt = SphericalHarmonicsDistributionComplex.from_distribution_numerical_fast(sys_noise, degree, 'sqrt')
+        shd_init_id = (
+            SphericalHarmonicsDistributionComplex.from_distribution_numerical_fast(
+                density_init, degree, "identity"
+            )
+        )
+        shd_init_sqrt = (
+            SphericalHarmonicsDistributionComplex.from_distribution_numerical_fast(
+                density_init, degree, "sqrt"
+            )
+        )
+        shd_noise_id = (
+            SphericalHarmonicsDistributionComplex.from_distribution_numerical_fast(
+                sys_noise, degree, "identity"
+            )
+        )
+        shd_noise_sqrt = (
+            SphericalHarmonicsDistributionComplex.from_distribution_numerical_fast(
+                sys_noise, degree, "sqrt"
+            )
+        )
 
-        sh_filter1 = SphericalHarmonicsFilter(degree, 'identity')
-        sh_filter2 = SphericalHarmonicsFilter(degree, 'sqrt')
+        sh_filter1 = SphericalHarmonicsFilter(degree, "identity")
+        sh_filter2 = SphericalHarmonicsFilter(degree, "sqrt")
 
         sh_filter1.set_state(shd_init_id)
         sh_filter2.set_state(shd_init_sqrt)
@@ -113,7 +165,11 @@ class SphericalHarmonicsFilterTest(unittest.TestCase):
         sh_filter1.predict_identity(shd_noise_id)
         sh_filter2.predict_identity(shd_noise_sqrt)
 
-        np.testing.assert_allclose(sh_filter1.state.total_variation_distance_numerical(sh_filter2.state), 0, atol=1e-11)
+        np.testing.assert_allclose(
+            sh_filter1.state.total_variation_distance_numerical(sh_filter2.state),
+            0,
+            atol=1e-11,
+        )
 
     # Helper function to generate truncated normals
     def _generate_truncated_normals(self, mu, sigma, n):
