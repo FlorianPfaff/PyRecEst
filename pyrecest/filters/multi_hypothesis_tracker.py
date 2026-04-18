@@ -1,9 +1,7 @@
 # pylint: disable=no-name-in-module,no-member,duplicate-code,redefined-builtin
+import warnings
 from copy import deepcopy
 from math import log
-import warnings
-
-from scipy.stats import chi2
 
 from pyrecest.backend import (
     all,
@@ -12,15 +10,18 @@ from pyrecest.backend import (
     asarray,
     exp,
     linalg,
-    log as backend_log,
-    max as backend_max,
+)
+from pyrecest.backend import log as backend_log
+from pyrecest.backend import max as backend_max
+from pyrecest.backend import (
     ndim,
     pi,
     sqrt,
     stack,
-    sum as backend_sum,
 )
+from pyrecest.backend import sum as backend_sum
 from pyrecest.distributions import GaussianDistribution
+from scipy.stats import chi2
 
 from .abstract_multitarget_tracker import AbstractMultitargetTracker
 from .kalman_filter import KalmanFilter
@@ -151,7 +152,9 @@ class MultiHypothesisTracker(AbstractMultitargetTracker):
 
         n_targets = len(filter_banks[0])
         if not all(len(filter_bank) == n_targets for filter_bank in filter_banks):
-            raise ValueError("All global hypotheses must have the same number of tracks")
+            raise ValueError(
+                "All global hypotheses must have the same number of tracks"
+            )
 
         self._global_hypotheses = [
             deepcopy(filter_bank) for filter_bank in filter_banks
@@ -251,7 +254,9 @@ class MultiHypothesisTracker(AbstractMultitargetTracker):
         if self.log_prior_estimates:
             self.store_prior_estimates()
 
-    def update_linear(self, measurements, measurement_matrix, cov_mats_meas):  # pylint: disable=too-many-locals
+    def update_linear(
+        self, measurements, measurement_matrix, cov_mats_meas
+    ):  # pylint: disable=too-many-locals
         if self.get_number_of_targets() == 0:
             warnings.warn("Currently, there are zero targets.")
             return
@@ -392,9 +397,8 @@ class MultiHypothesisTracker(AbstractMultitargetTracker):
         missed_detection_probability = 1.0 - detection_probability
 
         n_tracks = self.get_number_of_targets()
-        return (
-            n_meas * log(clutter_intensity)
-            + n_tracks * log(missed_detection_probability)
+        return n_meas * log(clutter_intensity) + n_tracks * log(
+            missed_detection_probability
         )
 
     def _build_candidate_measurements(  # pylint: disable=too-many-locals
@@ -435,10 +439,9 @@ class MultiHypothesisTracker(AbstractMultitargetTracker):
             predicted_measurement = measurement_matrix @ asarray(gaussian.mu)
             for j in range(n_meas):
                 meas_cov = self._get_measurement_covariance(cov_mats_meas, j)
-                innovation_cov = (
-                    measurement_matrix @ asarray(gaussian.C) @ measurement_matrix.T
-                    + asarray(meas_cov)
-                )
+                innovation_cov = measurement_matrix @ asarray(
+                    gaussian.C
+                ) @ measurement_matrix.T + asarray(meas_cov)
                 innovation = measurements[:, j] - predicted_measurement
                 mahalanobis_squared, log_likelihood = (
                     self._mahalanobis_squared_and_log_likelihood(
@@ -498,9 +501,7 @@ class MultiHypothesisTracker(AbstractMultitargetTracker):
 
             if len(best_assignments) == max_assignments:
                 upper_bound = (
-                    base_log_score
-                    + current_gain
-                    + optimistic_future_gain[track_index]
+                    base_log_score + current_gain + optimistic_future_gain[track_index]
                 )
                 if upper_bound <= best_assignments[-1][0]:
                     return
@@ -567,9 +568,7 @@ class MultiHypothesisTracker(AbstractMultitargetTracker):
         log_det = backend_log(det_val)
 
         log_likelihood = -0.5 * (
-            mahalanobis_squared
-            + innovation.shape[0] * backend_log(2.0 * pi)
-            + log_det
+            mahalanobis_squared + innovation.shape[0] * backend_log(2.0 * pi) + log_det
         )
         return mahalanobis_squared, float(log_likelihood)
 

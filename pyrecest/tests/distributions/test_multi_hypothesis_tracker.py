@@ -57,7 +57,9 @@ class MultiHypothesisTrackerTest(unittest.TestCase):
             log_weights=log(array([0.75, 0.25])),
         )
 
-        npt.assert_allclose(tracker.get_global_hypothesis_weights(), array([0.75, 0.25]))
+        npt.assert_allclose(
+            tracker.get_global_hypothesis_weights(), array([0.75, 0.25])
+        )
         npt.assert_allclose(
             tracker.get_point_estimate(weighted_average=True),
             array([[0.5], [0.0]]),
@@ -99,7 +101,9 @@ class MultiHypothesisTrackerTest(unittest.TestCase):
 
         npt.assert_allclose(tracker.get_point_estimate(), previous_estimate)
         self.assertEqual(
-            tracker.global_hypothesis_histories[tracker.get_best_hypothesis_index()][-1],
+            tracker.global_hypothesis_histories[tracker.get_best_hypothesis_index()][
+                -1
+            ],
             (-1, -1),
         )
         for filter_state in tracker.filter_state:
