@@ -210,17 +210,17 @@ class SphericalHarmonicsFilter(AbstractFilter, HypersphericalFilterMixin):
 
         # DH grid coordinates
         x_c, y_c, z_c, grid_shape = (
-            SphericalHarmonicsDistributionComplex._get_dh_grid_cartesian(
+            SphericalHarmonicsDistributionComplex._get_dh_grid_cartesian(  # pylint: disable=protected-access
                 degree
-            )  # pylint: disable=protected-access
+            )
         )
         # (3, N) matrix for likelihood calls
         grid_pts = stack([x_c, y_c, z_c], axis=0)
 
         # Evaluate current state on the DH grid
         fval_curr = (
-            self._filter_state._eval_on_grid()
-        )  # pylint: disable=protected-access
+            self._filter_state._eval_on_grid()  # pylint: disable=protected-access
+        )
 
         # Accumulate likelihood values over all (likelihood, measurement) pairs
         likelihood_vals = ones(grid_shape, dtype=float)

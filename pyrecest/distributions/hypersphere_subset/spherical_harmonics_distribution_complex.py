@@ -372,9 +372,9 @@ class SphericalHarmonicsDistributionComplex(AbstractSphericalHarmonicsDistributi
             f_grid = self._eval_on_grid(target_degree=degree_fine)
             p_grid = f_grid**2
 
-            g_grid = other._eval_on_grid(
+            g_grid = other._eval_on_grid(  # pylint: disable=protected-access
                 target_degree=degree_fine
-            )  # pylint: disable=protected-access
+            )
             q_grid = g_grid**2
 
             import numpy as _np  # noqa: PLC0415
