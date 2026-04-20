@@ -110,8 +110,8 @@ class AbstractHypercylindricalDistributionTest(unittest.TestCase):
         )
         
     def test_hybrid_moment_numerical_gaussian_2d(self):
-        mu = np.array([5, 10])
-        C = np.array([[2, 1], [1, 1]])
+        mu = array([5.0, 10.0])
+        C = array([[2.0, 1.0], [1.0, 1.0]])
         g = PartiallyWrappedNormalDistribution(mu, C, 1)
         
         #integrand_cos = lambda x: np.cos(x) * (1/np.sqrt(2*np.pi*C[0, 0])) * np.exp(-((x-mu[0])**2)/(2*C[0, 0]))
@@ -120,7 +120,7 @@ class AbstractHypercylindricalDistributionTest(unittest.TestCase):
         #                            quad(integrand_sin, 0, 2*np.pi)[0],
         #                            mu[-1]])
         
-        np.testing.assert_allclose(g.hybrid_moment_numerical(), g.hybrid_moment())
+        npt.assert_allclose(g.hybrid_moment_numerical(), g.hybrid_moment())
 
 
 

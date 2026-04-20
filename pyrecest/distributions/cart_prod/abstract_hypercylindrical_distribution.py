@@ -62,7 +62,11 @@ class AbstractHypercylindricalDistribution(AbstractLinPeriodicCartProdDistributi
             integration_boundaries = self.get_reasonable_integration_boundaries()
 
         def f(*args):
-            return self.pdf(array(args))
+            result = self.pdf(array(args))
+            # nquad requires a scalar return value
+            if hasattr(result, '__len__'):
+                return float(result[0])
+            return float(result)
 
         integration_result = nquad(f, integration_boundaries.T)[0]
 
@@ -73,10 +77,14 @@ class AbstractHypercylindricalDistribution(AbstractLinPeriodicCartProdDistributi
         Returns reasonable integration boundaries for the specific distribution
         based on the mode and covariance.
         """
-        left = empty((self.bound_dim + self.lin_dim, 1))
-        right = empty((self.bound_dim + self.lin_dim, 1))
+        left = empty(self.bound_dim + self.lin_dim)
+        right = empty(self.bound_dim + self.lin_dim)
         P = self.linear_covariance()
         m = self.mode()
+
+        for i in range(self.bound_dim):
+            left[i] = 0.0
+            right[i] = 2.0 * pi
 
         for i in range(self.bound_dim, self.bound_dim + self.lin_dim):
             left[i] = m[i] - scalingFactor * sqrt(
@@ -90,39 +98,55 @@ class AbstractHypercylindricalDistribution(AbstractLinPeriodicCartProdDistributi
     
     def hybrid_moment_numerical(self):
         assert self.bound_dim == 1, "Only implemented for bound_dim = 1"
-        m = np.empty(2 * self.bound_dim + self.lin_dim)  # Initialize the results array
-
-        # Integration boundaries
-        left, right = self.get_reasonable_integration_boundaries()
+        bounds = self.get_reasonable_integration_boundaries()
+        left = bounds[0]
+        right = bounds[1]
 
         if self.lin_dim == 1:
-            m[0] = dblquad(lambda x, y: np.cos(x) * self.pdf(np.array([x, y])),
-                           left[0], right[0], lambda _: left[1], lambda _: right[1])[0]
-            m[1] = dblquad(lambda x, y: np.sin(x) * self.pdf(np.array([x, y])),
-                           left[0], right[0], lambda _: left[1], lambda _: right[1])[0]
-            m[2] = dblquad(lambda x, y: y * self.pdf(np.array([x, y])),
-                           left[0], right[0], lambda _: left[1], lambda _: right[1])[0]
+            # dblquad(f, a, b, gfun, hfun) computes int_a^b int_{gfun(y)}^{hfun(y)} f(x, y) dx dy
+            # x is the inner (periodic) variable, y is the outer (linear) variable
+            m0 = scipy.integrate.dblquad(
+                lambda x, y: float(cos(array(x)) * self.pdf(array([x, y]))[0]),
+                float(left[1]), float(right[1]),
+                float(left[0]), float(right[0]),
+            )[0]
+            m1 = scipy.integrate.dblquad(
+                lambda x, y: float(sin(array(x)) * self.pdf(array([x, y]))[0]),
+                float(left[1]), float(right[1]),
+                float(left[0]), float(right[0]),
+            )[0]
+            m2 = scipy.integrate.dblquad(
+                lambda x, y: float(y * self.pdf(array([x, y]))[0]),
+                float(left[1]), float(right[1]),
+                float(left[0]), float(right[0]),
+            )[0]
+            return array([m0, m1, m2])
         elif self.lin_dim == 2:
+            ranges = [
+                [float(left[0]), float(right[0])],
+                [float(left[1]), float(right[1])],
+                [float(left[2]), float(right[2])],
+            ]
+
             def integrand1(x, y, z):
-                return np.cos(x) * self.pdf(np.array([x, y, z]))
+                return float(cos(array(x)) * self.pdf(array([x, y, z]))[0])
 
             def integrand2(x, y, z):
-                return np.sin(x) * self.pdf(np.array([x, y, z]))
+                return float(sin(array(x)) * self.pdf(array([x, y, z]))[0])
 
             def integrand3(x, y, z):
-                return y * self.pdf(np.array([x, y, z]))
+                return float(y * self.pdf(array([x, y, z]))[0])
 
             def integrand4(x, y, z):
-                return z * self.pdf(np.array([x, y, z]))
+                return float(z * self.pdf(array([x, y, z]))[0])
 
-            m[0] = nquad(integrand1, [[left[0], right[0]], [left[1], right[1]], [left[2], right[2]]])[0]
-            m[1] = nquad(integrand2, [[left[0], right[0]], [left[1], right[1]], [left[2], right[2]]])[0]
-            m[2] = nquad(integrand3, [[left[0], right[0]], [left[1], right[1]], [left[2], right[2]]])[0]
-            m[3] = nquad(integrand4, [[left[0], right[0]], [left[1], right[1]], [left[2], right[2]]])[0]
+            m0 = nquad(integrand1, ranges)[0]
+            m1 = nquad(integrand2, ranges)[0]
+            m2 = nquad(integrand3, ranges)[0]
+            m3 = nquad(integrand4, ranges)[0]
+            return array([m0, m1, m2, m3])
         else:
             raise ValueError("lin_dim>2 not supported.")
-
-        return m
 
     def mode(self):
         """Find the mode of the distribution by calling mode_numerical."""
