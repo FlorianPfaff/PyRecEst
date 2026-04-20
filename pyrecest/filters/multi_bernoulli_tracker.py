@@ -265,9 +265,7 @@ class MultiBernoulliTracker(AbstractMultitargetTracker):
         num_components = self.get_number_of_components()
         num_measurements = measurements.shape[1]
         invalid_cost = 1e12
-        detection_cost_matrix = full(
-            (num_components, num_measurements), invalid_cost
-        )
+        detection_cost_matrix = full((num_components, num_measurements), invalid_cost)
         missed_detection_costs = full((num_components,), invalid_cost)
         gating_distance_threshold = self._get_gating_distance_threshold(
             measurements.shape[0]

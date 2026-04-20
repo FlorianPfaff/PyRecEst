@@ -26,10 +26,9 @@ from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, cast
 
 import numpy as np
-from scipy.optimize import linear_sum_assignment
-
 from pyrecest.backend import empty, stack
 from pyrecest.distributions import GaussianDistribution
+from scipy.optimize import linear_sum_assignment
 
 from .abstract_filter import AbstractFilter
 from .abstract_multitarget_tracker import AbstractMultitargetTracker
@@ -125,7 +124,9 @@ class TrackManagerStepResult:  # pylint: disable=too-many-instance-attributes
     association: Optional[AssociationResult] = None
 
 
-class TrackManager(AbstractMultitargetTracker):  # pylint: disable=too-many-instance-attributes
+class TrackManager(
+    AbstractMultitargetTracker
+):  # pylint: disable=too-many-instance-attributes
     """Explicit lifecycle manager around a bank of single-target filters.
 
     The manager does not assume a specific measurement modality or cost model.
@@ -191,7 +192,9 @@ class TrackManager(AbstractMultitargetTracker):  # pylint: disable=too-many-inst
 
         active_tracks = self.get_tracks(confirmed_only=False, include_deleted=False)
         if not active_tracks:
-            raise ValueError("Cannot provide state dimension when no active tracks exist.")
+            raise ValueError(
+                "Cannot provide state dimension when no active tracks exist."
+            )
         return active_tracks[0].dim
 
     @property
@@ -236,7 +239,9 @@ class TrackManager(AbstractMultitargetTracker):  # pylint: disable=too-many-inst
     def get_number_of_targets(self, confirmed_only: Optional[bool] = None) -> int:
         """Return the number of extracted tracks."""
 
-        return len(self.get_tracks(confirmed_only=confirmed_only, include_deleted=False))
+        return len(
+            self.get_tracks(confirmed_only=confirmed_only, include_deleted=False)
+        )
 
     def get_point_estimate(
         self,
@@ -270,7 +275,9 @@ class TrackManager(AbstractMultitargetTracker):  # pylint: disable=too-many-inst
         """Create tracks directly from filters or filter states."""
 
         if metadata_list is not None and len(metadata_list) != len(filters_or_states):
-            raise ValueError("metadata_list must have the same length as filters_or_states")
+            raise ValueError(
+                "metadata_list must have the same length as filters_or_states"
+            )
 
         track_ids = []
         for index, filter_or_state in enumerate(filters_or_states):
@@ -279,7 +286,9 @@ class TrackManager(AbstractMultitargetTracker):  # pylint: disable=too-many-inst
                 self.add_track(
                     filter_or_state,
                     step=step,
-                    status=(TrackStatus.CONFIRMED if confirmed else TrackStatus.TENTATIVE),
+                    status=(
+                        TrackStatus.CONFIRMED if confirmed else TrackStatus.TENTATIVE
+                    ),
                     metadata=metadata,
                     history_event="initialized",
                 )
@@ -298,7 +307,9 @@ class TrackManager(AbstractMultitargetTracker):  # pylint: disable=too-many-inst
         """Create tracks from measurements using ``self.initiator``."""
 
         if self.initiator is None:
-            raise ValueError("TrackManager.initialize_from_measurements requires an initiator")
+            raise ValueError(
+                "TrackManager.initialize_from_measurements requires an initiator"
+            )
 
         track_ids = []
         for measurement_index, measurement in enumerate(measurements):
@@ -307,7 +318,9 @@ class TrackManager(AbstractMultitargetTracker):  # pylint: disable=too-many-inst
                     measurement,
                     step=step,
                     measurement_index=measurement_index,
-                    status=(TrackStatus.CONFIRMED if confirmed else TrackStatus.TENTATIVE),
+                    status=(
+                        TrackStatus.CONFIRMED if confirmed else TrackStatus.TENTATIVE
+                    ),
                     **initiation_kwargs,
                 )
             )
@@ -364,7 +377,9 @@ class TrackManager(AbstractMultitargetTracker):  # pylint: disable=too-many-inst
         """Run one complete lifecycle step."""
 
         predict_kwargs = {} if predict_kwargs is None else dict(predict_kwargs)
-        association_kwargs = {} if association_kwargs is None else dict(association_kwargs)
+        association_kwargs = (
+            {} if association_kwargs is None else dict(association_kwargs)
+        )
         update_kwargs = {} if update_kwargs is None else dict(update_kwargs)
         initiation_kwargs = {} if initiation_kwargs is None else dict(initiation_kwargs)
 
@@ -431,7 +446,9 @@ class TrackManager(AbstractMultitargetTracker):  # pylint: disable=too-many-inst
                     step=int(step),
                     measurement_index=int(measurement_index),
                     status=(
-                        TrackStatus.CONFIRMED if self.n_init <= 1 else TrackStatus.TENTATIVE
+                        TrackStatus.CONFIRMED
+                        if self.n_init <= 1
+                        else TrackStatus.TENTATIVE
                     ),
                     **initiation_kwargs,
                 )
@@ -593,7 +610,9 @@ class TrackManager(AbstractMultitargetTracker):  # pylint: disable=too-many-inst
             matches.append((track_index, measurement_index))
 
         if association.unmatched_track_indices is None:
-            unmatched_track_indices = sorted(set(range(num_tracks)) - used_track_indices)
+            unmatched_track_indices = sorted(
+                set(range(num_tracks)) - used_track_indices
+            )
         else:
             unmatched_track_indices = sorted(
                 {int(index) for index in association.unmatched_track_indices}
@@ -733,7 +752,9 @@ def solve_global_nearest_neighbor(  # pylint: disable=too-many-locals
     }
 
     unmatched_track_indices = sorted(
-        set(unmatched_track_indices).union(set(range(num_tracks)) - matched_track_indices)
+        set(unmatched_track_indices).union(
+            set(range(num_tracks)) - matched_track_indices
+        )
     )
     unmatched_measurement_indices = sorted(
         set(unmatched_measurement_indices).union(
