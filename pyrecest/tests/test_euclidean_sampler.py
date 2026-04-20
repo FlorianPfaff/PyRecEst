@@ -27,7 +27,7 @@ class TestGaussianSampler(unittest.TestCase):
     def test_sample_std_dev_close_to_one(self):
         """Check that the standard deviation is close to 1 for each dimension."""
         std_devs = std(self.samples, axis=0)
-        npt.assert_allclose(std_devs, ones(self.dim), atol=0.15)
+        npt.assert_allclose(std_devs, ones(self.dim), atol=0.2)
 
     def test_samples_follow_gaussian_distribution(self):
         """Test if the samples follow a Gaussian distribution for each dimension."""

@@ -58,6 +58,8 @@ class AbstractHypercylindricalDistribution(AbstractLinPeriodicCartProdDistributi
         return self.integrate_numerically(integration_boundaries)
 
     def integrate_numerically(self, integration_boundaries=None):
+        if pyrecest.backend.__backend_name__ == "jax":
+            raise NotImplementedError("integrate_numerically is not supported for the JAX backend.")
         if integration_boundaries is None:
             integration_boundaries = self.get_reasonable_integration_boundaries()
 
@@ -77,26 +79,31 @@ class AbstractHypercylindricalDistribution(AbstractLinPeriodicCartProdDistributi
         Returns reasonable integration boundaries for the specific distribution
         based on the mode and covariance.
         """
-        left = empty(self.bound_dim + self.lin_dim)
-        right = empty(self.bound_dim + self.lin_dim)
+        if pyrecest.backend.__backend_name__ == "jax":
+            raise NotImplementedError("get_reasonable_integration_boundaries is not supported for the JAX backend.")
         P = self.linear_covariance()
         m = self.mode()
 
-        for i in range(self.bound_dim):
-            left[i] = 0.0
-            right[i] = 2.0 * pi
+        periodic_left = zeros(self.bound_dim)
+        periodic_right = 2.0 * pi * ones(self.bound_dim)
 
-        for i in range(self.bound_dim, self.bound_dim + self.lin_dim):
-            left[i] = m[i] - scalingFactor * sqrt(
-                P[i - self.bound_dim, i - self.bound_dim]
-            )
-            right[i] = m[i] + scalingFactor * sqrt(
-                P[i - self.bound_dim, i - self.bound_dim]
-            )
+        lin_left = array(
+            [m[self.bound_dim + i] - scalingFactor * sqrt(P[i, i])
+             for i in range(self.lin_dim)]
+        )
+        lin_right = array(
+            [m[self.bound_dim + i] + scalingFactor * sqrt(P[i, i])
+             for i in range(self.lin_dim)]
+        )
+
+        left = concatenate([periodic_left, lin_left])
+        right = concatenate([periodic_right, lin_right])
 
         return vstack((left, right))
-    
+
     def hybrid_moment_numerical(self):
+        if pyrecest.backend.__backend_name__ == "jax":
+            raise NotImplementedError("hybrid_moment_numerical is not supported for the JAX backend.")
         assert self.bound_dim == 1, "Only implemented for bound_dim = 1"
         bounds = self.get_reasonable_integration_boundaries()
         left = bounds[0]

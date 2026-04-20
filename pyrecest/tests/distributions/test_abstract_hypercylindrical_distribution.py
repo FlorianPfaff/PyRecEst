@@ -109,6 +109,10 @@ class AbstractHypercylindricalDistributionTest(unittest.TestCase):
             )
         )
         
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ == "jax",
+        reason="Not supported for JAX backend",
+    )
     def test_hybrid_moment_numerical_gaussian_2d(self):
         mu = array([5.0, 10.0])
         C = array([[2.0, 1.0], [1.0, 1.0]])
