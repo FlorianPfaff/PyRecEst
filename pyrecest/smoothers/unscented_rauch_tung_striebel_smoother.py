@@ -1,10 +1,11 @@
 """Unscented Rauch--Tung--Striebel smoother for nonlinear Gaussian models."""
+
 # pylint: disable=duplicate-code
 
 from __future__ import annotations
 
-from copy import copy
 import inspect
+from copy import copy
 from typing import Callable, Sequence
 
 import pyrecest.backend
@@ -36,7 +37,9 @@ class UnscentedRauchTungStriebelSmoother(AbstractSmoother):
         Default sigma-point parameters used when ``points`` is omitted.
     """
 
-    def __init__(self, points=None, alpha: float = 0.001, beta: float = 2.0, kappa: float = 0.0):
+    def __init__(
+        self, points=None, alpha: float = 0.001, beta: float = 2.0, kappa: float = 0.0
+    ):
         self.points = points
         self.alpha = alpha
         self.beta = beta
@@ -44,14 +47,18 @@ class UnscentedRauchTungStriebelSmoother(AbstractSmoother):
 
     @staticmethod
     def _assert_supported_backend():
-        backend_name: str = getattr(pyrecest.backend, "__backend_name__", "")  # pylint: disable=no-member
+        backend_name: str = getattr(
+            pyrecest.backend, "__backend_name__", ""
+        )  # pylint: disable=no-member
         assert backend_name not in (
             "pytorch",
             "jax",
         ), "Not supported on this backend"
 
     @staticmethod
-    def _normalize_callable_sequence(functions, length: int, name: str, default=None) -> list:
+    def _normalize_callable_sequence(
+        functions, length: int, name: str, default=None
+    ) -> list:
         if length == 0:
             return []
 
@@ -73,7 +80,9 @@ class UnscentedRauchTungStriebelSmoother(AbstractSmoother):
         )
 
     @staticmethod
-    def _normalize_scalar_sequence(values, length: int, name: str, default=None) -> list:
+    def _normalize_scalar_sequence(
+        values, length: int, name: str, default=None
+    ) -> list:
         if length == 0:
             return []
 
@@ -82,16 +91,23 @@ class UnscentedRauchTungStriebelSmoother(AbstractSmoother):
 
         values_arr = asarray(values)
         if ndim(values_arr) == 0:
-            return [values_arr.item() if hasattr(values_arr, "item") else values_arr] * length
+            return [
+                values_arr.item() if hasattr(values_arr, "item") else values_arr
+            ] * length
         if ndim(values_arr) == 1 and values_arr.shape[0] == length:
-            return [values_arr[idx].item() if hasattr(values_arr[idx], "item") else values_arr[idx] for idx in range(length)]
+            return [
+                (
+                    values_arr[idx].item()
+                    if hasattr(values_arr[idx], "item")
+                    else values_arr[idx]
+                )
+                for idx in range(length)
+            ]
 
         if isinstance(values, (list, tuple)) and len(values) == length:
             return list(values)
 
-        raise ValueError(
-            f"{name} must be a scalar or a sequence with length {length}."
-        )
+        raise ValueError(f"{name} must be a scalar or a sequence with length {length}.")
 
     @staticmethod
     def _weighted_sum(values, weights):
@@ -229,7 +245,9 @@ class UnscentedRauchTungStriebelSmoother(AbstractSmoother):
             measurement_deviation = (
                 measurement_sigma_points[idx] - predicted_measurement
             )
-            innovation_covariance = innovation_covariance + sigma_points.Wc[idx] * outer(
+            innovation_covariance = innovation_covariance + sigma_points.Wc[
+                idx
+            ] * outer(
                 measurement_deviation,
                 measurement_deviation,
             )
@@ -466,7 +484,12 @@ class UnscentedRauchTungStriebelSmoother(AbstractSmoother):
         transition_functions=None,
         sys_noise_covariances=None,
         time_steps=None,
-    ) -> tuple[list[GaussianDistribution], list[GaussianDistribution], list[GaussianDistribution], list]:
+    ) -> tuple[
+        list[GaussianDistribution],
+        list[GaussianDistribution],
+        list[GaussianDistribution],
+        list,
+    ]:
         """Convenience wrapper that runs both the forward and backward passes."""
         filtered_states, predicted_states, predicted_cross_covariances = self.filter(
             initial_state=initial_state,

@@ -1,4 +1,5 @@
 """Rauch--Tung--Striebel smoother for linear Gaussian state-space models."""
+
 # pylint: disable=duplicate-code
 
 from __future__ import annotations
@@ -160,9 +161,7 @@ class RauchTungStriebelSmoother(AbstractSmoother):
 
             innovation = measurement - measurement_matrix @ predicted_mean
             innovation_covariance = (
-                measurement_matrix
-                @ predicted_covariance
-                @ measurement_matrix.T
+                measurement_matrix @ predicted_covariance @ measurement_matrix.T
                 + meas_noise_covariance
             )
             kalman_gain = linalg.solve(
