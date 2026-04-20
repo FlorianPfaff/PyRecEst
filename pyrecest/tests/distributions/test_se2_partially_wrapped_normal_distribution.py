@@ -1,9 +1,10 @@
+import numpy as _np
 import numpy.testing as npt
 import unittest
 from itertools import product
 
 import pyrecest.backend
-from pyrecest.backend import array, cos, sin, pi
+from pyrecest.backend import array
 from pyrecest.distributions.se2_partially_wrapped_normal_distribution import SE2PartiallyWrappedNormalDistribution
 
 from scipy.stats import multivariate_normal
@@ -23,7 +24,6 @@ class SE2PWNDistributionTest(unittest.TestCase):
 
     @staticmethod
     def _loop_wrapped_pdf(x, mu, C, n_wrappings=10, bound_dim=1):
-        import numpy as _np
         # Ensure x is at least 2D for iteration; convert to plain numpy for scipy
         x = _np.array(_np.atleast_2d(x), dtype=_np.float64)
         mu = _np.asarray(mu, dtype=_np.float64)
@@ -61,7 +61,6 @@ class SE2PWNDistributionTest(unittest.TestCase):
         npt.assert_allclose(float(self.pwn.pdf(self.mu)[0]), SE2PWNDistributionTest._loop_wrapped_pdf(self.mu, self.mu, self.C), rtol=1e-5)
         npt.assert_allclose(float(self.pwn.pdf(self.mu - array([1.0, 1.0, 1.0]))[0]), SE2PWNDistributionTest._loop_wrapped_pdf(self.mu - array([1.0, 1.0, 1.0]), self.mu, self.C), rtol=1e-5)
         npt.assert_allclose(float(self.pwn.pdf(self.mu + array([2.0, 2.0, 2.0]))[0]), SE2PWNDistributionTest._loop_wrapped_pdf(self.mu + array([2.0, 2.0, 2.0]), self.mu, self.C), rtol=1e-5)
-        import numpy as _np
         x = array(_np.random.rand(20, 3))
         npt.assert_allclose(
             _np.asarray(self.pwn.pdf(x)),
@@ -70,7 +69,6 @@ class SE2PWNDistributionTest(unittest.TestCase):
         )
 
     def test_pdf_large_uncertainty(self):
-        import numpy as _np
         C_high = array(100 * _np.eye(3, 3))
         pwn_large_uncertainty = SE2PartiallyWrappedNormalDistribution(self.mu, C_high)
         for t in range(1, 7):
@@ -98,7 +96,6 @@ class SE2PWNDistributionTest(unittest.TestCase):
         self.assertAlmostEqual(self.pwn.integrate(), 1, places=5)
 
     def test_sampling(self):
-        import numpy as _np
         _np.random.seed(0)
         n = 10
         s = self.pwn.sample(n)
@@ -113,7 +110,6 @@ class SE2PWNDistributionTest(unittest.TestCase):
         self.assertEqual(m.shape, (4,))
 
     def test_mean_4d_values(self):
-        import numpy as _np
         mu0 = float(self.mu[0])
         c00 = float(self.C[0, 0])
         expected = _np.array(
@@ -131,13 +127,11 @@ class SE2PWNDistributionTest(unittest.TestCase):
         self.assertEqual(cov.shape, (4, 4))
 
     def test_covariance_4d_symmetric(self):
-        import numpy as _np
         cov = _np.asarray(self.pwn.covariance_4d())
         npt.assert_allclose(cov, cov.T, atol=1e-12)
 
     def test_covariance_4d_matches_numerical(self):
         """Analytical covariance should match a numerical estimate within tolerance."""
-        import numpy as _np
         _np.random.seed(0)
         cov_analytical = _np.asarray(self.pwn.covariance_4d())
         cov_numerical = _np.asarray(self.pwn.covariance_4d_numerical(n_samples=100000))
@@ -145,7 +139,6 @@ class SE2PWNDistributionTest(unittest.TestCase):
 
     def test_from_samples_recovers_params(self):
         """from_samples should recover mu and C (up to Monte-Carlo noise)."""
-        import numpy as _np
         _np.random.seed(42)
         samples = array(_np.asarray(self.pwn.sample(50000)))
         fitted = SE2PartiallyWrappedNormalDistribution.from_samples(samples)
