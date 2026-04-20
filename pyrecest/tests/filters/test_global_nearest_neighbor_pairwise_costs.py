@@ -4,7 +4,6 @@ import numpy.testing as npt
 
 # pylint: disable=no-member,duplicate-code
 import pyrecest.backend
-
 from pyrecest.backend import array, column_stack, diag, eye, zeros
 from pyrecest.distributions import GaussianDistribution
 from pyrecest.filters import KalmanFilter

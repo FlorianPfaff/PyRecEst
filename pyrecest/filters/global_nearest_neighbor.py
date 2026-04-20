@@ -230,9 +230,7 @@ class GlobalNearestNeighbor(AbstractNearestNeighborTracker):
             measurement_matrix.shape[0] == measurements.shape[0]
             and measurement_matrix.shape[1]
             == self.filter_bank[0].get_point_estimate().shape[0]
-        ), (
-            "Dimensions of measurement matrix must match state and measurement dimensions."
-        )
+        ), "Dimensions of measurement matrix must match state and measurement dimensions."
         association = self.find_association(
             measurements,
             measurement_matrix,

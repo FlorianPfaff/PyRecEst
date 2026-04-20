@@ -6,7 +6,6 @@ import numpy.testing as npt
 # pylint: disable=no-name-in-module,no-member
 import pyrecest.backend
 from pyrecest.backend import allclose, array, eye
-
 from pyrecest.distributions import GaussianDistribution
 from pyrecest.filters.interacting_multiple_model_filter import (
     IMM,
@@ -29,7 +28,9 @@ class MockGaussianFilter:
         mu = system_matrix @ self.filter_state.mu
         if sys_input is not None:
             mu = mu + sys_input
-        covariance = system_matrix @ self.filter_state.C @ system_matrix.T + sys_noise_cov
+        covariance = (
+            system_matrix @ self.filter_state.C @ system_matrix.T + sys_noise_cov
+        )
         self.filter_state = GaussianDistribution(mu, covariance, check_validity=False)
 
     def update_identity(self, measurement, meas_noise):
@@ -40,17 +41,18 @@ class MockGaussianFilter:
         innovation_covariance = (
             measurement_matrix @ self.filter_state.C @ measurement_matrix.T + meas_noise
         )
-        kalman_gain = self.filter_state.C @ measurement_matrix.T @ pyrecest.backend.linalg.inv(
-            innovation_covariance
+        kalman_gain = (
+            self.filter_state.C
+            @ measurement_matrix.T
+            @ pyrecest.backend.linalg.inv(innovation_covariance)
         )
         mu = self.filter_state.mu + kalman_gain @ innovation
         identity_matrix = eye(self.dim)
         covariance = (
-            (identity_matrix - kalman_gain @ measurement_matrix)
-            @ self.filter_state.C
-            @ (identity_matrix - kalman_gain @ measurement_matrix).T
-            + kalman_gain @ meas_noise @ kalman_gain.T
-        )
+            identity_matrix - kalman_gain @ measurement_matrix
+        ) @ self.filter_state.C @ (
+            identity_matrix - kalman_gain @ measurement_matrix
+        ).T + kalman_gain @ meas_noise @ kalman_gain.T
         covariance = 0.5 * (covariance + covariance.T)
         self.filter_state = GaussianDistribution(mu, covariance, check_validity=False)
 

@@ -28,11 +28,11 @@ from .hyperspherical_ukf import HypersphericalUKF
 from .hypertoroidal_dummy_filter import HypertoroidalDummyFilter
 from .hypertoroidal_fourier_filter import HypertoroidalFourierFilter
 from .hypertoroidal_particle_filter import HypertoroidalParticleFilter
+from .interacting_multiple_model_filter import IMM, InteractingMultipleModelFilter
 from .joint_probabilistic_data_association_filter import (
     JPDAF,
     JointProbabilisticDataAssociationFilter,
 )
-from .interacting_multiple_model_filter import IMM, InteractingMultipleModelFilter
 from .kalman_filter import KalmanFilter
 from .kernel_sme_filter import KernelSMEFilter
 from .lin_bounded_particle_filter import LinBoundedParticleFilter

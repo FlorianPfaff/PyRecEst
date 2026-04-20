@@ -1,14 +1,11 @@
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
 import mpmath
 import pyrecest.backend
-from scipy.optimize import brentq
-
 from pyrecest.backend import (
     abs,
     all,
     arange,
     argsort,
-    flip,
     array,
     asarray,
     atleast_1d,
@@ -17,6 +14,7 @@ from pyrecest.backend import (
     cumprod,
     exp,
     eye,
+    flip,
     gammaln,
     linalg,
     log,
@@ -32,6 +30,7 @@ from pyrecest.backend import (
     zeros,
     zeros_like,
 )
+from scipy.optimize import brentq
 
 
 class ComplexWatsonDistribution:
@@ -54,9 +53,7 @@ class ComplexWatsonDistribution:
         """
         mu = asarray(mu, dtype=complex128)
         assert mu.ndim == 1, "mu must be a 1-D vector"
-        assert (
-            abs(linalg.norm(mu) - 1.0) < self.EPSILON
-        ), "mu must be a unit vector"
+        assert abs(linalg.norm(mu) - 1.0) < self.EPSILON, "mu must be a unit vector"
 
         self.mu = mu
         self.kappa = float(kappa)
@@ -282,10 +279,7 @@ class ComplexWatsonDistribution:
         #   log(1/C) ≈ log(2) + D·log(π) + (1-D)·log(κ) + κ
         # ----------------------------------------------------------
         log_c_high = (
-            log(array(2.0))
-            + D * log(pi)
-            + (1 - D) * log(kappa_arr)
-            + kappa_arr
+            log(array(2.0)) + D * log(pi) + (1 - D) * log(kappa_arr) + kappa_arr
         )
 
         # ----------------------------------------------------------
@@ -299,9 +293,7 @@ class ComplexWatsonDistribution:
                 kappa_arr[:, None] ** i_arr / exp(gammaln(i_arr + 1.0)),
                 axis=1,
             )
-            log_c_medium = log_c_high + log(
-                maximum(1.0 - correction, 1e-300)
-            )
+            log_c_medium = log_c_high + log(maximum(1.0 - correction, 1e-300))
         else:
             log_c_medium = log_c_high  # D=1: empty sum → correction = 0
 
@@ -313,12 +305,7 @@ class ComplexWatsonDistribution:
         cumprods = cumprod(ratios, axis=1)
         hyp1f1_approx = 1.0 + sum(cumprods, axis=1)
         log_fact_Dm1 = gammaln(array(float(D)))  # log Γ(D) = log (D-1)!
-        log_c_low = (
-            log(array(2.0))
-            + D * log(pi)
-            - log_fact_Dm1
-            + log(hyp1f1_approx)
-        )
+        log_c_low = log(array(2.0)) + D * log(pi) - log_fact_Dm1 + log(hyp1f1_approx)
 
         # Select the appropriate regime
         mask_low = kappa_arr < (1.0 / D)

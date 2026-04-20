@@ -2,7 +2,6 @@
 import unittest
 
 import pyrecest.backend
-
 from pyrecest.backend import (
     all,
     allclose,

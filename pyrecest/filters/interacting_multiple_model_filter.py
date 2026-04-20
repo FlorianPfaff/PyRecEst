@@ -27,9 +27,9 @@ from pyrecest.backend import (
     zeros,
     zeros_like,
 )
+from pyrecest.distributions import GaussianDistribution, GaussianMixture
 from scipy.special import logsumexp
 
-from pyrecest.distributions import GaussianDistribution, GaussianMixture
 from .abstract_filter import AbstractFilter
 from .manifold_mixins import EuclideanFilterMixin
 
@@ -106,7 +106,9 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
             i for i, prob in enumerate(self.mode_probabilities) if float(prob) > 0.0
         ]
         if not active_indices:
-            raise ValueError("At least one model probability must be strictly positive.")
+            raise ValueError(
+                "At least one model probability must be strictly positive."
+            )
 
         active_states = [
             self._as_gaussian(self.filter_bank[i].filter_state) for i in active_indices
@@ -136,10 +138,14 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
                     "model in the IMM."
                 )
             if all(hasattr(curr_state, "filter_state") for curr_state in new_state):
-                self.filter_bank = [copy.deepcopy(curr_filter) for curr_filter in new_state]
+                self.filter_bank = [
+                    copy.deepcopy(curr_filter) for curr_filter in new_state
+                ]
                 self._validate_filter_bank()
                 return
-            if all(isinstance(curr_state, GaussianDistribution) for curr_state in new_state):
+            if all(
+                isinstance(curr_state, GaussianDistribution) for curr_state in new_state
+            ):
                 for curr_filter, curr_state in zip(self.filter_bank, new_state):
                     curr_filter.filter_state = curr_state
                 return
@@ -152,7 +158,10 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
     @property
     def combined_filter_state(self) -> GaussianDistribution:
         """Moment-matched single-Gaussian approximation of the IMM state."""
-        curr_states = [self._as_gaussian(curr_filter.filter_state) for curr_filter in self.filter_bank]
+        curr_states = [
+            self._as_gaussian(curr_filter.filter_state)
+            for curr_filter in self.filter_bank
+        ]
         return self._moment_match_gaussians(curr_states, self.mode_probabilities)
 
     @property
@@ -175,7 +184,8 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
         )
 
         previous_states = [
-            self._as_gaussian(curr_filter.filter_state) for curr_filter in self.filter_bank
+            self._as_gaussian(curr_filter.filter_state)
+            for curr_filter in self.filter_bank
         ]
         mixing_probabilities = zeros((self.n_models, self.n_models))
 
@@ -188,8 +198,8 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
                     / curr_normalizer
                 )
                 mixing_probabilities[:, curr_model] = curr_weights
-                self.filter_bank[curr_model].filter_state = self._moment_match_gaussians(
-                    previous_states, curr_weights
+                self.filter_bank[curr_model].filter_state = (
+                    self._moment_match_gaussians(previous_states, curr_weights)
                 )
             else:
                 mixing_probabilities[curr_model, curr_model] = 1.0
@@ -206,7 +216,9 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
         or be provided as lists/tuples with one entry per model.
         """
         self.interact()
-        sys_noise_covs = self._broadcast_model_argument(sys_noise_covs, "sys_noise_covs")
+        sys_noise_covs = self._broadcast_model_argument(
+            sys_noise_covs, "sys_noise_covs"
+        )
         sys_inputs = self._broadcast_model_argument(sys_inputs, "sys_inputs")
 
         for curr_filter, curr_noise_cov, curr_input in zip(
@@ -228,7 +240,9 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
         system_matrices = self._broadcast_model_argument(
             system_matrices, "system_matrices"
         )
-        sys_noise_covs = self._broadcast_model_argument(sys_noise_covs, "sys_noise_covs")
+        sys_noise_covs = self._broadcast_model_argument(
+            sys_noise_covs, "sys_noise_covs"
+        )
         sys_inputs = self._broadcast_model_argument(sys_inputs, "sys_inputs")
 
         for curr_filter, curr_system_matrix, curr_noise_cov, curr_input in zip(
@@ -258,7 +272,9 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
         transition_functions = self._broadcast_model_argument(
             transition_functions, "transition_functions"
         )
-        sys_noise_covs = self._broadcast_model_argument(sys_noise_covs, "sys_noise_covs")
+        sys_noise_covs = self._broadcast_model_argument(
+            sys_noise_covs, "sys_noise_covs"
+        )
         dts = self._broadcast_model_argument(dts, "dts")
         fx_args = self._broadcast_keyword_argument(fx_args, "fx_args")
 
@@ -294,9 +310,11 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
         meas_noises = self._broadcast_model_argument(meas_noises, "meas_noises")
 
         log_likelihoods = empty(self.n_models)
-        for model_index, (curr_filter, curr_measurement_matrix, curr_meas_noise) in enumerate(
-            zip(self.filter_bank, measurement_matrices, meas_noises)
-        ):
+        for model_index, (
+            curr_filter,
+            curr_measurement_matrix,
+            curr_meas_noise,
+        ) in enumerate(zip(self.filter_bank, measurement_matrices, meas_noises)):
             predicted_state = self._as_gaussian(curr_filter.filter_state)
             log_likelihoods[model_index] = self._log_linear_measurement_likelihood(
                 measurement,
@@ -372,7 +390,7 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
                 )
             if pyrecest.backend.any(likelihoods < 0.0):
                 raise ValueError("likelihoods must be nonnegative.")
-            log_likelihoods = full(self.n_models, -float('inf'))
+            log_likelihoods = full(self.n_models, -float("inf"))
             positive = likelihoods > 0.0
             log_likelihoods[positive] = log(likelihoods[positive])
             self.latest_model_likelihoods = likelihoods
@@ -385,7 +403,7 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
             self.latest_model_likelihoods = exp(log_likelihoods)
 
         prior_probabilities = asarray(self.mode_probabilities, dtype=float).reshape(-1)
-        log_prior = full(self.n_models, -float('inf'))
+        log_prior = full(self.n_models, -float("inf"))
         positive = prior_probabilities > 0.0
         log_prior[positive] = log(prior_probabilities[positive])
 
@@ -397,9 +415,7 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
             )
 
         log_normalizer = logsumexp(log_posterior_unnormalized)
-        posterior_probabilities = exp(
-            log_posterior_unnormalized - log_normalizer
-        )
+        posterior_probabilities = exp(log_posterior_unnormalized - log_normalizer)
 
         self.mode_probabilities = self._prepare_mode_probabilities(
             posterior_probabilities, self.n_models
@@ -416,24 +432,27 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
             raise ValueError("filter_bank must contain at least one filter.")
 
         curr_dims = [
-            self._as_gaussian(curr_filter.filter_state).dim for curr_filter in self.filter_bank
+            self._as_gaussian(curr_filter.filter_state).dim
+            for curr_filter in self.filter_bank
         ]
         if any(curr_dim != curr_dims[0] for curr_dim in curr_dims[1:]):
-            raise ValueError("All filters in filter_bank must have the same state dimension.")
+            raise ValueError(
+                "All filters in filter_bank must have the same state dimension."
+            )
 
     @staticmethod
     def _prepare_transition_matrix(transition_matrix, n_models):
         transition_matrix = asarray(transition_matrix, dtype=float)
         if transition_matrix.shape != (n_models, n_models):
-            raise ValueError(
-                "transition_matrix must have shape (n_models, n_models)."
-            )
+            raise ValueError("transition_matrix must have shape (n_models, n_models).")
         if pyrecest.backend.any(transition_matrix < 0.0):
             raise ValueError("transition_matrix must be elementwise nonnegative.")
 
         row_sums = transition_matrix.sum(axis=1)
         if pyrecest.backend.any(row_sums <= 0.0):
-            raise ValueError("Each row of transition_matrix must sum to a positive value.")
+            raise ValueError(
+                "Each row of transition_matrix must sum to a positive value."
+            )
         if not allclose(row_sums, 1.0):
             warnings.warn(
                 "Rows of transition_matrix do not sum to one. Renormalizing rows.",
@@ -536,9 +555,7 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
         for curr_weight, curr_state in zip(weights, gaussians):
             curr_covariance = asarray(curr_state.C, dtype=float)
             curr_diff = asarray(curr_state.mu, dtype=float) - mean
-            covariance += curr_weight * (
-                curr_covariance + outer(curr_diff, curr_diff)
-            )
+            covariance += curr_weight * (curr_covariance + outer(curr_diff, curr_diff))
         covariance = 0.5 * (covariance + covariance.T)
         return GaussianDistribution(mean, covariance, check_validity=False)
 
@@ -561,7 +578,9 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
             predicted_state.mu, dtype=float
         )
         innovation_covariance = (
-            measurement_matrix @ asarray(predicted_state.C, dtype=float) @ measurement_matrix.T
+            measurement_matrix
+            @ asarray(predicted_state.C, dtype=float)
+            @ measurement_matrix.T
             + meas_noise
         )
         det_value = float(linalg.det(innovation_covariance))

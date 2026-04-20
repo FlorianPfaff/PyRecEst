@@ -153,6 +153,7 @@ from .hypersphere_subset.complex_angular_central_gaussian_distribution import (
     ComplexAngularCentralGaussianDistribution,
 )
 from .hypersphere_subset.complex_bingham_distribution import ComplexBinghamDistribution
+from .hypersphere_subset.complex_watson_distribution import ComplexWatsonDistribution
 from .hypersphere_subset.custom_hemispherical_distribution import (
     CustomHemisphericalDistribution,
 )
@@ -197,7 +198,6 @@ from .hypersphere_subset.spherical_harmonics_distribution_complex import (
 from .hypersphere_subset.spherical_harmonics_distribution_real import (
     SphericalHarmonicsDistributionReal,
 )
-from .hypersphere_subset.complex_watson_distribution import ComplexWatsonDistribution
 from .hypersphere_subset.von_mises_fisher_distribution import VonMisesFisherDistribution
 from .hypersphere_subset.watson_distribution import WatsonDistribution
 from .hypertorus.abstract_hypertoroidal_distribution import (
