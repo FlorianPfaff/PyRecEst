@@ -3,6 +3,7 @@ import numpy.testing as npt
 import unittest
 from itertools import product
 
+# pylint: disable=no-name-in-module,no-member
 import pyrecest.backend
 from pyrecest.backend import array
 from pyrecest.distributions.se2_partially_wrapped_normal_distribution import SE2PartiallyWrappedNormalDistribution

@@ -128,7 +128,7 @@ class AbstractHypercylindricalDistribution(AbstractLinPeriodicCartProdDistributi
                 float(left[0]), float(right[0]),
             )[0]
             return array([m0, m1, m2])
-        elif self.lin_dim == 2:
+        if self.lin_dim == 2:
             ranges = [
                 [float(left[0]), float(right[0])],
                 [float(left[1]), float(right[1])],
@@ -152,8 +152,7 @@ class AbstractHypercylindricalDistribution(AbstractLinPeriodicCartProdDistributi
             m2 = nquad(integrand3, ranges)[0]
             m3 = nquad(integrand4, ranges)[0]
             return array([m0, m1, m2, m3])
-        else:
-            raise ValueError("lin_dim>2 not supported.")
+        raise ValueError("lin_dim>2 not supported.")
 
     def mode(self):
         """Find the mode of the distribution by calling mode_numerical."""
