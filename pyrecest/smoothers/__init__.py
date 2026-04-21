@@ -1,8 +1,8 @@
 from .abstract_smoother import AbstractSmoother
-from .rauch_tung_striebel_smoother import RTSSmoother, RauchTungStriebelSmoother
+from .rauch_tung_striebel_smoother import RauchTungStriebelSmoother, RTSSmoother
 from .unscented_rauch_tung_striebel_smoother import (
-    URTSSmoother,
     UnscentedRauchTungStriebelSmoother,
+    URTSSmoother,
 )
 
 __all__ = [

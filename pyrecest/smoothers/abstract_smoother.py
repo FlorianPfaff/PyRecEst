@@ -37,8 +37,12 @@ class AbstractSmoother(ABC):
         if ndim(measurements_array) == 1:
             return [asarray([measurement]) for measurement in measurements_array]
         if ndim(measurements_array) == 2:
-            return [measurements_array[idx] for idx in range(measurements_array.shape[0])]
-        raise ValueError("Measurements must be a 1-D or 2-D array, or a Python sequence.")
+            return [
+                measurements_array[idx] for idx in range(measurements_array.shape[0])
+            ]
+        raise ValueError(
+            "Measurements must be a 1-D or 2-D array, or a Python sequence."
+        )
 
     @staticmethod
     def _normalize_matrix_sequence(  # pylint: disable=too-many-return-statements,too-many-branches
