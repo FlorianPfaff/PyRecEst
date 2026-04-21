@@ -36,9 +36,3 @@ class SE2PWNDistribution(SE2PartiallyWrappedNormalDistribution):
         Backward-compatible alias for covariance_4d_numerical().
         """
         return self.covariance_4d_numerical(n_samples)
-
-    @staticmethod
-    def from_samples(samples):
-        """Fit an SE2PWNDistribution from samples via moment matching."""
-        result = SE2PartiallyWrappedNormalDistribution.from_samples(samples)
-        return SE2PWNDistribution(result.mu, result.C)
