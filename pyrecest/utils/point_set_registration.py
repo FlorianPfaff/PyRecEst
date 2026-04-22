@@ -37,12 +37,14 @@ from ._point_set_registration_common import (
     RegistrationLoopCallbacks,
     RegistrationLoopConfig,
     RegistrationResultBase,
-    as_point_array as _as_point_array,
+)
+from ._point_set_registration_common import as_point_array as _as_point_array
+from ._point_set_registration_common import (
     build_registration_result,
     run_registration_loop,
     solve_gated_assignment,
-    validate_pair as _validate_pair,
 )
+from ._point_set_registration_common import validate_pair as _validate_pair
 
 TransformModel = Literal["translation", "rigid", "affine"]
 AssociationCostFn = Callable
@@ -102,7 +104,9 @@ class AffineTransform:
 
 
 @dataclass(frozen=True)
-class RegistrationResult(RegistrationResultBase):  # pylint: disable=too-many-instance-attributes
+class RegistrationResult(
+    RegistrationResultBase
+):  # pylint: disable=too-many-instance-attributes
     """Result of alternating registration and assignment."""
 
     transform: AffineTransform
@@ -154,7 +158,9 @@ def estimate_transform(  # pylint: disable=too-many-locals
         Only relevant for the rigid model. If ``False`` the returned rotation is
         constrained to have determinant ``+1``.
     """
-    assert pyrecest.backend.__backend_name__ != "jax", "Not supported for the JAX backend."
+    assert (
+        pyrecest.backend.__backend_name__ != "jax"
+    ), "Not supported for the JAX backend."
 
     source, target = _validate_pair(source_points, target_points)
     n_points, dim = source.shape
@@ -248,12 +254,16 @@ def joint_registration_assignment(  # pylint: disable=too-many-arguments,too-man
     allow_reflection:
         Passed through to :func:`estimate_transform` for the rigid model.
     """
-    assert pyrecest.backend.__backend_name__ != "jax", "Not supported for the JAX backend."
+    assert (
+        pyrecest.backend.__backend_name__ != "jax"
+    ), "Not supported for the JAX backend."
 
     reference = _as_point_array(reference_points)
     moving = _as_point_array(moving_points)
     if reference.shape[1] != moving.shape[1]:
-        raise ValueError("reference_points and moving_points must have the same dimension.")
+        raise ValueError(
+            "reference_points and moving_points must have the same dimension."
+        )
     if max_iterations <= 0:
         raise ValueError("max_iterations must be positive.")
 
@@ -266,7 +276,9 @@ def joint_registration_assignment(  # pylint: disable=too-many-arguments,too-man
     if initial_transform is None:
         reference_location = quantile(reference, 0.5, axis=0)
         moving_location = quantile(moving, 0.5, axis=0)
-        initial_transform = AffineTransform(eye(dim), moving_location - reference_location)
+        initial_transform = AffineTransform(
+            eye(dim), moving_location - reference_location
+        )
     elif initial_transform.dim != dim:
         raise ValueError("initial_transform dimension must match the point dimension.")
 

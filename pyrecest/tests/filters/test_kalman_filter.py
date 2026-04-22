@@ -3,7 +3,6 @@ import unittest
 
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import allclose, array, diag, eye
-
 from pyrecest.distributions import GaussianDistribution
 from pyrecest.filters.kalman_filter import KalmanFilter
 

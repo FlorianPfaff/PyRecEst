@@ -3,12 +3,11 @@ from typing import Callable
 
 import pyrecest.backend
 from pyrecest.backend import atleast_1d, zeros
+from pyrecest.distributions import GaussianDistribution
 
 from ._ukf import MerweScaledSigmaPoints
 from ._ukf import UnscentedKalmanFilter as BayesianFiltersUKF
 from ._ukf import _UKFModel
-from pyrecest.distributions import GaussianDistribution
-
 from .abstract_filter import AbstractFilter
 from .manifold_mixins import EuclideanFilterMixin
 

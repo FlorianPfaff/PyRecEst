@@ -10,9 +10,9 @@ from typing import Callable, Sequence
 
 # pylint: disable=no-member
 import pyrecest.backend
-from pyrecest.filters._ukf import MerweScaledSigmaPoints
 from pyrecest.backend import asarray, linalg, ndim, outer, stack, zeros
 from pyrecest.distributions import GaussianDistribution
+from pyrecest.filters._ukf import MerweScaledSigmaPoints
 
 from .abstract_smoother import AbstractSmoother
 

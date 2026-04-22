@@ -205,7 +205,9 @@ class UnscentedKalmanFilter:
 
         sigmas_f = empty_like(sigmas)
         for i in range(n_sigmas):
-            sigmas_f[i] = reshape(asarray(fx(sigmas[i], dt, **fx_args), dtype=float64), (-1,))
+            sigmas_f[i] = reshape(
+                asarray(fx(sigmas[i], dt, **fx_args), dtype=float64), (-1,)
+            )
 
         Wm = points.Wm
         Wc = points.Wc
@@ -264,7 +266,9 @@ class UnscentedKalmanFilter:
 
         sigmas_h = empty((sigmas_f.shape[0], self._model.dim_z))
         for i in range(sigmas_f.shape[0]):
-            sigmas_h[i] = reshape(asarray(hx(sigmas_f[i], **hx_args), dtype=float64), (-1,))
+            sigmas_h[i] = reshape(
+                asarray(hx(sigmas_f[i], **hx_args), dtype=float64), (-1,)
+            )
 
         z_pred = einsum("i,ij->j", Wm, sigmas_h)
         Pz, Pxz = self._innovation_matrices(sigmas_f, sigmas_h, z_pred, R, Wc)

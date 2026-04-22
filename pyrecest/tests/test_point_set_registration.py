@@ -1,7 +1,6 @@
 import unittest
 
 import numpy.testing as npt
-
 import pyrecest.backend
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
@@ -117,9 +116,7 @@ class TestJointRegistrationAssignment(unittest.TestCase):
             reference,
             moving,
             model="translation",
-            initial_transform=AffineTransform(
-                eye(2), shift + array([0.1, -0.1])
-            ),
+            initial_transform=AffineTransform(eye(2), shift + array([0.1, -0.1])),
             max_cost=0.35,
         )
 

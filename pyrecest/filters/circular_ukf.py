@@ -11,12 +11,11 @@ References:
 # pylint: disable=no-name-in-module,no-member
 import pyrecest.backend
 
-from ._ukf import MerweScaledSigmaPoints, UnscentedKalmanFilter, _UKFModel
-
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import array, atleast_1d, mod, pi, sign
 from pyrecest.distributions import GaussianDistribution
 
+from ._ukf import MerweScaledSigmaPoints, UnscentedKalmanFilter, _UKFModel
 from .abstract_filter import AbstractFilter
 from .manifold_mixins import CircularFilterMixin
 

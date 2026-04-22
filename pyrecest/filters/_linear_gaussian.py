@@ -1,7 +1,15 @@
 # pylint: disable=no-name-in-module,no-member
 """Backend-native linear-Gaussian predict/update primitives."""
 
-from pyrecest.backend import asarray, atleast_1d, atleast_2d, eye, float64, linalg, transpose
+from pyrecest.backend import (
+    asarray,
+    atleast_1d,
+    atleast_2d,
+    eye,
+    float64,
+    linalg,
+    transpose,
+)
 
 
 def _as_vector(x, name):
@@ -93,8 +101,8 @@ def linear_gaussian_update(
     identity = eye(state_dim)
     correction = identity - kalman_gain @ measurement_matrix
     updated_covariance = correction @ covariance @ transpose(correction)
-    updated_covariance = (
-        updated_covariance + kalman_gain @ meas_noise @ transpose(kalman_gain)
+    updated_covariance = updated_covariance + kalman_gain @ meas_noise @ transpose(
+        kalman_gain
     )
     updated_covariance = 0.5 * (updated_covariance + transpose(updated_covariance))
 

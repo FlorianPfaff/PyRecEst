@@ -96,7 +96,9 @@ def as_point_array(
         if point_array.shape[1] == 0:
             raise ValueError("Point dimension must be positive.")
     elif point_array.shape[1] != expected_dim:
-        raise ValueError(expected_dim_error or f"points must have dimension {expected_dim}.")
+        raise ValueError(
+            expected_dim_error or f"points must have dimension {expected_dim}."
+        )
     return point_array
 
 
@@ -160,9 +162,7 @@ def solve_gated_assignment(cost_matrix, *, max_cost: float = float("inf")):
         return zeros((costs.shape[0],), dtype=int64) - 1
 
     dummy_cost = (
-        float(max_cost)
-        if math.isfinite(max_cost)
-        else float(finite_costs.max() + 1.0)
+        float(max_cost) if math.isfinite(max_cost) else float(finite_costs.max() + 1.0)
     )
     padded_size = max(costs.shape[0], costs.shape[1])
     sanitized_costs = where(finite_mask, costs, dummy_cost)
@@ -174,7 +174,10 @@ def solve_gated_assignment(cost_matrix, *, max_cost: float = float("inf")):
     for row_index, col_index in zip(row_indices, col_indices):
         if row_index >= costs.shape[0] or col_index >= costs.shape[1]:
             continue
-        if isfinite(costs[row_index, col_index]) and costs[row_index, col_index] <= max_cost:
+        if (
+            isfinite(costs[row_index, col_index])
+            and costs[row_index, col_index] <= max_cost
+        ):
             assignment[row_index] = int(col_index)
     return assignment
 
@@ -220,7 +223,9 @@ def run_registration_loop(  # pylint: disable=too-many-locals
     assignment = zeros((reference.shape[0],), dtype=int64) - 1
     converged = False
     iteration = 0
-    association_cost = default_cost if config.cost_function is None else config.cost_function
+    association_cost = (
+        default_cost if config.cost_function is None else config.cost_function
+    )
 
     for iteration in range(1, config.max_iterations + 1):
         transformed_reference, current_costs = evaluate_registration_costs(

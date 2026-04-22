@@ -18,6 +18,7 @@ from pyrecest.backend import (
     asarray,
     concatenate,
     eye,
+    linalg,
     log,
     maximum,
     ones,
@@ -25,19 +26,20 @@ from pyrecest.backend import (
     where,
     zeros,
 )
-from pyrecest.backend import linalg
 from scipy.spatial.distance import cdist
 
 from ._point_set_registration_common import (
     RegistrationLoopCallbacks,
     RegistrationLoopConfig,
     RegistrationResultBase,
-    as_point_array as _as_point_array,
+)
+from ._point_set_registration_common import as_point_array as _as_point_array
+from ._point_set_registration_common import (
     build_registration_result,
     run_registration_loop,
     solve_gated_assignment,
-    validate_pair as _validate_pair,
 )
+from ._point_set_registration_common import validate_pair as _validate_pair
 
 NonRigidAssociationCostFn = Callable[[Any, Any], Any]
 
@@ -117,7 +119,9 @@ class ThinPlateSplineTransform:
 
         basis = zeros((point_array.shape[0], 0))
         if self.control_points.shape[0] > 0:
-            distances = asarray(cdist(point_array, self.control_points, metric="euclidean"))
+            distances = asarray(
+                cdist(point_array, self.control_points, metric="euclidean")
+            )
             basis = _tps_kernel_from_distances(distances)
 
         polynomial = concatenate([ones((point_array.shape[0], 1)), point_array], axis=1)
@@ -125,7 +129,9 @@ class ThinPlateSplineTransform:
 
 
 @dataclass(frozen=True)
-class ThinPlateSplineRegistrationResult(RegistrationResultBase):  # pylint: disable=too-many-instance-attributes
+class ThinPlateSplineRegistrationResult(
+    RegistrationResultBase
+):  # pylint: disable=too-many-instance-attributes
     """Result of alternating TPS registration and assignment."""
 
     transform: ThinPlateSplineTransform
@@ -169,9 +175,13 @@ def estimate_thin_plate_spline(
     n_points = source.shape[0]
 
     if n_points < 3:
-        raise ValueError("At least three matched 2D points are required for TPS fitting.")
+        raise ValueError(
+            "At least three matched 2D points are required for TPS fitting."
+        )
 
-    kernel = _tps_kernel_from_distances(asarray(cdist(source, source, metric="euclidean")))
+    kernel = _tps_kernel_from_distances(
+        asarray(cdist(source, source, metric="euclidean"))
+    )
     polynomial = concatenate([ones((n_points, 1)), source], axis=1)
 
     lhs = zeros((n_points + 3, n_points + 3))
@@ -263,7 +273,9 @@ def joint_tps_registration_assignment(  # pylint: disable=too-many-arguments,too
         transform = ThinPlateSplineTransform.from_translation(translation)
     else:
         if initial_transform.dim != 2:
-            raise ValueError("initial_transform dimension must match the point dimension.")
+            raise ValueError(
+                "initial_transform dimension must match the point dimension."
+            )
         transform = initial_transform
 
     def _fit_transform(matched_reference, matched_moving):

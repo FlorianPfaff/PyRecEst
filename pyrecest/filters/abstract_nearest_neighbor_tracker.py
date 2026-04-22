@@ -138,9 +138,7 @@ class AbstractNearestNeighborTracker(AbstractMultitargetTracker):
                 raise NotImplementedError(
                     "This tracker does not support pairwise_cost_matrix."
                 )
-            association = self.find_association_from_cost_matrix(
-                pairwise_cost_matrix
-            )
+            association = self.find_association_from_cost_matrix(pairwise_cost_matrix)
 
         currMeasCov = covMatsMeas
         for i in range(self.get_number_of_targets()):

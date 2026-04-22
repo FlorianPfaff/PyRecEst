@@ -1,12 +1,10 @@
 import unittest
 
 import numpy.testing as npt
-
 import pyrecest.backend
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import array, asarray, concatenate, eye, ones, zeros
-from pyrecest.backend import linalg
+from pyrecest.backend import array, asarray, concatenate, eye, linalg, ones, zeros
 from pyrecest.utils.nonrigid_point_set_registration import (
     ThinPlateSplineTransform,
     estimate_thin_plate_spline,
@@ -131,7 +129,9 @@ class TestJointThinPlateSplineRegistrationAssignment(unittest.TestCase):
         pyrecest.backend.__backend_name__ == "jax",
         reason="Not supported on this backend",
     )
-    def test_joint_tps_registration_assignment_handles_missing_points_and_outliers(self):
+    def test_joint_tps_registration_assignment_handles_missing_points_and_outliers(
+        self,
+    ):
         reference = array(
             [
                 [0.0, 0.0],
@@ -176,7 +176,9 @@ class TestJointThinPlateSplineRegistrationAssignment(unittest.TestCase):
         result = joint_tps_registration_assignment(
             reference,
             moving,
-            initial_transform=ThinPlateSplineTransform.from_translation(array([1.1, -0.8])),
+            initial_transform=ThinPlateSplineTransform.from_translation(
+                array([1.1, -0.8])
+            ),
             max_cost=0.5,
             regularization=1e-8,
         )
@@ -207,7 +209,9 @@ class TestJointThinPlateSplineRegistrationAssignment(unittest.TestCase):
         result = joint_tps_registration_assignment(
             reference,
             moving,
-            initial_transform=ThinPlateSplineTransform.from_translation(array([0.3, -0.1])),
+            initial_transform=ThinPlateSplineTransform.from_translation(
+                array([0.3, -0.1])
+            ),
             cost_function=cost_function,
             max_cost=1.0,
             regularization=1e-8,
