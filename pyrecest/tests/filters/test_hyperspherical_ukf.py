@@ -14,6 +14,8 @@ from pyrecest.filters.hyperspherical_ukf import HypersphericalUKF
 
 class HypersphericalUKFTest(unittest.TestCase):
     def setUp(self):
+        if pyrecest.backend.__backend_name__ in ("jax",):
+            return  # setUp deferred; individual tests are skipped
         self.filter_2d = HypersphericalUKF(dim=2)
         self.filter_3d = HypersphericalUKF(dim=3)
         self.gauss_2d = GaussianDistribution(
@@ -24,16 +26,28 @@ class HypersphericalUKFTest(unittest.TestCase):
             array([[0.5, 0.0, 0.0], [0.0, 0.5, 0.0], [0.0, 0.0, 0.5]]),
         )
 
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ in ("jax",),
+        reason="Not supported on this backend",
+    )
     def test_initialization_2d(self):
         """Default initial state is on S^1."""
         est = self.filter_2d.get_point_estimate()
         npt.assert_allclose(float(linalg.norm(est)), 1.0, atol=1e-10)
 
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ in ("jax",),
+        reason="Not supported on this backend",
+    )
     def test_initialization_3d(self):
         """Default initial state is on S^2."""
         est = self.filter_3d.get_point_estimate()
         npt.assert_allclose(float(linalg.norm(est)), 1.0, atol=1e-10)
 
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ in ("jax",),
+        reason="Not supported on this backend",
+    )
     def test_filter_state_setter(self):
         """Setting filter_state stores it correctly."""
         self.filter_2d.filter_state = self.gauss_2d

@@ -12,7 +12,6 @@ dependencies:
   - shapely
   - pip
   - pip: # Installing them via pip is much faster than using the conda-forge channel
-      - bayesian-filters
       - healpy
       - pyshtools
       - parameterized

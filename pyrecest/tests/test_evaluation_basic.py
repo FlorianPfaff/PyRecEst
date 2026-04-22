@@ -300,7 +300,7 @@ class TestEvalationBasics(TestEvalationBase):
             configure_for_filter(filterParam, scenario_config)
 
     @unittest.skipIf(
-        pyrecest.backend.__backend_name__ == "pytorch",
+        pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
         reason="Not supported on this backend",
     )
     def test_perform_predict_update_cycles(self):

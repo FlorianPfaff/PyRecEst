@@ -1,3 +1,6 @@
+# Ignore files by codex
+.codex_*
+
 # For ignoring cached files of GitHut action
 alpine-wheels/
 

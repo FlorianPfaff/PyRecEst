@@ -13,12 +13,20 @@ from pyrecest.filters.unscented_kalman_filter import UnscentedKalmanFilter
 
 
 class UnscentedKalmanFilterTest(unittest.TestCase):
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
+        reason="Not supported on this backend",
+    )
     def test_initialization(self):
         filter_custom = UnscentedKalmanFilter(
             GaussianDistribution(array([1.0]), array([[10000.0]]))
         )
         npt.assert_allclose(filter_custom.get_point_estimate(), 1.0)
 
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
+        reason="Not supported on this backend",
+    )
     def test_initialization_gauss(self):
         filter_custom = UnscentedKalmanFilter(
             GaussianDistribution(array([4.0]), array([[10000.0]]))

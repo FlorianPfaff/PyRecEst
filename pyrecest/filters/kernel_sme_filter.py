@@ -1,7 +1,5 @@
 import warnings
 
-import bayesian_filters
-
 # pylint: disable=no-name-in-module,no-member
 import pyrecest.backend
 
@@ -31,6 +29,7 @@ from pyrecest.backend import (
 )
 from pyrecest.distributions import GaussianDistribution
 
+from ._ukf import JulierSigmaPoints
 from .abstract_multitarget_tracker import AbstractMultitargetTracker
 
 
@@ -235,9 +234,9 @@ class KernelSMEFilter(AbstractMultitargetTracker):
         meas_dim = measurements.shape[0]
         n_meas = measurements.shape[1]
 
-        # Use high level function from bayesian_filters to generate sigma points
+        # Use sigma points to generate test points
         all_sample_points_list = [
-            bayesian_filters.kalman.JulierSigmaPoints(meas_dim).sigma_points(
+            JulierSigmaPoints(meas_dim).sigma_points(
                 measurements[:, i], sqrt(kernel_width) * eye(meas_dim)
             )
             for i in range(n_meas)

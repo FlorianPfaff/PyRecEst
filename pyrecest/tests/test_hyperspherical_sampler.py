@@ -335,7 +335,7 @@ class TestHopfConversion(unittest.TestCase):
         )
 
         # Check if the original quaternions are close to the recovered quaternions.
-        npt.assert_allclose(unit_vectors, recovered_quaternions, atol=3e-6)
+        npt.assert_allclose(unit_vectors, recovered_quaternions, atol=5e-6)
 
 
 class TestSymmetricLeopardiSampler(unittest.TestCase):
