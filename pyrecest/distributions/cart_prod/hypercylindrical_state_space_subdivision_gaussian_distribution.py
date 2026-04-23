@@ -6,7 +6,9 @@ from pyrecest.backend import (
     array,
     atleast_2d,
     concatenate,
-    sum as backend_sum,
+)
+from pyrecest.backend import sum as backend_sum
+from pyrecest.backend import (
     zeros,
 )
 
@@ -102,9 +104,8 @@ class HypercylindricalStateSpaceSubdivisionGaussianDistribution(
         for row_idx in range(xs.shape[0]):
             for grid_idx, grid_point in enumerate(grid_points):
                 if allclose(periodic_inputs[row_idx], grid_point):
-                    vals[row_idx] = (
-                        weights[grid_idx]
-                        * self.gaussians[grid_idx].pdf(linear_inputs[row_idx])
+                    vals[row_idx] = weights[grid_idx] * self.gaussians[grid_idx].pdf(
+                        linear_inputs[row_idx]
                     )
                     break
 
@@ -132,7 +133,9 @@ class HypercylindricalStateSpaceSubdivisionGaussianDistribution(
 
     def hybrid_moment(self):
         trig_mom_complex = self.gd.trigonometric_moment(1)
-        trig_mom_real = array([trig_mom_complex.real, trig_mom_complex.imag]).reshape(-1)
+        trig_mom_real = array([trig_mom_complex.real, trig_mom_complex.imag]).reshape(
+            -1
+        )
         return concatenate([trig_mom_real, self.linear_mean().reshape(-1)])
 
     def mode(self):

@@ -2,10 +2,9 @@ import unittest
 from math import pi
 
 import numpy.testing as npt
-
+from pyrecest.backend import __backend_name__ as backend_name
+from pyrecest.backend import all as backend_all
 from pyrecest.backend import (
-    __backend_name__ as backend_name,
-    all as backend_all,
     array,
     squeeze,
 )
@@ -37,9 +36,7 @@ class HypercylindricalStateSpaceSubdivisionDistributionTest(unittest.TestCase):
         hcrbd = HypercylindricalStateSpaceSubdivisionDistribution.from_distribution(
             self.chd, self.n
         )
-        self.assertIsInstance(
-            hcrbd, HypercylindricalStateSpaceSubdivisionDistribution
-        )
+        self.assertIsInstance(hcrbd, HypercylindricalStateSpaceSubdivisionDistribution)
         self.assertEqual(hcrbd.bound_dim, 1)
         self.assertEqual(hcrbd.lin_dim, 1)
 
@@ -47,9 +44,7 @@ class HypercylindricalStateSpaceSubdivisionDistributionTest(unittest.TestCase):
         hcrbd = HypercylindricalStateSpaceSubdivisionDistribution.from_function(
             self.fun, self.n, 1, 1
         )
-        self.assertIsInstance(
-            hcrbd, HypercylindricalStateSpaceSubdivisionDistribution
-        )
+        self.assertIsInstance(hcrbd, HypercylindricalStateSpaceSubdivisionDistribution)
 
     def test_marginalize_linear(self):
         from pyrecest.distributions.hypertorus.hypertoroidal_grid_distribution import (
@@ -104,9 +99,7 @@ class HypercylindricalStateSpaceSubdivisionDistributionTest(unittest.TestCase):
         hcrbd = HypercylindricalStateSpaceSubdivisionDistribution.from_distribution(
             self.chd, self.n
         )
-        test_points = array(
-            [[0.0, 1.0], [pi / 2, 0.5], [pi, 1.0], [3 * pi / 2, 1.5]]
-        )
+        test_points = array([[0.0, 1.0], [pi / 2, 0.5], [pi, 1.0], [3 * pi / 2, 1.5]])
         p_approx = hcrbd.pdf(test_points)
         p_true = self.chd.pdf(test_points)
         npt.assert_allclose(p_approx, p_true, rtol=0.3)
