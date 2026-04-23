@@ -3,25 +3,22 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-from pyrecest.backend import all, asarray, full, isfinite  # pylint: disable=no-name-in-module
+from pyrecest.backend import all, asarray, cast, full, isfinite  # pylint: disable=no-name-in-module
+from pyrecest.backend import max as backend_max
+from pyrecest.backend import sum as backend_sum
 
 from .multisession_assignment import (
     MultiSessionAssignmentResult,
     solve_multisession_assignment,
 )
 
-if TYPE_CHECKING:
-    import numpy as np
-
-    ObservationCostValue = float | Sequence[float] | np.ndarray
-else:
-    ObservationCostValue = Any
-
+BackendArray = Any
 PairwiseCostsInput = Mapping[tuple[int, int], Any] | Sequence[Any]
 SessionSizesInput = Mapping[int, int] | Sequence[int]
 Observation = tuple[int, int]
+ObservationCostValue = float | Sequence[float] | BackendArray
 ObservationCostsInput = Mapping[int, ObservationCostValue] | Sequence[ObservationCostValue]
 
 
@@ -68,11 +65,11 @@ def solve_multisession_assignment_with_observation_costs(
     )
 
     max_start_cost = max(
-        float(costs.max()) if costs.size else float(start_cost)
+        float(backend_max(costs)) if costs.size else float(start_cost)
         for costs in normalized_start_costs.values()
     )
     max_end_cost = max(
-        float(costs.max()) if costs.size else float(end_cost)
+        float(backend_max(costs)) if costs.size else float(end_cost)
         for costs in normalized_end_costs.values()
     )
 
@@ -102,8 +99,8 @@ def solve_multisession_assignment_with_observation_costs(
     )
 
     actual_baseline = sum(
-        float(costs.sum()) for costs in normalized_start_costs.values()
-    ) + sum(float(costs.sum()) for costs in normalized_end_costs.values())
+        float(backend_sum(costs)) for costs in normalized_start_costs.values()
+    ) + sum(float(backend_sum(costs)) for costs in normalized_end_costs.values())
     uniform_baseline = sum(session_sizes_map.values()) * (max_start_cost + max_end_cost)
     total_cost = float(base_result.total_cost - uniform_baseline + actual_baseline)
 
@@ -131,9 +128,9 @@ def solve_multisession_assignment_with_observation_costs(
 
 def _normalize_pairwise_costs(
     pairwise_costs: PairwiseCostsInput,
-) -> dict[tuple[int, int], np.ndarray]:
+) -> dict[tuple[int, int], BackendArray]:
     if isinstance(pairwise_costs, Mapping):
-        normalized: dict[tuple[int, int], np.ndarray] = {}
+        normalized: dict[tuple[int, int], BackendArray] = {}
         for key, value in pairwise_costs.items():
             if len(key) != 2:
                 raise ValueError("Each pairwise-cost key must contain two session indices.")
@@ -171,7 +168,7 @@ def _normalize_session_sizes(
 
 
 def _infer_and_validate_session_sizes(
-    pairwise_costs: Mapping[tuple[int, int], np.ndarray],
+    pairwise_costs: Mapping[tuple[int, int], BackendArray],
     session_sizes: Mapping[int, int],
 ) -> dict[int, int]:
     inferred_sizes = dict(session_sizes)
@@ -203,7 +200,7 @@ def _normalize_observation_costs(
     *,
     default_value: float,
     name: str,
-) -> dict[int, np.ndarray]:
+) -> dict[int, BackendArray]:
     if observation_costs is None:
         raw_entries: dict[int, ObservationCostValue] = {}
     elif isinstance(observation_costs, Mapping):
@@ -218,7 +215,7 @@ def _normalize_observation_costs(
             f"known sessions are {sorted(session_sizes)}."
         )
 
-    normalized: dict[int, np.ndarray] = {}
+    normalized: dict[int, BackendArray] = {}
     for session_idx in sorted(session_sizes):
         session_size = int(session_sizes[session_idx])
         if session_idx not in raw_entries:
@@ -242,7 +239,7 @@ def _normalize_observation_cost_entry(
     *,
     session_idx: int,
     name: str,
-) -> np.ndarray:
+) -> BackendArray:
     values = asarray(value, dtype=float)
     if values.ndim == 0:
         return full(session_size, float(values), dtype=float)
@@ -254,21 +251,21 @@ def _normalize_observation_cost_entry(
         raise ValueError(
             f"{name} entry for session {session_idx} has length {values.size}, expected {session_size}."
         )
-    return values.astype(float)
+    return cast(values, float)
 
 
 def _transform_pairwise_costs(
-    pairwise_costs: Mapping[tuple[int, int], np.ndarray],
+    pairwise_costs: Mapping[tuple[int, int], BackendArray],
     session_positions: Mapping[int, int],
-    start_costs: Mapping[int, np.ndarray],
-    end_costs: Mapping[int, np.ndarray],
+    start_costs: Mapping[int, BackendArray],
+    end_costs: Mapping[int, BackendArray],
     *,
     uniform_start_cost: float,
     uniform_end_cost: float,
     gap_penalty: float,
     cost_threshold: float | None,
-) -> dict[tuple[int, int], np.ndarray]:
-    transformed: dict[tuple[int, int], np.ndarray] = {}
+) -> dict[tuple[int, int], BackendArray]:
+    transformed: dict[tuple[int, int], BackendArray] = {}
     for (source_session, target_session), matrix in pairwise_costs.items():
         source_position = session_positions[source_session]
         target_position = session_positions[target_session]
