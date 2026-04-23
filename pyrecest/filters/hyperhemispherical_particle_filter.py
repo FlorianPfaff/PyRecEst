@@ -13,9 +13,7 @@ from .manifold_mixins import HyperhemisphericalFilterMixin
 class HyperhemisphericalParticleFilter(
     AbstractParticleFilter, HyperhemisphericalFilterMixin
 ):
-    def __init__(
-        self, n_particles: int, dim: int
-    ) -> None:
+    def __init__(self, n_particles: int, dim: int) -> None:
         """
         Constructor
 

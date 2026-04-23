@@ -1,8 +1,8 @@
 import warnings
 
+import pyrecest.backend
 from beartype import beartype
 from beartype.typing import Callable
-import pyrecest.backend
 from pyrecest.backend import any, empty, is_array, isinf, sum
 
 
