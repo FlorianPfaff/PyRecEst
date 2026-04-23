@@ -3,19 +3,25 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import numpy as np
+from pyrecest.backend import all, asarray, full, isfinite  # pylint: disable=no-name-in-module
 
 from .multisession_assignment import (
     MultiSessionAssignmentResult,
     solve_multisession_assignment,
 )
 
+if TYPE_CHECKING:
+    import numpy as np
+
+    ObservationCostValue = float | Sequence[float] | np.ndarray
+else:
+    ObservationCostValue = Any
+
 PairwiseCostsInput = Mapping[tuple[int, int], Any] | Sequence[Any]
 SessionSizesInput = Mapping[int, int] | Sequence[int]
 Observation = tuple[int, int]
-ObservationCostValue = float | Sequence[float] | np.ndarray
 ObservationCostsInput = Mapping[int, ObservationCostValue] | Sequence[ObservationCostValue]
 
 
@@ -134,7 +140,7 @@ def _normalize_pairwise_costs(
             source_session, target_session = int(key[0]), int(key[1])
             if source_session >= target_session:
                 raise ValueError("Pairwise-cost keys must satisfy source_session < target_session.")
-            matrix = np.asarray(value, dtype=float)
+            matrix = asarray(value, dtype=float)
             if matrix.ndim != 2:
                 raise ValueError("Each pairwise cost matrix must be two-dimensional.")
             normalized[(source_session, target_session)] = matrix
@@ -142,7 +148,7 @@ def _normalize_pairwise_costs(
 
     normalized = {}
     for session_idx, value in enumerate(pairwise_costs):
-        matrix = np.asarray(value, dtype=float)
+        matrix = asarray(value, dtype=float)
         if matrix.ndim != 2:
             raise ValueError("Each pairwise cost matrix must be two-dimensional.")
         normalized[(session_idx, session_idx + 1)] = matrix
@@ -216,7 +222,7 @@ def _normalize_observation_costs(
     for session_idx in sorted(session_sizes):
         session_size = int(session_sizes[session_idx])
         if session_idx not in raw_entries:
-            values = np.full(session_size, float(default_value), dtype=float)
+            values = full(session_size, float(default_value), dtype=float)
         else:
             values = _normalize_observation_cost_entry(
                 raw_entries[session_idx],
@@ -224,7 +230,7 @@ def _normalize_observation_costs(
                 session_idx=session_idx,
                 name=name,
             )
-        if not np.all(np.isfinite(values)):
+        if not all(isfinite(values)):
             raise ValueError(f"{name} for session {session_idx} must contain only finite values.")
         normalized[session_idx] = values
     return normalized
@@ -237,9 +243,9 @@ def _normalize_observation_cost_entry(
     session_idx: int,
     name: str,
 ) -> np.ndarray:
-    values = np.asarray(value, dtype=float)
+    values = asarray(value, dtype=float)
     if values.ndim == 0:
-        return np.full(session_size, float(values), dtype=float)
+        return full(session_size, float(values), dtype=float)
     if values.ndim != 1:
         raise ValueError(
             f"{name} entry for session {session_idx} must be a scalar or a one-dimensional array."
@@ -273,7 +279,7 @@ def _transform_pairwise_costs(
         source_end = end_costs[source_session][:, None]
         target_start = start_costs[target_session][None, :]
         transformed_matrix = (
-            np.asarray(matrix, dtype=float)
+            asarray(matrix, dtype=float)
             - source_end
             - target_start
             + float(uniform_end_cost)
@@ -281,9 +287,9 @@ def _transform_pairwise_costs(
         )
 
         if cost_threshold is not None:
-            adjusted_original = np.asarray(matrix, dtype=float) + float(gap_penalty) * gap
+            adjusted_original = asarray(matrix, dtype=float) + float(gap_penalty) * gap
             transformed_matrix = transformed_matrix.copy()
-            transformed_matrix[adjusted_original > float(cost_threshold)] = np.inf
+            transformed_matrix[adjusted_original > float(cost_threshold)] = float("inf")
 
         transformed[(source_session, target_session)] = transformed_matrix
     return transformed
