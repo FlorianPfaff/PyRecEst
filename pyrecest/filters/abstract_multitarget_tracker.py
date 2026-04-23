@@ -13,15 +13,15 @@ class AbstractMultitargetTracker(AbstractTrackerWithLogging):
     def store_prior_estimates(self):
         curr_ests = self.get_point_estimate(True)
         # pylint: disable=W0201
-        self.prior_estimates_over_time = self._store_estimates(
-            curr_ests, self.prior_estimates_over_time
+        self.prior_estimates_over_time = self._record_estimates(
+            "prior_estimates", curr_ests
         )
 
     def store_posterior_estimates(self):
         curr_ests = self.get_point_estimate(True)
         # pylint: disable=W0201
-        self.posterior_estimates_over_time = self._store_estimates(
-            curr_ests, self.posterior_estimates_over_time
+        self.posterior_estimates_over_time = self._record_estimates(
+            "posterior_estimates", curr_ests
         )
 
     @abstractmethod
