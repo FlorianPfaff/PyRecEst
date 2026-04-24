@@ -19,6 +19,14 @@ class TestGaussianSampler(unittest.TestCase):
         """Check that the returned shape matches the requested number of samples and dimension."""
         self.assertEqual(self.samples.shape, (self.n_samples, self.dim))
 
+    def test_sample_stochastic_reproducible_after_reseed(self):
+        """Repeated reseeding must reproduce identical Gaussian samples."""
+        random.seed(0)
+        samples1 = self.sampler.sample_stochastic(self.n_samples, self.dim)
+        random.seed(0)
+        samples2 = self.sampler.sample_stochastic(self.n_samples, self.dim)
+        npt.assert_allclose(samples1, samples2)
+
     def test_sample_mean_close_to_zero(self):
         """Check that the mean is close to 0 for each dimension."""
         means = mean(self.samples, axis=0)

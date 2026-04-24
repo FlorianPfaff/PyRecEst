@@ -146,6 +146,10 @@ class SphericalHarmonicsDistributionRealTest(unittest.TestCase):
             ),
         ]  # jscpd:ignore-end
     )
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ == "jax",
+        "Test not supported for this backend",
+    )
     def test_basis_function(self, name, coeff_mat, result_func):
         random.seed(10)
         shd = SphericalHarmonicsDistributionReal(1 / sqrt(4 * pi))
