@@ -14,7 +14,9 @@ class MultiHypothesisTrackerEnumerationTest(unittest.TestCase):
                 for measurement_index, _ in track_candidates
             }
         )
-        gain_lookup = [dict(track_candidates) for track_candidates in candidate_measurements]
+        gain_lookup = [
+            dict(track_candidates) for track_candidates in candidate_measurements
+        ]
         solutions = []
 
         def recurse(track_index, used_measurements, current_assignment, current_gain):
@@ -85,7 +87,9 @@ class MultiHypothesisTrackerEnumerationTest(unittest.TestCase):
         tracker = MultiHypothesisTracker.__new__(MultiHypothesisTracker)
         tracker.association_param = {"max_hypotheses_per_global_hypothesis": 3}
 
-        actual = tracker._enumerate_candidate_assignments([[], []], -2.0)  # pylint: disable=protected-access
+        actual = tracker._enumerate_candidate_assignments(
+            [[], []], -2.0
+        )  # pylint: disable=protected-access
 
         self.assertEqual(actual, [(-2.0, (-1, -1))])
 

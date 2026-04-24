@@ -19,7 +19,6 @@ from pyrecest.backend import (
     vstack,
     zeros,
 )
-
 from pyrecest.utils import LogisticPairwiseAssociationModel
 
 
@@ -40,15 +39,22 @@ class TestLogisticPairwiseAssociationModel(unittest.TestCase):
         )
         self.training_features = vstack([positive_examples, negative_examples])
         self.training_labels = concatenate(
-            [ones(len(positive_examples), dtype=int), zeros(len(negative_examples), dtype=int)]
+            [
+                ones(len(positive_examples), dtype=int),
+                zeros(len(negative_examples), dtype=int),
+            ]
         )
 
     def test_fit_separates_match_and_nonmatch_examples(self):
         model = LogisticPairwiseAssociationModel(class_weight="balanced")
         model.fit(self.training_features, self.training_labels)
 
-        positive_probabilities = model.predict_match_probability(self.training_features[:80])
-        negative_probabilities = model.predict_match_probability(self.training_features[80:])
+        positive_probabilities = model.predict_match_probability(
+            self.training_features[:80]
+        )
+        negative_probabilities = model.predict_match_probability(
+            self.training_features[80:]
+        )
 
         self.assertTrue(model.converged_)
         self.assertGreater(mean(positive_probabilities), 0.95)
@@ -118,7 +124,9 @@ class TestLogisticPairwiseAssociationModel(unittest.TestCase):
     def test_invalid_labels_raise(self):
         model = LogisticPairwiseAssociationModel()
         with self.assertRaises(ValueError):
-            model.fit(self.training_features, zeros(self.training_labels.shape, dtype=int) + 2)
+            model.fit(
+                self.training_features, zeros(self.training_labels.shape, dtype=int) + 2
+            )
 
 
 if __name__ == "__main__":

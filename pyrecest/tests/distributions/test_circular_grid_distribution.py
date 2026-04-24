@@ -1,10 +1,11 @@
 import unittest
 
 import numpy.testing as npt
-
 from pyrecest.backend import arange, linspace, pi
-from pyrecest.distributions.circle.circular_grid_distribution import CircularGridDistribution
 from pyrecest.distributions import VonMisesDistribution, WrappedNormalDistribution
+from pyrecest.distributions.circle.circular_grid_distribution import (
+    CircularGridDistribution,
+)
 
 
 class CircularGridDistributionTest(unittest.TestCase):

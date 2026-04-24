@@ -2,6 +2,7 @@ import random
 from typing import Any, Optional
 
 from beartype import beartype
+
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import size
 

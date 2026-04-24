@@ -45,9 +45,7 @@ def get_distance_function(
     elif "se3bounded" in manifold_name:
 
         def distance_function(x1, x2):
-            return min(
-                arccos(dot(x1[:4], x2[:4])), arccos(dot(x1[:4], -x2[:4]))
-            )
+            return min(arccos(dot(x1[:4], x2[:4])), arccos(dot(x1[:4], -x2[:4])))
 
     elif (
         "euclidean" in manifold_name or "Euclidean" in manifold_name
