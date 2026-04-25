@@ -58,6 +58,7 @@ from .mem_ekf_tracker import MEMEKFTracker, MemEkfTracker
 from .multi_bernoulli_tracker import BernoulliComponent, MultiBernoulliTracker
 from .piecewise_constant_filter import PiecewiseConstantFilter
 from .random_matrix_tracker import RandomMatrixTracker
+from .rigid_ekf_spline_tracker import RigidEKFSplineTracker, RigidEkfSplineTracker
 from .se2_ukf import SE2UKF
 from .state_space_subdivision_filter import StateSpaceSubdivisionFilter
 from .toroidal_particle_filter import ToroidalParticleFilter
@@ -142,6 +143,8 @@ __all__ = [
     "MemEkfTracker",
     "PiecewiseConstantFilter",
     "RandomMatrixTracker",
+    "RigidEKFSplineTracker",
+    "RigidEkfSplineTracker",
     "Track",
     "TrackManager",
     "TrackManagerStepResult",

@@ -27,6 +27,21 @@ class EKFSplineTracker(AbstractExtendedObjectTracker):
     the currently predicted closed spline, then corrected with an EKF update.
     """
 
+    def _initialize_extended_object_tracker(
+        self,
+        log_prior_estimates=False,
+        log_posterior_estimates=False,
+        log_prior_extents=False,
+        log_posterior_extents=False,
+    ):
+        """Initialize shared extended-object tracker logging state."""
+        super().__init__(
+            log_prior_estimates=log_prior_estimates,
+            log_posterior_estimates=log_posterior_estimates,
+            log_prior_extents=log_prior_extents,
+            log_posterior_extents=log_posterior_extents,
+        )
+
     # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
     def __init__(
         self,
