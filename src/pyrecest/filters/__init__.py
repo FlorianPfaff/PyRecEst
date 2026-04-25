@@ -75,6 +75,7 @@ from .track_manager import (
     solve_global_nearest_neighbor,
 )
 from .ukf_on_manifolds import UKFOnManifolds
+from .ukf_spline_tracker import UKFSplineTracker, UkfSplineTracker
 from .unscented_kalman_filter import UnscentedKalmanFilter
 from .von_mises_filter import VonMisesFilter
 from .von_mises_fisher_filter import VonMisesFisherFilter
@@ -131,6 +132,8 @@ __all__ = [
     "KalmanFilter",
     "UnscentedKalmanFilter",
     "UKFOnManifolds",
+    "UKFSplineTracker",
+    "UkfSplineTracker",
     "KernelSMEFilter",
     "LinBoundedFilterMixin",
     "LinBoundedParticleFilter",
