@@ -88,9 +88,7 @@ class MultiHypothesisTrackerEnumerationTest(unittest.TestCase):
         tracker.association_param = {"max_hypotheses_per_global_hypothesis": 3}
 
         # pylint: disable=protected-access
-        actual = tracker._enumerate_candidate_assignments(
-            [[], []], -2.0
-        )
+        actual = tracker._enumerate_candidate_assignments([[], []], -2.0)
 
         self.assertEqual(actual, [(-2.0, (-1, -1))])
 

@@ -1,7 +1,6 @@
 import unittest
 
 import numpy as np
-
 from pyrecest.evaluation import generate_measurements
 from shapely.geometry import Polygon
 

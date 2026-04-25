@@ -2,11 +2,9 @@ import unittest
 
 import numpy as np
 import pytest
-
 from pyrecest.backend import array, eye, get_backend_name
 from pyrecest.distributions import GaussianDistribution
 from pyrecest.evaluation import check_and_fix_config, generate_measurements
-
 
 IS_JAX_BACKEND = get_backend_name() == "jax"
 
@@ -21,9 +19,7 @@ class TestGenerateMeasurementsMtt(unittest.TestCase):
                 "n_targets": 1,
                 "initial_prior": GaussianDistribution(array([0.0, 0.0]), eye(2)),
                 "meas_matrix_for_each_target": eye(2),
-                "meas_noise": GaussianDistribution(
-                    array([0.0, 0.0]), 1.0e-12 * eye(2)
-                ),
+                "meas_noise": GaussianDistribution(array([0.0, 0.0]), 1.0e-12 * eye(2)),
             }
         )
 

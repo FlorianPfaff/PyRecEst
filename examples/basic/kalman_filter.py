@@ -13,9 +13,7 @@ def run_filter():
     measurement_noise_cov = array([[0.25]])
 
     measurements = [0.9, 2.0, 3.1, 3.9, 5.2]
-    kalman_filter = KalmanFilter(
-        (array([0.0, 1.0]), diag(array([1.0, 1.0])))
-    )
+    kalman_filter = KalmanFilter((array([0.0, 1.0]), diag(array([1.0, 1.0]))))
     estimates = []
 
     for measurement in measurements:

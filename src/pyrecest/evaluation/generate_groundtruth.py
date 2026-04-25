@@ -30,9 +30,7 @@ def generate_groundtruth(simulation_param, x0=None):
     # Initialize ground truth
     groundtruth = np.empty(simulation_param["n_timesteps"], dtype=object)
 
-    has_inputs = (
-        "inputs" in simulation_param and simulation_param["inputs"] is not None
-    )
+    has_inputs = "inputs" in simulation_param and simulation_param["inputs"] is not None
     if has_inputs:
         assert (
             simulation_param["inputs"].shape[1] == simulation_param["n_timesteps"] - 1

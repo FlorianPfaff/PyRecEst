@@ -2,7 +2,6 @@
 import unittest
 
 import numpy.testing as npt
-
 from pyrecest.backend import array, diag, zeros
 from pyrecest.filters import (
     AbstractMultipleExtendedObjectTracker,
@@ -107,9 +106,7 @@ class _DummyMultipleExtendedObjectTracker(AbstractMultipleExtendedObjectTracker)
         estimates = list(self.objects)
         if confirmed_only:
             estimates = [
-                estimate
-                for estimate in estimates
-                if estimate.status == "confirmed"
+                estimate for estimate in estimates if estimate.status == "confirmed"
             ]
         if extraction_threshold is not None:
             estimates = [

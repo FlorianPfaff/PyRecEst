@@ -5,7 +5,11 @@ import pyrecest.backend
 
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import allclose, arange, array, log, pi
-from pyrecest.distributions import CircularUniformDistribution, VonMisesDistribution, WrappedNormalDistribution
+from pyrecest.distributions import (
+    CircularUniformDistribution,
+    VonMisesDistribution,
+    WrappedNormalDistribution,
+)
 
 
 class AbstractCircularDistributionTest(unittest.TestCase):

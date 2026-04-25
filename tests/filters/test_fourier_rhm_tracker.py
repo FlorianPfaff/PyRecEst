@@ -93,7 +93,9 @@ class TestFourierRHMTracker(unittest.TestCase):
         inputs = zeros(tracker.state_dim)
         inputs[-2:] = array([1.0, -1.0])
 
-        tracker.predict_linear(system_matrix, sys_noise=0.01 * eye(tracker.state_dim), inputs=inputs)
+        tracker.predict_linear(
+            system_matrix, sys_noise=0.01 * eye(tracker.state_dim), inputs=inputs
+        )
 
         npt.assert_allclose(tracker.kinematic_state, array([1.0, -1.0]))
         npt.assert_allclose(tracker.fourier_coefficients, array([2.0, 0.0, 0.0]))

@@ -28,7 +28,9 @@ def _pol2cart(phi, radius=1.0):
     return radius * stack((cos(phi), sin(phi)))
 
 
-class FourierRHMTracker(AbstractExtendedObjectTracker):  # pylint: disable=too-many-instance-attributes
+class FourierRHMTracker(
+    AbstractExtendedObjectTracker
+):  # pylint: disable=too-many-instance-attributes
     """Star-convex Random Hypersurface Model with Fourier coefficients.
 
     The extent is represented by a radial function
@@ -67,7 +69,9 @@ class FourierRHMTracker(AbstractExtendedObjectTracker):  # pylint: disable=too-m
             log_posterior_extents=log_posterior_extents,
         )
         if pyrecest.backend.__backend_name__ == "jax":  # pylint: disable=no-member
-            raise NotImplementedError("FourierRHMTracker is not supported on the JAX backend")
+            raise NotImplementedError(
+                "FourierRHMTracker is not supported on the JAX backend"
+            )
 
         self.n_harmonics = int(n_harmonics)
         if self.n_harmonics < 0:
@@ -101,7 +105,9 @@ class FourierRHMTracker(AbstractExtendedObjectTracker):  # pylint: disable=too-m
                     "kinematic_covariance",
                 ),
             )
-        self.covariance = self._as_square_matrix(covariance, self.state_dim, "covariance")
+        self.covariance = self._as_square_matrix(
+            covariance, self.state_dim, "covariance"
+        )
         self._validate_positive_definite(
             self.covariance + covariance_regularization * eye(self.state_dim),
             "covariance",
@@ -215,7 +221,8 @@ class FourierRHMTracker(AbstractExtendedObjectTracker):  # pylint: disable=too-m
         if sys_noise is None:
             sys_noise = zeros((self.state_dim, self.state_dim))
         self.covariance = self._symmetrize(
-            self.covariance + self._as_square_matrix(sys_noise, self.state_dim, "sys_noise")
+            self.covariance
+            + self._as_square_matrix(sys_noise, self.state_dim, "sys_noise")
         )
         if self.log_prior_estimates:
             self.store_prior_estimates()
@@ -301,7 +308,10 @@ class FourierRHMTracker(AbstractExtendedObjectTracker):  # pylint: disable=too-m
 
         predicted_pseudo = 0.0
         for sigma_index in range(sigmas.shape[0]):
-            predicted_pseudo = predicted_pseudo + sigma_points.Wm[sigma_index] * pseudo_sigmas[sigma_index]
+            predicted_pseudo = (
+                predicted_pseudo
+                + sigma_points.Wm[sigma_index] * pseudo_sigmas[sigma_index]
+            )
 
         innovation_variance = self.covariance_regularization
         cross_covariance = zeros(self.state_dim)
@@ -312,7 +322,8 @@ class FourierRHMTracker(AbstractExtendedObjectTracker):  # pylint: disable=too-m
                 innovation_variance + sigma_points.Wc[sigma_index] * pseudo_delta**2
             )
             cross_covariance = (
-                cross_covariance + sigma_points.Wc[sigma_index] * state_delta * pseudo_delta
+                cross_covariance
+                + sigma_points.Wc[sigma_index] * state_delta * pseudo_delta
             )
 
         kalman_gain = cross_covariance / innovation_variance

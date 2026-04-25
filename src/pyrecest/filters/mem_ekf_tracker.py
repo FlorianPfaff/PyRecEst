@@ -177,8 +177,7 @@ class MEMEKFTracker(AbstractExtendedObjectTracker):
         if measurements.shape[1] == self.measurement_dim:
             return measurements.T
         raise ValueError(
-            "measurements must have shape (2, n_measurements) or "
-            "(n_measurements, 2)"
+            "measurements must have shape (2, n_measurements) or " "(n_measurements, 2)"
         )
 
     def _extent_transform(self):
@@ -250,7 +249,9 @@ class MEMEKFTracker(AbstractExtendedObjectTracker):
         system_matrix = array(system_matrix)
         state_dim = self.kinematic_state.shape[0]
         if system_matrix.shape != (state_dim, state_dim):
-            raise ValueError("system_matrix shape must match the kinematic state dimension")
+            raise ValueError(
+                "system_matrix shape must match the kinematic state dimension"
+            )
         if sys_noise is None:
             sys_noise = zeros((state_dim, state_dim))
         else:

@@ -396,9 +396,7 @@ class AbstractMultipleExtendedObjectTracker(AbstractMultitargetTracker):
         self.prior_measurement_rates_over_time = self._record_estimates(
             "prior_measurement_rates",
             asarray(
-                self.get_measurement_rate_estimates(
-                    unavailable_value=float("nan")
-                )
+                self.get_measurement_rate_estimates(unavailable_value=float("nan"))
             ),
         )
 
@@ -407,9 +405,7 @@ class AbstractMultipleExtendedObjectTracker(AbstractMultitargetTracker):
         self.posterior_measurement_rates_over_time = self._record_estimates(
             "posterior_measurement_rates",
             asarray(
-                self.get_measurement_rate_estimates(
-                    unavailable_value=float("nan")
-                )
+                self.get_measurement_rate_estimates(unavailable_value=float("nan"))
             ),
         )
 

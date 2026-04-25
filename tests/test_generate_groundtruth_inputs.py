@@ -2,7 +2,6 @@
 import unittest
 
 import numpy as np
-
 import pyrecest.backend
 from pyrecest.backend import array, eye, to_numpy
 from pyrecest.distributions import GaussianDistribution

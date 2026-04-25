@@ -1,8 +1,7 @@
 import unittest
 
-from scipy.stats import chi2
-
 from pyrecest.filters.global_nearest_neighbor import GlobalNearestNeighbor
+from scipy.stats import chi2
 
 
 class GlobalNearestNeighborGatingThresholdTest(unittest.TestCase):
