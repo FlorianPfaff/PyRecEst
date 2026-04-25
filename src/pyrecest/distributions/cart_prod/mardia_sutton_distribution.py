@@ -119,12 +119,13 @@ class MardiaSuttonDistribution(AbstractHypercylindricalDistribution):
         s_gauss = array(norm.rvs(loc=muc, scale=float(sigmac)))
         return column_stack([s_vm, s_gauss])
 
-    def linear_covariance(self):
+    def linear_covariance(self, approximate_mean=None):
         """Return the intrinsic linear variance as a (1, 1) matrix.
 
         Returns:
             C (1, 1): [[sigma^2]]
         """
+        _ = approximate_mean
         return array([[self.sigma**2]])
 
     def marginalize_linear(self):

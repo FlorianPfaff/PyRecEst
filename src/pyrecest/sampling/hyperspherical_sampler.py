@@ -323,11 +323,12 @@ class AbstractHopfBasedS3Sampler(AbstractHypersphericalUniformSampler):
 
 # pylint: disable=too-many-locals
 class HealpixHopfSampler(AbstractHopfBasedS3Sampler):
-    def get_grid(self, grid_density_parameter):
+    def get_grid(self, grid_density_parameter, dim: int = 3):
         """
         Hopf coordinates are (θ, ϕ, ψ) where θ and ϕ are the angles for the sphere and ψ is the angle on the circle
         First parameter is the number of points on the sphere, second parameter is the number of points on the circle.
         """
+        assert dim == 3, "HealpixHopfSampler is only implemented for S3 (dim=3)"
         import healpy as hp
 
         if isinstance(grid_density_parameter, int):
@@ -373,11 +374,12 @@ class HealpixHopfSampler(AbstractHopfBasedS3Sampler):
 
 
 class FibonacciHopfSampler(AbstractHopfBasedS3Sampler):
-    def get_grid(self, grid_density_parameter):
+    def get_grid(self, grid_density_parameter, dim: int = 3):
         """
         Hopf coordinates are (θ, ϕ, ψ) where θ and ϕ are the angles for the sphere and ψ is the angle on the circle
         First parameter is the number of points on the sphere, second parameter is the number of points on the circle.
         """
+        assert dim == 3, "FibonacciHopfSampler is only implemented for S3 (dim=3)"
         if isinstance(grid_density_parameter, int):
             grid_density_parameter = [grid_density_parameter]
 

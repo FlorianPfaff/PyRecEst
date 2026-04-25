@@ -47,9 +47,9 @@ class HypercylindricalDiracDistribution(
         # Perform the weighted sum using matrix multiplication
         return self.w @ S
 
-    def plot(self):
+    def plot(self, *args, **kwargs):
         assert self.dim <= 3, "Plotting not supported for this dimension"
-        LinearDiracDistribution.plot(self)
+        LinearDiracDistribution.plot(self, *args, **kwargs)
         if self.bound_dim >= 1:
             plt.xlim(0, 2 * pi)
         if self.bound_dim >= 2:

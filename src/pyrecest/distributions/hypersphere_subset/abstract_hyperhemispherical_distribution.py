@@ -93,7 +93,7 @@ class AbstractHyperhemisphericalDistribution(AbstractHypersphereSubsetDistributi
             n, burn_in, skipping, proposal=proposal, start_point=start_point
         )
 
-    def mean_direction_numerical(self):
+    def mean_direction_numerical(self, integration_boundaries=None):
         warning_msg = (
             "The result is the mean direction on the upper hemisphere along the last dimension. "
             "It is not a mean of a symmetric distribution, which would not have a proper mean. "
@@ -102,7 +102,9 @@ class AbstractHyperhemisphericalDistribution(AbstractHypersphereSubsetDistributi
         )
         warnings.warn(warning_msg)
 
-        if self.dim == 1:
+        if integration_boundaries is not None:
+            mu = super().mean_direction_numerical(integration_boundaries)
+        elif self.dim == 1:
             mu = super().mean_direction_numerical([0, pi])
         elif self.dim <= 3:
             mu = super().mean_direction_numerical(

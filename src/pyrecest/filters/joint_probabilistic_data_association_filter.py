@@ -338,10 +338,18 @@ class JointProbabilisticDataAssociationFilter(AbstractNearestNeighborTracker):
         return map_association
 
     # pylint: disable=too-many-locals,too-many-arguments,too-many-positional-arguments
-    def update_linear(self, measurements, measurement_matrix, covMatsMeas):
+    def update_linear(
+        self,
+        measurements,
+        measurement_matrix,
+        covMatsMeas,
+        pairwise_cost_matrix=None,
+    ):
         assert (
             pyrecest.backend.__backend_name__ == "numpy"
         ), "Only supported for numpy backend"
+        if pairwise_cost_matrix is not None:
+            raise NotImplementedError("JPDAF does not support pairwise_cost_matrix.")
 
         if len(self.filter_bank) == 0:
             warnings.warn("Currently, there are zero targets")

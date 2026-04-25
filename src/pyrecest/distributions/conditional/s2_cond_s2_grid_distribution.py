@@ -81,6 +81,7 @@ class S2CondS2GridDistribution(SdCondSdGridDistribution):
         no_of_grid_points,
         fun_does_cartesian_product=False,
         grid_type="leopardi",
+        dim=6,
     ):
         """
         Construct an :class:`S2CondS2GridDistribution` from a callable.
@@ -105,11 +106,14 @@ class S2CondS2GridDistribution(SdCondSdGridDistribution):
         -------
         S2CondS2GridDistribution
         """
+        if dim != 6:
+            raise ValueError("S2CondS2GridDistribution is fixed to dim=6.")
+
         sdsd = SdCondSdGridDistribution.from_function(
             fun,
             no_of_grid_points,
             fun_does_cartesian_product,
             grid_type,
-            dim=6,
+            dim=dim,
         )
         return S2CondS2GridDistribution(sdsd.grid, sdsd.grid_values)

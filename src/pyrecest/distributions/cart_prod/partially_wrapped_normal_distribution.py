@@ -173,7 +173,8 @@ class PartiallyWrappedNormalDistribution(AbstractHypercylindricalDistribution):
     def to_gaussian(self):
         return GaussianDistribution(self.mu, self.C)
 
-    def linear_covariance(self):
+    def linear_covariance(self, approximate_mean=None):
+        _ = approximate_mean
         return self.C[self.bound_dim :, self.bound_dim :]  # noqa: E203
 
     def marginalize_periodic(self):

@@ -81,7 +81,12 @@ class AbstractSphericalHarmonicsDistribution(
         else:
             warnings.warn("Warning: Currently cannot normalize")
 
-    def integrate(self):
+    def integrate(self, integration_boundaries=None):
+        if integration_boundaries is not None:
+            raise NotImplementedError(
+                "Analytical spherical-harmonics integration only supports the full domain."
+            )
+
         if self.transformation == "identity":
             int_val = self.coeff_mat[0, 0] * sqrt(4.0 * pi)
         elif self.transformation == "sqrt":

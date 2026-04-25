@@ -29,7 +29,8 @@ class AbstractHypersphereSubsetDiracDistribution(
         result = -sum(self.w * log(self.w))
         return result
 
-    def integrate(self, integration_boundaries=None):
+    def integrate(self, left=None, right=None):
+        _ = left, right
         raise NotImplementedError()
 
     def mean_axis(self):

@@ -40,9 +40,10 @@ class HypertoroidalDiracDistribution(
         AbstractHypertoroidalDistribution.__init__(self, dim)
         AbstractDiracDistribution.__init__(self, atleast_1d(mod(d, 2.0 * pi)), w=w)
 
-    def plot(self):
+    def plot(self, resolution=128, **kwargs):
+        _ = resolution
         assert self.dim <= 3, "Plotting not supported for this dimension"
-        LinearDiracDistribution.plot(self)
+        LinearDiracDistribution.plot(self, **kwargs)
         if self.dim >= 1:
             plt.xlim(0, 2 * pi)
         if self.dim >= 2:

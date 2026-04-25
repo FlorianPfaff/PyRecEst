@@ -62,7 +62,8 @@ class WrappedNormalDistribution(
         return sqrt(self.C)
 
     # pylint: disable=too-many-locals
-    def pdf(self, xs):
+    def pdf(self, xs, m: Union[int, int32, int64] = 3):
+        _ = m
         if self.sigma <= 0:
             raise ValueError(f"sigma must be >0, but received {self.sigma}.")
         xs = array(xs)

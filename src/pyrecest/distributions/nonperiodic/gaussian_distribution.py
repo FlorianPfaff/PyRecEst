@@ -83,7 +83,8 @@ class GaussianDistribution(AbstractLinearDistribution):
     def mean(self):
         return self.mu
 
-    def mode(self):
+    def mode(self, starting_point=None):
+        _ = starting_point
         return self.mu
 
     def set_mode(self, new_mode):
