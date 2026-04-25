@@ -431,7 +431,7 @@ class EKFSplineTracker(AbstractExtendedObjectTracker):
         if measurements.shape[0] == self.measurement_dim:
             return measurements.T
         raise ValueError(
-            "measurements must have shape (2, n_measurements) or " "(n_measurements, 2)"
+            "measurements must have shape (2, n_measurements) or (n_measurements, 2)"
         )
 
     def update(self, measurements, R=None):  # pylint: disable=too-many-locals
