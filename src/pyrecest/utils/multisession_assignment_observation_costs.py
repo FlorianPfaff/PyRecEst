@@ -10,14 +10,18 @@ from typing import Any
 
 from pyrecest.backend import (
     __backend_name__,
+)
+from pyrecest.backend import all as backend_all  # pylint: disable=no-name-in-module
+from pyrecest.backend import (
     asarray,
     cast,
+)
+from pyrecest.backend import copy as backend_copy
+from pyrecest.backend import (
     float64,
     full,
     isfinite,
 )
-from pyrecest.backend import all as backend_all  # pylint: disable=no-name-in-module
-from pyrecest.backend import copy as backend_copy
 from pyrecest.backend import max as backend_max
 from pyrecest.backend import sum as backend_sum
 
@@ -32,7 +36,9 @@ from .multisession_assignment import (
 )
 
 ObservationCostValue = float | Sequence[float] | Any
-ObservationCostsInput = Mapping[int, ObservationCostValue] | Sequence[ObservationCostValue]
+ObservationCostsInput = (
+    Mapping[int, ObservationCostValue] | Sequence[ObservationCostValue]
+)
 
 
 @dataclass(frozen=True)
@@ -181,7 +187,9 @@ def _normalize_observation_costs(
     if observation_costs is None:
         raw_entries: dict[int, ObservationCostValue] = {}
     elif isinstance(observation_costs, Mapping):
-        raw_entries = {int(session_idx): value for session_idx, value in observation_costs.items()}
+        raw_entries = {
+            int(session_idx): value for session_idx, value in observation_costs.items()
+        }
     else:
         raw_entries = dict(enumerate(observation_costs))
 
@@ -205,7 +213,9 @@ def _normalize_observation_costs(
                 name=name,
             )
         if not bool(backend_all(isfinite(values))):
-            raise ValueError(f"{name} for session {session_idx} must contain only finite values.")
+            raise ValueError(
+                f"{name} for session {session_idx} must contain only finite values."
+            )
         normalized[session_idx] = values
     return normalized
 
@@ -250,9 +260,13 @@ def _transform_pairwise_costs(
         )
 
         if transform.cost_threshold is not None:
-            adjusted_original = asarray(matrix, dtype=float64) + float(transform.gap_penalty) * gap
+            adjusted_original = (
+                asarray(matrix, dtype=float64) + float(transform.gap_penalty) * gap
+            )
             transformed_matrix = backend_copy(transformed_matrix)
-            transformed_matrix[adjusted_original > float(transform.cost_threshold)] = math.inf
+            transformed_matrix[adjusted_original > float(transform.cost_threshold)] = (
+                math.inf
+            )
 
         transformed[(source_session, target_session)] = transformed_matrix
     return transformed
