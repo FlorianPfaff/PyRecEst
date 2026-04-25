@@ -1,5 +1,8 @@
 import matplotlib.pyplot as plt
 
+# pylint: disable=no-name-in-module,no-member
+import pyrecest.backend
+
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
 from pyrecest.backend import (
     arctan2,
@@ -25,13 +28,34 @@ class AbstractSE2Distribution(AbstractHypercylindricalDistribution):
     def __init__(self):
         AbstractHypercylindricalDistribution.__init__(self, 1, 2)
 
+    @staticmethod
+    def _get_2d_axes():
+        ax = plt.gca()
+        if getattr(ax, "name", "") == "3d":
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+        return ax
+
+    @staticmethod
+    def _matplotlib_color(color):
+        if isinstance(color, str):
+            return color
+        return [float(channel) for channel in color]
+
     # pylint: disable=too-many-locals
     def plot_state(self, scaling_factor=1, circle_color=None, angle_color=None):
+        assert (
+            pyrecest.backend.__backend_name__ != "jax"
+        ), "plot_state is not supported for the JAX backend."
+
         if circle_color is None:
             circle_color = array([0, 0.4470, 0.7410])
 
         if angle_color is None:
             angle_color = array([0.8500, 0.3250, 0.0980])
+
+        circle_color = self._matplotlib_color(circle_color)
+        angle_color = self._matplotlib_color(angle_color)
 
         linear_covmat = self.linear_covariance()
         hybrid_moment = self.hybrid_moment()
@@ -39,13 +63,14 @@ class AbstractSE2Distribution(AbstractHypercylindricalDistribution):
         periodic_mean = arctan2(hybrid_moment[1], hybrid_moment[0])
         periodic_var = 1 - linalg.norm(hybrid_moment[0:2])
 
-        hold_status = plt.gca().get_label() == "hold"
+        ax = self._get_2d_axes()
+        hold_status = ax.get_label() == "hold"
         if not hold_status:
-            plt.gca().set_label("hold")
+            ax.set_label("hold")
 
-        xs = hstack((linspace(0, 2 * pi, 100), 0))
+        xs = hstack((linspace(0, 2 * pi, 100), array([0.0])))
         ps = scaling_factor * linear_covmat @ vstack((cos(xs), sin(xs)))
-        (h1,) = plt.plot(
+        (h1,) = ax.plot(
             ps[0, :] + linear_mean[0], ps[1, :] + linear_mean[1], color=circle_color
         )
 
@@ -59,7 +84,7 @@ class AbstractSE2Distribution(AbstractHypercylindricalDistribution):
             * linear_covmat
             @ array([cos(periodic_mean), sin(periodic_mean)])
         )
-        h2 = plt.quiver(
+        h2 = ax.quiver(
             linear_mean[0],
             linear_mean[1],
             scaled_mean_vec[0],
@@ -69,19 +94,19 @@ class AbstractSE2Distribution(AbstractHypercylindricalDistribution):
             scale=1,
             color=angle_color,
         )
-        (h3,) = plt.plot(
+        (h3,) = ax.plot(
             linear_mean[0] + ps[0, :],
             linear_mean[1] + ps[1, :],
             linestyle="--",
             color=angle_color,
         )
-        (h4,) = plt.plot(
+        (h4,) = ax.plot(
             [linear_mean[0], linear_mean[0] + ps[0, -1]],
             [linear_mean[1], linear_mean[1] + ps[1, -1]],
             linestyle="-",
             color=angle_color,
         )
-        (h5,) = plt.plot(
+        (h5,) = ax.plot(
             [linear_mean[0], linear_mean[0] + ps[0, 0]],
             [linear_mean[1], linear_mean[1] + ps[1, 0]],
             linestyle="-",
@@ -89,7 +114,7 @@ class AbstractSE2Distribution(AbstractHypercylindricalDistribution):
         )
 
         if not hold_status:
-            plt.gca().set_label("")
+            ax.set_label("")
             plt.show()
 
         return [h1, h2, h3, h4, h5]
@@ -138,9 +163,13 @@ class AbstractSE2Distribution(AbstractHypercylindricalDistribution):
         if angle_color is None:
             angle_color = [0.4660, 0.6740, 0.1880]
 
-        hold_status = plt.gca().get_label() == "hold"
+        pos_color = AbstractSE2Distribution._matplotlib_color(pos_color)
+        angle_color = AbstractSE2Distribution._matplotlib_color(angle_color)
+
+        ax = AbstractSE2Distribution._get_2d_axes()
+        hold_status = ax.get_label() == "hold"
         if not hold_status:
-            plt.gca().set_label("hold")
+            ax.set_label("hold")
 
         if fade:
             rgbtmp = pos_color
@@ -162,7 +191,7 @@ class AbstractSE2Distribution(AbstractHypercylindricalDistribution):
         h = []
         for i in range(lin_states.shape[1]):
             if arrow_scaling != 0:
-                h_curr = plt.quiver(
+                h_curr = ax.quiver(
                     lin_states[0, i],
                     lin_states[1, i],
                     arrow_scaling * cos(periodic_states[i]),
@@ -177,7 +206,7 @@ class AbstractSE2Distribution(AbstractHypercylindricalDistribution):
                     ],
                 )
                 h.append(h_curr)
-            h_curr = plt.scatter(
+            h_curr = ax.scatter(
                 lin_states[0, i],
                 lin_states[1, i],
                 c=[

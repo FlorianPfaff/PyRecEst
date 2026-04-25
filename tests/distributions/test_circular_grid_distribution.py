@@ -45,6 +45,13 @@ class CircularGridDistributionTest(unittest.TestCase):
             dist = WrappedNormalDistribution(mu, sigma)
             self._test_grid_conversion(dist, 101, True, 3e-6)
 
+    def test_even_grid_trigonometric_moment(self):
+        dist = VonMisesDistribution(0.4, 1.3)
+        figd = CircularGridDistribution.from_distribution(dist, 100)
+        npt.assert_allclose(
+            figd.trigonometric_moment(1), dist.trigonometric_moment(1), atol=1e-6
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

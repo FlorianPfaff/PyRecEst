@@ -87,6 +87,11 @@ class CircularGridDistribution(AbstractCircularDistribution, AbstractGridDistrib
     def get_manifold_size(self):
         return 2 * pi
 
+    def trigonometric_moment(self, n):
+        weights = self.grid_values / sum(self.grid_values)
+        grid = self.get_grid()
+        return sum(weights * (sin(pi / 2 + n * grid) + 1j * sin(n * grid)))
+
     def get_closest_point(self, xs):
         xs = array(xs)
         n = self.grid_values.shape[0]
