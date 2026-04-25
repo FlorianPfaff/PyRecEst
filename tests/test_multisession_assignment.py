@@ -8,8 +8,8 @@ from pyrecest.backend import (  # pylint: disable=no-name-in-module
     array,
     array_equal,
 )
-from pyrecest.utils import solve_multisession_assignment, tracks_to_session_labels
 from pyrecest.utils import multisession_assignment as multisession_assignment_module
+from pyrecest.utils import solve_multisession_assignment, tracks_to_session_labels
 
 
 class TestMultiSessionAssignment(unittest.TestCase):
@@ -120,7 +120,9 @@ class TestMultiSessionAssignment(unittest.TestCase):
         self.assertEqual(labels[1].shape[0], 0)
         self.assertTrue(array_equal(labels[2], array([0])))
 
-        labels_from_function = tracks_to_session_labels(result.tracks, session_sizes=[1, 0, 1])
+        labels_from_function = tracks_to_session_labels(
+            result.tracks, session_sizes=[1, 0, 1]
+        )
         self.assertTrue(array_equal(labels_from_function[0], array([0])))
         self.assertEqual(labels_from_function[1].shape[0], 0)
         self.assertTrue(array_equal(labels_from_function[2], array([0])))

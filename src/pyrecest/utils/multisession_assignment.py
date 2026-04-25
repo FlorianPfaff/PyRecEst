@@ -26,7 +26,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
-from pyrecest.backend import (  # pylint: disable=no-name-in-module
+from pyrecest.backend import (
     __backend_name__,
     arange,
     array,
@@ -38,7 +38,9 @@ from pyrecest.backend import (  # pylint: disable=no-name-in-module
     full,
     int64,
     isfinite,
-    min as backend_min,
+)
+from pyrecest.backend import min as backend_min  # pylint: disable=no-name-in-module
+from pyrecest.backend import (
     ones,
     where,
 )
@@ -275,7 +277,9 @@ def solve_multisession_assignment(  # pylint: disable=too-many-locals
             observation_to_track[(session_index, detection_index)] = track_index
     for edge in matched_edges:
         if observation_to_track[edge[0]] != observation_to_track[edge[1]]:
-            raise RuntimeError("Recovered edges are inconsistent with reconstructed tracks.")
+            raise RuntimeError(
+                "Recovered edges are inconsistent with reconstructed tracks."
+            )
 
     return MultiSessionAssignmentResult(
         tracks=tracks,
@@ -381,10 +385,14 @@ def _normalize_pairwise_costs(
         normalized: dict[tuple[int, int], Any] = {}
         for key, value in pairwise_costs.items():
             if len(key) != 2:
-                raise ValueError("Each pairwise-cost key must contain two session indices.")
+                raise ValueError(
+                    "Each pairwise-cost key must contain two session indices."
+                )
             source_session, target_session = int(key[0]), int(key[1])
             if source_session >= target_session:
-                raise ValueError("Pairwise-cost keys must satisfy source_session < target_session.")
+                raise ValueError(
+                    "Pairwise-cost keys must satisfy source_session < target_session."
+                )
             matrix = asarray(value, dtype=float64)
             if matrix.ndim != 2:
                 raise ValueError("Each pairwise cost matrix must be two-dimensional.")
@@ -406,9 +414,13 @@ def _normalize_session_sizes(
     if session_sizes is None:
         return {}
     if isinstance(session_sizes, Mapping):
-        normalized = {int(session_idx): int(size) for session_idx, size in session_sizes.items()}
+        normalized = {
+            int(session_idx): int(size) for session_idx, size in session_sizes.items()
+        }
     else:
-        normalized = {session_idx: int(size) for session_idx, size in enumerate(session_sizes)}
+        normalized = {
+            session_idx: int(size) for session_idx, size in enumerate(session_sizes)
+        }
     for session_idx, size in normalized.items():
         if size < 0:
             raise ValueError(f"Session {session_idx} has a negative detection count.")
@@ -426,7 +438,9 @@ def _infer_and_validate_session_sizes(
         _check_or_set_session_size(inferred_sizes, target_session, target_size)
 
     if not inferred_sizes and not pairwise_costs:
-        raise ValueError("No observations were provided. Supply pairwise_costs or session_sizes.")
+        raise ValueError(
+            "No observations were provided. Supply pairwise_costs or session_sizes."
+        )
 
     return dict(sorted(inferred_sizes.items()))
 
@@ -496,7 +510,9 @@ def _build_candidate_edges(  # pylint: disable=too-many-arguments,too-many-local
         target_position = session_positions[target_session]
         gap = target_position - source_position - 1
         if gap < 0:
-            raise ValueError("Session indices must define a forward-in-time edge ordering.")
+            raise ValueError(
+                "Session indices must define a forward-in-time edge ordering."
+            )
 
         adjusted_matrix = asarray(cost_matrix, dtype=float64) + float(gap_penalty) * gap
         gain_matrix = (float(start_cost) + float(end_cost)) - adjusted_matrix
@@ -510,7 +526,9 @@ def _build_candidate_edges(  # pylint: disable=too-many-arguments,too-many-local
             continue
 
         left_nodes.append(session_offsets[source_session] + cast(source_indices, int64))
-        right_nodes.append(session_offsets[target_session] + cast(target_indices, int64))
+        right_nodes.append(
+            session_offsets[target_session] + cast(target_indices, int64)
+        )
         edge_gains.append(cast(gain_matrix[valid_mask], float64))
         adjusted_costs.append(cast(adjusted_matrix[valid_mask], float64))
 
@@ -604,7 +622,9 @@ def _solve_max_weight_matching_sparse(  # pylint: disable=too-many-locals
 
     edge_lookup = {
         (int(source_node), int(target_node)): edge_index
-        for edge_index, (source_node, target_node) in enumerate(zip(left_nodes, right_nodes))
+        for edge_index, (source_node, target_node) in enumerate(
+            zip(left_nodes, right_nodes)
+        )
     }
     selected_edge_mask = _false_mask(num_edges)
 
@@ -651,8 +671,7 @@ def _solve_max_weight_matching_via_linprog(
 
     if not solution.success:
         raise RuntimeError(
-            "Global multi-session association failed: "
-            f"{solution.message}"
+            "Global multi-session association failed: " f"{solution.message}"
         )
 
     return array(solution.x > 0.5)
@@ -703,9 +722,14 @@ def _iter_track_items(track: TrackInput) -> list[Observation]:
     if isinstance(track, Mapping):
         items = list(track.items())
     else:
-        items = [(int(session_idx), int(detection_idx)) for session_idx, detection_idx in track]
+        items = [
+            (int(session_idx), int(detection_idx))
+            for session_idx, detection_idx in track
+        ]
     items.sort(key=lambda item: item[0])
-    return [(int(session_idx), int(detection_idx)) for session_idx, detection_idx in items]
+    return [
+        (int(session_idx), int(detection_idx)) for session_idx, detection_idx in items
+    ]
 
 
 __all__ = [

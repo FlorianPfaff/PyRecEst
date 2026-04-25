@@ -54,7 +54,9 @@ def perform_predict_update_cycles(
 
         if scenario_config.get("eot", False):
             meas_matrix = scenario_config.get("eot_meas_matrix")
-            filter_obj.update(all_meas_curr_time_step.T, meas_matrix, meas_noise_for_filter)
+            filter_obj.update(
+                all_meas_curr_time_step.T, meas_matrix, meas_noise_for_filter
+            )
         else:
             for m in range(n_updates):
                 curr_meas = all_meas_curr_time_step[m, :]

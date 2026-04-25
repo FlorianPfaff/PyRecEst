@@ -25,8 +25,8 @@ from pyrecest.backend import (
     array,
     asarray,
     cumsum,
-    float64,
     flip,
+    float64,
     full,
     full_like,
     int64,
@@ -315,9 +315,7 @@ def pairwise_iou_masks(
     n_reference = len(prepared_reference)
     n_query = len(prepared_query)
     iou_matrix = zeros((n_reference, n_query), dtype=float64)
-    centroid_distance_matrix = full(
-        (n_reference, n_query), float("inf"), dtype=float64
-    )
+    centroid_distance_matrix = full((n_reference, n_query), float("inf"), dtype=float64)
 
     if n_reference == 0 or n_query == 0:
         if return_centroid_distance_matrix:
@@ -441,7 +439,7 @@ def minimum_similarity_threshold(similarities, *, nbins: int = 256) -> float:
     best_peak_pair = None
     best_peak_score = None
     for left_position, left_peak in enumerate(peak_indices_list[:-1]):
-        for right_peak in peak_indices_list[left_position + 1:]:
+        for right_peak in peak_indices_list[left_position + 1 :]:
             valley_min = min(histogram_values[left_peak : right_peak + 1])
             peak_score = (
                 min(histogram_values[left_peak], histogram_values[right_peak])

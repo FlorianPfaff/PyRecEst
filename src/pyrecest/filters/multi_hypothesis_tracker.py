@@ -22,12 +22,12 @@ from pyrecest.backend import (
 )
 from pyrecest.backend import sum as backend_sum
 from pyrecest.distributions import GaussianDistribution
+from pyrecest.utils import murty_k_best_assignments
 from scipy.stats import chi2
 
 from .abstract_multitarget_tracker import AbstractMultitargetTracker
 from .kalman_filter import KalmanFilter
 from .manifold_mixins import EuclideanFilterMixin
-from pyrecest.utils import murty_k_best_assignments
 
 
 class MultiHypothesisTracker(AbstractMultitargetTracker):
@@ -500,8 +500,8 @@ class MultiHypothesisTracker(AbstractMultitargetTracker):
         )
         for track_index, track_candidates in enumerate(candidate_measurements):
             for measurement_index, gain in track_candidates:
-                cost_matrix[track_index, measurement_to_column[measurement_index]] = -float(
-                    gain
+                cost_matrix[track_index, measurement_to_column[measurement_index]] = (
+                    -float(gain)
                 )
 
         ranked_assignments = murty_k_best_assignments(
@@ -512,9 +512,7 @@ class MultiHypothesisTracker(AbstractMultitargetTracker):
         best_assignments = []
         for ranked_assignment in ranked_assignments:
             assignment = tuple(
-                -1
-                if column_index < 0
-                else unique_measurements[int(column_index)]
+                -1 if column_index < 0 else unique_measurements[int(column_index)]
                 for column_index in ranked_assignment["assignment"]
             )
             best_assignments.append(

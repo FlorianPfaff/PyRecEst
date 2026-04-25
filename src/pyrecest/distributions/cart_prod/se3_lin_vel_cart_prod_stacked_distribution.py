@@ -10,7 +10,9 @@ from .cart_prod_stacked_distribution import CartProdStackedDistribution
 class SE3LinVelCartProdStackedDistribution(CartProdStackedDistribution):
     def __init__(self, dists):
         assert len(dists) == 2, "There must be exactly 2 distributions in dists"
-        assert dists[0].input_dim == 4, "The first distribution must have input dimension 4"
+        assert (
+            dists[0].input_dim == 4
+        ), "The first distribution must have input dimension 4"
         assert isinstance(
             dists[0], AbstractHyperhemisphericalDistribution
         ), "The first distribution must be an instance of AbstractHyperhemisphericalDistribution"

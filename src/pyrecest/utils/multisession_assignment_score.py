@@ -6,11 +6,15 @@ import math
 from collections.abc import Callable
 from typing import Any
 
-from pyrecest.backend import (  # pylint: disable=no-name-in-module
+from pyrecest.backend import (
     __backend_name__,
-    all as backend_all,
+)
+from pyrecest.backend import all as backend_all  # pylint: disable=no-name-in-module
+from pyrecest.backend import (
     asarray,
-    copy as backend_copy,
+)
+from pyrecest.backend import copy as backend_copy
+from pyrecest.backend import (
     full,
     isfinite,
     where,
@@ -95,7 +99,10 @@ def solve_multisession_assignment_from_similarity(  # pylint: disable=R0913,R091
     }
 
     transformed_pairwise_costs: dict[tuple[int, int], Any] = {}
-    for (source_session, target_session), score_matrix in normalized_pairwise_scores.items():
+    for (
+        source_session,
+        target_session,
+    ), score_matrix in normalized_pairwise_scores.items():
         gap = session_positions[target_session] - session_positions[source_session] - 1
         if max_gap is not None and gap > max_gap:
             continue
@@ -141,8 +148,12 @@ def stitch_tracks_from_pairwise_scores(
     )
 
 
-def _result_to_index_matrix(self, session_sizes: SessionSizesInput | None = None, *, fill_value: int = -1):
-    return tracks_to_index_matrix(self.tracks, session_sizes=session_sizes, fill_value=fill_value)
+def _result_to_index_matrix(
+    self, session_sizes: SessionSizesInput | None = None, *, fill_value: int = -1
+):
+    return tracks_to_index_matrix(
+        self.tracks, session_sizes=session_sizes, fill_value=fill_value
+    )
 
 
 MultiSessionAssignmentResult.to_index_matrix = _result_to_index_matrix  # type: ignore[attr-defined]

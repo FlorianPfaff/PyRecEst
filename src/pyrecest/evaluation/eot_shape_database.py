@@ -205,7 +205,9 @@ class Cross(StarShapedPolygon):  # pylint: disable=abstract-method
         polygon_points = polygon_points + centroid
 
         # Create polygon instance
-        polygon = super().__new__(cls, shell=to_numpy(polygon_points), holes=None)  # nosec
+        polygon = super().__new__(
+            cls, shell=to_numpy(polygon_points), holes=None
+        )  # nosec
         polygon.__class__ = cls
 
         return polygon
@@ -223,7 +225,9 @@ class StarFish(StarShapedPolygon):  # pylint: disable=abstract-method
         y = r * sin(theta) * scaling_factor
 
         # Create polygon instance
-        polygon = super().__new__(cls, shell=zip(to_numpy(x), to_numpy(y)), holes=None)  # nosec
+        polygon = super().__new__(
+            cls, shell=zip(to_numpy(x), to_numpy(y)), holes=None
+        )  # nosec
         polygon.__class__ = cls
 
         return polygon

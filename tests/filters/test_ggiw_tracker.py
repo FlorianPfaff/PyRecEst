@@ -85,7 +85,9 @@ class TestGGIWTracker(unittest.TestCase):
         self.assertAlmostEqual(self.tracker.gamma_rate, 3.0)
         self.assertGreater(self.tracker.get_measurement_rate_estimate(), 2.0)
         self.assertAlmostEqual(self.tracker.extent_degrees_of_freedom, 16.0)
-        self.assertTrue(all(linalg.eigvalsh(self.tracker.get_point_estimate_extent()) > 0.0))
+        self.assertTrue(
+            all(linalg.eigvalsh(self.tracker.get_point_estimate_extent()) > 0.0)
+        )
         self.assertLess(self.tracker.covariance[0, 0], prior_covariance[0, 0])
         self.assertTrue(isfinite(self.tracker.latest_log_likelihood))
 

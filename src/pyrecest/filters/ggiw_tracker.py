@@ -1,12 +1,27 @@
 from __future__ import annotations
 
 # pylint: disable=no-name-in-module,no-member,redefined-builtin,duplicate-code
-from pyrecest.backend import array, concatenate, cos, eye, gammaln, linalg, linspace, log, mean, pi, sin, zeros
+from pyrecest.backend import (
+    array,
+    concatenate,
+    cos,
+    eye,
+    gammaln,
+    linalg,
+    linspace,
+    log,
+    mean,
+    pi,
+    sin,
+    zeros,
+)
 
 from .abstract_extended_object_tracker import AbstractExtendedObjectTracker
 
 
-class GGIWTracker(AbstractExtendedObjectTracker):  # pylint: disable=too-many-instance-attributes
+class GGIWTracker(
+    AbstractExtendedObjectTracker
+):  # pylint: disable=too-many-instance-attributes
     """Gamma-Gaussian-inverse-Wishart tracker for one extended object.
 
     The posterior is represented by a Gaussian kinematic state, an inverse-Wishart
@@ -184,9 +199,7 @@ class GGIWTracker(AbstractExtendedObjectTracker):  # pylint: disable=too-many-in
         return self.kinematic_state
 
     def get_point_estimate_extent(self, flatten_matrix=False):
-        extent = self._symmetrize(
-            self.extent_scale / self._extent_mean_denominator()
-        )
+        extent = self._symmetrize(self.extent_scale / self._extent_mean_denominator())
         if flatten_matrix:
             return extent.flatten()
         return extent
@@ -211,7 +224,9 @@ class GGIWTracker(AbstractExtendedObjectTracker):  # pylint: disable=too-many-in
             self.kinematic_state.shape[0],
             self.kinematic_state.shape[0],
         ):
-            raise ValueError("system_matrix shape must match the kinematic state dimension")
+            raise ValueError(
+                "system_matrix shape must match the kinematic state dimension"
+            )
         sys_noise = self._as_covariance_matrix(
             sys_noise,
             self.kinematic_state.shape[0],
@@ -228,7 +243,9 @@ class GGIWTracker(AbstractExtendedObjectTracker):  # pylint: disable=too-many-in
         extent_mean = self.get_point_estimate_extent()
         offset = 2.0 * self.measurement_dim + 2.0
         extent_information = self.extent_degrees_of_freedom - offset
-        self.extent_degrees_of_freedom = offset + extent_forgetting_factor * extent_information
+        self.extent_degrees_of_freedom = (
+            offset + extent_forgetting_factor * extent_information
+        )
         self.extent_scale = extent_mean * self._extent_mean_denominator()
 
         self.gamma_shape *= measurement_rate_forgetting_factor
@@ -302,7 +319,9 @@ class GGIWTracker(AbstractExtendedObjectTracker):  # pylint: disable=too-many-in
         demeaned_measurements = measurements - measurement_mean[:, None]
         measurement_scatter = demeaned_measurements @ demeaned_measurements.T
         if self.subtract_measurement_noise_from_scatter and n_measurements > 1:
-            measurement_scatter = measurement_scatter - (n_measurements - 1) * meas_noise_cov
+            measurement_scatter = (
+                measurement_scatter - (n_measurements - 1) * meas_noise_cov
+            )
 
         predicted_measurement_mean = measurement_matrix @ self.kinematic_state
         innovation = measurement_mean - predicted_measurement_mean
@@ -319,9 +338,13 @@ class GGIWTracker(AbstractExtendedObjectTracker):  # pylint: disable=too-many-in
         )
 
         innovation_outer = innovation[:, None] @ innovation[None, :]
-        innovation_scale = extent_innovation_weight * n_measurements / (n_measurements + 1.0)
+        innovation_scale = (
+            extent_innovation_weight * n_measurements / (n_measurements + 1.0)
+        )
         self.extent_scale = self._symmetrize(
-            self.extent_scale + measurement_scatter + innovation_scale * innovation_outer
+            self.extent_scale
+            + measurement_scatter
+            + innovation_scale * innovation_outer
         )
         self.extent_degrees_of_freedom += n_measurements
 

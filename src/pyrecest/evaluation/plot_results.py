@@ -81,11 +81,7 @@ def plot_results(
 
         # Plot errors
         plt.figure(0)
-        if (
-            params[0] is not None
-            and not any(isnan(params))
-            and size(params) > 1
-        ):
+        if params[0] is not None and not any(isnan(params)) and size(params) > 1:
             if plot_stds:
                 plt.plot(
                     params,
@@ -120,11 +116,7 @@ def plot_results(
 
         # Plot times
         plt.figure(1)
-        if (
-            params[0] is not None
-            and not any(isnan(params))
-            and size(params) > 1
-        ):
+        if params[0] is not None and not any(isnan(params)) and size(params) > 1:
             plt.plot(
                 params,
                 times_factor * times_mean,
@@ -150,11 +142,7 @@ def plot_results(
 
         # Plot errors over time
         plt.figure(2)
-        if (
-            params[0] is not None
-            and not any(isnan(params))
-            and size(params) > 1
-        ):
+        if params[0] is not None and not any(isnan(params)) and size(params) > 1:
             plt.plot(
                 times_factor * times_mean,
                 errors_mean,

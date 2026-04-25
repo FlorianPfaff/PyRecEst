@@ -45,7 +45,9 @@ def simulation_database(
             [(-0.5, -0.5), (0.5, -0.5), (0.5, 0.5), (-0.5, 0.5)]
         )
         simulation_param["eot_sampling_style"] = "boundary"
-        simulation_param["n_meas_at_individual_time_step"] = [5] * simulation_param["n_timesteps"]
+        simulation_param["n_meas_at_individual_time_step"] = [5] * simulation_param[
+            "n_timesteps"
+        ]
         simulation_param["eot_initial_extent"] = eye(2)
         simulation_param["eot_meas_matrix"] = eye(2)
         simulation_param["eot_meas_noise_cov"] = 0.1 * eye(2)

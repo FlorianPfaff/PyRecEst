@@ -1,12 +1,12 @@
 import copy
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
+from pyrecest.backend import __backend_name__ as backend_name
 from pyrecest.backend import (
-    __backend_name__ as backend_name,
     abs,
+    arange,
     argmax,
     argmin,
-    arange,
     array,
     asarray,
     atleast_2d,
@@ -18,11 +18,12 @@ from pyrecest.backend import (
     pi,
     random,
     reshape,
+)
+from pyrecest.backend import sum as backend_sum
+from pyrecest.backend import (
     unique,
     zeros,
 )
-from pyrecest.backend import sum as backend_sum
-
 from pyrecest.distributions.cart_prod.abstract_hypercylindrical_distribution import (
     AbstractHypercylindricalDistribution,
 )
@@ -84,8 +85,8 @@ class HypercylindricalStateSpaceSubdivisionDistribution(
         assert backend_name == "numpy", "Only supported for numpy backend"
         xs = atleast_2d(asarray(xs))
         n_eval = xs.shape[0]
-        x_bound = xs[:, :self.bound_dim]  # (n_eval, bound_dim)
-        x_lin = xs[:, self.bound_dim:]  # (n_eval, lin_dim)
+        x_bound = xs[:, : self.bound_dim]  # (n_eval, bound_dim)
+        x_lin = xs[:, self.bound_dim :]  # (n_eval, lin_dim)
 
         # Find nearest grid indices (vectorised toroidal distance)
         grid = asarray(self.gd.get_grid())  # (n_grid, bound_dim)
@@ -262,9 +263,7 @@ class HypercylindricalStateSpaceSubdivisionDistribution(
                 return reshape(asarray(fun(x_input)), (-1,))
 
             # Unnormalized conditional to compute the marginal weight
-            cd_unnorm = CustomLinearDistribution(
-                lambda x, fc=fun_curr: fc(x), dim_lin
-            )
+            cd_unnorm = CustomLinearDistribution(lambda x, fc=fun_curr: fc(x), dim_lin)
 
             integral_val = float(
                 cd_unnorm.integrate(

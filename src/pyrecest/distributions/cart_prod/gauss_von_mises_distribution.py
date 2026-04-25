@@ -1,19 +1,16 @@
 import pyrecest.backend
-from scipy.integrate import nquad
-from scipy.special import iv
-from scipy.stats import vonmises as _vonmises
 
 # pylint: disable=no-name-in-module,no-member,redefined-builtin
 from pyrecest.backend import (
+    allclose,
     arccos,
     array,
-    allclose,
     atleast_1d,
     atleast_2d,
     concatenate,
     cos,
-    eye,
     exp,
+    eye,
     float64,
     full,
     hstack,
@@ -30,6 +27,9 @@ from pyrecest.backend import (
     zeros,
     zeros_like,
 )
+from scipy.integrate import nquad
+from scipy.special import iv
+from scipy.stats import vonmises as _vonmises
 
 from ..nonperiodic.gaussian_distribution import GaussianDistribution
 from .abstract_hypercylindrical_distribution import AbstractHypercylindricalDistribution
@@ -45,7 +45,9 @@ class GaussVonMisesDistribution(AbstractHypercylindricalDistribution):
         SIAM/ASA Journal on Uncertainty Quantification, 2014, 2, 276-304
     """
 
-    def __init__(self, mu, P, alpha, beta, Gamma, kappa):  # pylint: disable=too-many-arguments,too-many-positional-arguments
+    def __init__(
+        self, mu, P, alpha, beta, Gamma, kappa
+    ):  # pylint: disable=too-many-arguments,too-many-positional-arguments
         # Convert scalars/lists to arrays
         mu = atleast_1d(array(mu, dtype=float64))
         P = atleast_2d(array(P, dtype=float64))
@@ -118,8 +120,10 @@ class GaussVonMisesDistribution(AbstractHypercylindricalDistribution):
         mvn_vals = GaussianDistribution(self.mu, self.P, check_validity=False).pdf(
             xa[1:, :].T
         )
-        p = mvn_vals * exp(self.kappa * cos(xa[0, :] - theta)) / (
-            2.0 * float(pi) * iv(0, self.kappa)
+        p = (
+            mvn_vals
+            * exp(self.kappa * cos(xa[0, :] - theta))
+            / (2.0 * float(pi) * iv(0, self.kappa))
         )
 
         if single_point:
@@ -140,7 +144,8 @@ class GaussVonMisesDistribution(AbstractHypercylindricalDistribution):
         M = eye(self.lin_dim) - 1j * self.Gamma
         beta = self.beta + 0j
         eiphi = (
-            1.0 / sqrt(linalg.det(M))
+            1.0
+            / sqrt(linalg.det(M))
             * VonMisesDistribution.besselratio(0, self.kappa)
             * exp(1j * self.alpha - 0.5 * beta @ linalg.solve(M, beta))
         )

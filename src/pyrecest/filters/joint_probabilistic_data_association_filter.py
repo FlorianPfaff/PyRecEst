@@ -300,9 +300,7 @@ class JointProbabilisticDataAssociationFilter(AbstractNearestNeighborTracker):
         recurse(0, 0.0)
 
         event_log_weights = asarray(event_log_weights, dtype=float)
-        normalized_event_weights = exp(
-            event_log_weights - logsumexp(event_log_weights)
-        )
+        normalized_event_weights = exp(event_log_weights - logsumexp(event_log_weights))
 
         association_probabilities = zeros((n_targets, n_meas + 1))
         for event_assignment, event_weight in zip(

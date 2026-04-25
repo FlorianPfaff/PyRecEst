@@ -6,20 +6,19 @@ from dataclasses import dataclass
 from heapq import heappop, heappush
 
 import pyrecest.backend
-from pyrecest.backend import (
-    abs as _abs,
-    any as _any,
-    array as _array,
-    asarray as _asarray,
-    concatenate as _concatenate,
-    full as _full,
-    int64 as _int64,
-    isfinite as _isfinite,
-    sum as _sum,
-    where as _where,
-    zeros as _zeros,
-)
+from pyrecest.backend import abs as _abs
+from pyrecest.backend import any as _any
+from pyrecest.backend import array as _array
+from pyrecest.backend import asarray as _asarray
+from pyrecest.backend import concatenate as _concatenate
+from pyrecest.backend import full as _full
+from pyrecest.backend import int64 as _int64
+from pyrecest.backend import isfinite as _isfinite
+from pyrecest.backend import sum as _sum
+from pyrecest.backend import where as _where
+from pyrecest.backend import zeros as _zeros
 from scipy.optimize import linear_sum_assignment
+
 
 @dataclass(frozen=True)
 class _MurtySubproblem:
@@ -29,6 +28,7 @@ class _MurtySubproblem:
     forbidden_pairs: tuple[tuple[int, int], ...]
     branching_row_start: int
 
+
 def _coerce_non_assignment_costs(costs, size: int, name: str):
     if costs is None:
         return _zeros(size, dtype=float)
@@ -37,6 +37,7 @@ def _coerce_non_assignment_costs(costs, size: int, name: str):
     if costs.shape[0] != size:
         raise ValueError(f"{name} must have length {size}")
     return costs
+
 
 def _get_large_cost(cost_matrix, row_non_assignment_costs, col_non_assignment_costs):
     finite_costs = cost_matrix[_isfinite(cost_matrix)]
@@ -48,6 +49,7 @@ def _get_large_cost(cost_matrix, row_non_assignment_costs, col_non_assignment_co
         )
     )
     return 2.0 * (float(_sum(_abs(finite_entries))) + 1.0)
+
 
 def _build_augmented_cost_matrix(
     cost_matrix,
@@ -75,6 +77,7 @@ def _build_augmented_cost_matrix(
 
     augmented_cost_matrix[n_rows:, n_cols:] = 0.0
     return augmented_cost_matrix
+
 
 def _solve_subproblem(  # pylint: disable=too-many-locals
     augmented_cost_matrix,
@@ -133,6 +136,7 @@ def _solve_subproblem(  # pylint: disable=too-many-locals
         "cost": total_cost,
         "_full_assignment": full_assignment,
     }
+
 
 def murty_k_best_assignments(  # pylint: disable=too-many-locals
     cost_matrix,
@@ -268,5 +272,6 @@ def murty_k_best_assignments(  # pylint: disable=too-many-locals
             )
 
     return ranked_solutions
+
 
 __all__ = ["murty_k_best_assignments"]

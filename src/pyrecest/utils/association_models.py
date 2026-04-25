@@ -43,7 +43,6 @@ from pyrecest.backend import (
     zeros,
 )
 
-
 _COST_MODE = Literal["negative_log_probability", "one_minus_probability"]
 
 
@@ -215,7 +214,9 @@ class LogisticPairwiseAssociationModel:  # pylint: disable=too-many-instance-att
             n_pos = int(labels.sum())
             n_neg = n_total - n_pos
             if n_neg == 0 or n_pos == 0:
-                raise ValueError("Both classes must be present when using balanced class weights")
+                raise ValueError(
+                    "Both classes must be present when using balanced class weights"
+                )
             total_count = float(n_total)
             return _BinaryClassWeights(
                 negative=total_count / (2.0 * n_neg),
@@ -223,7 +224,9 @@ class LogisticPairwiseAssociationModel:  # pylint: disable=too-many-instance-att
             )
 
         if 0 not in self.class_weight or 1 not in self.class_weight:
-            raise ValueError("class_weight dictionaries must contain entries for both 0 and 1")
+            raise ValueError(
+                "class_weight dictionaries must contain entries for both 0 and 1"
+            )
         negative_weight = float(self.class_weight[0])
         positive_weight = float(self.class_weight[1])
         if negative_weight <= 0.0 or positive_weight <= 0.0:
@@ -314,13 +317,19 @@ class LogisticPairwiseAssociationModel:  # pylint: disable=too-many-instance-att
         return ones(n_params, dtype=float64)
 
     @staticmethod
-    def _effective_tolerance(parameter_vector: Any, requested_tolerance: float) -> float:
+    def _effective_tolerance(
+        parameter_vector: Any, requested_tolerance: float
+    ) -> float:
         try:
             dtype_eps = float(_numpy.finfo(parameter_vector.dtype).eps)
         except (AttributeError, TypeError, ValueError):
             dtype_eps = float(_numpy.finfo(float).eps)
         dtype_threshold = dtype_eps * 1000.0
-        return dtype_threshold if dtype_threshold > requested_tolerance else requested_tolerance
+        return (
+            dtype_threshold
+            if dtype_threshold > requested_tolerance
+            else requested_tolerance
+        )
 
     def _store_fitted_parameters(self, parameter_vector: Any) -> None:
         if self.fit_intercept:
@@ -373,7 +382,9 @@ class LogisticPairwiseAssociationModel:  # pylint: disable=too-many-instance-att
 
             parameter_vector = parameter_vector - step
             self.n_iter_ = iteration
-            if max(abs(step)) <= self._effective_tolerance(parameter_vector, self.tolerance):
+            if max(abs(step)) <= self._effective_tolerance(
+                parameter_vector, self.tolerance
+            ):
                 self.converged_ = True
                 break
 
