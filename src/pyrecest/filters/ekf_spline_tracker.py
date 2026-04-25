@@ -156,9 +156,7 @@ class EKFSplineTracker(AbstractExtendedObjectTracker):
         if matrix.shape != (dim, dim):
             raise ValueError(f"{name} must have shape ({dim}, {dim})")
         matrix = cls._symmetrize(matrix)
-        if require_positive_semidefinite and not all(
-            linalg.eigvalsh(matrix) >= -1e-12
-        ):
+        if require_positive_semidefinite and not all(linalg.eigvalsh(matrix) >= -1e-12):
             raise ValueError(f"{name} must be positive semidefinite")
         return matrix
 
@@ -276,8 +274,7 @@ class EKFSplineTracker(AbstractExtendedObjectTracker):
         for grid_index in range(self.closest_point_grid_size + 1):
             tau = grid_index / self.closest_point_grid_size
             diff = (
-                self._evaluate_coefficients(coefficients, tau)
-                - scaled_body_measurement
+                self._evaluate_coefficients(coefficients, tau) - scaled_body_measurement
             )
             distance = float(diff @ diff)
             if best_distance is None or distance < best_distance:
@@ -359,8 +356,8 @@ class EKFSplineTracker(AbstractExtendedObjectTracker):
         process_noise = array(self.process_noise)
         if self.acceleration_variance > 0.0:
             orientation = self.state[2]
-            position_direction = 0.5 * dt**2 * array(
-                [cos(orientation), sin(orientation)]
+            position_direction = (
+                0.5 * dt**2 * array([cos(orientation), sin(orientation)])
             )
             process_noise[0:2, 0:2] = process_noise[0:2, 0:2] + (
                 self.acceleration_variance
@@ -381,9 +378,7 @@ class EKFSplineTracker(AbstractExtendedObjectTracker):
                 self.turn_rate_variance * dt**2 / 2.0
             )
             process_noise[4, 2] = process_noise[2, 4]
-            process_noise[4, 4] = process_noise[4, 4] + (
-                self.turn_rate_variance * dt
-            )
+            process_noise[4, 4] = process_noise[4, 4] + (self.turn_rate_variance * dt)
         if self.scale_process_noise > 0.0:
             process_noise[5, 5] = process_noise[5, 5] + self.scale_process_noise * dt
             process_noise[6, 6] = process_noise[6, 6] + self.scale_process_noise * dt
@@ -436,8 +431,7 @@ class EKFSplineTracker(AbstractExtendedObjectTracker):
         if measurements.shape[0] == self.measurement_dim:
             return measurements.T
         raise ValueError(
-            "measurements must have shape (2, n_measurements) or "
-            "(n_measurements, 2)"
+            "measurements must have shape (2, n_measurements) or " "(n_measurements, 2)"
         )
 
     def update(self, measurements, R=None):  # pylint: disable=too-many-locals
