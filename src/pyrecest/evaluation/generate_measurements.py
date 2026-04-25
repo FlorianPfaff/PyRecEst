@@ -2,7 +2,17 @@ import numpy as np
 from beartype import beartype
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
-from pyrecest.backend import array, dot, get_backend_name, mod, pi, squeeze, tile, zeros
+from pyrecest.backend import (
+    array,
+    dot,
+    get_backend_name,
+    mod,
+    pi,
+    squeeze,
+    tile,
+    to_numpy,
+    zeros,
+)
 from pyrecest.distributions import (
     AbstractHypertoroidalDistribution,
     GaussianDistribution,
@@ -13,6 +23,10 @@ from pyrecest.evaluation.eot_shape_database import PolygonWithSampling
 from scipy.stats import poisson
 from shapely.affinity import rotate, translate
 from shapely.geometry import Polygon
+
+
+def _as_shapely_scalar(value):
+    return float(to_numpy(value))
 
 
 # pylint: disable=too-many-branches,too-many-locals,too-many-statements
@@ -57,16 +71,18 @@ def generate_measurements(groundtruth, simulation_config):
         ), "Currently only StarConvexPolygon (based on shapely Polygons) are supported as target shapes."
 
         for t in range(simulation_config["n_timesteps"]):
-            if groundtruth[0].shape[-1] == 2:
-                curr_shape = translate(
-                    shape, groundtruth[0][..., 0], yoff=groundtruth[0][..., 1]
-                )
-            elif groundtruth[0].shape[-1] == 3:
+            curr_groundtruth = groundtruth[t]
+            if curr_groundtruth.shape[-1] == 2:
+                x = _as_shapely_scalar(curr_groundtruth[..., 0])
+                y = _as_shapely_scalar(curr_groundtruth[..., 1])
+                curr_shape = translate(shape, xoff=x, yoff=y)
+            elif curr_groundtruth.shape[-1] == 3:
+                angle = _as_shapely_scalar(curr_groundtruth[..., 0])
+                x = _as_shapely_scalar(curr_groundtruth[..., 1])
+                y = _as_shapely_scalar(curr_groundtruth[..., 2])
                 curr_shape = rotate(
-                    translate(
-                        shape, groundtruth[0][..., 1], yoff=groundtruth[0][..., 2]
-                    ),
-                    angle=groundtruth[0][..., 0],
+                    translate(shape, xoff=x, yoff=y),
+                    angle=angle,
                     origin="centroid",
                 )
             else:
