@@ -177,7 +177,7 @@ class MEMEKFTracker(AbstractExtendedObjectTracker):
         if measurements.shape[1] == self.measurement_dim:
             return measurements.T
         raise ValueError(
-            "measurements must have shape (2, n_measurements) or " "(n_measurements, 2)"
+            "measurements must have shape (2, n_measurements) or (n_measurements, 2)"
         )
 
     def _extent_transform(self):
