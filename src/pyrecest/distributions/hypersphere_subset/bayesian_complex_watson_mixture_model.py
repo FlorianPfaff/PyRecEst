@@ -14,12 +14,11 @@ Reference:
 """
 
 import pyrecest.backend
-from scipy.special import digamma  # pylint: disable=no-name-in-module
-
 from pyrecest.backend import (  # pylint: disable=no-name-in-module,no-member
     allclose,
     any,
     arange,
+    argsort,
     asarray,
     copy,
     diag,
@@ -35,8 +34,8 @@ from pyrecest.backend import (  # pylint: disable=no-name-in-module,no-member
     ones,
     real,
     zeros,
-    argsort,
 )
+from scipy.special import digamma  # pylint: disable=no-name-in-module
 
 from .complex_watson_distribution import ComplexWatsonDistribution
 
@@ -129,9 +128,9 @@ class BayesianComplexWatsonMixtureModel:
         Returns:
             tuple: (BayesianComplexWatsonMixtureModel, posterior dict)
         """
-        assert Z.shape[0] < 100, (
-            "fit_default assumes D < 100 (feature dimension, not sample count)"
-        )
+        assert (
+            Z.shape[0] < 100
+        ), "fit_default assumes D < 100 (feature dimension, not sample count)"
         D = Z.shape[0]
         parameters = BayesianComplexWatsonMixtureModel.parameters_default(D, K)
         return BayesianComplexWatsonMixtureModel.fit(Z, parameters)
@@ -165,7 +164,9 @@ class BayesianComplexWatsonMixtureModel:
         return parameters
 
     @staticmethod
-    def estimate_posterior(Z, parameters):  # pylint: disable=too-many-locals,too-many-statements
+    def estimate_posterior(
+        Z, parameters
+    ):  # pylint: disable=too-many-locals,too-many-statements
         """
         Run the variational EM algorithm to estimate posterior parameters.
 
@@ -214,17 +215,13 @@ class BayesianComplexWatsonMixtureModel:
 
         posterior = {
             "B": copy(B_init),
-            "alpha": copy(asarray(
-                parameters["initial"]["alpha"], dtype=float
-            ).ravel()),
+            "alpha": copy(asarray(parameters["initial"]["alpha"], dtype=float).ravel()),
             "kappa": kappa_init_arr,
             "gamma": zeros((N, K)),
         }
 
         # Precompute outer products Z[:, n] * conj(Z)[:, n] reshaped to (D*D, N)
-        ZZ = (
-            Z[:, None, :] * Z.conj()[None, :, :]
-        ).reshape(D * D, N)
+        ZZ = (Z[:, None, :] * Z.conj()[None, :, :]).reshape(D * D, N)
 
         # Log saliencies shape (N, K)
         saliencies = parameters["prior"].get("saliencies", 1.0)
@@ -234,10 +231,7 @@ class BayesianComplexWatsonMixtureModel:
         else:
             saliencies_vec = saliencies_arr.ravel()
             assert len(saliencies_vec) == N
-            ln_saliencies = (
-                log(maximum(saliencies_vec, 1e-7))[:, None]
-                * ones((N, K))
-            )
+            ln_saliencies = log(maximum(saliencies_vec, 1e-7))[:, None] * ones((N, K))
 
         prior_B = asarray(parameters["prior"]["B"], dtype=complex)
         prior_alpha = asarray(parameters["prior"]["alpha"], dtype=float).ravel()
@@ -257,7 +251,9 @@ class BayesianComplexWatsonMixtureModel:
             log_gamma += digamma(posterior["alpha"])[None, :]
 
             log_gamma_row_max = log_gamma.max(axis=1, keepdims=True)
-            if pyrecest.backend.__backend_name__ == "pytorch":  # pylint: disable=no-member
+            if (
+                pyrecest.backend.__backend_name__ == "pytorch"
+            ):  # pylint: disable=no-member
                 log_gamma_row_max = log_gamma_row_max.values
             log_gamma = log_gamma - log_gamma_row_max
             gamma = exp(log_gamma)
@@ -271,7 +267,9 @@ class BayesianComplexWatsonMixtureModel:
 
             posterior["alpha"] = prior_alpha + N_k
 
-            cov_matrix = (ZZ @ asarray(gamma, dtype=complex)) / maximum(N_k[None, :], 1e-300)
+            cov_matrix = (ZZ @ asarray(gamma, dtype=complex)) / maximum(
+                N_k[None, :], 1e-300
+            )
             cov_matrix = cov_matrix.reshape(D, D, K)
 
             for k in range(K):
@@ -350,7 +348,8 @@ class BayesianComplexWatsonMixtureModel:
                 Lambda_perturbed = Lambda + arange(1, D + 1) * 1e-2
                 Lambda_shifted = Lambda_perturbed - Lambda_perturbed.max()
                 c_diag = asarray(
-                    _complex_bingham_first_order_moments(Lambda_shifted, D), dtype=complex
+                    _complex_bingham_first_order_moments(Lambda_shifted, D),
+                    dtype=complex,
                 )
                 cov_k = U @ diag(c_diag) @ U.conj().T
             else:

@@ -67,9 +67,7 @@ class CircularGridDistribution(AbstractCircularDistribution, AbstractGridDistrib
         repetitions = arange(-lower, upper)
         sinc_vals = self._matlab_sinc((xs / step_size)[:, None] - repetitions[None, :])
         grid_values = (
-            sqrt(self.grid_values)
-            if self.enforce_pdf_nonnegative
-            else self.grid_values
+            sqrt(self.grid_values) if self.enforce_pdf_nonnegative else self.grid_values
         )
         density = sum(tile(grid_values, sinc_repetitions) * sinc_vals, axis=1)
         if self.enforce_pdf_nonnegative:
@@ -79,9 +77,7 @@ class CircularGridDistribution(AbstractCircularDistribution, AbstractGridDistrib
     def _pdf_via_fourier(self, xs):
         transformation = "sqrt" if self.enforce_pdf_nonnegative else "identity"
         function_values = (
-            sqrt(self.grid_values)
-            if self.enforce_pdf_nonnegative
-            else self.grid_values
+            sqrt(self.grid_values) if self.enforce_pdf_nonnegative else self.grid_values
         )
         fd = CircularFourierDistribution.from_function_values(
             function_values, transformation
@@ -116,9 +112,7 @@ class CircularGridDistribution(AbstractCircularDistribution, AbstractGridDistrib
             )
             if fd_to_conv.transformation == "identity":
                 if any(vals_on_grid < 0):
-                    warnings.warn(
-                        "Negative values occurred. Increasing them to 0."
-                    )
+                    warnings.warn("Negative values occurred. Increasing them to 0.")
                     vals_on_grid = maximum(vals_on_grid, 0)
             elif fd_to_conv.transformation == "sqrt":
                 vals_on_grid = vals_on_grid**2

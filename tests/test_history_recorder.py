@@ -5,8 +5,9 @@ import numpy.testing as npt
 
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import array, zeros
-
-from pyrecest.filters.abstract_extended_object_tracker import AbstractExtendedObjectTracker
+from pyrecest.filters.abstract_extended_object_tracker import (
+    AbstractExtendedObjectTracker,
+)
 from pyrecest.filters.abstract_filter import AbstractFilter
 from pyrecest.filters.abstract_multitarget_tracker import AbstractMultitargetTracker
 from pyrecest.utils import HistoryRecorder
@@ -78,9 +79,7 @@ class HistoryRecorderTest(unittest.TestCase):
         recorder.record("estimate", array([3.0]), pad_with_nan=True)
         recorder.record("estimate", array([4.0, 5.0, 6.0]), pad_with_nan=True)
 
-        expected = array(
-            [[1.0, 3.0, 4.0], [2.0, nan, 5.0], [nan, nan, 6.0]]
-        )
+        expected = array([[1.0, 3.0, 4.0], [2.0, nan, 5.0], [nan, nan, 6.0]])
         npt.assert_allclose(recorder["estimate"], expected, equal_nan=True)
 
     def test_object_history_deep_copies_values(self):
@@ -116,10 +115,18 @@ class HistoryRecorderTest(unittest.TestCase):
 
         expected_prior = array([[1.0, 3.0], [2.0, nan]])
         expected_posterior = array([[4.0], [5.0], [6.0]])
-        npt.assert_allclose(tracker.prior_estimates_over_time, expected_prior, equal_nan=True)
-        npt.assert_allclose(tracker.history["prior_estimates"], expected_prior, equal_nan=True)
-        npt.assert_allclose(tracker.posterior_estimates_over_time, expected_posterior, equal_nan=True)
-        npt.assert_allclose(tracker.history["posterior_estimates"], expected_posterior, equal_nan=True)
+        npt.assert_allclose(
+            tracker.prior_estimates_over_time, expected_prior, equal_nan=True
+        )
+        npt.assert_allclose(
+            tracker.history["prior_estimates"], expected_prior, equal_nan=True
+        )
+        npt.assert_allclose(
+            tracker.posterior_estimates_over_time, expected_posterior, equal_nan=True
+        )
+        npt.assert_allclose(
+            tracker.history["posterior_estimates"], expected_posterior, equal_nan=True
+        )
 
     def test_extended_tracker_logs_extents_via_same_recorder(self):
         tracker = _DummyExtendedTracker()
@@ -139,7 +146,9 @@ class HistoryRecorderTest(unittest.TestCase):
             tracker.history["prior_extents"], expected_prior_extents, equal_nan=True
         )
         npt.assert_allclose(
-            tracker.history["posterior_extents"], expected_posterior_extents, equal_nan=True
+            tracker.history["posterior_extents"],
+            expected_posterior_extents,
+            equal_nan=True,
         )
         npt.assert_allclose(
             tracker.prior_extents_over_time, expected_prior_extents, equal_nan=True

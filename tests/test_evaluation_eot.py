@@ -2,7 +2,6 @@
 import unittest
 
 import pyrecest.backend
-
 from tests.test_evaluation_basic import TestEvalationBase
 
 

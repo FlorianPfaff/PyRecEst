@@ -3,7 +3,6 @@ import unittest
 import numpy as np
 import numpy.testing as npt
 import pyrecest.backend
-
 from pyrecest.utils import murty_k_best_assignments
 
 
@@ -59,7 +58,9 @@ class MurtyAssignmentTest(unittest.TestCase):
                 current_cost + row_non_assignment_costs[row_index],
             )
             for col_index in available_columns:
-                if col_index in used_columns or not np.isfinite(cost_matrix[row_index, col_index]):
+                if col_index in used_columns or not np.isfinite(
+                    cost_matrix[row_index, col_index]
+                ):
                     continue
                 recurse(
                     row_index + 1,
@@ -115,7 +116,9 @@ class MurtyAssignmentTest(unittest.TestCase):
                         col_non_assignment_costs=col_costs,
                     )
 
-                    self.assertEqual(len(actual_solutions), min(10, len(expected_solutions)))
+                    self.assertEqual(
+                        len(actual_solutions), min(10, len(expected_solutions))
+                    )
                     for actual_solution, expected_solution in zip(
                         actual_solutions,
                         expected_solutions,

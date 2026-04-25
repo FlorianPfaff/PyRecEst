@@ -1,11 +1,13 @@
 import unittest
-from scipy.stats import multivariate_normal
-from scipy.special import iv
 
 from pyrecest import backend
+from pyrecest.backend import all, allclose, cos, exp, linalg, pi, random, squeeze, zeros
 from pyrecest.distributions import GaussianDistribution
-from pyrecest.distributions.cart_prod.gauss_von_mises_distribution import GaussVonMisesDistribution
-from pyrecest.backend import allclose, cos, exp, linalg, pi, random, squeeze, zeros, all
+from pyrecest.distributions.cart_prod.gauss_von_mises_distribution import (
+    GaussVonMisesDistribution,
+)
+from scipy.special import iv
+from scipy.stats import multivariate_normal
 
 
 class GaussVonMisesDistributionTest(unittest.TestCase):
@@ -22,15 +24,19 @@ class GaussVonMisesDistributionTest(unittest.TestCase):
         if xa.shape[1] > 1:
             p = zeros((1, xa.shape[1]))
             for i in range(xa.shape[1]):
-                p[0, i] = GaussVonMisesDistributionTest._non_vectorized_pdf(gvm, xa[:, [i]])
+                p[0, i] = GaussVonMisesDistributionTest._non_vectorized_pdf(
+                    gvm, xa[:, [i]]
+                )
             return p
 
         angle = xa[0, :]
         z = linalg.solve(gvm.A, xa[1:, :] - gvm.mu.reshape(-1, 1))
         Theta = gvm.alpha + gvm.beta @ z + 0.5 * z.T @ gvm.Gamma @ z
-        p = (multivariate_normal.pdf(xa[1:, :].T, mean=gvm.mu.ravel(), cov=gvm.P)
-             * exp(gvm.kappa * cos(angle - Theta))
-             / (2.0 * float(pi) * iv(0, gvm.kappa)))
+        p = (
+            multivariate_normal.pdf(xa[1:, :].T, mean=gvm.mu.ravel(), cov=gvm.P)
+            * exp(gvm.kappa * cos(angle - Theta))
+            / (2.0 * float(pi) * iv(0, gvm.kappa))
+        )
         return float(squeeze(p))
 
     @unittest.skipIf(
@@ -38,11 +44,15 @@ class GaussVonMisesDistributionTest(unittest.TestCase):
         reason="Not supported on this backend",
     )
     def test_pdf(self):
-        self.assertTrue(allclose(
-            self.g.pdf(self.testpoints),
-            GaussVonMisesDistributionTest._non_vectorized_pdf(self.g, self.testpoints).ravel(),
-            atol=1e-10,
-        ))
+        self.assertTrue(
+            allclose(
+                self.g.pdf(self.testpoints),
+                GaussVonMisesDistributionTest._non_vectorized_pdf(
+                    self.g, self.testpoints
+                ).ravel(),
+                atol=1e-10,
+            )
+        )
 
     def test_integral(self):
         self.assertAlmostEqual(self.g.integrate(), 1, delta=1e-5)

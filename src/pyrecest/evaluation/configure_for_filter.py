@@ -127,7 +127,9 @@ def configure_for_filter(filter_config, scenario_config, precalculated_params=No
         initial_covariance = scenario_config["initial_prior"].covariance()
         initial_extent = scenario_config["eot_initial_extent"]
 
-        filter_obj = RandomMatrixTracker(initial_state, initial_covariance, initial_extent)
+        filter_obj = RandomMatrixTracker(
+            initial_state, initial_covariance, initial_extent
+        )
 
         dt = scenario_config.get("eot_dt", 1.0)
         tau = scenario_config.get("eot_tau", 10.0)

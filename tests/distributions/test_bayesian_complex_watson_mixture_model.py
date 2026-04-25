@@ -17,14 +17,13 @@ from pyrecest.backend import (
     random,
     zeros,
 )
-
-from pyrecest.distributions.hypersphere_subset.complex_watson_distribution import (
-    ComplexWatsonDistribution,
-)
 from pyrecest.distributions.hypersphere_subset.bayesian_complex_watson_mixture_model import (
     BayesianComplexWatsonMixtureModel,
-    _simplex_integral,
     _complex_bingham_first_order_moments,
+    _simplex_integral,
+)
+from pyrecest.distributions.hypersphere_subset.complex_watson_distribution import (
+    ComplexWatsonDistribution,
 )
 
 
@@ -38,7 +37,9 @@ class TestSimplexIntegralMixture(unittest.TestCase):
     def test_D2(self):
         a, b = 2.0, 1.0
         expected = float((exp(a) - exp(b)) / (a - b))
-        self.assertAlmostEqual(float(_simplex_integral(array([a, b]))), expected, places=6)
+        self.assertAlmostEqual(
+            float(_simplex_integral(array([a, b]))), expected, places=6
+        )
 
     def test_D3(self):
         Lambda = array([2.0, 1.0, 0.0])

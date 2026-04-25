@@ -24,14 +24,14 @@ from pyrecest.sampling.hyperspherical_sampler import (
     AbstractHopfBasedS3Sampler,
     DriscollHealySampler,
     FibonacciHopfSampler,
-    get_grid_hyperhemisphere,
-    get_grid_hypersphere,
     HealpixHopfSampler,
     HealpixSampler,
     LeopardiSampler,
     SphericalCoordinatesBasedFixedResolutionSampler,
     SphericalFibonacciSampler,
     SymmetricLeopardiSampler,
+    get_grid_hyperhemisphere,
+    get_grid_hypersphere,
 )
 
 healpy_installed = importlib.util.find_spec("healpy") is not None

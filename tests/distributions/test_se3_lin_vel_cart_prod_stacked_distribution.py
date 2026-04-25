@@ -1,6 +1,16 @@
 import unittest
 
-from pyrecest.backend import allclose, array, diag, diff, hstack, linalg, ones, random, zeros
+from pyrecest.backend import (
+    allclose,
+    array,
+    diag,
+    diff,
+    hstack,
+    linalg,
+    ones,
+    random,
+    zeros,
+)
 from pyrecest.distributions import (
     GaussianDistribution,
     HyperhemisphericalUniformDistribution,
