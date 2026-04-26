@@ -39,7 +39,9 @@ class HypersphericalParticleFilter(AbstractParticleFilter, HypersphericalFilterM
     def predict_identity(self, noise_distribution):
         self.predict_nonlinear(lambda x: x, noise_distribution)
 
-    def update_identity(self, meas_noise, measurement, shift_instead_of_add: bool = True):
+    def update_identity(
+        self, meas_noise, measurement, shift_instead_of_add: bool = True
+    ):
         if not shift_instead_of_add:
             raise NotImplementedError()
         noise_copy = copy.deepcopy(meas_noise)

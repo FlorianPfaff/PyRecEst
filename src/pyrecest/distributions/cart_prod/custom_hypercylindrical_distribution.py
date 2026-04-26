@@ -46,7 +46,9 @@ class CustomHypercylindricalDistribution(
 
     def integrate(self, integration_boundaries=None):
         # Call the integrate method from the superclass
-        return AbstractHypercylindricalDistribution.integrate(self, integration_boundaries)
+        return AbstractHypercylindricalDistribution.integrate(
+            self, integration_boundaries
+        )
 
     def condition_on_periodic(self, input_periodic, normalize=True):
         # Call the condition_on_periodic method from the superclass
