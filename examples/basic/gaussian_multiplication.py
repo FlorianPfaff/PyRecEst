@@ -70,7 +70,12 @@ def main():
     print(f"  covariance =\n{reference_product.C}")
 
     print("\nMatches closed form:")
-    print(bool(allclose(product.mu, reference_product.mu) and allclose(product.C, reference_product.C)))
+    print(
+        bool(
+            allclose(product.mu, reference_product.mu)
+            and allclose(product.C, reference_product.C)
+        )
+    )
 
 
 if __name__ == "__main__":

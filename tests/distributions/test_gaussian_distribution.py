@@ -73,7 +73,9 @@ class GaussianDistributionTest(unittest.TestCase):
         for distribution in distributions[1:]:
             product = product.multiply(distribution)
 
-        precision_sum = sum(linalg.inv(distribution.C) for distribution in distributions)
+        precision_sum = sum(
+            linalg.inv(distribution.C) for distribution in distributions
+        )
         weighted_mean_sum = sum(
             matvec(linalg.inv(distribution.C), distribution.mu)
             for distribution in distributions

@@ -1,4 +1,5 @@
 """Multiply two von Mises-Fisher distributions on the unit sphere."""
+
 # pylint: disable=no-name-in-module,no-member
 
 from pyrecest.backend import allclose, array, linalg
@@ -73,7 +74,9 @@ def main():
     print("\nnormalized product distribution:")
     print(f"  mu    = {_format_vector(product.mu)}")
     print(f"  kappa = {float(product.kappa):.6f}")
-    print(f"\nconstant ratio product.pdf(x) / (first.pdf(x) * second.pdf(x)) = {float(normalization_ratio):.6f}")
+    print(
+        f"\nconstant ratio product.pdf(x) / (first.pdf(x) * second.pdf(x)) = {float(normalization_ratio):.6f}"
+    )
 
     print("\npointwise check:")
     print("index  product.pdf(x)  ratio * first.pdf(x) * second.pdf(x)")
