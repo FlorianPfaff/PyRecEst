@@ -16,9 +16,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from pyrecest.backend import abs as backend_abs
+from pyrecest.backend import angle as backend_angle
 from pyrecest.backend import (
-    abs as backend_abs,
-    angle as backend_angle,
     array,
     asarray,
     column_stack,
@@ -31,7 +31,9 @@ from pyrecest.backend import (
     pi,
     sin,
     stack,
-    sum as backend_sum,
+)
+from pyrecest.backend import sum as backend_sum
+from pyrecest.backend import (
     zeros,
     zeros_like,
 )
