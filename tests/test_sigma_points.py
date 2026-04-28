@@ -2,7 +2,6 @@ import unittest
 
 import numpy as np
 import numpy.testing as npt
-
 from pyrecest.backend import __backend_name__
 from pyrecest.sampling import JulierSigmaPoints, MerweScaledSigmaPoints
 

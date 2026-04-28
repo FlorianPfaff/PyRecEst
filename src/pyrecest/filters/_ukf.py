@@ -9,8 +9,6 @@ from copy import deepcopy
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import (
     asarray,
-)
-from pyrecest.backend import (
     einsum,
     empty,
     empty_like,

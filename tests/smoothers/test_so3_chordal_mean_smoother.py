@@ -1,7 +1,6 @@
 import unittest
 
 import numpy.testing as npt
-
 from pyrecest.backend import array, cos, eye, linalg, sin, stack
 from pyrecest.smoothers import SO3ChordalMeanSmoother, SO3CMSmoother
 
@@ -23,9 +22,7 @@ class SO3ChordalMeanSmootherTest(unittest.TestCase):
         identity = eye(3)
         quarter_turn = z_rotation(0.5 * 3.141592653589793)
 
-        mean_rotation = SO3ChordalMeanSmoother.chordal_mean(
-            [identity, quarter_turn]
-        )
+        mean_rotation = SO3ChordalMeanSmoother.chordal_mean([identity, quarter_turn])
 
         npt.assert_allclose(
             mean_rotation,

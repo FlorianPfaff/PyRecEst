@@ -27,11 +27,11 @@ across supported Python versions. Passing tests do not mean that every public
 API has identical behavior on every backend. Some modules intentionally assert
 or raise when a backend does not support the required operation.
 
-| Backend | Best fit | Main limitations |
-| --- | --- | --- |
-| NumPy | Default backend and broadest compatibility for examples, evaluation, plotting, tracking, and SciPy-based helpers. | No automatic differentiation through `pyrecest.backend.autodiff`. Autodiff calls raise `AutodiffNotImplementedError`. |
-| PyTorch | Tensor workflows and automatic differentiation where the required API is implemented. | Some backend helpers are placeholders or bridge through NumPy/SciPy. `pyrecest.backend.signal.fftconvolve` and `pyrecest.backend.searchsorted` are not implemented. |
-| JAX | JAX array and autodiff workflows for APIs that avoid unsupported mutable, assignment-heavy, or SciPy-specific operations. | Several package areas explicitly skip or reject JAX, including some sampling, tracking, assignment, evaluation, point-set registration, and manifold-specific operations. |
+| Backend | Best fit                                                                                                                  | Main limitations                                                                                                                                                          |
+|---------|---------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| NumPy   | Default backend and broadest compatibility for examples, evaluation, plotting, tracking, and SciPy-based helpers.         | No automatic differentiation through `pyrecest.backend.autodiff`. Autodiff calls raise `AutodiffNotImplementedError`.                                                     |
+| PyTorch | Tensor workflows and automatic differentiation where the required API is implemented.                                     | Some backend helpers are placeholders or bridge through NumPy/SciPy. `pyrecest.backend.signal.fftconvolve` and `pyrecest.backend.searchsorted` are not implemented.       |
+| JAX     | JAX array and autodiff workflows for APIs that avoid unsupported mutable, assignment-heavy, or SciPy-specific operations. | Several package areas explicitly skip or reject JAX, including some sampling, tracking, assignment, evaluation, point-set registration, and manifold-specific operations. |
 
 ## NumPy Backend
 

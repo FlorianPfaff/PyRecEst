@@ -116,9 +116,7 @@ class SO3ChordalMeanSmoother(AbstractSmoother):
         if matrix.shape != (3, 3):
             raise ValueError("matrix must have shape (3, 3).")
 
-        left_singular_vectors, _, right_singular_vectors_transposed = linalg.svd(
-            matrix
-        )
+        left_singular_vectors, _, right_singular_vectors_transposed = linalg.svd(matrix)
         determinant = linalg.det(
             left_singular_vectors @ right_singular_vectors_transposed
         )
@@ -147,7 +145,9 @@ class SO3ChordalMeanSmoother(AbstractSmoother):
             "weights",
         )
         if normalized_weights is None:
-            normalized_weights = asarray([1.0 / len(rotation_list) for _ in rotation_list])
+            normalized_weights = asarray(
+                [1.0 / len(rotation_list) for _ in rotation_list]
+            )
 
         mean_matrix = zeros((3, 3))
         for idx, rotation in enumerate(rotation_list):
@@ -229,7 +229,9 @@ class SO3ChordalMeanSmoother(AbstractSmoother):
 
         smoothed = []
         for idx in range(len(rotation_list)):
-            window_bounds = self._window_bounds(len(rotation_list), active_window_size, idx)
+            window_bounds = self._window_bounds(
+                len(rotation_list), active_window_size, idx
+            )
             local_weights = self._local_weights(
                 window_bounds,
                 sample_weights,

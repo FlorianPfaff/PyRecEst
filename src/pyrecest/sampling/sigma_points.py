@@ -5,8 +5,9 @@ Sigma-point sampling schemes for unscented transforms.
 import pyrecest.backend
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import asarray, empty, float64, full, linalg, reshape
+from pyrecest.backend import asarray
 from pyrecest.backend import copy as backend_copy
+from pyrecest.backend import empty, float64, full, linalg, reshape
 
 
 class MerweScaledSigmaPoints:
