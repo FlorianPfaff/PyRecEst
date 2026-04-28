@@ -69,9 +69,7 @@ class SlidingWindowManifoldMeanSmoother(AbstractSmoother):
         if window_size < 1:
             raise ValueError("window_size must be a positive integer.")
         if alignment not in self._ALIGNMENTS:
-            raise ValueError(
-                f"alignment must be one of {', '.join(self._ALIGNMENTS)}."
-            )
+            raise ValueError(f"alignment must be one of {', '.join(self._ALIGNMENTS)}.")
 
         self.window_size = window_size
         self.dirac_distribution_factory = dirac_distribution_factory

@@ -28,9 +28,7 @@ class SlidingWindowManifoldMeanSmootherTest(unittest.TestCase):
             alignment="trailing",
         )
 
-        smoothed_values = smoother.smooth(
-            [array([0.0]), array([2.0]), array([4.0])]
-        )
+        smoothed_values = smoother.smooth([array([0.0]), array([2.0]), array([4.0])])
 
         npt.assert_allclose(smoothed_values[0], array([0.0]))
         npt.assert_allclose(smoothed_values[1], array([1.0]))
@@ -74,9 +72,7 @@ class SlidingWindowManifoldMeanSmootherTest(unittest.TestCase):
             window_weights=array([1.0, 2.0, 1.0]),
         )
 
-        smoothed_values = smoother.smooth(
-            [array([0.0]), array([2.0]), array([4.0])]
-        )
+        smoothed_values = smoother.smooth([array([0.0]), array([2.0]), array([4.0])])
 
         npt.assert_allclose(smoothed_values[0], array([2.0 / 3.0]))
         npt.assert_allclose(smoothed_values[1], array([2.0]))
