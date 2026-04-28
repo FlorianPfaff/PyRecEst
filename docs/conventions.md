@@ -26,13 +26,13 @@ current reference when an API has backend limitations.
 
 For Euclidean Gaussian states, the common convention is:
 
-| Quantity | Shape | Meaning |
-| --- | --- | --- |
-| `mean` or `mu` | `(state_dim,)` | State mean vector |
-| `covariance` or `C` | `(state_dim, state_dim)` | State covariance matrix |
-| `system_matrix` | `(pred_dim, state_dim)` | Linear transition matrix |
-| `sys_noise_cov` | `(pred_dim, pred_dim)` | Process-noise covariance |
-| `sys_input` | `(pred_dim,)` | Optional additive system input |
+| Quantity            | Shape                    | Meaning                        |
+|---------------------|--------------------------|--------------------------------|
+| `mean` or `mu`      | `(state_dim,)`           | State mean vector              |
+| `covariance` or `C` | `(state_dim, state_dim)` | State covariance matrix        |
+| `system_matrix`     | `(pred_dim, state_dim)`  | Linear transition matrix       |
+| `sys_noise_cov`     | `(pred_dim, pred_dim)`   | Process-noise covariance       |
+| `sys_input`         | `(pred_dim,)`            | Optional additive system input |
 
 `GaussianDistribution(mu, C)` expects a one-dimensional mean and a
 two-dimensional covariance matrix. A scalar one-dimensional Gaussian is also
@@ -62,11 +62,11 @@ v ~ N(0, R)
 
 For a single target, use:
 
-| Quantity | Shape | Meaning |
-| --- | --- | --- |
-| `measurement` | `(meas_dim,)` | One measurement vector |
-| `measurement_matrix` | `(meas_dim, state_dim)` | Linear measurement matrix |
-| `meas_noise` | `(meas_dim, meas_dim)` | Measurement-noise covariance |
+| Quantity             | Shape                   | Meaning                      |
+|----------------------|-------------------------|------------------------------|
+| `measurement`        | `(meas_dim,)`           | One measurement vector       |
+| `measurement_matrix` | `(meas_dim, state_dim)` | Linear measurement matrix    |
+| `meas_noise`         | `(meas_dim, meas_dim)`  | Measurement-noise covariance |
 
 For a scalar measurement, pass a one-element vector:
 
@@ -83,12 +83,12 @@ filter.update_linear(measurement, measurement_matrix, measurement_noise_cov)
 Multi-target tracking APIs use a column-oriented measurement-set convention:
 each column is one measurement.
 
-| Quantity | Shape | Meaning |
-| --- | --- | --- |
-| `measurements` | `(meas_dim, num_measurements)` | Measurement set |
-| `measurement_matrix` | `(meas_dim, state_dim)` | Shared measurement model |
-| `cov_mats_meas` | `(meas_dim, meas_dim)` | Shared measurement covariance |
-| `cov_mats_meas` | `(meas_dim, meas_dim, num_measurements)` | Per-measurement covariances |
+| Quantity             | Shape                                    | Meaning                       |
+|----------------------|------------------------------------------|-------------------------------|
+| `measurements`       | `(meas_dim, num_measurements)`           | Measurement set               |
+| `measurement_matrix` | `(meas_dim, state_dim)`                  | Shared measurement model      |
+| `cov_mats_meas`      | `(meas_dim, meas_dim)`                   | Shared measurement covariance |
+| `cov_mats_meas`      | `(meas_dim, meas_dim, num_measurements)` | Per-measurement covariances   |
 
 For example, three one-dimensional detections are represented as:
 
@@ -111,17 +111,17 @@ Many distribution `pdf` methods accept either one point or a batch of points.
 For Euclidean and hyperspherical distributions, batched points commonly use the
 last axis for coordinates:
 
-| Domain | Single point | Batch of points |
-| --- | --- | --- |
-| Euclidean `dim` | `(dim,)` | `(num_points, dim)` |
-| Hypersphere embedded in R^d | `(d,)` | `(num_points, d)` |
+| Domain                      | Single point | Batch of points     |
+|-----------------------------|--------------|---------------------|
+| Euclidean `dim`             | `(dim,)`     | `(num_points, dim)` |
+| Hypersphere embedded in R^d | `(d,)`       | `(num_points, d)`   |
 
 Dirac distributions store support locations by row:
 
-| Quantity | Shape | Meaning |
-| --- | --- | --- |
-| `d` | `(num_diracs, dim)` | Dirac support locations |
-| `w` | `(num_diracs,)` | Dirac weights |
+| Quantity | Shape               | Meaning                 |
+|----------|---------------------|-------------------------|
+| `d`      | `(num_diracs, dim)` | Dirac support locations |
+| `w`      | `(num_diracs,)`     | Dirac weights           |
 
 ## Angles And Manifold Coordinates
 
