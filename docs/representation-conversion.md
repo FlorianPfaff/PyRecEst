@@ -5,11 +5,11 @@ uncertainty state: analytic densities, Dirac/particle sets, grids, Fourier
 series, mixtures, and moment-matched approximations.
 
 Use `convert_distribution` to make these conversions explicit and discoverable.
+The conversion API is re-exported from `pyrecest.distributions`.
 
 ```python
 from pyrecest.backend import array, eye
-from pyrecest.distributions import GaussianDistribution
-from pyrecest.distributions.conversion import convert_distribution
+from pyrecest.distributions import GaussianDistribution, convert_distribution
 
 prior = GaussianDistribution(array([0.0, 0.0]), eye(2))
 particles = convert_distribution(prior, "particles", n_particles=1000)
@@ -68,7 +68,7 @@ Third-party representations can register conversions without editing central
 dispatch code.
 
 ```python
-from pyrecest.distributions.conversion import register_conversion
+from pyrecest.distributions import register_conversion
 
 
 @register_conversion(MyDistribution, MyParticleDistribution)
@@ -100,7 +100,7 @@ Aliases are case-insensitive, and hyphens or spaces are normalized to
 underscores. Custom aliases can be registered with `register_conversion_alias`:
 
 ```python
-from pyrecest.distributions.conversion import register_conversion_alias
+from pyrecest.distributions import register_conversion_alias
 
 register_conversion_alias("my_particles", MyParticleDistribution)
 ```
