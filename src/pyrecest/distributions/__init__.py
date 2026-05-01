@@ -22,6 +22,16 @@ from .abstract_periodic_grid_distribution import AbstractPeriodicGridDistributio
 from .abstract_se2_distribution import AbstractSE2Distribution
 from .abstract_se3_distribution import AbstractSE3Distribution
 from .abstract_uniform_distribution import AbstractUniformDistribution
+from .conversion import (
+    ConversionError,
+    ConversionResult,
+    can_convert,
+    convert_distribution,
+    register_conversion,
+    register_conversion_alias,
+    registered_conversion_aliases,
+    registered_conversions,
+)
 from .cart_prod.abstract_cart_prod_distribution import AbstractCartProdDistribution
 from .cart_prod.abstract_custom_lin_bounded_cart_prod_distribution import (
     AbstractCustomLinBoundedCartProdDistribution,
@@ -286,6 +296,14 @@ aliases = [
 
 __all__ = aliases + [
     "GvMDistribution",
+    "ConversionError",
+    "ConversionResult",
+    "can_convert",
+    "convert_distribution",
+    "register_conversion",
+    "register_conversion_alias",
+    "registered_conversion_aliases",
+    "registered_conversions",
     "GeneralizedKSineSkewedVonMisesDistribution",
     "AbstractBoundedDomainDistribution",
     "AbstractBoundedNonPeriodicDistribution",
@@ -337,7 +355,7 @@ __all__ = aliases + [
     "CircularUniformDistribution",
     "CustomCircularDistribution",
     "AbstractSineSkewedDistribution",
-    "GeneralizedKSineSkewedVonMisesDistribution",
+    "GeneralizedKSineSkedVonMisesDistribution",
     "GeneralizedKSineSkewedWrappedCauchyDistribution",
     "GSSVMDistribution",
     "SineSkewedVonMisesDistribution",
