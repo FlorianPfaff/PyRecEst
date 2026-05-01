@@ -365,12 +365,33 @@ def _resolve_builtin_alias(distribution, alias: str):
     from .nonperiodic.abstract_linear_distribution import AbstractLinearDistribution
     from .nonperiodic.gaussian_distribution import GaussianDistribution
     from .nonperiodic.linear_dirac_distribution import LinearDiracDistribution
+    from .so3_dirac_distribution import SO3DiracDistribution
+    from .so3_product_dirac_distribution import SO3ProductDiracDistribution
+    from .so3_product_tangent_gaussian_distribution import (
+        SO3ProductTangentGaussianDistribution,
+    )
+    from .so3_tangent_gaussian_distribution import SO3TangentGaussianDistribution
 
     if alias in ("gaussian", "normal", "moment_matched_gaussian"):
+        if isinstance(distribution, (SO3DiracDistribution, SO3TangentGaussianDistribution)):
+            return SO3TangentGaussianDistribution
+        if isinstance(
+            distribution,
+            (SO3ProductDiracDistribution, SO3ProductTangentGaussianDistribution),
+        ):
+            return SO3ProductTangentGaussianDistribution
         return GaussianDistribution
 
     if alias in ("linear_dirac", "linear_particles"):
         return LinearDiracDistribution
+    if alias in ("so3_dirac", "so3_particles"):
+        return SO3DiracDistribution
+    if alias in ("so3_product_dirac", "so3_product_particles"):
+        return SO3ProductDiracDistribution
+    if alias in ("so3_tangent_gaussian", "so3_gaussian"):
+        return SO3TangentGaussianDistribution
+    if alias in ("so3_product_tangent_gaussian", "so3_product_gaussian"):
+        return SO3ProductTangentGaussianDistribution
     if alias == "circular_dirac":
         return CircularDiracDistribution
     if alias == "hypertoroidal_dirac":
@@ -381,6 +402,14 @@ def _resolve_builtin_alias(distribution, alias: str):
         return HyperhemisphericalDiracDistribution
 
     if alias in ("particles", "dirac", "samples"):
+        if isinstance(distribution, SO3DiracDistribution):
+            return SO3DiracDistribution
+        if isinstance(distribution, SO3ProductDiracDistribution):
+            return SO3ProductDiracDistribution
+        if isinstance(distribution, SO3TangentGaussianDistribution):
+            return SO3DiracDistribution
+        if isinstance(distribution, SO3ProductTangentGaussianDistribution):
+            return SO3ProductDiracDistribution
         if isinstance(distribution, AbstractCircularDistribution):
             return CircularDiracDistribution
         if isinstance(distribution, AbstractHypertoroidalDistribution):
@@ -510,6 +539,9 @@ def _validate_conversion_arguments(
             f"{conversion_name} got unsupported conversion argument(s): "
             f"{', '.join(sorted(unknown))}. Accepted arguments: {accepted}."
         )
+
+
+from . import so3_conversion as _so3_conversion  # noqa: F401,E402  pylint: disable=wrong-import-position,unused-import
 
 
 __all__ = [
