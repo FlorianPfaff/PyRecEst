@@ -41,10 +41,10 @@ Common starting points include:
 - `HypertoroidalFourierDistribution` and hypertoroidal grid or wrapped-normal
   distributions for toroidal states.
 
-Use `pyrecest.distributions.conversion.convert_distribution(...)` to convert
-between analytic, Dirac/particle, grid, Fourier, and moment-matched
-representations. The target may be a concrete class or an alias such as
-`"particles"`, `"gaussian"`, `"grid"`, or `"fourier"`. See
+Use `pyrecest.distributions.convert_distribution(...)` to convert between
+analytic, Dirac/particle, grid, Fourier, and moment-matched representations.
+The target may be a concrete class or an alias such as `"particles"`,
+`"gaussian"`, `"grid"`, or `"fourier"`. See
 [representation conversion](representation-conversion.md).
 
 ### `pyrecest.filters`
