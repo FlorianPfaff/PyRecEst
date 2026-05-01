@@ -2,10 +2,12 @@ import unittest
 
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import allclose, array, eye, random
-from pyrecest.distributions import GaussianDistribution, LinearDiracDistribution
-from pyrecest.distributions.conversion import (
+import pyrecest.distributions as distributions
+from pyrecest.distributions import (
     ConversionError,
     ConversionResult,
+    GaussianDistribution,
+    LinearDiracDistribution,
     can_convert,
     convert_distribution,
     register_conversion_alias,
@@ -136,6 +138,22 @@ class ConversionTest(unittest.TestCase):
 
         self.assertTrue(can_convert(gaussian, "particles"))
         self.assertFalse(can_convert(gaussian, "not_a_representation"))
+
+    def test_conversion_symbols_are_exported_from_distributions_package(self):
+        exported_symbols = {
+            "ConversionError",
+            "ConversionResult",
+            "can_convert",
+            "convert_distribution",
+            "register_conversion",
+            "register_conversion_alias",
+            "registered_conversion_aliases",
+            "registered_conversions",
+        }
+
+        for symbol in exported_symbols:
+            self.assertTrue(hasattr(distributions, symbol))
+            self.assertIn(symbol, distributions.__all__)
 
 
 if __name__ == "__main__":
