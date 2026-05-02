@@ -2,7 +2,7 @@
 
 Model objects describe transition and measurement capabilities independently of a concrete filter implementation.
 
-This initial model layer focuses on likelihood- and sampling-based capabilities for particle filters, grid filters, and other callback-based estimators.
+This initial model layer focuses on likelihood- and sampling-based capabilities for particle filters, grid filters, and other callback-based estimators. Public model capability protocols are available from `pyrecest.protocols.models`.
 
 ## Measurement likelihoods
 
@@ -48,6 +48,27 @@ density = transition_model.transition_density(state_next, state_previous)
 ```
 
 The callback convention is `transition_density(state_next, state_previous)`.
+
+## Public model protocols
+
+Use `pyrecest.protocols.models` when writing generic code that accepts any model
+with a required capability:
+
+```python
+from pyrecest.protocols.models import SupportsLikelihood, SupportsTransitionSampling
+
+
+def evaluate_weights(model: SupportsLikelihood, measurement, states):
+    return model.likelihood(measurement, states)
+
+
+def draw_predictions(model: SupportsTransitionSampling, state, n):
+    return model.sample_next(state, n=n)
+```
+
+The same protocols remain importable from `pyrecest.models` for compatibility
+with earlier model-layer code, but the protocol submodule is the preferred
+public home for new code.
 
 ## Scope
 
