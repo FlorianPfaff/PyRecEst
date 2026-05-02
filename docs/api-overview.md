@@ -1,8 +1,9 @@
 # API Overview
 
 PyRecEst exposes most user-facing classes through package-level imports such as
-`pyrecest.distributions`, `pyrecest.filters`, `pyrecest.sampling`,
-`pyrecest.smoothers`, `pyrecest.evaluation`, and `pyrecest.utils`.
+`pyrecest.distributions`, `pyrecest.models`, `pyrecest.filters`,
+`pyrecest.sampling`, `pyrecest.smoothers`, `pyrecest.evaluation`, and
+`pyrecest.utils`.
 
 Use backend-compatible arrays from `pyrecest.backend` in examples and user code
 when the same code should run on more than one numerical backend.
@@ -11,6 +12,7 @@ when the same code should run on more than one numerical backend.
 from pyrecest.backend import array, diag
 from pyrecest.distributions import GaussianDistribution
 from pyrecest.filters import KalmanFilter
+from pyrecest.models import HasLinearTransition
 ```
 
 See [Shapes and conventions](conventions.md) for the expected vector, matrix,
@@ -46,6 +48,24 @@ between analytic, Dirac/particle, grid, Fourier, and moment-matched
 representations. The target may be a concrete class or an alias such as
 `"particles"`, `"gaussian"`, `"grid"`, or `"fourier"`. See
 [representation conversion](representation-conversion.md).
+
+### `pyrecest.models`
+
+Reusable, filter-independent contracts for transition, measurement, and noise
+models. The package currently provides marker base classes, model metadata,
+small runtime-checkable capability protocols, and minimal validation helpers.
+
+Common starting points include:
+
+- `TransitionModel`, `MeasurementModel`, and `NoiseModel` for model categories;
+- `ModelMetadata` for optional names and dimensions;
+- `HasLinearTransition` and `HasLinearMeasurement` for linear Gaussian-style
+  models;
+- `HasTransitionFunction` and `HasMeasurementFunction` for nonlinear mappings;
+- `HasTransitionSampler`, `HasTransitionDensity`, and `HasLikelihood` for
+  particle, grid, and likelihood-based filters.
+
+See [model objects](models.md) for the intended use of these contracts.
 
 ### `pyrecest.filters`
 
