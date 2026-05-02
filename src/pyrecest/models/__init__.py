@@ -4,8 +4,6 @@ evolve and how measurements are evaluated. These objects are deliberately small
 and capability-oriented so filters can opt into the pieces they need.
 """
 
-from .particle import LikelihoodMeasurementModel, SampleableTransitionModel
-
 from .additive_noise import AdditiveNoiseMeasurementModel, AdditiveNoiseTransitionModel
 from .likelihood import (
     DensityTransitionModel,
@@ -55,6 +53,4 @@ __all__ = [
     "validate_state_vector",
     "validate_transition_matrix",
     "validate_vector",
-    "LikelihoodMeasurementModel",
-    "SampleableTransitionModel",
 ]

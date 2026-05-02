@@ -17,6 +17,7 @@ duplicating callback conventions.
 
 from __future__ import annotations
 
+from inspect import Parameter, signature
 from typing import Any, Callable, Protocol, runtime_checkable
 
 
@@ -55,6 +56,37 @@ class SupportsTransitionDensity(Protocol):
 def _ensure_callable(value: Any, name: str) -> None:
     if not callable(value):
         raise TypeError(f"{name} must be callable")
+
+
+def _accepts_sample_count(callback: Callable[..., Any]) -> bool:
+    """Return whether a sampler callback appears to accept an ``n`` argument."""
+
+    try:
+        parameters = signature(callback).parameters.values()
+    except (TypeError, ValueError):
+        return True
+
+    has_variadic_positional = any(
+        parameter.kind is Parameter.VAR_POSITIONAL for parameter in parameters
+    )
+    if has_variadic_positional:
+        return True
+
+    try:
+        parameters = signature(callback).parameters.values()
+    except (TypeError, ValueError):
+        return True
+
+    positional_parameters = [
+        parameter
+        for parameter in parameters
+        if parameter.kind
+        in (Parameter.POSITIONAL_ONLY, Parameter.POSITIONAL_OR_KEYWORD)
+    ]
+    if len(positional_parameters) >= 2:
+        return True
+
+    return any(parameter.name == "n" for parameter in parameters)
 
 
 def _evaluate_distribution_method(distribution: Any, method_name: str, *args: Any) -> Any:
@@ -170,28 +202,34 @@ class SampleableTransitionModel:
     Parameters
     ----------
     sample_next
-        Callable with signature ``sample_next(state, n=1)`` returning samples
-        from ``p(x_k | state)``.
+        Callable with signature ``sample_next(state)`` or
+        ``sample_next(state, n=1)`` returning samples from ``p(x_k | state)``.
     transition_density
         Optional callable with signature
         ``transition_density(state_next, state_previous)``.
     name
         Optional human-readable model name.
+    function_is_vectorized
+        Whether ``sample_next`` accepts a batch of states. This preserves the
+        legacy particle-model adapter contract.
     """
 
     def __init__(
         self,
-        sample_next: Callable[[Any, int], Any],
+        sample_next: Callable[..., Any],
         *,
         transition_density: Callable[[Any, Any], Any] | None = None,
         name: str | None = None,
+        function_is_vectorized: bool = True,
     ):
         _ensure_callable(sample_next, "sample_next")
         if transition_density is not None:
             _ensure_callable(transition_density, "transition_density")
 
         self._sample_next = sample_next
+        self._sample_next_accepts_n = _accepts_sample_count(sample_next)
         self._transition_density = transition_density
+        self.function_is_vectorized = function_is_vectorized
         self.name = name
 
     @property
@@ -203,7 +241,9 @@ class SampleableTransitionModel:
     def sample_next(self, state: Any, n: int = 1) -> Any:
         """Draw ``n`` next-state samples conditioned on ``state``."""
 
-        return self._sample_next(state, n)
+        if self._sample_next_accepts_n:
+            return self._sample_next(state, n)
+        return self._sample_next(state)
 
     def transition_density(self, state_next: Any, state_previous: Any) -> Any:
         """Return transition density values if available."""
