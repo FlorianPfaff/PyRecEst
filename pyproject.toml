@@ -83,7 +83,6 @@ disable = [
   "too-many-statements",
   "too-many-arguments",
   "duplicate-code",
-  "consider-using-from-import",
 ]
 
 [tool.pylint.FORMAT]
