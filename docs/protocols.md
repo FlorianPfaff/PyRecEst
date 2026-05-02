@@ -53,11 +53,22 @@ shapes, backend behavior, and semantics separately.
 
 ## Import style
 
-Use submodule imports in early protocol pull requests:
+Submodule imports remain the clearest option when code depends on one specific
+capability area:
 
 ```python
 from pyrecest.protocols.common import SupportsDim, SupportsInputDim
 ```
 
-Package-level exports are intentionally minimal in this seed package to reduce
-merge conflicts while follow-up protocol modules are developed in parallel.
+The package also provides curated convenience exports for all available protocol
+submodules:
+
+```python
+from pyrecest.protocols import SupportsDim, SupportsInputDim
+```
+
+Each protocol submodule owns its public names through its own `__all__`. The
+package-level namespace re-exports those names from known protocol submodules
+that are present in the installed package. This keeps follow-up protocol pull
+requests independent while still allowing a stable package-level import style
+once the corresponding submodule has landed.
