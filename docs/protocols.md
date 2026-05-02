@@ -32,6 +32,19 @@ a sampler utility may require only `SupportsSampling`. A particle representation
 should not need to implement analytic density evaluation merely to satisfy a
 large distribution base interface.
 
+Prefer additive protocols over mandatory base classes:
+
+```python
+from pyrecest.protocols.common import SupportsDim
+
+
+def describe_dimension(obj: SupportsDim) -> str:
+    return f"intrinsic dimension: {obj.dim}"
+```
+
+A class does not need to inherit from `SupportsDim`; it only needs to expose the
+required attribute or property.
+
 ## Runtime checks
 
 The public protocols are runtime-checkable where practical:
@@ -61,3 +74,26 @@ from pyrecest.protocols.common import SupportsDim, SupportsInputDim
 
 Package-level exports are intentionally minimal in this seed package to reduce
 merge conflicts while follow-up protocol modules are developed in parallel.
+
+## Extension examples
+
+The extension guides show how to write user-defined components that follow the
+current public protocol seed and existing PyRecEst naming conventions:
+
+- [Custom distribution extensions](custom-distribution.md) explains how to build
+  a small distribution-like class with `dim`, `input_dim`, `pdf`, `sample`,
+  `mean`, and `covariance` methods.
+- [Custom filter extensions](custom-filter.md) explains how to build a small
+  recursive filter-like class with `dim`, `filter_state`, prediction, update,
+  and point-estimate methods.
+
+The runnable scripts are:
+
+```bash
+python examples/basic/custom_distribution_protocol.py
+python examples/basic/custom_filter_protocol.py
+```
+
+These examples intentionally depend only on the currently available common
+protocols. When distribution- and filter-specific protocol modules are added,
+the same examples can be updated to import those narrower capability protocols.

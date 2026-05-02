@@ -48,6 +48,26 @@ product relation.
 python examples/basic/von_mises_fisher_multiplication.py
 ```
 
+### Custom Distribution Protocol
+
+`examples/basic/custom_distribution_protocol.py` shows a small user-defined
+scalar distribution that satisfies the public dimension protocols without
+inheriting from a PyRecEst distribution base class.
+
+```bash
+python examples/basic/custom_distribution_protocol.py
+```
+
+### Custom Filter Protocol
+
+`examples/basic/custom_filter_protocol.py` shows a small user-defined recursive
+filter that satisfies the public dimension protocol and follows common PyRecEst
+filter naming conventions.
+
+```bash
+python examples/basic/custom_filter_protocol.py
+```
+
 ## Backend Selection
 
 Select a non-default backend by setting `PYRECEST_BACKEND` before running the

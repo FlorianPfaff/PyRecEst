@@ -2,8 +2,8 @@
 
 PyRecEst exposes most user-facing classes through package-level imports such as
 `pyrecest.distributions`, `pyrecest.filters`, `pyrecest.models`,
-`pyrecest.sampling`, `pyrecest.smoothers`, `pyrecest.evaluation`, and
-`pyrecest.utils`.
+`pyrecest.protocols`, `pyrecest.sampling`, `pyrecest.smoothers`,
+`pyrecest.evaluation`, and `pyrecest.utils`.
 
 Use backend-compatible arrays from `pyrecest.backend` in examples and user code
 when the same code should run on more than one numerical backend.
@@ -26,6 +26,21 @@ Dynamic backend facade used by the rest of the project. The default backend is
 NumPy. PyTorch and JAX support are selected through `PYRECEST_BACKEND` before
 importing `pyrecest`. See [backend compatibility](backend-compatibility.md) for
 backend-specific support notes and known limitations.
+
+### `pyrecest.protocols`
+
+Public capability contracts for PyRecEst extension points. Protocols describe
+what an object can do without requiring it to inherit from a specific PyRecEst
+base class.
+
+The current seed exposes common dimension protocols:
+
+- `SupportsDim` for objects with an intrinsic state-space dimension;
+- `SupportsInputDim` for objects with an ambient or input coordinate dimension.
+
+See [public protocols](protocols.md), [custom distribution extensions](custom-distribution.md),
+and [custom filter extensions](custom-filter.md) for protocol-oriented extension
+examples.
 
 ### `pyrecest.distributions`
 
@@ -142,6 +157,8 @@ Common starting points include:
 ## Where To Look Next
 
 - Use [the examples guide](examples.md) for small runnable workflows.
+- Use [public protocols](protocols.md) and the custom extension guides when you
+  want user-defined objects to interoperate with generic PyRecEst utilities.
 - Use [the generated API reference](reference/index.md) for package-level
   reference pages built from docstrings.
 - Use `tests/` as executable reference coverage for APIs that do not yet have
