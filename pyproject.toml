@@ -77,6 +77,12 @@ disable = [
   "W0221",
   "redefined-builtin",
   "cyclic-import",
+  "too-many-locals",
+  "too-many-return-statements",
+  "too-many-branches",
+  "too-many-statements",
+  "too-many-arguments",
+  "duplicate-code",
 ]
 
 [tool.pylint.FORMAT]
