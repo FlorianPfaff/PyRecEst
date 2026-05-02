@@ -139,6 +139,21 @@ For Cartesian-product and rigid-body state spaces, keep component blocks in the
 order expected by the specific distribution or filter class. When in doubt, look
 at the class tests for a runnable example of the expected coordinate ordering.
 
+## Protocol-Level State-Space Metadata
+
+The public manifold and state-space protocols use `dim` for the intrinsic state
+dimension and `input_dim` for the trailing coordinate dimension accepted by
+public methods. For Euclidean and toroidal coordinates these values often match.
+For embedded manifolds, such as hyperspheres, `input_dim` can be larger than
+`dim`.
+
+Finite-measure domains can additionally expose `get_manifold_size()` and
+`get_ln_manifold_size()`. These methods should describe the total measure of the
+state space with respect to the base measure used by the density, for example
+the circumference of a circle or the surface area of a hypersphere. Non-compact
+state spaces should not fake a finite manifold size just to satisfy a protocol.
+
+
 ## Practical Checklist
 
 - Use one-dimensional arrays for state and measurement vectors.
