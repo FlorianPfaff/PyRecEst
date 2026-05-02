@@ -21,6 +21,17 @@ aliases:
 Follow-up pull requests can add distribution, filter, model, conversion, and
 manifold-specific protocols independently.
 
+## Type-checker discovery
+
+PyRecEst ships a top-level `py.typed` marker so type checkers can discover the
+inline annotations and public protocol definitions distributed with the runtime
+package. The marker is intentionally empty because PyRecEst is an inline-typed
+package, not a stub-only package.
+
+Adding more precise annotations remains an incremental process: the marker makes
+the available annotations visible, while follow-up protocol PRs should continue
+to tighten the public contracts module by module.
+
 ## Design principles
 
 Protocols should stay small and capability-oriented. Instead of requiring every
