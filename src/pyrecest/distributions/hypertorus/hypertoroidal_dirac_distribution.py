@@ -14,6 +14,7 @@ from pyrecest.backend import (
     int32,
     int64,
     mod,
+    ones,
     pi,
     real,
     reshape,
@@ -39,6 +40,40 @@ class HypertoroidalDiracDistribution(
 
         AbstractHypertoroidalDistribution.__init__(self, dim)
         AbstractDiracDistribution.__init__(self, atleast_1d(mod(d, 2.0 * pi)), w=w)
+
+    @staticmethod
+    def from_distribution(
+        distribution: AbstractHypertoroidalDistribution, n_particles: int | None = None
+    ):
+        """Create a hypertoroidal Dirac approximation from a distribution.
+
+        Grid distributions are converted deterministically by using every grid
+        point as a Dirac location and normalized grid values as weights. Other
+        hypertoroidal distributions are approximated by sampling and need
+        ``n_particles``.
+        """
+        if not isinstance(distribution, AbstractHypertoroidalDistribution):
+            raise ValueError(
+                "from_distribution: invalidObject: First argument has to be "
+                "a hypertoroidal distribution."
+            )
+
+        if hasattr(distribution, "grid_values") and callable(
+            getattr(distribution, "get_grid", None)
+        ):
+            weights = reshape(distribution.grid_values, (-1,))
+            weights = weights / sum(weights)
+            return HypertoroidalDiracDistribution(
+                distribution.get_grid(), weights, dim=distribution.dim
+            )
+
+        if n_particles is None:
+            raise ValueError("n_particles is required for sampling-based conversion.")
+        if n_particles <= 0:
+            raise ValueError("n_particles must be a positive integer.")
+        return HypertoroidalDiracDistribution(
+            distribution.sample(n_particles), ones(n_particles) / n_particles
+        )
 
     def plot(self, resolution=128, **kwargs):
         _ = resolution

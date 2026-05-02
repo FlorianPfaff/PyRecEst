@@ -1,4 +1,6 @@
+import builtins
 import math
+from numbers import Integral
 import warnings
 
 from beartype import beartype
@@ -17,7 +19,6 @@ from pyrecest.backend import (
     min,
     mod,
     ndim,
-    ones,
     pi,
     reshape,
     stack,
@@ -27,6 +28,28 @@ from pyrecest.backend import (
 from ..abstract_grid_distribution import AbstractGridDistribution
 from .abstract_hypertoroidal_distribution import AbstractHypertoroidalDistribution
 from .hypertoroidal_dirac_distribution import HypertoroidalDiracDistribution
+
+
+def _normalize_hypertoroidal_resolution(value, dim: int, name: str) -> tuple[int, ...]:
+    """Normalize scalar or per-dimension hypertoroidal resolutions."""
+    if isinstance(value, Integral):
+        resolution = (int(value),) * dim
+    else:
+        try:
+            resolution = tuple(int(v) for v in value)
+        except TypeError as exc:
+            raise TypeError(
+                f"{name} must be an integer or a sequence of integers."
+            ) from exc
+
+    if len(resolution) != dim:
+        raise ValueError(
+            f"{name} must contain one entry per dimension. "
+            f"Expected {dim}, got {len(resolution)}."
+        )
+    if builtins.any(v <= 0 for v in resolution):
+        raise ValueError(f"{name} entries must be positive integers.")
+    return resolution
 
 
 class HypertoroidalGridDistribution(
@@ -234,14 +257,19 @@ class HypertoroidalGridDistribution(
     @beartype
     def from_distribution(
         distribution: AbstractHypertoroidalDistribution,
-        n_grid_points: tuple | list,
+        n_grid_points: int | tuple | list,
         grid_type: str = "cartesian_prod",
         enforce_pdf_nonnegative: bool = True,
     ):
         """Create a grid distribution from an existing hypertoroidal distribution."""
-        assert distribution.dim == len(
-            n_grid_points
-        ), "from_distribution:DimensionMismatch: n_grid_points must specify number of grid points along each dimension (i.e., have length equal to distribution.dim)."
+        if not isinstance(distribution, AbstractHypertoroidalDistribution):
+            raise ValueError(
+                "from_distribution: invalidObject: First argument has to be "
+                "a hypertoroidal distribution."
+            )
+        n_grid_points = _normalize_hypertoroidal_resolution(
+            n_grid_points, distribution.dim, "n_grid_points"
+        )
         # Generic case: sample pdf of the given distribution on a grid.
         hgd = HypertoroidalGridDistribution.from_function(
             distribution.pdf,
@@ -291,20 +319,20 @@ class HypertoroidalGridDistribution(
         )
         return sgd
 
-    def plot(self, *args, **kwargs):
-        # Initially equally weighted and then overwrite to prevent
-        # normalization in the constructor of the Dirac distribution
-        hdd = HypertoroidalDiracDistribution(
-            self.grid,
-            (1.0 / len(self.grid_values)) * ones(len(self.grid_values)),
+    def to_dirac_distribution(self):
+        """Return a weighted Dirac distribution on the grid points."""
+        weights = reshape(self.grid_values, (-1,))
+        weights = weights / sum(weights)
+        return HypertoroidalDiracDistribution(
+            self.get_grid(), weights, dim=self.dim
         )
-        # Overwrite with actual (possibly unnormalized) weights
-        hdd.w = self.grid_values.copy()
-        return hdd.plot(*args, **kwargs)
+
+    def plot(self, *args, **kwargs):
+        return self.to_dirac_distribution().plot(*args, **kwargs)
 
     def trigonometric_moment(self, n):
         hwd = HypertoroidalDiracDistribution(
-            self.grid, self.grid_values / sum(self.grid_values)
+            self.get_grid(), reshape(self.grid_values, (-1,)) / sum(self.grid_values)
         )
         m = hwd.trigonometric_moment(n)
         return m
