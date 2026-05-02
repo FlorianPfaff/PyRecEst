@@ -1,8 +1,9 @@
 # API Overview
 
 PyRecEst exposes most user-facing classes through package-level imports such as
-`pyrecest.distributions`, `pyrecest.filters`, `pyrecest.sampling`,
-`pyrecest.smoothers`, `pyrecest.evaluation`, and `pyrecest.utils`.
+`pyrecest.distributions`, `pyrecest.models`, `pyrecest.filters`,
+`pyrecest.sampling`, `pyrecest.smoothers`, `pyrecest.evaluation`, and
+`pyrecest.utils`.
 
 Use backend-compatible arrays from `pyrecest.backend` in examples and user code
 when the same code should run on more than one numerical backend.
@@ -10,6 +11,7 @@ when the same code should run on more than one numerical backend.
 ```python
 from pyrecest.backend import array, diag
 from pyrecest.distributions import GaussianDistribution
+from pyrecest.models import AdditiveNoiseTransitionModel
 from pyrecest.filters import KalmanFilter
 ```
 
@@ -46,6 +48,21 @@ between analytic, Dirac/particle, grid, Fourier, and moment-matched
 representations. The target may be a concrete class or an alias such as
 `"particles"`, `"gaussian"`, `"grid"`, or `"fourier"`. See
 [representation conversion](representation-conversion.md).
+
+### `pyrecest.models`
+
+Reusable transition and measurement model objects that describe estimation
+problems independently from the filters that consume them.
+
+Common starting points include:
+
+- `AdditiveNoiseTransitionModel` for nonlinear transitions of the form
+  `x_next = f(x) + w`;
+- `AdditiveNoiseMeasurementModel` for nonlinear measurements of the form
+  `z = h(x) + v`.
+
+See [model objects](model-objects.md) for usage patterns and supported
+capabilities.
 
 ### `pyrecest.filters`
 
@@ -122,6 +139,8 @@ Common starting points include:
 ## Where To Look Next
 
 - Use [the examples guide](examples.md) for small runnable workflows.
+- Use [model objects](model-objects.md) to define reusable transition and
+  measurement functions.
 - Use [the generated API reference](reference/index.md) for package-level
   reference pages built from docstrings.
 - Use `tests/` as executable reference coverage for APIs that do not yet have
