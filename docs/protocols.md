@@ -51,12 +51,54 @@ Runtime checks confirm that the required attributes or methods are present. They
 do not prove mathematical correctness. Protocol-specific tests should check
 shapes, backend behavior, and semantics separately.
 
+## Compliance testing helpers
+
+`pyrecest.protocols.testing` provides reusable assertion helpers for protocol
+and capability tests. These helpers are intentionally lightweight: they check
+that required attributes or methods exist, are callable where appropriate, and
+return non-`None` values for representative inputs. They do not check numerical
+correctness.
+
+Example:
+
+```python
+from pyrecest.protocols.testing import (
+    assert_shape,
+    assert_supports_pdf,
+    assert_supports_sampling,
+)
+
+
+def test_my_distribution_basic_capabilities(my_distribution):
+    xs = my_distribution.sample(3)
+
+    assert_shape(xs, (3, my_distribution.input_dim))
+    assert_supports_sampling(my_distribution, 3)
+    assert_supports_pdf(my_distribution, xs)
+```
+
+General-purpose helpers include:
+
+- `assert_protocol_instance` for runtime-checkable protocol checks;
+- `assert_has_attribute` and `assert_callable_attribute` for duck-typed
+  contracts;
+- `assert_method_returns_non_none` and `assert_value_is_not_none` for minimal
+  behavioral checks;
+- `assert_shape`, `assert_shape_prefix`, and `assert_trailing_dimension` for
+  backend-array shape checks.
+
+PyRecEst-specific convenience helpers currently cover common dimensions,
+distribution-like methods, the minimal recursive-filter contract, likelihood
+models, and transition models. More specific helpers can be added when the
+corresponding capability protocols are introduced.
+
 ## Import style
 
 Use submodule imports in early protocol pull requests:
 
 ```python
 from pyrecest.protocols.common import SupportsDim, SupportsInputDim
+from pyrecest.protocols.testing import assert_supports_dim
 ```
 
 Package-level exports are intentionally minimal in this seed package to reduce
