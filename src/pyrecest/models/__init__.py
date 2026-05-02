@@ -4,8 +4,22 @@ evolve and how measurements are evaluated. These objects are deliberately small
 and capability-oriented so filters can opt into the pieces they need.
 """
 
-from .particle import LikelihoodMeasurementModel, SampleableTransitionModel
-
+from .adapters import (
+    LinearMeasurementArguments,
+    LinearTransitionArguments,
+    as_density_transition_model,
+    as_likelihood_model,
+    as_sampleable_transition_model,
+    evaluate_likelihood,
+    evaluate_log_likelihood,
+    evaluate_transition_density,
+    get_optional_model_attribute,
+    linear_measurement_arguments,
+    linear_transition_arguments,
+    predict_distribution_from_model,
+    require_model_attribute,
+    sample_next_state,
+)
 from .additive_noise import AdditiveNoiseMeasurementModel, AdditiveNoiseTransitionModel
 from .likelihood import (
     DensityTransitionModel,
@@ -36,17 +50,31 @@ __all__ = [
     "AdditiveNoiseMeasurementModel",
     "AdditiveNoiseTransitionModel",
     "DensityTransitionModel",
+    "IdentityGaussianMeasurementModel",
+    "IdentityGaussianTransitionModel",
     "LikelihoodMeasurementModel",
+    "LinearGaussianMeasurementModel",
+    "LinearGaussianTransitionModel",
+    "LinearMeasurementArguments",
+    "LinearTransitionArguments",
     "SampleableTransitionModel",
     "SupportsLikelihood",
     "SupportsLogLikelihood",
     "SupportsTransitionDensity",
     "SupportsTransitionSampling",
-    "IdentityGaussianMeasurementModel",
-    "IdentityGaussianTransitionModel",
-    "LinearGaussianMeasurementModel",
-    "LinearGaussianTransitionModel",
+    "as_density_transition_model",
+    "as_likelihood_model",
+    "as_sampleable_transition_model",
+    "evaluate_likelihood",
+    "evaluate_log_likelihood",
+    "evaluate_transition_density",
+    "get_optional_model_attribute",
     "infer_state_dim_from_distribution",
+    "linear_measurement_arguments",
+    "linear_transition_arguments",
+    "predict_distribution_from_model",
+    "require_model_attribute",
+    "sample_next_state",
     "validate_covariance_matrix",
     "validate_matrix",
     "validate_measurement_matrix",
@@ -55,6 +83,4 @@ __all__ = [
     "validate_state_vector",
     "validate_transition_matrix",
     "validate_vector",
-    "LikelihoodMeasurementModel",
-    "SampleableTransitionModel",
 ]

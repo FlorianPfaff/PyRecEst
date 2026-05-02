@@ -17,39 +17,14 @@ duplicating callback conventions.
 
 from __future__ import annotations
 
-from typing import Any, Callable, Protocol, runtime_checkable
+from typing import Any, Callable
 
-
-@runtime_checkable
-class SupportsLikelihood(Protocol):
-    """Protocol for measurement models that can evaluate ``p(z | x)``."""
-
-    def likelihood(self, measurement: Any, state: Any) -> Any:
-        """Return the likelihood of ``measurement`` for ``state``."""
-
-
-@runtime_checkable
-class SupportsLogLikelihood(Protocol):
-    """Protocol for measurement models that can evaluate log-likelihoods."""
-
-    def log_likelihood(self, measurement: Any, state: Any) -> Any:
-        """Return the log-likelihood of ``measurement`` for ``state``."""
-
-
-@runtime_checkable
-class SupportsTransitionSampling(Protocol):
-    """Protocol for transition models that can sample ``p(x_k | x_{k-1})``."""
-
-    def sample_next(self, state: Any, n: int = 1) -> Any:
-        """Draw ``n`` next-state samples conditioned on ``state``."""
-
-
-@runtime_checkable
-class SupportsTransitionDensity(Protocol):
-    """Protocol for transition models that can evaluate ``p(x_k | x_{k-1})``."""
-
-    def transition_density(self, state_next: Any, state_previous: Any) -> Any:
-        """Return transition density values."""
+from pyrecest.protocols.models import (
+    SupportsLikelihood,
+    SupportsLogLikelihood,
+    SupportsTransitionDensity,
+    SupportsTransitionSampling,
+)
 
 
 def _ensure_callable(value: Any, name: str) -> None:
@@ -57,7 +32,11 @@ def _ensure_callable(value: Any, name: str) -> None:
         raise TypeError(f"{name} must be callable")
 
 
-def _evaluate_distribution_method(distribution: Any, method_name: str, *args: Any) -> Any:
+def _evaluate_distribution_method(
+    distribution: Any,
+    method_name: str,
+    *args: Any,
+) -> Any:
     method = getattr(distribution, method_name, None)
     if method is None or not callable(method):
         raise AttributeError(
@@ -141,7 +120,11 @@ class LikelihoodMeasurementModel:
 
             def log_likelihood(measurement: Any, state: Any) -> Any:
                 distribution = distribution_factory(state)
-                return _evaluate_distribution_method(distribution, log_pdf_method, measurement)
+                return _evaluate_distribution_method(
+                    distribution,
+                    log_pdf_method,
+                    measurement,
+                )
 
         return cls(likelihood, log_likelihood=log_likelihood, name=name)
 
