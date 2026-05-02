@@ -10,6 +10,7 @@ the examples and tests when working with less common APIs.
 ## Packages
 
 - [Distributions](distributions.md)
+- [Models](models.md)
 - [Filters](filters.md)
 - [Smoothers](smoothers.md)
 - [Sampling](sampling.md)
