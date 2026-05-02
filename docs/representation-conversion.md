@@ -41,6 +41,41 @@ owns it. For example:
 - `GaussianDistribution.from_distribution(...)` performs Gaussian moment
   matching when the source exposes `mean()` and `covariance()`.
 
+## Public conversion protocols
+
+The public conversion protocols live in `pyrecest.protocols.conversions`. They
+make the conversion gateway's duck-typed extension points explicit without
+requiring user-defined representations to inherit from PyRecEst base classes.
+
+```python
+from pyrecest.protocols.conversions import (
+    SupportsApproximateAs,
+    SupportsConvertTo,
+    SupportsFromDistribution,
+)
+
+assert isinstance(prior, SupportsConvertTo)
+assert isinstance(prior, SupportsApproximateAs)
+assert isinstance(MyParticleDistribution, SupportsFromDistribution)
+```
+
+The most important protocols are:
+
+- `SupportsFromDistribution` for target classes exposing
+  `from_distribution(distribution, ...)`.
+- `SupportsConvertTo` for distribution objects exposing `convert_to(...)`.
+- `SupportsApproximateAs` for distribution objects exposing `approximate_as(...)`.
+- `SupportsDistributionConversion` for objects exposing both convenience
+  wrappers.
+- `DistributionConverter` for callables registered with `register_conversion`.
+- `ConversionAliasResolver` for callables registered with
+  `register_conversion_alias` when an alias has to resolve to a target class
+  depending on the source distribution.
+
+Runtime checks only verify that the required attribute or method exists. They do
+not verify conversion correctness, accepted keyword arguments, or approximation
+quality.
+
 ## Metadata
 
 Use `return_info=True` when you need to know how the conversion was performed.
@@ -69,6 +104,16 @@ dispatch code.
 
 ```python
 from pyrecest.distributions.conversion import register_conversion
+from pyrecest.protocols.conversions import SupportsFromDistribution
+
+
+class MyParticleDistribution:
+    @classmethod
+    def from_distribution(cls, distribution, n_particles):
+        return cls(distribution.sample(n_particles))
+
+
+assert isinstance(MyParticleDistribution, SupportsFromDistribution)
 
 
 @register_conversion(MyDistribution, MyParticleDistribution)
