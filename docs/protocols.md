@@ -10,15 +10,17 @@ methods and attributes.
 
 ## Current scope
 
-This seed package only defines common dimension protocols and broad array
-aliases:
+The initial protocol package defines common dimension protocols, broad array
+aliases, and model capability protocols:
 
 - `SupportsDim` for objects with an intrinsic state-space dimension;
 - `SupportsInputDim` for objects with an ambient or input coordinate dimension;
 - `ArrayLike` and `BackendArray` as intentionally broad aliases for backend
-  compatible values.
+  compatible values;
+- `pyrecest.protocols.models` for likelihood, transition, prediction, and
+  linear-Gaussian model capabilities.
 
-Follow-up pull requests can add distribution, filter, model, conversion, and
+Follow-up pull requests can add distribution, filter, conversion, and
 manifold-specific protocols independently.
 
 ## Design principles
@@ -59,5 +61,29 @@ Use submodule imports in early protocol pull requests:
 from pyrecest.protocols.common import SupportsDim, SupportsInputDim
 ```
 
-Package-level exports are intentionally minimal in this seed package to reduce
-merge conflicts while follow-up protocol modules are developed in parallel.
+Package-level exports are intentionally minimal in the early protocol pull
+requests to reduce merge conflicts while follow-up protocol modules are developed
+in parallel.
+
+## Model protocols
+
+Model protocols live in `pyrecest.protocols.models`:
+
+```python
+from pyrecest.protocols.models import SupportsLikelihood, SupportsTransitionSampling
+```
+
+They cover small model capabilities such as:
+
+- `SupportsLikelihood` for objects exposing `likelihood(measurement, state)`;
+- `SupportsLogLikelihood` for log-domain measurement likelihoods;
+- `SupportsTransitionSampling` for objects exposing `sample_next(state, n=1)`;
+- `SupportsTransitionDensity` for transition-density evaluators;
+- `SupportsPredictedDistribution` for models that can propagate a distribution;
+- `SupportsLinearGaussianTransition` and `SupportsLinearGaussianMeasurement` for
+  explicit linear-Gaussian model objects.
+
+The expanded model protocol set is re-exported from `pyrecest.models`. Existing
+likelihood and transition protocols also remain re-exported from
+`pyrecest.models.likelihood` for backwards compatibility. The preferred public
+protocol import path for new code is the protocol submodule.

@@ -12,44 +12,21 @@ The conventions are intentionally simple:
 
 The classes do not modify filters directly. They only make the model
 capabilities explicit so filter adapters can consume them later without
-duplicating callback conventions.
+duplicating callback conventions. The public capability protocols live in
+:mod:`pyrecest.protocols.models` and are re-exported here for backwards
+compatibility.
 """
 
 from __future__ import annotations
 
-from typing import Any, Callable, Protocol, runtime_checkable
+from typing import Any, Callable
 
-
-@runtime_checkable
-class SupportsLikelihood(Protocol):
-    """Protocol for measurement models that can evaluate ``p(z | x)``."""
-
-    def likelihood(self, measurement: Any, state: Any) -> Any:
-        """Return the likelihood of ``measurement`` for ``state``."""
-
-
-@runtime_checkable
-class SupportsLogLikelihood(Protocol):
-    """Protocol for measurement models that can evaluate log-likelihoods."""
-
-    def log_likelihood(self, measurement: Any, state: Any) -> Any:
-        """Return the log-likelihood of ``measurement`` for ``state``."""
-
-
-@runtime_checkable
-class SupportsTransitionSampling(Protocol):
-    """Protocol for transition models that can sample ``p(x_k | x_{k-1})``."""
-
-    def sample_next(self, state: Any, n: int = 1) -> Any:
-        """Draw ``n`` next-state samples conditioned on ``state``."""
-
-
-@runtime_checkable
-class SupportsTransitionDensity(Protocol):
-    """Protocol for transition models that can evaluate ``p(x_k | x_{k-1})``."""
-
-    def transition_density(self, state_next: Any, state_previous: Any) -> Any:
-        """Return transition density values."""
+from pyrecest.protocols.models import (
+    SupportsLikelihood,
+    SupportsLogLikelihood,
+    SupportsTransitionDensity,
+    SupportsTransitionSampling,
+)
 
 
 def _ensure_callable(value: Any, name: str) -> None:

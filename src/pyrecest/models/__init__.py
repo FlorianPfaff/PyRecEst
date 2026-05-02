@@ -4,17 +4,21 @@ evolve and how measurements are evaluated. These objects are deliberately small
 and capability-oriented so filters can opt into the pieces they need.
 """
 
-from .particle import LikelihoodMeasurementModel, SampleableTransitionModel
+from pyrecest.protocols.models import (
+    SupportsLikelihood,
+    SupportsLinearGaussianMeasurement,
+    SupportsLinearGaussianTransition,
+    SupportsLogLikelihood,
+    SupportsPredictedDistribution,
+    SupportsTransitionDensity,
+    SupportsTransitionSampling,
+)
 
 from .additive_noise import AdditiveNoiseMeasurementModel, AdditiveNoiseTransitionModel
 from .likelihood import (
     DensityTransitionModel,
     LikelihoodMeasurementModel,
     SampleableTransitionModel,
-    SupportsLikelihood,
-    SupportsLogLikelihood,
-    SupportsTransitionDensity,
-    SupportsTransitionSampling,
 )
 from .linear_gaussian import IdentityGaussianMeasurementModel
 from .linear_gaussian import IdentityGaussianTransitionModel
@@ -36,16 +40,19 @@ __all__ = [
     "AdditiveNoiseMeasurementModel",
     "AdditiveNoiseTransitionModel",
     "DensityTransitionModel",
-    "LikelihoodMeasurementModel",
-    "SampleableTransitionModel",
-    "SupportsLikelihood",
-    "SupportsLogLikelihood",
-    "SupportsTransitionDensity",
-    "SupportsTransitionSampling",
     "IdentityGaussianMeasurementModel",
     "IdentityGaussianTransitionModel",
+    "LikelihoodMeasurementModel",
     "LinearGaussianMeasurementModel",
     "LinearGaussianTransitionModel",
+    "SampleableTransitionModel",
+    "SupportsLikelihood",
+    "SupportsLinearGaussianMeasurement",
+    "SupportsLinearGaussianTransition",
+    "SupportsLogLikelihood",
+    "SupportsPredictedDistribution",
+    "SupportsTransitionDensity",
+    "SupportsTransitionSampling",
     "infer_state_dim_from_distribution",
     "validate_covariance_matrix",
     "validate_matrix",
@@ -55,6 +62,4 @@ __all__ = [
     "validate_state_vector",
     "validate_transition_matrix",
     "validate_vector",
-    "LikelihoodMeasurementModel",
-    "SampleableTransitionModel",
 ]
