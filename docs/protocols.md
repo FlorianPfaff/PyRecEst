@@ -10,15 +10,28 @@ methods and attributes.
 
 ## Current scope
 
-This seed package only defines common dimension protocols and broad array
-aliases:
+The protocol package is intentionally introduced incrementally. The common module
+currently defines dimension protocols and broad array aliases:
 
 - `SupportsDim` for objects with an intrinsic state-space dimension;
 - `SupportsInputDim` for objects with an ambient or input coordinate dimension;
 - `ArrayLike` and `BackendArray` as intentionally broad aliases for backend
   compatible values.
 
-Follow-up pull requests can add distribution, filter, model, conversion, and
+The conversion module defines protocols for representation conversion and
+approximation:
+
+- `SupportsFromDistribution` for target classes exposing
+  `from_distribution(distribution, ...)`;
+- `SupportsConvertTo` for objects exposing `convert_to(...)`;
+- `SupportsApproximateAs` for objects exposing `approximate_as(...)`;
+- `SupportsDistributionConversion` for objects exposing both conversion
+  convenience wrappers;
+- `DistributionConverter` for callables registered as conversion routes;
+- `ConversionAliasResolver` for callables that resolve aliases to target
+  classes.
+
+Follow-up pull requests can add distribution, filter, model, and
 manifold-specific protocols independently.
 
 ## Design principles
@@ -57,6 +70,7 @@ Use submodule imports in early protocol pull requests:
 
 ```python
 from pyrecest.protocols.common import SupportsDim, SupportsInputDim
+from pyrecest.protocols.conversions import SupportsFromDistribution
 ```
 
 Package-level exports are intentionally minimal in this seed package to reduce
