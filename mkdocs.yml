@@ -11,6 +11,7 @@ nav:
       - Shapes and Conventions: conventions.md
       - Backend Compatibility: backend-compatibility.md
       - Representation Conversion: representation-conversion.md
+      - Model Objects: models.md
   - Tutorials:
       - Overview: tutorials/index.md
       - Use a Distribution: tutorials/use-a-distribution.md
@@ -21,6 +22,7 @@ nav:
   - API Reference:
       - Reference Index: reference/index.md
       - Distributions: reference/distributions.md
+      - Models: reference/models.md
       - Filters: reference/filters.md
       - Smoothers: reference/smoothers.md
       - Sampling: reference/sampling.md
