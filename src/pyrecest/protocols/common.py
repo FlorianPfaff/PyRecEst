@@ -45,3 +45,11 @@ class SupportsInputDim(Protocol):
     def input_dim(self) -> int:
         """Ambient/input coordinate dimension."""
         raise NotImplementedError
+
+
+__all__ = [
+    "ArrayLike",
+    "BackendArray",
+    "SupportsDim",
+    "SupportsInputDim",
+]
