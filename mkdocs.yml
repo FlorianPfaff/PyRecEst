@@ -12,6 +12,7 @@ nav:
       - Backend Compatibility: backend-compatibility.md
       - Representation Conversion: representation-conversion.md
       - Model Objects: models.md
+      - Public Protocols: protocols.md
   - Tutorials:
       - Overview: tutorials/index.md
       - Use a Distribution: tutorials/use-a-distribution.md
