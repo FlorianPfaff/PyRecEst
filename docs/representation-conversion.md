@@ -40,6 +40,8 @@ owns it. For example:
   coefficients from samples or grid values.
 - `GaussianDistribution.from_distribution(...)` performs Gaussian moment
   matching when the source exposes `mean()` and `covariance()`.
+- SO(3) tangent-Gaussian conversions are registered separately and use local
+  tangent-space moment matching.
 
 ## Metadata
 
@@ -94,7 +96,15 @@ aliases. Useful aliases include:
   hyperhemispherical grid representations;
 - `"fourier"` for circular or hypertoroidal Fourier representations;
 - explicit aliases such as `"linear_dirac"`, `"circular_grid"`,
-  `"hypertoroidal_grid"`, and `"circular_fourier"`.
+  `"hypertoroidal_grid"`, and `"circular_fourier"`;
+- SO(3)-specific aliases such as `"so3_dirac"`, `"so3_particles"`,
+  `"so3_tangent_gaussian"`, `"so3_gaussian"`, `"so3_product_dirac"`,
+  `"so3_product_particles"`, `"so3_product_tangent_gaussian"`, and
+  `"so3_product_gaussian"`.
+
+For SO(3) and SO(3)^K distributions, `"particles"`/`"dirac"` resolve to
+SO(3)-specific Dirac representations, and `"gaussian"` resolves to the
+corresponding tangent-Gaussian approximation.
 
 Aliases are case-insensitive, and hyphens or spaces are normalized to
 underscores. Custom aliases can be registered with `register_conversion_alias`:
@@ -149,6 +159,7 @@ Common conversion parameters depend on the target representation:
 | `no_of_grid_points` | hypersphere-subset grid targets | Number of hyperspherical or hyperhemispherical grid points. |
 | `grid_type` | hypersphere-subset grid targets | Grid construction method, such as a Leopardi-style grid where supported. |
 | `n` | Fourier targets | Fourier truncation/order parameter used by the target representation. |
+| `covariance_regularization` | SO(3) tangent-Gaussian targets | Optional diagonal regularization when fitting tangent-Gaussian approximations from few Dirac particles. |
 | `return_info` | conversion gateway | Return a `ConversionResult` instead of only the converted distribution. |
 | `copy_if_same` | conversion gateway | Return a deep copy for identity conversion instead of the original object. |
 

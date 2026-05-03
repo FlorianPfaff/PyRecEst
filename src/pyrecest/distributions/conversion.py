@@ -142,6 +142,22 @@ _LINEAR_DIRAC: ClassSpec = (
     "pyrecest.distributions.nonperiodic.linear_dirac_distribution",
     "LinearDiracDistribution",
 )
+_SO3_DIRAC: ClassSpec = (
+    "pyrecest.distributions.so3_dirac_distribution",
+    "SO3DiracDistribution",
+)
+_SO3_PRODUCT_DIRAC: ClassSpec = (
+    "pyrecest.distributions.so3_product_dirac_distribution",
+    "SO3ProductDiracDistribution",
+)
+_SO3_TANGENT_GAUSSIAN: ClassSpec = (
+    "pyrecest.distributions.so3_tangent_gaussian_distribution",
+    "SO3TangentGaussianDistribution",
+)
+_SO3_PRODUCT_TANGENT_GAUSSIAN: ClassSpec = (
+    "pyrecest.distributions.so3_product_tangent_gaussian_distribution",
+    "SO3ProductTangentGaussianDistribution",
+)
 
 _DIRECT_BUILTIN_ALIAS_CLASS_SPECS: dict[str, ClassSpec] = {
     "circular_dirac": _CIRCULAR_DIRAC,
@@ -159,8 +175,28 @@ _DIRECT_BUILTIN_ALIAS_CLASS_SPECS: dict[str, ClassSpec] = {
     "linear_particles": _LINEAR_DIRAC,
     "moment_matched_gaussian": _GAUSSIAN,
     "normal": _GAUSSIAN,
+    "so3_dirac": _SO3_DIRAC,
+    "so3_gaussian": _SO3_TANGENT_GAUSSIAN,
+    "so3_particles": _SO3_DIRAC,
+    "so3_product_dirac": _SO3_PRODUCT_DIRAC,
+    "so3_product_gaussian": _SO3_PRODUCT_TANGENT_GAUSSIAN,
+    "so3_product_particles": _SO3_PRODUCT_DIRAC,
+    "so3_product_tangent_gaussian": _SO3_PRODUCT_TANGENT_GAUSSIAN,
+    "so3_tangent_gaussian": _SO3_TANGENT_GAUSSIAN,
 }
 
+_SO3_PARTICLE_ALIAS_DOMAINS: tuple[AliasDomain, ...] = (
+    (_SO3_DIRAC, _SO3_DIRAC),
+    (_SO3_PRODUCT_DIRAC, _SO3_PRODUCT_DIRAC),
+    (_SO3_TANGENT_GAUSSIAN, _SO3_DIRAC),
+    (_SO3_PRODUCT_TANGENT_GAUSSIAN, _SO3_PRODUCT_DIRAC),
+)
+_SO3_GAUSSIAN_ALIAS_DOMAINS: tuple[AliasDomain, ...] = (
+    (_SO3_DIRAC, _SO3_TANGENT_GAUSSIAN),
+    (_SO3_TANGENT_GAUSSIAN, _SO3_TANGENT_GAUSSIAN),
+    (_SO3_PRODUCT_DIRAC, _SO3_PRODUCT_TANGENT_GAUSSIAN),
+    (_SO3_PRODUCT_TANGENT_GAUSSIAN, _SO3_PRODUCT_TANGENT_GAUSSIAN),
+)
 _PARTICLE_ALIAS_DOMAINS: tuple[AliasDomain, ...] = (
     (_ABSTRACT_CIRCULAR, _CIRCULAR_DIRAC),
     (_ABSTRACT_HYPERTOROIDAL, _HYPERTOROIDAL_DIRAC),
@@ -195,6 +231,14 @@ _BUILTIN_ALIAS_DESCRIPTIONS: dict[str, str] = {
     "moment_matched_gaussian": "Gaussian moment-matched representation",
     "linear_dirac": "linear Dirac representation",
     "linear_particles": "linear Dirac/particle representation",
+    "so3_dirac": "SO(3) Dirac representation",
+    "so3_particles": "SO(3) Dirac/particle representation",
+    "so3_tangent_gaussian": "SO(3) tangent-Gaussian representation",
+    "so3_gaussian": "SO(3) tangent-Gaussian representation",
+    "so3_product_dirac": "SO(3)^K Dirac representation",
+    "so3_product_particles": "SO(3)^K Dirac/particle representation",
+    "so3_product_tangent_gaussian": "SO(3)^K tangent-Gaussian representation",
+    "so3_product_gaussian": "SO(3)^K tangent-Gaussian representation",
     "circular_dirac": "circular Dirac representation",
     "hypertoroidal_dirac": "hypertoroidal Dirac representation",
     "hyperspherical_dirac": "hyperspherical Dirac representation",
@@ -209,9 +253,7 @@ _BUILTIN_ALIAS_DESCRIPTIONS: dict[str, str] = {
     "hypertoroidal_fourier": "hypertoroidal Fourier representation",
 }
 
-_DIRECT_GAUSSIAN_ALIASES = frozenset(
-    {"gaussian", "normal", "moment_matched_gaussian"}
-)
+_DIRECT_GAUSSIAN_ALIASES = frozenset({"gaussian", "normal", "moment_matched_gaussian"})
 _DIRECT_LINEAR_ALIASES = frozenset({"linear_dirac", "linear_particles"})
 
 
@@ -301,7 +343,8 @@ def registered_conversion_aliases() -> tuple[tuple[str, str | None], ...]:
     """Return registered custom conversion aliases."""
 
     return tuple(
-        (alias, entry.description) for alias, entry in _CONVERSION_ALIAS_REGISTRY.items()
+        (alias, entry.description)
+        for alias, entry in _CONVERSION_ALIAS_REGISTRY.items()
     )
 
 
@@ -475,6 +518,10 @@ def _resolve_alias_entry(distribution, alias_entry: _ConversionAlias):
 # across several distribution domains while keeping imports lazy to avoid cycles.
 # pylint: disable-next=too-many-locals,too-many-return-statements,too-many-branches
 def _resolve_builtin_alias(distribution, alias: str):
+    target_type = _resolve_so3_builtin_alias(distribution, alias)
+    if target_type is not None:
+        return target_type
+
     target_type = _resolve_direct_builtin_alias(alias)
     if target_type is not None:
         return target_type
@@ -489,6 +536,14 @@ def _resolve_builtin_alias(distribution, alias: str):
         raise _unsupported_builtin_alias_error(distribution, alias)
 
     raise _unknown_builtin_alias_error(distribution, alias)
+
+
+def _resolve_so3_builtin_alias(distribution, alias: str) -> type | None:
+    if alias in _DIRECT_GAUSSIAN_ALIASES:
+        return _resolve_domain_builtin_alias(distribution, _SO3_GAUSSIAN_ALIAS_DOMAINS)
+    if alias in ("particles", "dirac", "samples"):
+        return _resolve_domain_builtin_alias(distribution, _SO3_PARTICLE_ALIAS_DOMAINS)
+    return None
 
 
 def _unsupported_builtin_alias_error(distribution, alias: str) -> ConversionError:
@@ -527,7 +582,37 @@ def _unknown_builtin_alias_error(distribution, alias: str) -> ConversionError:
 def _supported_builtin_aliases_for_source(distribution) -> tuple[str, ...]:
     aliases = set()
 
-    if _is_instance_of_class_spec(distribution, _ABSTRACT_CIRCULAR):
+    if _is_instance_of_class_spec(
+        distribution, _SO3_DIRAC
+    ) or _is_instance_of_class_spec(distribution, _SO3_TANGENT_GAUSSIAN):
+        aliases.update(
+            {
+                "particles",
+                "dirac",
+                "samples",
+                "so3_dirac",
+                "so3_particles",
+                "so3_tangent_gaussian",
+                "so3_gaussian",
+                *_DIRECT_GAUSSIAN_ALIASES,
+            }
+        )
+    elif _is_instance_of_class_spec(
+        distribution, _SO3_PRODUCT_DIRAC
+    ) or _is_instance_of_class_spec(distribution, _SO3_PRODUCT_TANGENT_GAUSSIAN):
+        aliases.update(
+            {
+                "particles",
+                "dirac",
+                "samples",
+                "so3_product_dirac",
+                "so3_product_particles",
+                "so3_product_tangent_gaussian",
+                "so3_product_gaussian",
+                *_DIRECT_GAUSSIAN_ALIASES,
+            }
+        )
+    elif _is_instance_of_class_spec(distribution, _ABSTRACT_CIRCULAR):
         aliases.update(
             {
                 "particles",
@@ -678,13 +763,9 @@ def _validate_conversion_arguments(
     skipped_source_argument = False
 
     for param in params:
-        if (
-            not skipped_source_argument
-            and param.kind
-            in (
-                inspect.Parameter.POSITIONAL_ONLY,
-                inspect.Parameter.POSITIONAL_OR_KEYWORD,
-            )
+        if not skipped_source_argument and param.kind in (
+            inspect.Parameter.POSITIONAL_ONLY,
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
         ):
             skipped_source_argument = True
             continue
@@ -715,6 +796,10 @@ def _validate_conversion_arguments(
             f"{', '.join(sorted(unknown))}. Accepted arguments: {accepted}."
         )
 
+
+from . import (
+    so3_conversion as _so3_conversion,
+)  # noqa: F401,E402  pylint: disable=wrong-import-position,unused-import
 
 __all__ = [
     "ConversionError",

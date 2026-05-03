@@ -14,6 +14,16 @@ from pyrecest.distributions.conversion import (
     convert_distribution,
     register_conversion_alias,
 )
+from pyrecest.distributions.so3_dirac_distribution import SO3DiracDistribution
+from pyrecest.distributions.so3_product_dirac_distribution import (
+    SO3ProductDiracDistribution,
+)
+from pyrecest.distributions.so3_product_tangent_gaussian_distribution import (
+    SO3ProductTangentGaussianDistribution,
+)
+from pyrecest.distributions.so3_tangent_gaussian_distribution import (
+    SO3TangentGaussianDistribution,
+)
 
 
 class ConversionTest(unittest.TestCase):
@@ -49,9 +59,7 @@ class ConversionTest(unittest.TestCase):
     def test_identity_conversion_is_exact(self):
         gaussian = GaussianDistribution(array([0.0, 0.0]), eye(2))
 
-        result = convert_distribution(
-            gaussian, GaussianDistribution, return_info=True
-        )
+        result = convert_distribution(gaussian, GaussianDistribution, return_info=True)
 
         self.assertIs(result.distribution, gaussian)
         self.assertTrue(result.exact)
@@ -83,9 +91,7 @@ class ConversionTest(unittest.TestCase):
         random.seed(0)
         gaussian = GaussianDistribution(array([0.0, 0.0]), eye(2))
 
-        particles = gaussian.approximate_as(
-            LinearDiracDistribution, n_particles=25
-        )
+        particles = gaussian.approximate_as(LinearDiracDistribution, n_particles=25)
 
         self.assertIsInstance(particles, LinearDiracDistribution)
         self.assertEqual(particles.d.shape[0], 25)
@@ -150,9 +156,7 @@ class ConversionTest(unittest.TestCase):
         message = str(context.exception)
 
         self.assertIn("Conversion alias 'grid' is known", message)
-        self.assertIn(
-            "not supported for source type GaussianDistribution", message
-        )
+        self.assertIn("not supported for source type GaussianDistribution", message)
         self.assertIn("Supported aliases for GaussianDistribution", message)
         self.assertIn("'particles'", message)
         self.assertIn("'gaussian'", message)
@@ -163,6 +167,93 @@ class ConversionTest(unittest.TestCase):
 
         self.assertTrue(can_convert(gaussian, "particles"))
         self.assertFalse(can_convert(gaussian, "not_a_representation"))
+
+    def test_so3_tangent_gaussian_to_dirac_alias(self):
+        random.seed(0)
+        distribution = SO3TangentGaussianDistribution(
+            array([0.0, 0.0, 0.0, 1.0]), 0.01 * eye(3)
+        )
+
+        particles = convert_distribution(distribution, "particles", n_particles=8)
+
+        self.assertIsInstance(particles, SO3DiracDistribution)
+        self.assertEqual(particles.d.shape, (8, 4))
+        self.assertTrue(particles.is_valid())
+
+    def test_so3_dirac_to_tangent_gaussian_alias(self):
+        base = array([0.0, 0.0, 0.0, 1.0])
+        rotations = SO3TangentGaussianDistribution.exp_map(
+            array(
+                [
+                    [0.01, 0.0, 0.0],
+                    [-0.01, 0.0, 0.0],
+                    [0.0, 0.02, 0.0],
+                    [0.0, -0.02, 0.0],
+                ]
+            ),
+            base=base,
+        )
+        particles = SO3DiracDistribution(rotations, array([0.25, 0.25, 0.25, 0.25]))
+
+        gaussian = particles.approximate_as("so3_tangent_gaussian")
+
+        self.assertIsInstance(gaussian, SO3TangentGaussianDistribution)
+        self.assertEqual(gaussian.mean().shape, (4,))
+        self.assertEqual(gaussian.covariance().shape, (3, 3))
+        self.assertTrue(gaussian.is_valid())
+
+    def test_so3_generic_gaussian_alias_is_tangent_gaussian(self):
+        base = array([0.0, 0.0, 0.0, 1.0])
+        rotations = SO3TangentGaussianDistribution.exp_map(
+            array([[0.01, 0.0, 0.0], [-0.01, 0.0, 0.0]]),
+            base=base,
+        )
+        particles = SO3DiracDistribution(rotations, array([0.5, 0.5]))
+
+        gaussian = convert_distribution(
+            particles, "gaussian", covariance_regularization=1e-9
+        )
+
+        self.assertIsInstance(gaussian, SO3TangentGaussianDistribution)
+        self.assertEqual(gaussian.covariance().shape, (3, 3))
+
+    def test_so3_product_tangent_gaussian_to_dirac_alias(self):
+        random.seed(0)
+        mean = array([[0.0, 0.0, 0.0, 1.0], [0.0, 0.0, 0.0, 1.0]])
+        distribution = SO3ProductTangentGaussianDistribution(mean, 0.01 * eye(6))
+
+        particles = convert_distribution(distribution, "particles", n_particles=8)
+
+        self.assertIsInstance(particles, SO3ProductDiracDistribution)
+        self.assertEqual(particles.d.shape, (8, 2, 4))
+        self.assertEqual(particles.num_rotations, 2)
+        self.assertTrue(particles.is_valid())
+
+    def test_so3_product_dirac_to_tangent_gaussian_alias(self):
+        mean = array([[0.0, 0.0, 0.0, 1.0], [0.0, 0.0, 0.0, 1.0]])
+        rotations = SO3ProductTangentGaussianDistribution.exp_map(
+            array(
+                [
+                    [0.01, 0.0, 0.0, 0.0, 0.02, 0.0],
+                    [-0.01, 0.0, 0.0, 0.0, -0.02, 0.0],
+                    [0.0, 0.01, 0.0, 0.02, 0.0, 0.0],
+                    [0.0, -0.01, 0.0, -0.02, 0.0, 0.0],
+                ]
+            ),
+            base=mean,
+            num_rotations=2,
+        )
+        particles = SO3ProductDiracDistribution(
+            rotations, array([0.25, 0.25, 0.25, 0.25])
+        )
+
+        gaussian = convert_distribution(particles, "so3_product_tangent_gaussian")
+
+        self.assertIsInstance(gaussian, SO3ProductTangentGaussianDistribution)
+        self.assertEqual(gaussian.mean().shape, (2, 4))
+        self.assertEqual(gaussian.covariance().shape, (6, 6))
+        self.assertEqual(gaussian.num_rotations, 2)
+        self.assertTrue(gaussian.is_valid())
 
     def test_linear_dirac_from_distribution_accepts_n_samples_alias(self):
         random.seed(0)
