@@ -1,117 +1,344 @@
-"""Additive-noise model objects.
+"""Additive-noise nonlinear transition and measurement models."""
 
-These classes intentionally stay small. They package a deterministic model
-function together with an additive noise description so filters can reuse the
-same model object instead of receiving ad hoc functions and covariance matrices.
-"""
-
+import inspect
 from collections.abc import Callable
-from dataclasses import dataclass
 from typing import Any
 
+# pylint: disable=no-name-in-module,no-member,too-many-instance-attributes,too-many-positional-arguments
+from pyrecest.backend import asarray, is_array
 
-def _covariance_from_noise(noise):
-    """Return a covariance matrix from a noise object or covariance-like value."""
-    covariance = getattr(noise, "covariance", None)
+
+def _as_optional_array(value):
+    """Convert ``value`` through the active backend unless it is ``None``."""
+    return None if value is None else asarray(value)
+
+
+def _call_or_value(obj, name):
+    """Return an attribute value, calling zero-argument attributes if needed."""
+    if obj is None or not hasattr(obj, name):
+        return None
+    value = getattr(obj, name)
+    return value() if callable(value) else value
+
+
+def _distribution_mean(distribution):
+    """Return mean information exposed by a distribution, if any."""
+    mean = _call_or_value(distribution, "mean")
+    return _call_or_value(distribution, "mu") if mean is None else mean
+
+
+def _distribution_covariance(distribution):
+    """Return covariance information exposed by a distribution, if any."""
+    covariance = _call_or_value(distribution, "covariance")
     if covariance is not None:
-        return covariance() if callable(covariance) else covariance
+        return covariance
+    covariance = _call_or_value(distribution, "C")
+    if covariance is not None:
+        return covariance
+    if is_array(distribution):
+        return asarray(distribution)
+    covariance = _call_or_value(distribution, "cov")
+    if covariance is not None:
+        return covariance
+    if (
+        distribution is not None
+        and not hasattr(distribution, "sample")
+        and not hasattr(distribution, "pdf")
+    ):
+        return asarray(distribution)
+    return None
 
-    direct_covariance = getattr(noise, "C", None)
-    if direct_covariance is not None:
-        return direct_covariance
 
-    return noise
+def _require_callable(function: Any, name: str) -> Callable[..., Any]:
+    if not callable(function):
+        raise TypeError(f"{name} must be callable")
+    return function
 
 
-@dataclass(frozen=True)
+def _pop_function_alias(
+    kwargs: dict[str, Any],
+    canonical_name: str,
+    alias_name: str,
+    current_value: Any,
+) -> Any:
+    """Resolve legacy constructor aliases without accepting ambiguous input."""
+    alias_value = kwargs.pop(alias_name, None)
+    if current_value is not None and alias_value is not None:
+        raise TypeError(f"Got both {canonical_name} and {alias_name}")
+    return current_value if current_value is not None else alias_value
+
+
+def _reject_unexpected_kwargs(kwargs: dict[str, Any]) -> None:
+    if kwargs:
+        unexpected = ", ".join(sorted(kwargs))
+        raise TypeError(f"Unexpected keyword argument(s): {unexpected}")
+
+
+def _dt_call_mode(function: Callable[..., Any]) -> str | None:
+    """Return how ``dt`` can be passed to ``function``."""
+    try:
+        signature = inspect.signature(function)
+    except (TypeError, ValueError):
+        return "positional"
+
+    parameters = tuple(signature.parameters.values())
+    if any(param.kind == inspect.Parameter.VAR_KEYWORD for param in parameters):
+        return "keyword"
+    if "dt" in signature.parameters:
+        return "keyword"
+    if any(param.kind == inspect.Parameter.VAR_POSITIONAL for param in parameters):
+        return "positional"
+
+    positional = tuple(
+        param
+        for param in parameters
+        if param.kind
+        in (
+            inspect.Parameter.POSITIONAL_ONLY,
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+        )
+    )
+    return "positional" if len(positional) >= 2 else None
+
+
+def _call_transition_function(
+    function: Callable[..., Any],
+    state: Any,
+    dt: Any,
+    function_args: dict[str, Any],
+    kwargs: dict[str, Any],
+) -> Any:
+    """Call a transition function with default and per-call arguments."""
+    call_kwargs = {**function_args, **kwargs}
+    if dt is None:
+        return function(state, **call_kwargs)
+
+    dt_mode = _dt_call_mode(function)
+    if dt_mode == "keyword" and "dt" not in call_kwargs:
+        return function(state, dt=dt, **call_kwargs)
+    if dt_mode == "positional":
+        return function(state, dt, **call_kwargs)
+    return function(state, **call_kwargs)
+
+
+def _call_measurement_function(
+    function: Callable[..., Any],
+    state: Any,
+    function_args: dict[str, Any],
+    kwargs: dict[str, Any],
+) -> Any:
+    """Call a measurement function with default and per-call arguments."""
+    return function(state, **{**function_args, **kwargs})
+
+
 class AdditiveNoiseTransitionModel:
-    """Deterministic transition function with additive process noise.
+    """Nonlinear transition model with additive state noise.
 
-    Parameters
-    ----------
-    transition_function:
-        Callable with signature ``transition_function(x, dt, **kwargs)``. This
-        matches the current Euclidean UKF nonlinear prediction API.
-    noise_distribution:
-        Additive process-noise distribution or covariance-like object. If the
-        object has ``covariance()`` or ``C``, that covariance is used by filters
-        requiring a covariance matrix.
-    dt:
-        Optional default time step for filters whose predict methods accept
-        ``dt``. A method-level ``dt`` argument overrides this value.
-    function_args:
-        Optional keyword arguments applied to every transition-function call.
-        Method-level keyword arguments override entries in this mapping.
+    The model represents ``x_next = f(x) + w`` where ``f`` is the noise-free
+    transition function and ``w`` follows the supplied noise distribution. It is
+    intentionally filter-independent: sigma-point filters can use
+    :meth:`transition_function`, linearized filters can use :meth:`jacobian`, and
+    sample- or density-based filters can use :meth:`sample_next` or
+    :meth:`transition_density` when the noise distribution supports them.
     """
 
-    transition_function: Callable[..., Any]
-    noise_distribution: Any
-    dt: float | None = None
-    function_args: dict[str, Any] | None = None
+    def __init__(
+        self,
+        f: Callable[..., Any] | None = None,
+        noise_distribution: Any | None = None,
+        noise_mean=None,
+        noise_covariance=None,
+        jacobian: Callable[..., Any] | None = None,
+        vectorized: bool = False,
+        dt=None,
+        function_args: dict[str, Any] | None = None,
+        **kwargs,
+    ):
+        f = _pop_function_alias(kwargs, "f", "transition_function", f)
+        _reject_unexpected_kwargs(kwargs)
 
-    @property
-    def noise_covariance(self):
-        """Covariance matrix associated with the additive process noise."""
-        return _covariance_from_noise(self.noise_distribution)
+        self._f = _require_callable(f, "f")
+        if jacobian is not None:
+            jacobian = _require_callable(jacobian, "jacobian")
+        self.noise_distribution = noise_distribution
+        self._noise_mean = _as_optional_array(noise_mean)
+        self._noise_covariance = _as_optional_array(noise_covariance)
+        self._jacobian = jacobian
+        self.vectorized = vectorized
+        self.dt = dt
+        self.function_args = dict(function_args or {})
 
     def evaluate(self, state, dt=None, **kwargs):
-        """Evaluate the deterministic transition part.
-
-        Parameters
-        ----------
-        state:
-            State vector with shape ``(state_dim,)``.
-        dt:
-            Time step passed by the consuming filter. If ``None``, this model's
-            default ``dt`` is used.
-        kwargs:
-            Extra transition-function keyword arguments. These override
-            ``function_args`` for this call.
-        """
-        call_args = dict(self.function_args or {})
-        call_args.update(kwargs)
+        """Evaluate the noise-free transition, including default function args."""
         effective_dt = self.dt if dt is None else dt
-        return self.transition_function(state, effective_dt, **call_args)
+        return _call_transition_function(
+            self._f, state, effective_dt, self.function_args, kwargs
+        )
 
+    def transition_function(self, state, **kwargs):
+        """Evaluate the noise-free transition ``f(state)``."""
+        return self.evaluate(state, **kwargs)
 
-@dataclass(frozen=True)
-class AdditiveNoiseMeasurementModel:
-    """Deterministic measurement function with additive measurement noise.
+    def propagate(self, state):
+        """Alias for :meth:`transition_function`."""
+        return self.transition_function(state)
 
-    Parameters
-    ----------
-    measurement_function:
-        Callable with signature ``measurement_function(x, **kwargs)``. This
-        matches the current Euclidean UKF nonlinear update API.
-    noise_distribution:
-        Additive measurement-noise distribution or covariance-like object. If
-        the object has ``covariance()`` or ``C``, that covariance is used by
-        filters requiring a covariance matrix.
-    function_args:
-        Optional keyword arguments applied to every measurement-function call.
-        Method-level keyword arguments override entries in this mapping.
-    """
-
-    measurement_function: Callable[..., Any]
-    noise_distribution: Any
-    function_args: dict[str, Any] | None = None
+    @property
+    def noise_mean(self):
+        """Mean of the additive transition noise, or ``None`` if unavailable."""
+        return (
+            self._noise_mean
+            if self._noise_mean is not None
+            else _distribution_mean(self.noise_distribution)
+        )
 
     @property
     def noise_covariance(self):
-        """Covariance matrix associated with the additive measurement noise."""
-        return _covariance_from_noise(self.noise_distribution)
+        """Covariance of the additive transition noise, or ``None`` if unavailable."""
+        return (
+            self._noise_covariance
+            if self._noise_covariance is not None
+            else _distribution_covariance(self.noise_distribution)
+        )
+
+    def mean(self, state):
+        """Return ``f(state)`` plus the additive noise mean if available."""
+        propagated = self.transition_function(state)
+        noise_mean = self.noise_mean
+        return propagated if noise_mean is None else propagated + noise_mean
+
+    def jacobian(self, state):
+        """Return the transition Jacobian evaluated at ``state``."""
+        jacobian = self._jacobian
+        if jacobian is None:
+            raise NotImplementedError("No transition Jacobian callback was supplied")
+        return jacobian(state)
+
+    def has_jacobian(self):
+        """Return whether this model can provide transition Jacobians."""
+        return self._jacobian is not None
+
+    def sample_next(self, state, n: int = 1):
+        """Draw ``n`` samples from ``p(x_next | state)``."""
+        if self.noise_distribution is None or not hasattr(
+            self.noise_distribution, "sample"
+        ):
+            raise NotImplementedError(
+                "The transition noise distribution does not provide sample(n)"
+            )
+        return self.transition_function(state) + self.noise_distribution.sample(n)
+
+    def transition_density(self, next_state, state):
+        """Evaluate ``p(next_state | state)`` from the additive noise density."""
+        if self.noise_distribution is None or not hasattr(
+            self.noise_distribution, "pdf"
+        ):
+            raise NotImplementedError(
+                "The transition noise distribution does not provide pdf(x)"
+            )
+        return self.noise_distribution.pdf(next_state - self.transition_function(state))
+
+
+class AdditiveNoiseMeasurementModel:
+    """Nonlinear measurement model with additive measurement noise.
+
+    The model represents ``z = h(x) + v`` where ``h`` is the noise-free
+    measurement function and ``v`` follows the supplied noise distribution.
+    """
+
+    def __init__(
+        self,
+        h: Callable[..., Any] | None = None,
+        noise_distribution: Any | None = None,
+        noise_mean=None,
+        noise_covariance=None,
+        jacobian: Callable[..., Any] | None = None,
+        vectorized: bool = False,
+        function_args: dict[str, Any] | None = None,
+        **kwargs,
+    ):
+        h = _pop_function_alias(kwargs, "h", "measurement_function", h)
+        _reject_unexpected_kwargs(kwargs)
+
+        self._h = _require_callable(h, "h")
+        if jacobian is not None:
+            jacobian = _require_callable(jacobian, "jacobian")
+        self.noise_distribution = noise_distribution
+        self._noise_mean = _as_optional_array(noise_mean)
+        self._noise_covariance = _as_optional_array(noise_covariance)
+        self._jacobian = jacobian
+        self.vectorized = vectorized
+        self.function_args = dict(function_args or {})
 
     def evaluate(self, state, **kwargs):
-        """Evaluate the deterministic measurement part.
+        """Evaluate the noise-free measurement, including default function args."""
+        return _call_measurement_function(self._h, state, self.function_args, kwargs)
 
-        Parameters
-        ----------
-        state:
-            State vector with shape ``(state_dim,)``.
-        kwargs:
-            Extra measurement-function keyword arguments. These override
-            ``function_args`` for this call.
-        """
-        call_args = dict(self.function_args or {})
-        call_args.update(kwargs)
-        return self.measurement_function(state, **call_args)
+    def measurement_function(self, state, **kwargs):
+        """Evaluate the noise-free measurement ``h(state)``."""
+        return self.evaluate(state, **kwargs)
+
+    def predict_measurement(self, state):
+        """Return ``h(state)`` plus the additive noise mean if available."""
+        prediction = self.measurement_function(state)
+        noise_mean = self.noise_mean
+        return prediction if noise_mean is None else prediction + noise_mean
+
+    def mean(self, state):
+        """Alias for :meth:`predict_measurement`."""
+        return self.predict_measurement(state)
+
+    @property
+    def noise_mean(self):
+        """Mean of the additive measurement noise, or ``None`` if unavailable."""
+        return (
+            self._noise_mean
+            if self._noise_mean is not None
+            else _distribution_mean(self.noise_distribution)
+        )
+
+    @property
+    def noise_covariance(self):
+        """Covariance of the additive measurement noise, or ``None`` if unavailable."""
+        return (
+            self._noise_covariance
+            if self._noise_covariance is not None
+            else _distribution_covariance(self.noise_distribution)
+        )
+
+    def jacobian(self, state):
+        """Return the measurement Jacobian evaluated at ``state``."""
+        jacobian = self._jacobian
+        if jacobian is None:
+            raise NotImplementedError("No measurement Jacobian callback was supplied")
+        return jacobian(state)
+
+    def has_jacobian(self):
+        """Return whether this model can provide measurement Jacobians."""
+        return self._jacobian is not None
+
+    def measurement_residual(self, measurement, state):
+        """Return ``measurement - h(state)``."""
+        return measurement - self.measurement_function(state)
+
+    def sample_measurement(self, state, n: int = 1):
+        """Draw ``n`` samples from ``p(measurement | state)``."""
+        if self.noise_distribution is None or not hasattr(
+            self.noise_distribution, "sample"
+        ):
+            raise NotImplementedError(
+                "The measurement noise distribution does not provide sample(n)"
+            )
+        return self.measurement_function(state) + self.noise_distribution.sample(n)
+
+    def likelihood(self, measurement, state):
+        """Evaluate ``p(measurement | state)`` from the additive noise density."""
+        if self.noise_distribution is None or not hasattr(
+            self.noise_distribution, "pdf"
+        ):
+            raise NotImplementedError(
+                "The measurement noise distribution does not provide pdf(x)"
+            )
+        return self.noise_distribution.pdf(
+            self.measurement_residual(measurement, state)
+        )
