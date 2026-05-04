@@ -1,14 +1,13 @@
 """Kalman filter example using reusable linear-Gaussian model objects."""
 
 # pylint: disable=import-error,no-name-in-module,no-member
+from _filter_example_output import print_position_velocity_estimates
 from pyrecest.backend import array, diag
 from pyrecest.filters import KalmanFilter
 from pyrecest.models import (
     LinearGaussianMeasurementModel,
     LinearGaussianTransitionModel,
 )
-
-from _filter_example_output import print_position_velocity_estimates
 
 
 def run_filter():

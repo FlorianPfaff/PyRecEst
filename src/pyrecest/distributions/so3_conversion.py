@@ -58,9 +58,7 @@ def _so3_tangent_gaussian_from_dirac(
         tangent_mean, base=initial_mean
     )[0]
 
-    residuals = SO3TangentGaussianDistribution.log_map(
-        rotations, base=refined_mean
-    )
+    residuals = SO3TangentGaussianDistribution.log_map(rotations, base=refined_mean)
     residual_mean = sum(weights * residuals, axis=0)
     centered = residuals - residual_mean
     covariance = matmul(transpose(weights * centered), centered)

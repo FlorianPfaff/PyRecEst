@@ -108,7 +108,9 @@ def as_density_transition_model(
 
     if isinstance(model_or_density, SupportsTransitionDensity):
         if _metadata_was_requested(name=name, extra=sample_next):
-            raise ValueError("sample_next and name are only used when wrapping a callable.")
+            raise ValueError(
+                "sample_next and name are only used when wrapping a callable."
+            )
         return model_or_density
 
     if callable(model_or_density):
@@ -135,7 +137,9 @@ def evaluate_log_likelihood(
 ) -> Any:
     """Evaluate ``log p(measurement | state)`` on a compatible model."""
 
-    _require_capability(model, SupportsLogLikelihood, "log_likelihood(measurement, state)")
+    _require_capability(
+        model, SupportsLogLikelihood, "log_likelihood(measurement, state)"
+    )
     return model.log_likelihood(measurement, state)
 
 
@@ -169,7 +173,9 @@ def predict_distribution_from_model(
 ) -> Any:
     """Propagate ``state_distribution`` with a distribution-aware model."""
 
-    _require_capability(model, SupportsPredictedDistribution, "predict_distribution(state_distribution)")
+    _require_capability(
+        model, SupportsPredictedDistribution, "predict_distribution(state_distribution)"
+    )
     return model.predict_distribution(state_distribution, *args, **kwargs)
 
 
@@ -190,7 +196,9 @@ def require_model_attribute(model: object, *names: str) -> Any:
     )
 
 
-def get_optional_model_attribute(model: object, *names: str, default: Any = None) -> Any:
+def get_optional_model_attribute(
+    model: object, *names: str, default: Any = None
+) -> Any:
     """Return the first available optional model attribute from ``names``."""
 
     for name in names:
@@ -206,7 +214,9 @@ def linear_transition_arguments(model: object) -> LinearTransitionArguments:
 
     return LinearTransitionArguments(
         system_matrix=require_model_attribute(model, "system_matrix"),
-        sys_noise_cov=require_model_attribute(model, "system_noise_cov", "sys_noise_cov"),
+        sys_noise_cov=require_model_attribute(
+            model, "system_noise_cov", "sys_noise_cov"
+        ),
         sys_input=get_optional_model_attribute(model, "sys_input", "system_input"),
     )
 
@@ -216,7 +226,9 @@ def linear_measurement_arguments(model: object) -> LinearMeasurementArguments:
 
     return LinearMeasurementArguments(
         measurement_matrix=require_model_attribute(model, "measurement_matrix"),
-        meas_noise=require_model_attribute(model, "meas_noise", "measurement_noise_cov"),
+        meas_noise=require_model_attribute(
+            model, "meas_noise", "measurement_noise_cov"
+        ),
     )
 
 

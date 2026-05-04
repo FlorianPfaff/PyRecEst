@@ -2,9 +2,22 @@ import copy
 import warnings
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import array, asarray, concatenate, einsum, exp, less_equal, linalg, log, stack, transpose
 from pyrecest.backend import any as backend_any
+from pyrecest.backend import (
+    array,
+    asarray,
+    concatenate,
+    einsum,
+    exp,
+    less_equal,
+    linalg,
+    log,
+    stack,
+)
 from pyrecest.backend import sum as backend_sum
+from pyrecest.backend import (
+    transpose,
+)
 
 from ..distributions.cart_prod.state_space_subdivision_gaussian_distribution import (
     StateSpaceSubdivisionGaussianDistribution,
@@ -294,12 +307,16 @@ class StateSpaceSubdivisionFilter(AbstractFilter, HypercylindricalFilterMixin):
                 pdf_values = []
                 for i in range(n_areas):
                     j = i if n_likelihoods > 1 else 0
-                    combined_cov = state.linear_distributions[i].C + likelihoods_linear[j].C
+                    combined_cov = (
+                        state.linear_distributions[i].C + likelihoods_linear[j].C
+                    )
                     temp_g = GaussianDistribution(
                         likelihoods_linear[j].mu, combined_cov, check_validity=False
                     )
                     pdf_values.append(
-                        asarray(temp_g.pdf(state.linear_distributions[i].mu)).reshape((1,))
+                        asarray(temp_g.pdf(state.linear_distributions[i].mu)).reshape(
+                            (1,)
+                        )
                     )
                 factors = concatenate(pdf_values)  # shape (n_areas,)
                 state.gd.grid_values = state.gd.grid_values * factors
@@ -322,7 +339,9 @@ class StateSpaceSubdivisionFilter(AbstractFilter, HypercylindricalFilterMixin):
 
         state.gd.normalize_in_place(warn_unnorm=False)
 
-    def _update_single_linear_likelihood(self, likelihood):  # pylint: disable=too-many-locals
+    def _update_single_linear_likelihood(
+        self, likelihood
+    ):  # pylint: disable=too-many-locals
         """Vectorized update for one linear Gaussian likelihood."""
 
         state = self._filter_state

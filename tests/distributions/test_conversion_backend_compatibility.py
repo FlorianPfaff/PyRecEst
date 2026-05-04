@@ -2,10 +2,23 @@ import unittest
 
 # pylint: disable=no-name-in-module,no-member,redefined-builtin
 from pyrecest import backend
-from pyrecest.backend import allclose, array, diag, is_array, random, sum as backend_sum, to_numpy
+from pyrecest.backend import (
+    allclose,
+    array,
+    diag,
+    is_array,
+    random,
+)
+from pyrecest.backend import sum as backend_sum
+from pyrecest.backend import (
+    to_numpy,
+)
 from pyrecest.distributions import GaussianDistribution, LinearDiracDistribution
-from pyrecest.distributions.conversion import ConversionError, can_convert, convert_distribution
-
+from pyrecest.distributions.conversion import (
+    ConversionError,
+    can_convert,
+    convert_distribution,
+)
 
 SUPPORTED_BACKENDS = ("numpy", "pytorch", "jax")
 
@@ -82,7 +95,9 @@ class ConversionBackendCompatibilityTest(unittest.TestCase):
         self.assertTrue(is_array(gaussian.mean()), self.backend_name)
         self.assertTrue(is_array(gaussian.covariance()), self.backend_name)
         self.assertTrue(_as_bool(allclose(gaussian.mean(), particles.mean())))
-        self.assertTrue(_as_bool(allclose(gaussian.covariance(), particles.covariance())))
+        self.assertTrue(
+            _as_bool(allclose(gaussian.covariance(), particles.covariance()))
+        )
 
     def test_class_and_alias_targets_are_consistent_on_active_backend(self):
         random.seed(7)

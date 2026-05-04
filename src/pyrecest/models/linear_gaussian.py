@@ -1,6 +1,15 @@
 """Reusable linear Gaussian transition and measurement models."""
 
-from pyrecest.backend import asarray, eye, matmul, matvec, ndim, reshape, transpose, zeros
+from pyrecest.backend import (
+    asarray,
+    eye,
+    matmul,
+    matvec,
+    ndim,
+    reshape,
+    transpose,
+    zeros,
+)
 from pyrecest.distributions import GaussianDistribution
 
 
@@ -91,7 +100,10 @@ class LinearGaussianTransitionModel:
         state_covariance = _as_square(state_covariance, "state_covariance")
         if _shape(state_covariance) != (self.state_dim, self.state_dim):
             raise ValueError("state_covariance has incompatible shape")
-        return matmul(matmul(self.matrix, state_covariance), transpose(self.matrix)) + self.noise_cov
+        return (
+            matmul(matmul(self.matrix, state_covariance), transpose(self.matrix))
+            + self.noise_cov
+        )
 
     def predict_distribution(self, state_distribution, check_validity=False):
         return GaussianDistribution(
@@ -101,7 +113,9 @@ class LinearGaussianTransitionModel:
         )
 
     def noise_distribution(self, check_validity=False):
-        return GaussianDistribution(zeros((self.predicted_dim,)), self.noise_cov, check_validity=check_validity)
+        return GaussianDistribution(
+            zeros((self.predicted_dim,)), self.noise_cov, check_validity=check_validity
+        )
 
 
 class IdentityGaussianTransitionModel(LinearGaussianTransitionModel):
@@ -141,7 +155,10 @@ class LinearGaussianMeasurementModel:
         state_covariance = _as_square(state_covariance, "state_covariance")
         if _shape(state_covariance) != (self.state_dim, self.state_dim):
             raise ValueError("state_covariance has incompatible shape")
-        return matmul(matmul(self.matrix, state_covariance), transpose(self.matrix)) + self.noise_cov
+        return (
+            matmul(matmul(self.matrix, state_covariance), transpose(self.matrix))
+            + self.noise_cov
+        )
 
     def predict_distribution(self, state_distribution, check_validity=False):
         return GaussianDistribution(
@@ -151,7 +168,11 @@ class LinearGaussianMeasurementModel:
         )
 
     def noise_distribution(self, check_validity=False):
-        return GaussianDistribution(zeros((self.measurement_dim,)), self.noise_cov, check_validity=check_validity)
+        return GaussianDistribution(
+            zeros((self.measurement_dim,)),
+            self.noise_cov,
+            check_validity=check_validity,
+        )
 
 
 class IdentityGaussianMeasurementModel(LinearGaussianMeasurementModel):

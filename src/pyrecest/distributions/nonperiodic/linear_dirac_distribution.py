@@ -4,7 +4,9 @@ import matplotlib.pyplot as plt
 import pyrecest.backend
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import cov, ones, reshape, sum as backend_sum, zeros
+from pyrecest.backend import cov, ones, reshape
+from pyrecest.backend import sum as backend_sum
+from pyrecest.backend import zeros
 
 from ..abstract_dirac_distribution import AbstractDiracDistribution
 from .abstract_linear_distribution import AbstractLinearDistribution
@@ -76,9 +78,7 @@ class LinearDiracDistribution(AbstractDiracDistribution, AbstractLinearDistribut
             n=n,
         )
         samples = distribution.sample(particle_count)
-        return LinearDiracDistribution(
-            samples, ones(particle_count) / particle_count
-        )
+        return LinearDiracDistribution(samples, ones(particle_count) / particle_count)
 
     @staticmethod
     def _resolve_particle_count(n_particles=None, n_samples=None, n=None):

@@ -105,7 +105,9 @@ def print_linear_example():
 
 def print_circular_example():
     """Print the circular grid/Fourier conversion workflow."""
-    distribution, grid_result, fourier_result, evaluation_points = run_circular_example()
+    distribution, grid_result, fourier_result, evaluation_points = (
+        run_circular_example()
+    )
     grid = grid_result.distribution
     fourier = fourier_result.distribution
 

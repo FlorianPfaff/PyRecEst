@@ -32,11 +32,15 @@ class ModelObjectTest(unittest.TestCase):
             return array([x[0] + offset, x[1] - offset])
 
         model = AdditiveNoiseMeasurementModel(
-            measurement_function=hx, noise_distribution=noise_cov, function_args={"offset": 0.25}
+            measurement_function=hx,
+            noise_distribution=noise_cov,
+            function_args={"offset": 0.25},
         )
 
         self.assertTrue(allclose(model.noise_covariance, noise_cov))
-        self.assertTrue(allclose(model.evaluate(array([1.0, 2.0])), array([1.25, 1.75])))
+        self.assertTrue(
+            allclose(model.evaluate(array([1.0, 2.0])), array([1.25, 1.75]))
+        )
 
 
 if __name__ == "__main__":

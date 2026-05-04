@@ -79,9 +79,13 @@ class KalmanFilterTest(unittest.TestCase):
         filter_model.update_model(measurement_model, measurement)
 
         self.assertTrue(
-            allclose(filter_linear.get_point_estimate(), filter_model.get_point_estimate())
+            allclose(
+                filter_linear.get_point_estimate(), filter_model.get_point_estimate()
+            )
         )
-        self.assertTrue(allclose(filter_linear.filter_state.C, filter_model.filter_state.C))
+        self.assertTrue(
+            allclose(filter_linear.filter_state.C, filter_model.filter_state.C)
+        )
 
     def test_predict_identity_1d(self):
         kf = KalmanFilter((array([0]), array([[1]])))
@@ -116,9 +120,13 @@ class KalmanFilterTest(unittest.TestCase):
         filter_model.predict_model(transition_model)
 
         self.assertTrue(
-            allclose(filter_linear.get_point_estimate(), filter_model.get_point_estimate())
+            allclose(
+                filter_linear.get_point_estimate(), filter_model.get_point_estimate()
+            )
         )
-        self.assertTrue(allclose(filter_linear.filter_state.C, filter_model.filter_state.C))
+        self.assertTrue(
+            allclose(filter_linear.filter_state.C, filter_model.filter_state.C)
+        )
 
     def test_predict_model_accepts_existing_noise_and_input_aliases(self):
         initial_state = (array([0.0, 1.0]), diag(array([1.0, 2.0])))
@@ -138,9 +146,13 @@ class KalmanFilterTest(unittest.TestCase):
         filter_model.predict_model(transition_model)
 
         self.assertTrue(
-            allclose(filter_linear.get_point_estimate(), filter_model.get_point_estimate())
+            allclose(
+                filter_linear.get_point_estimate(), filter_model.get_point_estimate()
+            )
         )
-        self.assertTrue(allclose(filter_linear.filter_state.C, filter_model.filter_state.C))
+        self.assertTrue(
+            allclose(filter_linear.filter_state.C, filter_model.filter_state.C)
+        )
 
 
 if __name__ == "__main__":

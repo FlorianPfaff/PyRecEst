@@ -1,7 +1,7 @@
 import builtins
 import math
-from numbers import Integral
 import warnings
+from numbers import Integral
 
 from beartype import beartype
 
@@ -323,9 +323,7 @@ class HypertoroidalGridDistribution(
         """Return a weighted Dirac distribution on the grid points."""
         weights = reshape(self.grid_values, (-1,))
         weights = weights / sum(weights)
-        return HypertoroidalDiracDistribution(
-            self.get_grid(), weights, dim=self.dim
-        )
+        return HypertoroidalDiracDistribution(self.get_grid(), weights, dim=self.dim)
 
     def plot(self, *args, **kwargs):
         return self.to_dirac_distribution().plot(*args, **kwargs)

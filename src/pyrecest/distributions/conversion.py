@@ -797,9 +797,9 @@ def _validate_conversion_arguments(
         )
 
 
-from . import (
+from . import (  # noqa: F401,E402  pylint: disable=wrong-import-position,unused-import
     so3_conversion as _so3_conversion,
-)  # noqa: F401,E402  pylint: disable=wrong-import-position,unused-import
+)
 
 __all__ = [
     "ConversionError",

@@ -35,10 +35,12 @@ from .likelihood import (
     SupportsTransitionDensity,
     SupportsTransitionSampling,
 )
-from .linear_gaussian import IdentityGaussianMeasurementModel
-from .linear_gaussian import IdentityGaussianTransitionModel
-from .linear_gaussian import LinearGaussianMeasurementModel
-from .linear_gaussian import LinearGaussianTransitionModel
+from .linear_gaussian import (
+    IdentityGaussianMeasurementModel,
+    IdentityGaussianTransitionModel,
+    LinearGaussianMeasurementModel,
+    LinearGaussianTransitionModel,
+)
 from .validation import (
     infer_state_dim_from_distribution,
     validate_covariance_matrix,

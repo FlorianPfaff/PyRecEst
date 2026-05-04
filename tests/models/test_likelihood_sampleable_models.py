@@ -2,7 +2,6 @@ import unittest
 
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import allclose, arange, array, exp, reshape
-
 from pyrecest.models import (
     DensityTransitionModel,
     LikelihoodMeasurementModel,
@@ -49,10 +48,14 @@ class LikelihoodMeasurementModelTest(unittest.TestCase):
 
         self.assertIsInstance(model, SupportsLogLikelihood)
         self.assertTrue(model.has_log_likelihood)
-        self.assertTrue(allclose(model.log_likelihood(array([3.0]), array([1.0])), array([2.0])))
+        self.assertTrue(
+            allclose(model.log_likelihood(array([3.0]), array([1.0])), array([2.0]))
+        )
 
     def test_missing_log_likelihood_raises(self):
-        model = LikelihoodMeasurementModel(lambda measurement, state: measurement + state)
+        model = LikelihoodMeasurementModel(
+            lambda measurement, state: measurement + state
+        )
 
         self.assertFalse(model.has_log_likelihood)
         with self.assertRaises(NotImplementedError):
@@ -64,8 +67,12 @@ class LikelihoodMeasurementModelTest(unittest.TestCase):
             log_pdf_method="log_pdf",
         )
 
-        self.assertTrue(allclose(model.likelihood(array([2.0]), array([3.0])), array([5.0])))
-        self.assertTrue(allclose(model.log_likelihood(array([2.0]), array([3.0])), array([-1.0])))
+        self.assertTrue(
+            allclose(model.likelihood(array([2.0]), array([3.0])), array([5.0]))
+        )
+        self.assertTrue(
+            allclose(model.log_likelihood(array([2.0]), array([3.0])), array([-1.0]))
+        )
 
     def test_non_callable_likelihood_rejected(self):
         with self.assertRaises(TypeError):
@@ -82,7 +89,11 @@ class SampleableTransitionModelTest(unittest.TestCase):
         self.assertIsInstance(model, SupportsTransitionSampling)
         self.assertEqual(model.name, "unit-test-transition")
         self.assertFalse(model.has_transition_density)
-        self.assertTrue(allclose(model.sample_next(array([10.0]), n=3), array([[10.0], [11.0], [12.0]])))
+        self.assertTrue(
+            allclose(
+                model.sample_next(array([10.0]), n=3), array([[10.0], [11.0], [12.0]])
+            )
+        )
 
     def test_unary_sample_next_callback(self):
         def shift_state(state):
@@ -95,11 +106,15 @@ class SampleableTransitionModelTest(unittest.TestCase):
     def test_optional_transition_density(self):
         model = SampleableTransitionModel(
             lambda state, n=1: state + reshape(arange(n), (n, 1)),
-            transition_density=lambda state_next, state_previous: exp(-0.5 * (state_next - state_previous) ** 2),
+            transition_density=lambda state_next, state_previous: exp(
+                -0.5 * (state_next - state_previous) ** 2
+            ),
         )
 
         self.assertTrue(model.has_transition_density)
-        self.assertTrue(allclose(model.transition_density(array([1.0]), array([1.0])), array([1.0])))
+        self.assertTrue(
+            allclose(model.transition_density(array([1.0]), array([1.0])), array([1.0]))
+        )
 
     def test_missing_transition_density_raises(self):
         model = SampleableTransitionModel(lambda state, n=1: state)
@@ -122,27 +137,37 @@ class SampleableTransitionModelTest(unittest.TestCase):
 class DensityTransitionModelTest(unittest.TestCase):
     def test_transition_density_callback(self):
         model = DensityTransitionModel(
-            lambda state_next, state_previous: exp(-0.5 * (state_next - state_previous) ** 2)
+            lambda state_next, state_previous: exp(
+                -0.5 * (state_next - state_previous) ** 2
+            )
         )
 
         self.assertIsInstance(model, SupportsTransitionDensity)
         self.assertFalse(model.has_sampler)
-        self.assertTrue(allclose(model.transition_density(array([2.0]), array([2.0])), array([1.0])))
+        self.assertTrue(
+            allclose(model.transition_density(array([2.0]), array([2.0])), array([1.0]))
+        )
 
     def test_optional_sampler(self):
         def sample_next(state, n=1):
             return state + reshape(arange(n), (n, 1))
 
         model = DensityTransitionModel(
-            lambda state_next, state_previous: exp(-0.5 * (state_next - state_previous) ** 2),
+            lambda state_next, state_previous: exp(
+                -0.5 * (state_next - state_previous) ** 2
+            ),
             sample_next=sample_next,
         )
 
         self.assertTrue(model.has_sampler)
-        self.assertTrue(allclose(model.sample_next(array([4.0]), n=2), array([[4.0], [5.0]])))
+        self.assertTrue(
+            allclose(model.sample_next(array([4.0]), n=2), array([[4.0], [5.0]]))
+        )
 
     def test_missing_sampler_raises(self):
-        model = DensityTransitionModel(lambda state_next, state_previous: state_next + state_previous)
+        model = DensityTransitionModel(
+            lambda state_next, state_previous: state_next + state_previous
+        )
 
         with self.assertRaises(NotImplementedError):
             model.sample_next(array([1.0]))

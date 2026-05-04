@@ -22,16 +22,6 @@ from .abstract_periodic_grid_distribution import AbstractPeriodicGridDistributio
 from .abstract_se2_distribution import AbstractSE2Distribution
 from .abstract_se3_distribution import AbstractSE3Distribution
 from .abstract_uniform_distribution import AbstractUniformDistribution
-from .conversion import (
-    ConversionError,
-    ConversionResult,
-    can_convert,
-    convert_distribution,
-    register_conversion,
-    register_conversion_alias,
-    registered_conversion_aliases,
-    registered_conversions,
-)
 from .cart_prod.abstract_cart_prod_distribution import AbstractCartProdDistribution
 from .cart_prod.abstract_custom_lin_bounded_cart_prod_distribution import (
     AbstractCustomLinBoundedCartProdDistribution,
@@ -123,6 +113,16 @@ from .conditional.sd_half_cond_sd_half_grid_distribution import (
     SdHalfCondSdHalfGridDistribution,
 )
 from .conditional.td_cond_td_grid_distribution import TdCondTdGridDistribution
+from .conversion import (
+    ConversionError,
+    ConversionResult,
+    can_convert,
+    convert_distribution,
+    register_conversion,
+    register_conversion_alias,
+    registered_conversion_aliases,
+    registered_conversions,
+)
 from .custom_hyperrectangular_distribution import CustomHyperrectangularDistribution
 from .disk_uniform_distribution import DiskUniformDistribution
 from .ellipsoidal_ball_uniform_distribution import EllipsoidalBallUniformDistribution

@@ -1,14 +1,13 @@
 """Unscented Kalman filter example using additive-noise model objects."""
 
 # pylint: disable=import-error,no-name-in-module,no-member
+from _filter_example_output import print_position_velocity_estimates
 from pyrecest.backend import array, diag
 from pyrecest.filters import UnscentedKalmanFilter
 from pyrecest.models import (
     AdditiveNoiseMeasurementModel,
     AdditiveNoiseTransitionModel,
 )
-
-from _filter_example_output import print_position_velocity_estimates
 
 
 def constant_velocity_transition(state, dt):

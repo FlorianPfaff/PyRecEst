@@ -1,6 +1,7 @@
 """Particle filter example using reusable transition and likelihood models."""
 
 # pylint: disable=import-error,no-name-in-module,no-member
+from _filter_example_output import print_position_velocity_estimates
 from pyrecest.backend import array, diag
 from pyrecest.distributions import GaussianDistribution
 from pyrecest.filters import EuclideanParticleFilter
@@ -8,8 +9,6 @@ from pyrecest.models import (
     LikelihoodMeasurementModel,
     SampleableTransitionModel,
 )
-
-from _filter_example_output import print_position_velocity_estimates
 
 
 def make_constant_velocity_sampler(dt, process_noise):

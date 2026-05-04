@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from pyrecest.protocols.common import SupportsDim
 from pyrecest.protocols.testing import (
     ProtocolAssertionError,
@@ -188,7 +187,19 @@ def test_model_helpers_return_method_results():
     likelihood_model = DemoLikelihoodModel()
     transition_model = DemoTransitionModel()
 
-    assert assert_supports_likelihood(likelihood_model, measurement, state) == (measurement, state)
-    assert assert_supports_log_likelihood(likelihood_model, measurement, state) == (measurement, state, "log")
-    assert_shape(assert_supports_transition_sampling(transition_model, state, 3), (3, 2))
-    assert assert_supports_transition_density(transition_model, next_state, state) == (next_state, state)
+    assert assert_supports_likelihood(likelihood_model, measurement, state) == (
+        measurement,
+        state,
+    )
+    assert assert_supports_log_likelihood(likelihood_model, measurement, state) == (
+        measurement,
+        state,
+        "log",
+    )
+    assert_shape(
+        assert_supports_transition_sampling(transition_model, state, 3), (3, 2)
+    )
+    assert assert_supports_transition_density(transition_model, next_state, state) == (
+        next_state,
+        state,
+    )

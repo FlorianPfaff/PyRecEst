@@ -66,8 +66,10 @@ class TestGridFilterModelAdapters(unittest.TestCase):
     def test_predict_model_matches_transition_density_prediction(self):
         reference_filter = self._initialized_filter()
         model_filter = self._initialized_filter()
-        transition_density = HyperhemisphericalGridFilter.sys_noise_to_transition_density(
-            self.system_noise, self.n_grid
+        transition_density = (
+            HyperhemisphericalGridFilter.sys_noise_to_transition_density(
+                self.system_noise, self.n_grid
+            )
         )
 
         reference_filter.predict_nonlinear_via_transition_density(transition_density)
@@ -90,8 +92,10 @@ class TestGridFilterModelAdapters(unittest.TestCase):
         reference_filter = self._initialized_filter()
         model_filter = self._initialized_filter()
 
-        transition_density = HyperhemisphericalGridFilter.sys_noise_to_transition_density(
-            self.system_noise, self.n_grid
+        transition_density = (
+            HyperhemisphericalGridFilter.sys_noise_to_transition_density(
+                self.system_noise, self.n_grid
+            )
         )
         reference_filter.predict_nonlinear_via_transition_density(transition_density)
 
