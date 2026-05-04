@@ -204,10 +204,6 @@ class HyperhemisphericalGridFilter(AbstractGridFilter, HyperhemisphericalFilterM
         if isinstance(meas_noise, HyperhemisphericalWatsonDistribution):
             meas_noise = meas_noise.set_mode(z)
         elif isinstance(meas_noise, WatsonDistribution):
-            from pyrecest.backend import (  # pylint: disable=import-outside-toplevel
-                linalg,
-            )
-
             standard_pole = array([*([0.0] * (self.dim - 1)), 1.0])
             if linalg.norm(meas_noise.mu - standard_pole) > 1e-6:
                 raise ValueError(
@@ -215,10 +211,6 @@ class HyperhemisphericalGridFilter(AbstractGridFilter, HyperhemisphericalFilterM
                 )
             meas_noise = WatsonDistribution(z, meas_noise.kappa)
         elif isinstance(meas_noise, VonMisesFisherDistribution) and z[-1] == 0:
-            from pyrecest.backend import (  # pylint: disable=import-outside-toplevel
-                linalg,
-            )
-
             standard_pole = array([*([0.0] * (self.dim - 1)), 1.0])
             if linalg.norm(meas_noise.mu - standard_pole) > 1e-6:
                 raise ValueError(

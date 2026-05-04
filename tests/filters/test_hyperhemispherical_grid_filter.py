@@ -2,7 +2,8 @@ import unittest
 import warnings
 
 import pyrecest.backend
-from pyrecest.backend import array, linalg
+from pyrecest.backend import allclose, array, linalg
+from pyrecest.backend import sum as backend_sum
 from pyrecest.distributions import (
     HyperhemisphericalWatsonDistribution,
     SdHalfCondSdHalfGridDistribution,
@@ -102,7 +103,7 @@ class TestHyperhemisphericalGridFilter(unittest.TestCase):
         f.filter_state = HyperhemisphericalGridDistribution(grid, weights)
 
         gd_full = f.filter_state.to_full_sphere()
-        full_weights = gd_full.grid_values / pyrecest.backend.sum(gd_full.grid_values)
+        full_weights = gd_full.grid_values / backend_sum(gd_full.grid_values)
         scatter = gd_full.grid.T @ (gd_full.grid * full_weights[:, None])
         scatter = 0.5 * (scatter + scatter.T)
         _, eigenvectors = linalg.eigh(scatter)
@@ -114,7 +115,7 @@ class TestHyperhemisphericalGridFilter(unittest.TestCase):
 
         self.assertAlmostEqual(float(linalg.norm(p)), 1.0, places=5)
         self.assertGreaterEqual(float(p[-1]), 0.0)
-        self.assertTrue(pyrecest.backend.allclose(p, expected, atol=1e-10))
+        self.assertTrue(allclose(p, expected, atol=1e-10))
 
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ == "jax",  # pylint: disable=no-member
