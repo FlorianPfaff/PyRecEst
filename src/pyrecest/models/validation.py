@@ -33,7 +33,9 @@ def _format_shape(shape: tuple[int, ...]) -> str:
     return str(shape)
 
 
-def _validate_expected_dim(actual_dim: int, expected_dim: int | None, name: str, dim_name: str) -> None:
+def _validate_expected_dim(
+    actual_dim: int, expected_dim: int | None, name: str, dim_name: str
+) -> None:
     if expected_dim is None:
         return
     if not isinstance(expected_dim, Integral):
@@ -41,7 +43,9 @@ def _validate_expected_dim(actual_dim: int, expected_dim: int | None, name: str,
     if int(expected_dim) <= 0:
         raise ValueError(f"{dim_name} must be positive.")
     if actual_dim != int(expected_dim):
-        raise ValueError(f"{name} has dimension {actual_dim}, expected {int(expected_dim)}.")
+        raise ValueError(
+            f"{name} has dimension {actual_dim}, expected {int(expected_dim)}."
+        )
 
 
 def _to_python_bool(value: Any) -> bool:
@@ -53,7 +57,13 @@ def _to_python_bool(value: Any) -> bool:
     return bool(value)
 
 
-def validate_vector(vector: Any, *, name: str = "vector", dim: int | None = None, allow_scalar: bool = False):
+def validate_vector(
+    vector: Any,
+    *,
+    name: str = "vector",
+    dim: int | None = None,
+    allow_scalar: bool = False,
+):
     """Validate and return a one-dimensional backend array.
 
     Parameters
@@ -80,14 +90,22 @@ def validate_vector(vector: Any, *, name: str = "vector", dim: int | None = None
         vector_ndim = 1
 
     if vector_ndim != 1:
-        raise ValueError(f"{name} must be one-dimensional with shape (dim,), got shape {_format_shape(_shape_tuple(vector))}.")
+        raise ValueError(
+            f"{name} must be one-dimensional with shape (dim,), got shape {_format_shape(_shape_tuple(vector))}."
+        )
 
     actual_dim = _shape_tuple(vector)[0]
     _validate_expected_dim(actual_dim, dim, name, "dim")
     return vector
 
 
-def validate_state_vector(state: Any, *, name: str = "state", state_dim: int | None = None, allow_scalar: bool = False):
+def validate_state_vector(
+    state: Any,
+    *,
+    name: str = "state",
+    state_dim: int | None = None,
+    allow_scalar: bool = False,
+):
     """Validate a state vector with shape ``(state_dim,)``.
 
     Scalar state vectors are rejected by default.  Set ``allow_scalar=True`` for
@@ -96,12 +114,26 @@ def validate_state_vector(state: Any, *, name: str = "state", state_dim: int | N
     return validate_vector(state, name=name, dim=state_dim, allow_scalar=allow_scalar)
 
 
-def validate_measurement_vector(measurement: Any, *, name: str = "measurement", meas_dim: int | None = None, allow_scalar: bool = False):
+def validate_measurement_vector(
+    measurement: Any,
+    *,
+    name: str = "measurement",
+    meas_dim: int | None = None,
+    allow_scalar: bool = False,
+):
     """Validate a single-target measurement vector with shape ``(meas_dim,)``."""
-    return validate_vector(measurement, name=name, dim=meas_dim, allow_scalar=allow_scalar)
+    return validate_vector(
+        measurement, name=name, dim=meas_dim, allow_scalar=allow_scalar
+    )
 
 
-def validate_matrix(matrix: Any, *, name: str = "matrix", rows: int | None = None, cols: int | None = None):
+def validate_matrix(
+    matrix: Any,
+    *,
+    name: str = "matrix",
+    rows: int | None = None,
+    cols: int | None = None,
+):
     """Validate and return a two-dimensional backend array.
 
     Parameters
@@ -118,7 +150,9 @@ def validate_matrix(matrix: Any, *, name: str = "matrix", rows: int | None = Non
     matrix = _as_backend_array(matrix, name)
 
     if backend.ndim(matrix) != 2:
-        raise ValueError(f"{name} must be two-dimensional, got shape {_format_shape(_shape_tuple(matrix))}.")
+        raise ValueError(
+            f"{name} must be two-dimensional, got shape {_format_shape(_shape_tuple(matrix))}."
+        )
 
     actual_rows, actual_cols = _shape_tuple(matrix)
     _validate_expected_dim(actual_rows, rows, name, "rows")
@@ -151,11 +185,20 @@ def validate_covariance_matrix(
     covariance = validate_matrix(covariance, name=name)
     rows, cols = _shape_tuple(covariance)
     if rows != cols:
-        raise ValueError(f"{name} must be square, got shape {_format_shape((rows, cols))}.")
+        raise ValueError(
+            f"{name} must be square, got shape {_format_shape((rows, cols))}."
+        )
 
     _validate_expected_dim(rows, dim, name, "dim")
 
-    if check_symmetric and not _to_python_bool(backend.allclose(covariance, backend.transpose(covariance), rtol=symmetric_rtol, atol=symmetric_atol)):
+    if check_symmetric and not _to_python_bool(
+        backend.allclose(
+            covariance,
+            backend.transpose(covariance),
+            rtol=symmetric_rtol,
+            atol=symmetric_atol,
+        )
+    ):
         raise ValueError(f"{name} must be symmetric.")
 
     return covariance
@@ -192,13 +235,21 @@ def validate_noise_covariance(
     check_symmetric: bool = False,
 ):
     """Validate a process- or measurement-noise covariance with shape ``(dim, dim)``."""
-    return validate_covariance_matrix(noise_covariance, name=name, dim=dim, allow_scalar=allow_scalar, check_symmetric=check_symmetric)
+    return validate_covariance_matrix(
+        noise_covariance,
+        name=name,
+        dim=dim,
+        allow_scalar=allow_scalar,
+        check_symmetric=check_symmetric,
+    )
 
 
 def _maybe_call(value: Any, *, allow_methods: bool) -> Any:
     if callable(value):
         if not allow_methods:
-            raise ValueError("Callable distribution attributes are disabled for this inference attempt.")
+            raise ValueError(
+                "Callable distribution attributes are disabled for this inference attempt."
+            )
         return value()
     return value
 
@@ -209,7 +260,9 @@ def _positive_int_or_none(value: Any) -> int | None:
     return None
 
 
-def infer_state_dim_from_distribution(distribution: Any, *, allow_methods: bool = True) -> int:
+def infer_state_dim_from_distribution(
+    distribution: Any, *, allow_methods: bool = True
+) -> int:
     """Infer a state dimension from common PyRecEst distribution attributes.
 
     The helper first checks explicit dimension attributes such as ``dim`` and
@@ -221,7 +274,9 @@ def infer_state_dim_from_distribution(distribution: Any, *, allow_methods: bool 
     """
     for attr_name in ("dim", "input_dim"):
         if hasattr(distribution, attr_name):
-            attr_value = _maybe_call(getattr(distribution, attr_name), allow_methods=allow_methods)
+            attr_value = _maybe_call(
+                getattr(distribution, attr_name), allow_methods=allow_methods
+            )
             inferred_dim = _positive_int_or_none(attr_value)
             if inferred_dim is not None:
                 return inferred_dim
@@ -229,16 +284,26 @@ def infer_state_dim_from_distribution(distribution: Any, *, allow_methods: bool 
     for attr_name in ("mu", "m", "mean"):
         if hasattr(distribution, attr_name):
             try:
-                mean = _maybe_call(getattr(distribution, attr_name), allow_methods=allow_methods)
-                return _shape_tuple(validate_state_vector(mean, name=f"distribution.{attr_name}"))[0]
+                mean = _maybe_call(
+                    getattr(distribution, attr_name), allow_methods=allow_methods
+                )
+                return _shape_tuple(
+                    validate_state_vector(mean, name=f"distribution.{attr_name}")
+                )[0]
             except (TypeError, ValueError):
                 pass
 
     for attr_name in ("C", "covariance"):
         if hasattr(distribution, attr_name):
             try:
-                covariance = _maybe_call(getattr(distribution, attr_name), allow_methods=allow_methods)
-                return _shape_tuple(validate_covariance_matrix(covariance, name=f"distribution.{attr_name}"))[0]
+                covariance = _maybe_call(
+                    getattr(distribution, attr_name), allow_methods=allow_methods
+                )
+                return _shape_tuple(
+                    validate_covariance_matrix(
+                        covariance, name=f"distribution.{attr_name}"
+                    )
+                )[0]
             except (TypeError, ValueError):
                 pass
 
@@ -249,7 +314,9 @@ def infer_state_dim_from_distribution(distribution: Any, *, allow_methods: bool 
         except (TypeError, ValueError):
             pass
 
-    raise ValueError("Could not infer a positive state dimension from the distribution.")
+    raise ValueError(
+        "Could not infer a positive state dimension from the distribution."
+    )
 
 
 __all__ = [

@@ -318,8 +318,7 @@ class CircularFourierDistribution(AbstractCircularDistribution):
                 transformation = "identity"
             coeffs = array(
                 [
-                    conj(distribution.trigonometric_moment(k).squeeze())
-                    / (2.0 * pi)
+                    conj(distribution.trigonometric_moment(k).squeeze()) / (2.0 * pi)
                     for k in range(int(n) // 2 + 1)
                 ]
             )

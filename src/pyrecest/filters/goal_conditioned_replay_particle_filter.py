@@ -346,9 +346,7 @@ class GoalConditionedReplayParticleFilter(EuclideanParticleFilter):
 
     @property
     def last_position_proposal_fraction(self) -> float:
-        proposal_mask = self._last_transition_diagnostics.get(
-            "position_proposal_mask"
-        )
+        proposal_mask = self._last_transition_diagnostics.get("position_proposal_mask")
         if proposal_mask is None:
             return 0.0
         return float(sum(proposal_mask) / proposal_mask.shape[0])

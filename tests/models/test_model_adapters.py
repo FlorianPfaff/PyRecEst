@@ -89,10 +89,10 @@ class ModelAdapterTest(unittest.TestCase):
 
     def test_evaluate_log_likelihood(self):
         def likelihood(measurement, state):
-            return exp(-(measurement - state) ** 2)
+            return exp(-((measurement - state) ** 2))
 
         def log_likelihood(measurement, state):
-            return -(measurement - state) ** 2
+            return -((measurement - state) ** 2)
 
         model = as_likelihood_model(
             likelihood,

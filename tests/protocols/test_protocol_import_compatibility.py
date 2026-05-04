@@ -2,16 +2,22 @@
 
 from __future__ import annotations
 
+from pyrecest.models import SupportsLikelihood as ModelSupportsLikelihood
+from pyrecest.models import SupportsLogLikelihood as ModelSupportsLogLikelihood
+from pyrecest.models import SupportsTransitionDensity as ModelSupportsTransitionDensity
 from pyrecest.models import (
-    SupportsLikelihood as ModelSupportsLikelihood,
-    SupportsLogLikelihood as ModelSupportsLogLikelihood,
-    SupportsTransitionDensity as ModelSupportsTransitionDensity,
     SupportsTransitionSampling as ModelSupportsTransitionSampling,
 )
 from pyrecest.models.likelihood import (
     SupportsLikelihood as LikelihoodSupportsLikelihood,
+)
+from pyrecest.models.likelihood import (
     SupportsLogLikelihood as LikelihoodSupportsLogLikelihood,
+)
+from pyrecest.models.likelihood import (
     SupportsTransitionDensity as LikelihoodSupportsTransitionDensity,
+)
+from pyrecest.models.likelihood import (
     SupportsTransitionSampling as LikelihoodSupportsTransitionSampling,
 )
 from pyrecest.protocols import SupportsDim as PackageSupportsDim

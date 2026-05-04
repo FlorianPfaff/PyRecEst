@@ -51,15 +51,21 @@ class TestModelValidation(unittest.TestCase):
 
     def test_validate_covariance_matrix_can_check_symmetry(self):
         with self.assertRaisesRegex(ValueError, "symmetric"):
-            validate_covariance_matrix(array([[1.0, 2.0], [0.0, 1.0]]), check_symmetric=True)
+            validate_covariance_matrix(
+                array([[1.0, 2.0], [0.0, 1.0]]), check_symmetric=True
+            )
 
     def test_validate_noise_covariance_uses_covariance_rules(self):
-        noise_covariance = validate_noise_covariance(array(0.5), dim=1, allow_scalar=True)
+        noise_covariance = validate_noise_covariance(
+            array(0.5), dim=1, allow_scalar=True
+        )
 
         self.assertEqual(noise_covariance.shape, (1, 1))
 
     def test_validate_transition_matrix_accepts_pred_by_state_shape(self):
-        system_matrix = validate_transition_matrix(zeros((3, 2)), state_dim=2, pred_dim=3)
+        system_matrix = validate_transition_matrix(
+            zeros((3, 2)), state_dim=2, pred_dim=3
+        )
 
         self.assertEqual(system_matrix.shape, (3, 2))
 
@@ -68,7 +74,9 @@ class TestModelValidation(unittest.TestCase):
             validate_transition_matrix(zeros((2, 2)), state_dim=3)
 
     def test_validate_measurement_matrix_accepts_meas_by_state_shape(self):
-        measurement_matrix = validate_measurement_matrix(zeros((1, 2)), state_dim=2, meas_dim=1)
+        measurement_matrix = validate_measurement_matrix(
+            zeros((1, 2)), state_dim=2, meas_dim=1
+        )
 
         self.assertEqual(measurement_matrix.shape, (1, 2))
 
@@ -93,7 +101,9 @@ class TestModelValidation(unittest.TestCase):
             def covariance(self):
                 return eye(5)
 
-        self.assertEqual(infer_state_dim_from_distribution(DistributionWithCovariance()), 5)
+        self.assertEqual(
+            infer_state_dim_from_distribution(DistributionWithCovariance()), 5
+        )
 
     def test_infer_state_dim_from_dirac_locations(self):
         class DistributionWithDiracs:

@@ -2,7 +2,6 @@ import unittest
 
 from pyrecest import distributions
 
-
 CONVERSION_EXPORTS = (
     "ConversionError",
     "ConversionResult",

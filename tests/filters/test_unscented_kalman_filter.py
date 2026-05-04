@@ -99,9 +99,7 @@ class UnscentedKalmanFilterTest(unittest.TestCase):
         direct.predict_nonlinear(fx, sys_noise_cov, dt=0.25, bias=0.1)
         transition_model = AdditiveNoiseTransitionModel(
             transition_function=fx,
-            noise_distribution=GaussianDistribution(
-                array([0.0, 0.0]), sys_noise_cov
-            ),
+            noise_distribution=GaussianDistribution(array([0.0, 0.0]), sys_noise_cov),
             dt=0.25,
             function_args={"bias": 0.1},
         )
@@ -135,9 +133,7 @@ class UnscentedKalmanFilterTest(unittest.TestCase):
         direct.update_nonlinear(measurement, hx, meas_noise_cov, offset=0.1)
         measurement_model = AdditiveNoiseMeasurementModel(
             measurement_function=hx,
-            noise_distribution=GaussianDistribution(
-                array([0.0, 0.0]), meas_noise_cov
-            ),
+            noise_distribution=GaussianDistribution(array([0.0, 0.0]), meas_noise_cov),
             function_args={"offset": 0.1},
         )
         via_model.update_model(measurement_model, measurement)

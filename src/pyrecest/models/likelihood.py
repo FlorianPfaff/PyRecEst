@@ -66,7 +66,9 @@ def _accepts_sample_count(callback: Callable[..., Any]) -> bool:
     return any(parameter.name == "n" for parameter in parameters)
 
 
-def _evaluate_distribution_method(distribution: Any, method_name: str, *args: Any) -> Any:
+def _evaluate_distribution_method(
+    distribution: Any, method_name: str, *args: Any
+) -> Any:
     method = getattr(distribution, method_name, None)
     if method is None or not callable(method):
         raise AttributeError(
@@ -117,7 +119,9 @@ class LikelihoodMeasurementModel:
 
             def log_likelihood(measurement: Any, state: Any) -> Any:
                 distribution = distribution_factory(state)
-                return _evaluate_distribution_method(distribution, log_pdf_method, measurement)
+                return _evaluate_distribution_method(
+                    distribution, log_pdf_method, measurement
+                )
 
         return cls(likelihood, log_likelihood=log_likelihood, name=name)
 

@@ -47,7 +47,9 @@ FILTER_CAPABILITIES = (
     ClassCapability("update_nonlinear", "update_nonlinear"),
     ClassCapability("predict_model", "predict_model"),
     ClassCapability("update_model", "update_model"),
-    ClassCapability("update_nonlinear_using_likelihood", "update_nonlinear_using_likelihood"),
+    ClassCapability(
+        "update_nonlinear_using_likelihood", "update_nonlinear_using_likelihood"
+    ),
     ClassCapability("record_filter_state", "record_filter_state"),
     ClassCapability("record_point_estimate", "record_point_estimate"),
 )

@@ -29,12 +29,16 @@ class AbstractParticleFilter(AbstractFilter):
             )
 
         sample_next = transition_model.sample_next
-        function_is_vectorized = getattr(transition_model, "function_is_vectorized", True)
+        function_is_vectorized = getattr(
+            transition_model, "function_is_vectorized", True
+        )
 
         if function_is_vectorized:
             updated_particles = sample_next(self.filter_state.d)
         else:
-            updated_particles = [sample_next(particle) for particle in self.filter_state.d]
+            updated_particles = [
+                sample_next(particle) for particle in self.filter_state.d
+            ]
             if self.filter_state.dim == 1:
                 updated_particles = hstack(updated_particles)
             else:

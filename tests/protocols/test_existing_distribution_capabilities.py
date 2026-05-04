@@ -162,9 +162,7 @@ def _observed_capabilities(row: DistributionCapabilityRow) -> frozenset[str]:
         "from_distribution": lambda: _class_callable(distribution, "from_distribution"),
     }
 
-    return frozenset(
-        capability for capability, check in checks.items() if check()
-    )
+    return frozenset(capability for capability, check in checks.items() if check())
 
 
 @pytest.mark.parametrize("row", DISTRIBUTION_ROWS, ids=lambda row: row.name)

@@ -51,7 +51,9 @@ class AdditiveNoiseTransitionModelTest(unittest.TestCase):
 
         state = array([2.0, 3.0])
 
-        assert_backend_allclose(self, model.transition_function(state), array([3.0, 6.0]))
+        assert_backend_allclose(
+            self, model.transition_function(state), array([3.0, 6.0])
+        )
         assert_backend_allclose(self, model.mean(state), array([3.1, 5.8]))
         assert_backend_allclose(self, model.noise_covariance, diag(array([1.0, 2.0])))
         assert_backend_allclose(self, model.jacobian(state), diag(array([1.0, 2.0])))
@@ -68,7 +70,9 @@ class AdditiveNoiseTransitionModelTest(unittest.TestCase):
             covariance=array([[1.0]]),
             pdf_value=array(7.0),
         )
-        model = AdditiveNoiseTransitionModel(lambda x: array([x[0] + 1.0]), noise_distribution=noise)
+        model = AdditiveNoiseTransitionModel(
+            lambda x: array([x[0] + 1.0]), noise_distribution=noise
+        )
 
         likelihood = model.transition_density(array([4.5]), array([2.0]))
 
@@ -116,7 +120,9 @@ class AdditiveNoiseMeasurementModelTest(unittest.TestCase):
         assert_backend_allclose(self, model.mean(state), array([4.5]))
         assert_backend_allclose(self, model.noise_covariance, array([[2.0]]))
         assert_backend_allclose(self, model.jacobian(state), array([[4.0]]))
-        assert_backend_allclose(self, model.sample_measurement(state, n=2), array([[4.5], [3.5]]))
+        assert_backend_allclose(
+            self, model.sample_measurement(state, n=2), array([[4.5], [3.5]])
+        )
         self.assertTrue(model.has_jacobian())
 
     def test_likelihood_uses_measurement_residual(self):
@@ -125,12 +131,16 @@ class AdditiveNoiseMeasurementModelTest(unittest.TestCase):
             covariance=array([[1.0]]),
             pdf_value=array(11.0),
         )
-        model = AdditiveNoiseMeasurementModel(lambda x: array([x[0] * x[0]]), noise_distribution=noise)
+        model = AdditiveNoiseMeasurementModel(
+            lambda x: array([x[0] * x[0]]), noise_distribution=noise
+        )
 
         likelihood = model.likelihood(array([5.0]), array([2.0]))
 
         assert_backend_allclose(self, likelihood, array(11.0))
-        assert_backend_allclose(self, model.measurement_residual(array([5.0]), array([2.0])), array([1.0]))
+        assert_backend_allclose(
+            self, model.measurement_residual(array([5.0]), array([2.0])), array([1.0])
+        )
         assert_backend_allclose(self, noise.last_pdf_arg, array([1.0]))
 
     def test_missing_measurement_capabilities_raise(self):

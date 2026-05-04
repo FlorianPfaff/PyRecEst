@@ -11,7 +11,9 @@ from pyrecest.backend import (
     isnan,
     ones,
     random,
-    sum as backend_sum,
+)
+from pyrecest.backend import sum as backend_sum
+from pyrecest.backend import (
     zeros,
 )
 from pyrecest.distributions import GaussianDistribution

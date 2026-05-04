@@ -7,7 +7,6 @@ from ._linear_gaussian import linear_gaussian_predict, linear_gaussian_update
 from .abstract_filter import AbstractFilter
 from .manifold_mixins import EuclideanFilterMixin
 
-
 _MODEL_ATTRIBUTE_SENTINEL = object()
 
 
