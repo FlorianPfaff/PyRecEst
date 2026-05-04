@@ -18,6 +18,7 @@ on: # yamllint disable-line rule:truthy
     paths:
       - "pyproject.toml"
       - "poetry.lock"
+  workflow_dispatch:
 
 env: # Comment env block if you do not want to apply fixes
   # Apply linter fixes configuration
@@ -44,7 +45,7 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v5
         with:
-          ref: ${{ github.head_ref }}
+          ref: ${{ github.head_ref || github.ref_name }}
           fetch-depth: 0
 
       - name: Set up Python
@@ -93,10 +94,16 @@ jobs:
       # Create Pull Request step
       - name: Create Pull Request with applied fixes
         id: cpr
-        if: github.ref == 'refs/heads/main' && env.changes_made == 'true' && (env.APPLY_FIXES_EVENT == 'all' || env.APPLY_FIXES_EVENT == github.event_name) && env.APPLY_FIXES_MODE == 'pull_request' && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository) && !contains(github.event.head_commit.message, 'skip fix')
+        if: >-
+          github.ref == 'refs/heads/main' &&
+          env.changes_made == 'true' &&
+          (env.APPLY_FIXES_EVENT == 'all' || env.APPLY_FIXES_EVENT == github.event_name || github.event_name == 'workflow_dispatch') &&
+          env.APPLY_FIXES_MODE == 'pull_request' &&
+          (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository) &&
+          (github.event_name != 'push' || !contains(github.event.head_commit.message, 'skip fix'))
         uses: peter-evans/create-pull-request@v8
         with:
-          token: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT }}
           commit-message: "Update requirements"
           title: "Update requirements"
           branch: update-requirements
@@ -105,7 +112,13 @@ jobs:
 
       # Output PR details
       - name: Create PR output
-        if: github.ref == 'refs/heads/main' && env.changes_made == 'true' && (env.APPLY_FIXES_EVENT == 'all' || env.APPLY_FIXES_EVENT == github.event_name) && env.APPLY_FIXES_MODE == 'pull_request' && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository) && !contains(github.event.head_commit.message, 'skip fix')
+        if: >-
+          github.ref == 'refs/heads/main' &&
+          env.changes_made == 'true' &&
+          (env.APPLY_FIXES_EVENT == 'all' || env.APPLY_FIXES_EVENT == github.event_name || github.event_name == 'workflow_dispatch') &&
+          env.APPLY_FIXES_MODE == 'pull_request' &&
+          (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository) &&
+          (github.event_name != 'push' || !contains(github.event.head_commit.message, 'skip fix'))
         run: |
           echo "Pull Request Number - ${{ steps.cpr.outputs.pull-request-number }}"
           echo "Pull Request URL - ${{ steps.cpr.outputs.pull-request-url }}"
