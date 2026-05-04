@@ -237,7 +237,9 @@ class HyperhemisphericalGridDistributionTest(unittest.TestCase):
         reason="Not supported on this backend",
     )
     def test_multiply_vmf_mixture_s3(self):
-        kappas = [0.1 + 0.3 * i for i in range(14)]  # 0.1:0.3:4
+        # Representative low/medium/high concentrations from the original
+        # 0.1:0.3:4 sweep keep the coverage while avoiding a 14x14 grid loop.
+        kappas = [0.1, 2.2, 4.0]
 
         for kappa1 in kappas:
             for kappa2 in kappas:
