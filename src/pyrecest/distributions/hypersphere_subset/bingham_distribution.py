@@ -1,4 +1,7 @@
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
+from functools import lru_cache
+
+import numpy as _np
 from pyrecest.backend import (
     abs,
     all,
@@ -10,18 +13,82 @@ from pyrecest.backend import (
     eye,
     linalg,
     max,
-    maximum,
-    ones,
-    pi,
-    sort,
     sum,
+    to_numpy,
     zeros,
 )
-from scipy.integrate import quad
+from scipy.integrate import quad_vec
 from scipy.optimize import fsolve
 from scipy.special import iv
 
 from .abstract_hyperspherical_distribution import AbstractHypersphericalDistribution
+
+
+def _as_numpy_vector(values):
+    try:
+        values = to_numpy(values)
+    except AttributeError:
+        pass
+    return _np.asarray(values, dtype=float).reshape(-1)
+
+
+def _cache_key(values):
+    return tuple(float(value) for value in _as_numpy_vector(values))
+
+
+@lru_cache(maxsize=4096)
+def _calculate_F_and_dF_cached(Z_key):
+    Z = _np.asarray(Z_key, dtype=float)
+    if Z.shape[0] == 2:
+        exp_factor = _np.exp((Z[0] + Z[1]) / 2)
+        bessel_arg = (Z[0] - Z[1]) / 2
+        bessel_0 = iv(0, bessel_arg)
+        bessel_1 = iv(1, bessel_arg)
+        shared_factor = 2 * _np.pi * exp_factor
+        F = shared_factor * bessel_0
+        dF = _np.array(
+            [
+                0.5 * shared_factor * (bessel_0 + bessel_1),
+                0.5 * shared_factor * (bessel_0 - bessel_1),
+            ]
+        )
+        return float(F), tuple(float(value) for value in dF)
+
+    assert Z.shape[0] == 4
+
+    def integrand(u):
+        u_comp = 1 - u
+        t01 = 0.5 * (Z[0] - Z[1]) * u
+        t23 = 0.5 * (Z[2] - Z[3]) * u_comp
+        b01_0 = iv(0, t01)
+        b01_1 = iv(1, t01)
+        b23_0 = iv(0, t23)
+        b23_1 = iv(1, t23)
+        base = b01_0 * b23_0
+        exp_factor = _np.exp(
+            0.5 * (Z[0] + Z[1]) * u + 0.5 * (Z[2] + Z[3]) * u_comp
+        )
+        dF = _np.array(
+            [
+                exp_factor * 0.5 * u * (b01_1 * b23_0 + base),
+                exp_factor * 0.5 * u * (-b01_1 * b23_0 + base),
+                exp_factor * 0.5 * u_comp * (b01_0 * b23_1 + base),
+                exp_factor * 0.5 * u_comp * (-b01_0 * b23_1 + base),
+            ]
+        )
+        return _np.concatenate((_np.array([exp_factor * base]), dF))
+
+    values, _ = quad_vec(integrand, 0, 1)
+    values = 2 * _np.pi**2 * _np.asarray(values, dtype=float)
+    return float(values[0]), tuple(float(value) for value in values[1:])
+
+
+def _calculate_F_cached(Z_key):
+    return _calculate_F_and_dF_cached(Z_key)[0]
+
+
+def _calculate_dF_cached(Z_key):
+    return _calculate_F_and_dF_cached(Z_key)[1]
 
 
 class BinghamDistribution(AbstractHypersphericalDistribution):
@@ -54,10 +121,13 @@ class BinghamDistribution(AbstractHypersphericalDistribution):
     @property
     def F(self):
         if self._F is None:
-            # Currently, only supporting numerical integration
-            # Temporarily set _F to 1 to use .integrate_numerically to calculate the normalization constant
-            self._F = 1
-            self._F = self.integrate_numerically()
+            if self.Z.shape[0] in (2, 4):
+                self._F = self.calculate_F(self.Z)
+            else:
+                # Temporarily set _F to 1 so integrate_numerically can evaluate
+                # an unnormalized density for dimensions without a specialized F.
+                self._F = 1
+                self._F = self.integrate_numerically()
         return self._F
 
     @F.setter
@@ -67,24 +137,7 @@ class BinghamDistribution(AbstractHypersphericalDistribution):
     @staticmethod
     def calculate_F(Z):
         """Uses analytical method. Supports 2-D and 4-D distributions."""
-        if Z.shape[0] == 2:
-            # F = exp((Z[0]+Z[1])/2) * 2*pi * I_0(|Z[0]-Z[1]|/2)
-            return float(
-                exp((Z[0] + Z[1]) / 2) * 2 * pi * iv(0, abs(float(Z[0] - Z[1])) / 2)
-            )
-        assert Z.shape[0] == 4
-
-        def J(Z, u):
-            return iv(0, 0.5 * abs(Z[0] - Z[1]) * u) * iv(
-                0, 0.5 * abs(Z[2] - Z[3]) * (1 - u)
-            )
-
-        def ifun(u):
-            return J(Z, u) * exp(
-                0.5 * (Z[0] + Z[1]) * u + 0.5 * (Z[2] + Z[3]) * (1 - u)
-            )
-
-        return 2 * pi**2 * quad(ifun, 0, 1)[0]
+        return _calculate_F_cached(_cache_key(Z))
 
     def pdf(self, xs):
         assert xs.shape[-1] == self.dim + 1
@@ -148,17 +201,7 @@ class BinghamDistribution(AbstractHypersphericalDistribution):
         return self._dF
 
     def calculate_dF(self):
-        dim = self.Z.shape[0]  # Assuming Z is a property of the object
-        dF = zeros(dim)
-        epsilon = 0.001
-        for i in range(dim):
-            # Using finite differences
-            dZ = zeros(dim)
-            dZ[i] = epsilon
-            F1 = self.calculate_F(self.Z + dZ)
-            F2 = self.calculate_F(self.Z - dZ)
-            dF[i] = (F1 - F2) / (2 * epsilon)
-        return dF
+        return array(_calculate_dF_cached(_cache_key(self.Z)))
 
     def sample_kent(self, n):
         raise NotImplementedError("Not yet implemented.")
@@ -272,29 +315,31 @@ class BinghamDistribution(AbstractHypersphericalDistribution):
             BinghamDistribution: fitted distribution
         """
         n = S.shape[0]
-        S_np = array(S, dtype=float)
+        S_np = _np.asarray(_as_numpy_vector(S), dtype=float).reshape(n, n)
         S_np = (S_np + S_np.T) / 2
 
         # Eigendecompose S: eigenvectors sorted by ascending eigenvalue
-        eigenvalues, M_np = linalg.eigh(S_np)
+        eigenvalues, M_np = _np.linalg.eigh(S_np)
         eigenvalues = eigenvalues.real
         M_np = M_np.real
 
         # Normalize eigenvalues to get target moments (they should sum to 1)
-        eigenvalues = maximum(eigenvalues, 0)
+        eigenvalues = _np.maximum(eigenvalues, 0)
         ev_sum = eigenvalues.sum()
         if ev_sum == 0:
-            target_d = ones(n) / n
+            target_d = _np.ones(n) / n
         else:
             target_d = eigenvalues / ev_sum
 
         def moment_residual(z_free):
-            Z_cand = concatenate((z_free, array([0.0])))
-            Z_sorted = sort(Z_cand)
-            M_sorted = M_np[:, argsort(Z_cand)]
+            Z_cand = _np.concatenate((z_free, _np.array([0.0])))
+            idx = _np.argsort(Z_cand)
+            Z_sorted = Z_cand[idx]
+            if not _np.isclose(Z_sorted[-1], 0.0):
+                return _np.ones(n - 1) * 1e6
             try:
-                B_temp = BinghamDistribution(array(Z_sorted), array(M_sorted))
-                d = array(B_temp.dF / B_temp.F, dtype=float)
+                F = _calculate_F_cached(tuple(Z_sorted))
+                d = _np.asarray(_calculate_dF_cached(tuple(Z_sorted))) / F
                 d = d / d.sum()
                 return d[:-1] - target_d[:-1]
             except (
@@ -302,14 +347,14 @@ class BinghamDistribution(AbstractHypersphericalDistribution):
                 ValueError,
                 RuntimeError,
             ):  # pylint: disable=broad-except
-                return ones(n - 1) * 1e6
+                return _np.ones(n - 1) * 1e6
 
         # Initial guess: scale based on target moments relative to last
         z0 = -(target_d[-1] - target_d[:-1]) * 10.0
         z_sol = fsolve(moment_residual, z0, full_output=False)
 
-        Z_out = concatenate((z_sol, array([0.0])))
-        idx = argsort(Z_out)
+        Z_out = _np.concatenate((z_sol, _np.array([0.0])))
+        idx = _np.argsort(Z_out)
         Z_final = Z_out[idx]
         M_final = M_np[:, idx]
 
