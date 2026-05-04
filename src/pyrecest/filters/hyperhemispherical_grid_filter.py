@@ -5,10 +5,8 @@ from pyrecest.backend import (
     allclose,
     array,
     exp,
+    linalg,
     sum,
-)
-from pyrecest.distributions.hypersphere_subset.bingham_distribution import (
-    BinghamDistribution,
 )
 from pyrecest.distributions.hypersphere_subset.hyperhemispherical_grid_distribution import (
     HyperhemisphericalGridDistribution,
@@ -251,7 +249,7 @@ class HyperhemisphericalGridFilter(AbstractGridFilter, HyperhemisphericalFilterM
 
     def get_point_estimate(self):
         """
-        Compute a point estimate by fitting a Bingham distribution to the state.
+        Compute a point estimate from the dominant scatter-matrix eigenvector.
 
         Returns
         -------
@@ -262,7 +260,8 @@ class HyperhemisphericalGridFilter(AbstractGridFilter, HyperhemisphericalFilterM
         weights = gd_full.grid_values / sum(gd_full.grid_values)
         S = gd_full.grid.T @ (gd_full.grid * weights[:, None])
         S = 0.5 * (S + S.T)
-        p = BinghamDistribution.fit_to_moment(S).mode()
+        _, eigenvectors = linalg.eigh(S)
+        p = eigenvectors[:, -1]
         if p[-1] < 0:
             p = -p
         return p
