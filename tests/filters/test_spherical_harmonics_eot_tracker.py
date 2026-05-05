@@ -17,7 +17,9 @@ class TestSphericalHarmonicsEOTTracker(unittest.TestCase):
         coefficients = array([0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0])
 
         coeff_mat = SphericalHarmonicsEOTTracker.coefficients_to_matrix(coefficients)
-        coefficients_roundtrip = SphericalHarmonicsEOTTracker.matrix_to_coefficients(coeff_mat)
+        coefficients_roundtrip = SphericalHarmonicsEOTTracker.matrix_to_coefficients(
+            coeff_mat
+        )
 
         self.assertEqual(coeff_mat.shape, (3, 5))
         npt.assert_allclose(coefficients_roundtrip, coefficients)
@@ -64,7 +66,9 @@ class TestSphericalHarmonicsEOTTracker(unittest.TestCase):
             ]
         )
 
-        predicted = tracker.measurement_function(tracker.get_point_estimate(), measurements)
+        predicted = tracker.measurement_function(
+            tracker.get_point_estimate(), measurements
+        )
 
         expected_points = array(
             [
@@ -87,7 +91,9 @@ class TestSphericalHarmonicsEOTTracker(unittest.TestCase):
 
         tracker.update(array([2.0, 0.0, 0.0]), meas_noise_cov=0.01 * eye(3))
 
-        self.assertGreater(tracker.evaluate_radius(array([1.0, 0.0, 0.0])), prior_radius)
+        self.assertGreater(
+            tracker.evaluate_radius(array([1.0, 0.0, 0.0])), prior_radius
+        )
         self.assertLess(tracker.covariance[3, 3], prior_covariance[3, 3])
         self.assertTrue(isfinite(tracker.latest_predicted_measurement).all())
         self.assertTrue(linalg.eigvalsh(tracker.covariance)[0] > -1e-8)
