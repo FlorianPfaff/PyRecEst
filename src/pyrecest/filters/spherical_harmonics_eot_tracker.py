@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import pyrecest.backend
 import numpy as np
+
+import pyrecest.backend
 
 # pylint: disable=no-member,no-name-in-module,too-many-lines
 from pyrecest.backend import (
@@ -42,7 +43,7 @@ class SphericalHarmonicsEOTTracker(AbstractExtendedObjectTracker):  # pylint: di
     matches the spherical-harmonics tracker in the ICRA 2017 MATLAB code.
     """
 
-    # pylint: disable=too-many-arguments,too-many-positional-arguments
+    # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
     def __init__(
         self,
         order,
@@ -68,7 +69,10 @@ class SphericalHarmonicsEOTTracker(AbstractExtendedObjectTracker):  # pylint: di
             log_posterior_extents=log_posterior_extents,
         )
         if pyrecest.backend.__backend_name__ != "numpy":  # pylint: disable=no-member
-            raise NotImplementedError("SphericalHarmonicsEOTTracker is currently supported only on the numpy backend")
+            raise NotImplementedError(
+                "SphericalHarmonicsEOTTracker is currently supported only on the "
+                "numpy backend"
+            )
 
         self.order = int(order)
         if self.order < 0:
@@ -79,7 +83,11 @@ class SphericalHarmonicsEOTTracker(AbstractExtendedObjectTracker):  # pylint: di
         if coefficients is None:
             coefficients = zeros(self.n_coefficients)
             coefficients[0] = float(initial_radius) * sqrt(4.0 * pi)
-        self.coefficients = self._as_vector(coefficients, self.n_coefficients, "coefficients")
+        self.coefficients = self._as_vector(
+            coefficients,
+            self.n_coefficients,
+            "coefficients",
+        )
 
         if center is None:
             center = zeros(3)
@@ -94,7 +102,11 @@ class SphericalHarmonicsEOTTracker(AbstractExtendedObjectTracker):  # pylint: di
                     "coefficient_covariance",
                 ),
             )
-        self.covariance = self._as_square_matrix(covariance, self.state_dim, "covariance")
+        self.covariance = self._as_square_matrix(
+            covariance,
+            self.state_dim,
+            "covariance",
+        )
         self._validate_positive_definite(
             self.covariance + covariance_regularization * eye(self.state_dim),
             "covariance",
@@ -205,9 +217,19 @@ class SphericalHarmonicsEOTTracker(AbstractExtendedObjectTracker):  # pylint: di
         for degree in range(1, real_coeff_mat.shape[0]):
             for order in range(-degree, degree + 1):
                 if order < 0:
-                    complex_coeff_mat[degree, degree + order] = (1j * real_coeff_mat[degree, degree + order] + real_coeff_mat[degree, degree - order]) / sqrt(2.0)
+                    complex_coeff_mat[degree, degree + order] = (
+                        1j * real_coeff_mat[degree, degree + order]
+                        + real_coeff_mat[degree, degree - order]
+                    ) / sqrt(2.0)
                 elif order > 0:
-                    complex_coeff_mat[degree, degree + order] = (-1) ** order * (-1j * real_coeff_mat[degree, degree - order] + real_coeff_mat[degree, degree + order]) / sqrt(2.0)
+                    complex_coeff_mat[degree, degree + order] = (
+                        (-1) ** order
+                        * (
+                            -1j * real_coeff_mat[degree, degree - order]
+                            + real_coeff_mat[degree, degree + order]
+                        )
+                        / sqrt(2.0)
+                    )
                 else:
                     complex_coeff_mat[degree, degree] = real_coeff_mat[degree, degree]
         return complex_coeff_mat
@@ -221,9 +243,18 @@ class SphericalHarmonicsEOTTracker(AbstractExtendedObjectTracker):  # pylint: di
         for degree in range(1, complex_coeff_mat.shape[0]):
             for order in range(-degree, degree + 1):
                 if order < 0:
-                    real_coeff_mat[degree, degree + order] = (-1) ** order * sqrt(2.0) * (-1 if (-order) % 2 else 1) * imag(complex_coeff_mat[degree, degree + order])
+                    real_coeff_mat[degree, degree + order] = (
+                        (-1) ** order
+                        * sqrt(2.0)
+                        * (-1 if (-order) % 2 else 1)
+                        * imag(complex_coeff_mat[degree, degree + order])
+                    )
                 elif order > 0:
-                    real_coeff_mat[degree, degree + order] = sqrt(2.0) * (-1 if order % 2 else 1) * real(complex_coeff_mat[degree, degree + order])
+                    real_coeff_mat[degree, degree + order] = (
+                        sqrt(2.0)
+                        * (-1 if order % 2 else 1)
+                        * real(complex_coeff_mat[degree, degree + order])
+                    )
                 else:
                     real_coeff_mat[degree, degree] = real(complex_coeff_mat[degree, degree])
         return real_coeff_mat
@@ -234,9 +265,13 @@ class SphericalHarmonicsEOTTracker(AbstractExtendedObjectTracker):  # pylint: di
         if alpha == 0.0 and beta == 0.0 and gamma == 0.0:
             return array(coefficients).reshape(-1)
 
-        coeff_mat_real = SphericalHarmonicsEOTTracker.coefficients_to_matrix(coefficients)
+        coeff_mat_real = SphericalHarmonicsEOTTracker.coefficients_to_matrix(
+            coefficients
+        )
         degree = coeff_mat_real.shape[0] - 1
-        coeff_mat_complex = SphericalHarmonicsEOTTracker._real_coeff_mat_to_complex(coeff_mat_real)
+        coeff_mat_complex = SphericalHarmonicsEOTTracker._real_coeff_mat_to_complex(
+            coeff_mat_real
+        )
         clm = SphericalHarmonicsDistributionComplex._coeff_mat_to_pysh(  # pylint: disable=protected-access
             coeff_mat_complex, degree
         )
@@ -250,7 +285,9 @@ class SphericalHarmonicsEOTTracker(AbstractExtendedObjectTracker):  # pylint: di
         coeff_mat_complex_rot = SphericalHarmonicsDistributionComplex._pysh_to_coeff_mat(  # pylint: disable=protected-access
             clm_rot, degree
         )
-        coeff_mat_real_rot = SphericalHarmonicsEOTTracker._complex_coeff_mat_to_real(coeff_mat_complex_rot)
+        coeff_mat_real_rot = SphericalHarmonicsEOTTracker._complex_coeff_mat_to_real(
+            coeff_mat_complex_rot
+        )
         return SphericalHarmonicsEOTTracker.matrix_to_coefficients(coeff_mat_real_rot)
 
     @staticmethod
@@ -259,16 +296,22 @@ class SphericalHarmonicsEOTTracker(AbstractExtendedObjectTracker):  # pylint: di
         directions = SphericalHarmonicsEOTTracker._normalize_measurements(directions)
         directions = SphericalHarmonicsEOTTracker._unit_directions(directions)
         coeff_mat = SphericalHarmonicsEOTTracker.coefficients_to_matrix(coefficients)
-        phi, theta = AbstractSphereSubsetDistribution.cart_to_sph(directions[0], directions[1], directions[2])
+        phi, theta = AbstractSphereSubsetDistribution.cart_to_sph(
+            directions[0],
+            directions[1],
+            directions[2],
+        )
 
         radii = zeros(directions.shape[1])
         for degree in range(coeff_mat.shape[0]):
             for order in range(-degree, degree + 1):
-                basis_values = SphericalHarmonicsDistributionReal.real_spherical_harmonic_basis_function(
-                    degree,
-                    order,
-                    theta,
-                    phi,
+                basis_values = (
+                    SphericalHarmonicsDistributionReal.real_spherical_harmonic_basis_function(
+                        degree,
+                        order,
+                        theta,
+                        phi,
+                    )
                 )
                 radii += coeff_mat[degree, degree + order] * basis_values
         return radii
@@ -303,7 +346,11 @@ class SphericalHarmonicsEOTTracker(AbstractExtendedObjectTracker):  # pylint: di
         center = state[:3]
         coefficients = state[3:]
         local_measurements = measurements - center.reshape(3, 1)
-        predicted_points = self.surface_points_for_directions(local_measurements, center, coefficients)
+        predicted_points = self.surface_points_for_directions(
+            local_measurements,
+            center,
+            coefficients,
+        )
         return self._flatten_measurements(predicted_points)
 
     def get_point_estimate(self):
@@ -324,7 +371,9 @@ class SphericalHarmonicsEOTTracker(AbstractExtendedObjectTracker):  # pylint: di
         x = np.cos(el_grid) * np.cos(az_grid)
         y = np.cos(el_grid) * np.sin(az_grid)
         z = np.sin(el_grid)
-        directions = stack([array(x).reshape(-1), array(y).reshape(-1), array(z).reshape(-1)])
+        directions = stack(
+            [array(x).reshape(-1), array(y).reshape(-1), array(z).reshape(-1)]
+        )
         return reshape(self.evaluate_radius(directions), az_grid.shape)
 
     def get_contour_points(self, n=100):
@@ -334,11 +383,15 @@ class SphericalHarmonicsEOTTracker(AbstractExtendedObjectTracker):  # pylint: di
         x = np.cos(el_grid) * np.cos(az_grid)
         y = np.cos(el_grid) * np.sin(az_grid)
         z = np.sin(el_grid)
-        directions = stack([array(x).reshape(-1), array(y).reshape(-1), array(z).reshape(-1)])
+        directions = stack(
+            [array(x).reshape(-1), array(y).reshape(-1), array(z).reshape(-1)]
+        )
         return self.surface_points_for_directions(directions).T
 
     def _sigma_points(self, mean, covariance):
-        covariance = self._symmetrize(covariance + self.covariance_regularization * eye(mean.shape[0]))
+        covariance = self._symmetrize(
+            covariance + self.covariance_regularization * eye(mean.shape[0])
+        )
         points = MerweScaledSigmaPoints(
             mean.shape[0],
             alpha=self.ukf_alpha,
@@ -350,7 +403,10 @@ class SphericalHarmonicsEOTTracker(AbstractExtendedObjectTracker):  # pylint: di
     def predict_identity(self, sys_noise=None):
         if sys_noise is None:
             sys_noise = zeros((self.state_dim, self.state_dim))
-        self.covariance = self._symmetrize(self.covariance + self._as_square_matrix(sys_noise, self.state_dim, "sys_noise"))
+        self.covariance = self._symmetrize(
+            self.covariance
+            + self._as_square_matrix(sys_noise, self.state_dim, "sys_noise")
+        )
         if self.log_prior_estimates:
             self.store_prior_estimates()
         if self.log_prior_extents:
@@ -359,14 +415,19 @@ class SphericalHarmonicsEOTTracker(AbstractExtendedObjectTracker):  # pylint: di
     def predict_linear(self, system_matrix, sys_noise=None, inputs=None):
         system_matrix = array(system_matrix)
         if system_matrix.shape != (self.state_dim, self.state_dim):
-            raise ValueError(f"system_matrix must have shape ({self.state_dim}, {self.state_dim})")
+            raise ValueError(
+                f"system_matrix must have shape ({self.state_dim}, {self.state_dim})"
+            )
         state = system_matrix @ self._state_vector()
         if inputs is not None:
             state = state + self._as_vector(inputs, self.state_dim, "inputs")
         self._set_state_vector(state)
         if sys_noise is None:
             sys_noise = zeros((self.state_dim, self.state_dim))
-        self.covariance = self._symmetrize(system_matrix @ self.covariance @ system_matrix.T + self._as_square_matrix(sys_noise, self.state_dim, "sys_noise"))
+        self.covariance = self._symmetrize(
+            system_matrix @ self.covariance @ system_matrix.T
+            + self._as_square_matrix(sys_noise, self.state_dim, "sys_noise")
+        )
         if self.log_prior_estimates:
             self.store_prior_estimates()
         if self.log_prior_extents:
@@ -390,10 +451,16 @@ class SphericalHarmonicsEOTTracker(AbstractExtendedObjectTracker):  # pylint: di
         predicted_covariance = zeros((self.state_dim, self.state_dim))
         for sigma_index in range(sigmas.shape[0]):
             delta = propagated[sigma_index] - predicted_state
-            predicted_covariance += points.Wc[sigma_index] * (delta[:, None] @ delta[None, :])
+            predicted_covariance += points.Wc[sigma_index] * (
+                delta[:, None] @ delta[None, :]
+            )
         if sys_noise is None:
             sys_noise = zeros((self.state_dim, self.state_dim))
-        predicted_covariance += self._as_square_matrix(sys_noise, self.state_dim, "sys_noise")
+        predicted_covariance += self._as_square_matrix(
+            sys_noise,
+            self.state_dim,
+            "sys_noise",
+        )
 
         self._set_state_vector(predicted_state)
         self.covariance = self._symmetrize(predicted_covariance)
@@ -435,29 +502,44 @@ class SphericalHarmonicsEOTTracker(AbstractExtendedObjectTracker):  # pylint: di
         measurements = self._normalize_measurements(measurements)
         measurement = self._flatten_measurements(measurements)
         measurement_dim = measurement.shape[0]
-        meas_noise_cov = self._as_square_matrix(meas_noise_cov, measurement_dim, "meas_noise_cov")
+        meas_noise_cov = self._as_square_matrix(
+            meas_noise_cov,
+            measurement_dim,
+            "meas_noise_cov",
+        )
 
         state = self._state_vector()
         points, sigmas = self._sigma_points(state, self.covariance)
         meas_sigmas = zeros((sigmas.shape[0], measurement_dim))
         for sigma_index in range(sigmas.shape[0]):
-            meas_sigmas[sigma_index] = self.measurement_function(sigmas[sigma_index], measurements)
+            meas_sigmas[sigma_index] = self.measurement_function(
+                sigmas[sigma_index],
+                measurements,
+            )
 
         predicted_measurement = zeros(measurement_dim)
         for sigma_index in range(sigmas.shape[0]):
             predicted_measurement += points.Wm[sigma_index] * meas_sigmas[sigma_index]
 
-        innovation_covariance = self._symmetrize(meas_noise_cov + self.covariance_regularization * eye(measurement_dim))
+        innovation_covariance = self._symmetrize(
+            meas_noise_cov + self.covariance_regularization * eye(measurement_dim)
+        )
         cross_covariance = zeros((self.state_dim, measurement_dim))
         for sigma_index in range(sigmas.shape[0]):
             meas_delta = meas_sigmas[sigma_index] - predicted_measurement
             state_delta = sigmas[sigma_index] - state
-            innovation_covariance += points.Wc[sigma_index] * (meas_delta[:, None] @ meas_delta[None, :])
-            cross_covariance += points.Wc[sigma_index] * (state_delta[:, None] @ meas_delta[None, :])
+            innovation_covariance += points.Wc[sigma_index] * (
+                meas_delta[:, None] @ meas_delta[None, :]
+            )
+            cross_covariance += points.Wc[sigma_index] * (
+                state_delta[:, None] @ meas_delta[None, :]
+            )
 
         kalman_gain = linalg.solve(innovation_covariance, cross_covariance.T).T
         posterior_state = state + kalman_gain @ (measurement - predicted_measurement)
-        posterior_covariance = self.covariance - kalman_gain @ innovation_covariance @ kalman_gain.T
+        posterior_covariance = (
+            self.covariance - kalman_gain @ innovation_covariance @ kalman_gain.T
+        )
 
         self._set_state_vector(posterior_state)
         self.covariance = self._symmetrize(posterior_covariance)
