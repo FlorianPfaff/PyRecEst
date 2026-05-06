@@ -88,6 +88,63 @@ class TestSCGPTracker(unittest.TestCase):
         npt.assert_allclose(cross_covariance, zeros(cross_covariance.shape), atol=1e-12)
         npt.assert_array_less(-1e-10, linalg.eigvalsh(tracker.covariance))
 
+    def test_active_measurement_mask_matches_single_measurement_update(self):
+        masked_tracker = self._make_tracker()
+        single_tracker = self._make_tracker()
+        measurements = array([[1.4, 0.2], [0.1, 1.3]])
+
+        masked_tracker.update(
+            measurements,
+            active_measurement_mask=array([True, False]),
+        )
+        single_tracker.update(measurements[0])
+
+        npt.assert_allclose(masked_tracker.state, single_tracker.state, atol=1e-12)
+        npt.assert_allclose(
+            masked_tracker.covariance,
+            single_tracker.covariance,
+            atol=1e-12,
+        )
+        self.assertEqual(masked_tracker.last_active_measurement_indices, [0])
+        npt.assert_allclose(masked_tracker.last_measurement_weights, array([1.0, 1.0]))
+
+    def test_zero_measurement_weight_skips_measurement(self):
+        tracker = self._make_tracker()
+        state_before = array(tracker.state)
+        covariance_before = array(tracker.covariance)
+
+        tracker.update(array([1.4, 0.2]), measurement_weights=array([0.0]))
+
+        npt.assert_allclose(tracker.state, state_before, atol=1e-12)
+        npt.assert_allclose(tracker.covariance, covariance_before, atol=1e-12)
+        self.assertEqual(tracker.last_active_measurement_indices, [])
+        self.assertIsNone(tracker.last_quadratic_form)
+
+    def test_measurement_weight_changes_update_strength(self):
+        high_weight_tracker = self._make_tracker()
+        low_weight_tracker = self._make_tracker()
+        state_before = array(high_weight_tracker.state)
+        measurement = array([1.4, 0.2])
+
+        high_weight_tracker.update(measurement, measurement_weights=1.0)
+        low_weight_tracker.update(measurement, measurement_weights=0.05)
+
+        high_weight_delta = linalg.norm(high_weight_tracker.state - state_before)
+        low_weight_delta = linalg.norm(low_weight_tracker.state - state_before)
+        self.assertGreater(float(high_weight_delta), float(low_weight_delta))
+        npt.assert_allclose(low_weight_tracker.last_measurement_weights, array([0.05]))
+
+    def test_measurement_weights_validate_shape_and_values(self):
+        tracker = self._make_tracker()
+
+        with self.assertRaises(ValueError):
+            tracker.update(
+                array([[1.4, 0.2], [0.1, 1.3]]),
+                measurement_weights=array([1.0]),
+            )
+        with self.assertRaises(ValueError):
+            tracker.update(array([1.4, 0.2]), measurement_weights=-1.0)
+
     def test_full_tracker_contour_and_bounding_box(self):
         tracker = self._make_tracker()
 
