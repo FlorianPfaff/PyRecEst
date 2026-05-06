@@ -103,7 +103,7 @@ jobs:
           (github.event_name != 'push' || !contains(github.event.head_commit.message, 'skip fix'))
         uses: peter-evans/create-pull-request@v8
         with:
-          token: ${{ secrets.PAT }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "Update requirements"
           title: "Update requirements"
           branch: update-requirements
