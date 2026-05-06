@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import numpy as np
-
 import pyrecest.backend
 
 # pylint: disable=no-member,no-name-in-module,too-many-lines
@@ -34,7 +33,9 @@ from pyrecest.sampling.sigma_points import MerweScaledSigmaPoints
 from .abstract_extended_object_tracker import AbstractExtendedObjectTracker
 
 
-class SphericalHarmonicsEOTTracker(AbstractExtendedObjectTracker):  # pylint: disable=too-many-instance-attributes
+class SphericalHarmonicsEOTTracker(
+    AbstractExtendedObjectTracker
+):  # pylint: disable=too-many-instance-attributes
     """3-D star-convex EOT tracker with spherical-harmonic extent coefficients.
 
     The state is ``[cx, cy, cz, c_00, c_1,-1, c_1,0, c_1,1, ...]``.  The
@@ -256,7 +257,9 @@ class SphericalHarmonicsEOTTracker(AbstractExtendedObjectTracker):  # pylint: di
                         * real(complex_coeff_mat[degree, degree + order])
                     )
                 else:
-                    real_coeff_mat[degree, degree] = real(complex_coeff_mat[degree, degree])
+                    real_coeff_mat[degree, degree] = real(
+                        complex_coeff_mat[degree, degree]
+                    )
         return real_coeff_mat
 
     @staticmethod
@@ -305,13 +308,11 @@ class SphericalHarmonicsEOTTracker(AbstractExtendedObjectTracker):  # pylint: di
         radii = zeros(directions.shape[1])
         for degree in range(coeff_mat.shape[0]):
             for order in range(-degree, degree + 1):
-                basis_values = (
-                    SphericalHarmonicsDistributionReal.real_spherical_harmonic_basis_function(
-                        degree,
-                        order,
-                        theta,
-                        phi,
-                    )
+                basis_values = SphericalHarmonicsDistributionReal.real_spherical_harmonic_basis_function(
+                    degree,
+                    order,
+                    theta,
+                    phi,
                 )
                 radii += coeff_mat[degree, degree + order] * basis_values
         return radii
