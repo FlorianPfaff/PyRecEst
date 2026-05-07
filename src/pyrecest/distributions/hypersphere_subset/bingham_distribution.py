@@ -65,9 +65,7 @@ def _calculate_F_and_dF_cached(Z_key):
         b23_0 = iv(0, t23)
         b23_1 = iv(1, t23)
         base = b01_0 * b23_0
-        exp_factor = _np.exp(
-            0.5 * (Z[0] + Z[1]) * u + 0.5 * (Z[2] + Z[3]) * u_comp
-        )
+        exp_factor = _np.exp(0.5 * (Z[0] + Z[1]) * u + 0.5 * (Z[2] + Z[3]) * u_comp)
         dF = _np.array(
             [
                 exp_factor * 0.5 * u * (b01_1 * b23_0 + base),

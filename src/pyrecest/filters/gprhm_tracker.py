@@ -628,7 +628,9 @@ class FullSCGPTracker(AbstractExtendedObjectTracker):
             raise ValueError("measurement_weights must be non-negative")
         return weights
 
-    def _normalize_active_measurement_mask(self, active_measurement_mask, n_measurements):
+    def _normalize_active_measurement_mask(
+        self, active_measurement_mask, n_measurements
+    ):
         if active_measurement_mask is None:
             return [True] * n_measurements
 
@@ -713,13 +715,16 @@ class FullSCGPTracker(AbstractExtendedObjectTracker):
                 require_positive_semidefinite=False,
             )
 
-        measurement_jacobian, predicted_measurements, noise_covariance, active_indices = (
-            self._stack_measurement_terms(
-                measurements,
-                measurement_noise,
-                measurement_weights=measurement_weights,
-                active_measurement_mask=active_measurement_mask,
-            )
+        (
+            measurement_jacobian,
+            predicted_measurements,
+            noise_covariance,
+            active_indices,
+        ) = self._stack_measurement_terms(
+            measurements,
+            measurement_noise,
+            measurement_weights=measurement_weights,
+            active_measurement_mask=active_measurement_mask,
         )
         if not active_indices:
             self.last_quadratic_form = None
