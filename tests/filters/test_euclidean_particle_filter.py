@@ -4,7 +4,7 @@ import numpy.testing as npt
 
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import array, mean, ones, random, vstack, zeros, zeros_like
-from pyrecest.distributions import GaussianDistribution
+from pyrecest.distributions import GaussianDistribution, LinearDiracDistribution
 from pyrecest.filters.euclidean_particle_filter import EuclideanParticleFilter
 
 
@@ -65,6 +65,29 @@ class EuclideanParticleFilterTest(unittest.TestCase):
         npt.assert_allclose(
             self.pf.get_point_estimate(), force_first_particle_pos, atol=0.2
         )
+
+    def test_update_can_skip_automatic_resampling(self):
+        pf = EuclideanParticleFilter(n_particles=4, dim=1)
+        particles = array([[0.0], [1.0], [2.0], [3.0]])
+        pf.filter_state = LinearDiracDistribution(particles)
+        pf.set_resampling_criterion(lambda _state: False)
+
+        pf.update_nonlinear_using_likelihood(lambda x: x[:, 0] + 1.0)
+
+        npt.assert_allclose(pf.filter_state.d, particles)
+        npt.assert_allclose(pf.filter_state.w, array([0.1, 0.2, 0.3, 0.4]))
+
+    def test_manual_resample_resets_weights(self):
+        pf = EuclideanParticleFilter(n_particles=4, dim=1)
+        pf.filter_state = LinearDiracDistribution(
+            array([[0.0], [1.0], [2.0], [3.0]]),
+            array([0.0, 0.0, 0.0, 1.0]),
+        )
+
+        pf.resample()
+
+        npt.assert_allclose(pf.filter_state.d, array([[3.0], [3.0], [3.0], [3.0]]))
+        npt.assert_allclose(pf.filter_state.w, ones(4) / 4)
 
 
 if __name__ == "__main__":
