@@ -11,8 +11,71 @@ from .abstract_filter import AbstractFilter
 
 
 class AbstractParticleFilter(AbstractFilter):
-    def __init__(self, initial_filter_state=None):
+    def __init__(
+        self,
+        initial_filter_state=None,
+        resampling_criterion: Callable | None = None,
+    ):
         AbstractFilter.__init__(self, initial_filter_state)
+        self.resampling_criterion = resampling_criterion
+
+    @property
+    def resampling_criterion(self):
+        """Criterion deciding whether to resample after an update.
+
+        ``None`` preserves the historical behavior and always resamples.
+        Otherwise, the callable receives the current weighted filter state and
+        must return a truthy value if the particle set should be resampled.
+        """
+        return self._resampling_criterion
+
+    @resampling_criterion.setter
+    def resampling_criterion(self, criterion: Callable | None):
+        if criterion is not None and not callable(criterion):
+            raise TypeError("resampling_criterion must be callable or None")
+        self._resampling_criterion = criterion
+
+    def set_resampling_criterion(self, criterion: Callable | None):
+        """Set the post-update resampling criterion and return the filter."""
+        self.resampling_criterion = criterion
+        return self
+
+    def should_resample(self) -> bool:
+        """Return whether the current weighted particle set should resample.
+
+        The default criterion, ``None``, always returns ``True`` to retain the
+        previous update behavior.
+        """
+        if self.resampling_criterion is None:
+            return True
+        return bool(self.resampling_criterion(self.filter_state))
+
+    def resample(self):
+        """Manually resample particles according to their current weights.
+
+        The particle locations are sampled with replacement from the current
+        weighted particle set, and the resulting weights are reset to uniform.
+        """
+        self._filter_state.d = self.filter_state.sample(
+            self.filter_state.w.shape[0]
+        )
+        self._filter_state.w = (
+            ones_like(self.filter_state.w) / self.filter_state.w.shape[0]
+        )
+        return self
+
+    def resample_if_needed(self) -> bool:
+        """Resample if the configured criterion requests it.
+
+        Returns
+        -------
+        bool
+            ``True`` if resampling was performed, otherwise ``False``.
+        """
+        if self.should_resample():
+            self.resample()
+            return True
+        return False
 
     def predict_identity(self, noise_distribution):
         self.predict_nonlinear(
@@ -166,10 +229,7 @@ class AbstractParticleFilter(AbstractFilter):
                 lambda x: likelihood(measurement, x)
             )
 
-        self._filter_state.d = self.filter_state.sample(self.filter_state.w.shape[0])
-        self._filter_state.w = (
-            1 / self.filter_state.w.shape[0] * ones_like(self.filter_state.w)
-        )
+        self.resample_if_needed()
 
     def association_likelihood(self, likelihood: AbstractManifoldSpecificDistribution):
         likelihood_val = sum(likelihood.pdf(self.filter_state.d) * self.filter_state.w)
