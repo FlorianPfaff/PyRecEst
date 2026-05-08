@@ -2,7 +2,6 @@
 """Tests for robust linear-Gaussian helper functions."""
 
 import pytest
-
 from pyrecest.backend import allclose, array
 from pyrecest.filters._linear_gaussian import huber_covariance_scale
 
