@@ -28,6 +28,22 @@ def _as_matrix(x, name):
     return x
 
 
+def normalized_innovation_squared(innovation, innovation_covariance):
+    """Return innovation.T @ inv(innovation_covariance) @ innovation."""
+    innovation = _as_vector(innovation, "innovation")
+    innovation_covariance = _as_matrix(
+        innovation_covariance,
+        "innovation_covariance",
+    )
+    innovation_dim = innovation.shape[0]
+    if innovation_covariance.shape != (innovation_dim, innovation_dim):
+        raise ValueError(
+            "innovation_covariance must have shape "
+            "(innovation_dim, innovation_dim)"
+        )
+    return transpose(innovation) @ linalg.solve(innovation_covariance, innovation)
+
+
 def huber_covariance_scale(normalized_innovation_squared, huber_threshold=2.0):
     """Return measurement-covariance scaling for a Huber robust update.
 
@@ -139,9 +155,23 @@ def linear_gaussian_predict(
 
 
 def linear_gaussian_update(
-    mean, covariance, measurement, measurement_matrix, meas_noise
+    mean,
+    covariance,
+    measurement,
+    measurement_matrix,
+    meas_noise,
+    *,
+    return_diagnostics=False,
+    scale=1.0,
+    action="updated",
 ):
-    """Update step for z_k = H x_k + v with v ~ N(0, R)."""
+    """Update step for z_k = H x_k + v with v ~ N(0, R).
+
+    If ``return_diagnostics`` is true, return a third value containing the
+    normalized innovation squared (NIS), residual, covariance scale, and action.
+    ``scale`` multiplies ``meas_noise`` for the update but diagnostics report
+    the pre-scaled NIS, matching the usual gating/robust-update convention.
+    """
     mean = _as_vector(mean, "mean")
     covariance = _as_matrix(covariance, "covariance")
     measurement = _as_vector(measurement, "measurement")
@@ -160,9 +190,18 @@ def linear_gaussian_update(
     if meas_noise.shape != (meas_dim, meas_dim):
         raise ValueError("meas_noise must have shape (meas_dim, meas_dim)")
 
+    scale = float(scale)
+    if scale <= 0.0:
+        raise ValueError("scale must be positive")
+
     innovation = measurement - measurement_matrix @ mean
-    innovation_cov = (
+    nominal_innovation_cov = (
         measurement_matrix @ covariance @ transpose(measurement_matrix) + meas_noise
+    )
+    scaled_meas_noise = meas_noise * scale
+    innovation_cov = (
+        measurement_matrix @ covariance @ transpose(measurement_matrix)
+        + scaled_meas_noise
     )
     cross_cov = covariance @ transpose(measurement_matrix)
 
@@ -175,9 +214,18 @@ def linear_gaussian_update(
     identity = eye(state_dim)
     correction = identity - kalman_gain @ measurement_matrix
     updated_covariance = correction @ covariance @ transpose(correction)
-    updated_covariance = updated_covariance + kalman_gain @ meas_noise @ transpose(
+    updated_covariance = updated_covariance + kalman_gain @ scaled_meas_noise @ transpose(
         kalman_gain
     )
     updated_covariance = 0.5 * (updated_covariance + transpose(updated_covariance))
+
+    if return_diagnostics:
+        diagnostics = {
+            "nis": normalized_innovation_squared(innovation, nominal_innovation_cov),
+            "residual": innovation,
+            "scale": scale,
+            "action": action,
+        }
+        return updated_mean, updated_covariance, diagnostics
 
     return updated_mean, updated_covariance
