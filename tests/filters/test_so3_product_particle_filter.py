@@ -3,7 +3,7 @@ import unittest
 import numpy.testing as npt
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import array, cos, diag, linalg, ones, pi, random, sin, stack
+from pyrecest.backend import array, cos, diag, exp, linalg, ones, pi, random, sin, stack
 from pyrecest.filters import (
     HyperhemisphereCartProdParticleFilter,
     SO3ProductParticleFilter,
@@ -83,6 +83,29 @@ class SO3ProductParticleFilterTest(unittest.TestCase):
 
         self.assertLess(float(ess), 2.0)
         self.assertGreater(float(filt.weights[0]), float(filt.weights[1]))
+
+    def test_update_with_log_likelihood_matches_likelihood_update(self):
+        likelihood_values = array([0.25, 1.0])
+        log_likelihood_values = array([-1.3862943611198906, 0.0])
+
+        likelihood_filter = SO3ProductParticleFilter(n_particles=2, num_rotations=1)
+        log_likelihood_filter = SO3ProductParticleFilter(n_particles=2, num_rotations=1)
+
+        likelihood_filter.update_with_likelihood(
+            lambda _: likelihood_values, resample=False
+        )
+        log_likelihood_filter.update_with_log_likelihood(
+            lambda _: log_likelihood_values, resample=False
+        )
+
+        npt.assert_allclose(log_likelihood_filter.weights, likelihood_filter.weights)
+
+    def test_update_with_log_likelihood_is_underflow_safe(self):
+        filt = SO3ProductParticleFilter(n_particles=2, num_rotations=1)
+
+        filt.update_with_log_likelihood(array([-1000.0, -1001.0]), resample=False)
+
+        npt.assert_allclose(filt.weights, array([1.0, exp(-1.0)]) / (1.0 + exp(-1.0)))
 
     def test_update_mask_ignores_unobserved_rotations(self):
         filt = SO3ProductParticleFilter(n_particles=2, num_rotations=2)
