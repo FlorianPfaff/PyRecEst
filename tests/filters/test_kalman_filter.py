@@ -87,6 +87,70 @@ class KalmanFilterTest(unittest.TestCase):
             allclose(filter_linear.filter_state.C, filter_model.filter_state.C)
         )
 
+    def test_update_linear_default_return_stays_none(self):
+        kf = KalmanFilter((array([0.0]), array([[1.0]])))
+        result = kf.update_linear(array([2.0]), array([[1.0]]), array([[1.0]]))
+        self.assertIsNone(result)
+
+    def test_update_linear_can_return_diagnostics(self):
+        kf = KalmanFilter((array([0.0, 1.0]), diag(array([1.0, 2.0]))))
+        diagnostics = kf.update_linear(
+            array([2.0, 0.0]),
+            eye(2),
+            diag(array([2.0, 1.0])),
+            return_diagnostics=True,
+        )
+
+        self.assertEqual(diagnostics["action"], "updated")
+        self.assertEqual(diagnostics["scale"], 1.0)
+        self.assertTrue(allclose(diagnostics["residual"], array([2.0, -1.0])))
+        self.assertTrue(allclose(diagnostics["nis"], array(5.0 / 3.0)))
+
+    def test_update_linear_scale_is_applied_and_reported(self):
+        kf = KalmanFilter((array([0.0]), array([[1.0]])))
+        diagnostics = kf.update_linear(
+            array([4.0]),
+            array([[1.0]]),
+            array([[1.0]]),
+            return_diagnostics=True,
+            scale=4.0,
+            action="huberized",
+        )
+
+        self.assertEqual(diagnostics["action"], "huberized")
+        self.assertEqual(diagnostics["scale"], 4.0)
+        self.assertTrue(allclose(diagnostics["nis"], array(8.0)))
+        self.assertTrue(allclose(kf.get_point_estimate(), array([0.8])))
+        self.assertTrue(allclose(kf.filter_state.C, array([[0.8]])))
+
+    def test_update_identity_forwards_diagnostics(self):
+        kf = KalmanFilter((array([0.0]), array([[1.0]])))
+        diagnostics = kf.update_identity(
+            array([[1.0]]),
+            array([2.0]),
+            return_diagnostics=True,
+            action="accepted",
+        )
+
+        self.assertEqual(diagnostics["action"], "accepted")
+        self.assertTrue(allclose(diagnostics["residual"], array([2.0])))
+
+    def test_update_model_forwards_diagnostics(self):
+        kf = KalmanFilter((array([0.0]), array([[1.0]])))
+        measurement_model = _LinearGaussianMeasurementModel(
+            array([[1.0]]),
+            array([[1.0]]),
+        )
+        diagnostics = kf.update_model(
+            measurement_model,
+            array([2.0]),
+            return_diagnostics=True,
+            action="accepted",
+        )
+
+        self.assertEqual(diagnostics["action"], "accepted")
+        self.assertTrue(allclose(diagnostics["residual"], array([2.0])))
+
     def test_predict_identity_1d(self):
         kf = KalmanFilter((array([0]), array([[1]])))
         kf.predict_identity(array([[3]]), array([1]))

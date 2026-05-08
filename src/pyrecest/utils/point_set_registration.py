@@ -95,6 +95,31 @@ class AffineTransform:
             raise ValueError("Point dimension does not match transform dimension.")
         return (self.matrix @ points_array.T).T + self.offset
 
+    def inverse(self) -> "AffineTransform":
+        """Return the inverse affine transform.
+
+        For a transform ``y = A x + b``, the inverse is
+        ``x = A^{-1} y - A^{-1} b``.
+        """
+        inverse_matrix = linalg.inv(self.matrix)
+        inverse_offset = -(inverse_matrix @ self.offset)
+        return AffineTransform(inverse_matrix, inverse_offset)
+
+    def compose(self, other: "AffineTransform") -> "AffineTransform":
+        """Return the composition of this transform with ``other``.
+
+        The returned transform is equivalent to applying ``other`` first and
+        this transform second, i.e. ``self.apply(other.apply(points))``.
+        """
+        if not isinstance(other, AffineTransform):
+            raise TypeError("other must be an AffineTransform.")
+        if other.dim != self.dim:
+            raise ValueError("Transform dimensions must match.")
+        return AffineTransform(
+            self.matrix @ other.matrix,
+            self.matrix @ other.offset + self.offset,
+        )
+
     def homogeneous_matrix(self) -> Any:
         """Return the homogeneous representation of the affine transform."""
         transform = eye(self.dim + 1)

@@ -8,6 +8,8 @@ from pyrecest.backend import (
     eye,
     float64,
     linalg,
+    maximum,
+    sqrt,
     transpose,
 )
 
@@ -24,6 +26,94 @@ def _as_matrix(x, name):
     if len(x.shape) != 2:
         raise ValueError(f"{name} must be two-dimensional after coercion")
     return x
+
+
+def normalized_innovation_squared(innovation, innovation_covariance):
+    """Return innovation.T @ inv(innovation_covariance) @ innovation."""
+    innovation = _as_vector(innovation, "innovation")
+    innovation_covariance = _as_matrix(
+        innovation_covariance,
+        "innovation_covariance",
+    )
+    innovation_dim = innovation.shape[0]
+    if innovation_covariance.shape != (innovation_dim, innovation_dim):
+        raise ValueError(
+            "innovation_covariance must have shape "
+            "(innovation_dim, innovation_dim)"
+        )
+    return transpose(innovation) @ linalg.solve(innovation_covariance, innovation)
+
+
+def huber_covariance_scale(normalized_innovation_squared, huber_threshold=2.0):
+    """Return measurement-covariance scaling for a Huber robust update.
+
+    The Huber weight is one for Mahalanobis innovation norm below ``k`` and
+    ``k / norm`` for outliers. Inflating the measurement covariance by the
+    reciprocal weight gives
+
+    ``max(1, sqrt(normalized_innovation_squared) / huber_threshold)``.
+
+    Parameters
+    ----------
+    normalized_innovation_squared : scalar or array-like
+        Squared Mahalanobis innovation, i.e. NIS.
+    huber_threshold : float, optional
+        Huber threshold ``k`` in Mahalanobis-norm units. Must be positive.
+    """
+    huber_threshold = float(huber_threshold)
+    if huber_threshold <= 0.0:
+        raise ValueError("huber_threshold must be positive")
+
+    nis = asarray(normalized_innovation_squared, dtype=float64)
+    return maximum(1.0, sqrt(nis) / huber_threshold)
+
+
+def student_t_covariance_scale(
+    normalized_innovation_squared,
+    measurement_dim,
+    dof=4.0,
+    min_scale=1.0,
+):
+    """Return Student-t measurement-covariance scaling from innovation NIS.
+
+    This helper implements the scale-mixture weight used for an approximate
+    Student-t Kalman measurement update. For normalized innovation squared
+    ``nis``, measurement dimension ``d``, and degrees of freedom ``nu``, the
+    Student-t IRLS/EM weight is
+
+    ``w = (nu + d) / (nu + nis)``.
+
+    A Gaussian update can therefore be made heavy-tailed by replacing the
+    measurement covariance ``R`` with ``R * scale``, where ``scale = 1 / w``.
+    The default ``min_scale=1`` prevents inliers from becoming more confident
+    than the supplied Gaussian measurement model.
+
+    Parameters
+    ----------
+    normalized_innovation_squared : scalar or array-like
+        Squared Mahalanobis innovation, i.e. NIS.
+    measurement_dim : int
+        Dimension ``d`` of the measurement vector. Must be positive.
+    dof : float, optional
+        Student-t degrees of freedom ``nu``. Must be greater than two.
+    min_scale : float, optional
+        Lower bound on the returned covariance scale. Must be nonnegative.
+    """
+    measurement_dim = int(measurement_dim)
+    if measurement_dim <= 0:
+        raise ValueError("measurement_dim must be positive")
+
+    dof = float(dof)
+    if dof <= 2.0:
+        raise ValueError("dof must be greater than 2")
+
+    min_scale = float(min_scale)
+    if min_scale < 0.0:
+        raise ValueError("min_scale must be nonnegative")
+
+    nis = asarray(normalized_innovation_squared, dtype=float64)
+    scale = (dof + nis) / (dof + measurement_dim)
+    return maximum(min_scale, scale)
 
 
 def linear_gaussian_predict(
@@ -65,9 +155,23 @@ def linear_gaussian_predict(
 
 
 def linear_gaussian_update(
-    mean, covariance, measurement, measurement_matrix, meas_noise
+    mean,
+    covariance,
+    measurement,
+    measurement_matrix,
+    meas_noise,
+    *,
+    return_diagnostics=False,
+    scale=1.0,
+    action="updated",
 ):
-    """Update step for z_k = H x_k + v with v ~ N(0, R)."""
+    """Update step for z_k = H x_k + v with v ~ N(0, R).
+
+    If ``return_diagnostics`` is true, return a third value containing the
+    normalized innovation squared (NIS), residual, covariance scale, and action.
+    ``scale`` multiplies ``meas_noise`` for the update but diagnostics report
+    the pre-scaled NIS, matching the usual gating/robust-update convention.
+    """
     mean = _as_vector(mean, "mean")
     covariance = _as_matrix(covariance, "covariance")
     measurement = _as_vector(measurement, "measurement")
@@ -86,9 +190,18 @@ def linear_gaussian_update(
     if meas_noise.shape != (meas_dim, meas_dim):
         raise ValueError("meas_noise must have shape (meas_dim, meas_dim)")
 
+    scale = float(scale)
+    if scale <= 0.0:
+        raise ValueError("scale must be positive")
+
     innovation = measurement - measurement_matrix @ mean
-    innovation_cov = (
+    nominal_innovation_cov = (
         measurement_matrix @ covariance @ transpose(measurement_matrix) + meas_noise
+    )
+    scaled_meas_noise = meas_noise * scale
+    innovation_cov = (
+        measurement_matrix @ covariance @ transpose(measurement_matrix)
+        + scaled_meas_noise
     )
     cross_cov = covariance @ transpose(measurement_matrix)
 
@@ -101,9 +214,18 @@ def linear_gaussian_update(
     identity = eye(state_dim)
     correction = identity - kalman_gain @ measurement_matrix
     updated_covariance = correction @ covariance @ transpose(correction)
-    updated_covariance = updated_covariance + kalman_gain @ meas_noise @ transpose(
+    updated_covariance = updated_covariance + kalman_gain @ scaled_meas_noise @ transpose(
         kalman_gain
     )
     updated_covariance = 0.5 * (updated_covariance + transpose(updated_covariance))
+
+    if return_diagnostics:
+        diagnostics = {
+            "nis": normalized_innovation_squared(innovation, nominal_innovation_cov),
+            "residual": innovation,
+            "scale": scale,
+            "action": action,
+        }
+        return updated_mean, updated_covariance, diagnostics
 
     return updated_mean, updated_covariance

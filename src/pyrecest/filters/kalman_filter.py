@@ -174,7 +174,15 @@ class KalmanFilter(AbstractFilter, EuclideanFilterMixin):
         )
         self.predict_linear(system_matrix, sys_noise_cov, sys_input)
 
-    def update_identity(self, meas_noise, measurement):
+    def update_identity(
+        self,
+        meas_noise,
+        measurement,
+        *,
+        return_diagnostics=False,
+        scale=1.0,
+        action="updated",
+    ):
         """Update with a measurement matrix equal to the identity.
 
         Parameters
@@ -183,11 +191,20 @@ class KalmanFilter(AbstractFilter, EuclideanFilterMixin):
             Measurement-noise covariance.
         measurement : array-like, shape (n,)
             Measurement vector.
+        return_diagnostics : bool, optional
+            If true, return update diagnostics after updating the filter state.
+        scale : float, optional
+            Multiplicative measurement-noise scale used for the update.
+        action : str, optional
+            Caller-defined diagnostic label for the update action.
         """
-        self.update_linear(
+        return self.update_linear(
             measurement=measurement,
             measurement_matrix=eye(self.dim),
             meas_noise=meas_noise,
+            return_diagnostics=return_diagnostics,
+            scale=scale,
+            action=action,
         )
 
     def update_linear(
@@ -195,6 +212,10 @@ class KalmanFilter(AbstractFilter, EuclideanFilterMixin):
         measurement,
         measurement_matrix,
         meas_noise,
+        *,
+        return_diagnostics=False,
+        scale=1.0,
+        action="updated",
     ):
         """Update the state with a linear Gaussian measurement model.
 
@@ -207,21 +228,46 @@ class KalmanFilter(AbstractFilter, EuclideanFilterMixin):
             vectors.
         meas_noise : array-like, shape (m, m)
             Measurement-noise covariance ``R``.
+        return_diagnostics : bool, optional
+            If true, return a diagnostics dictionary after updating the filter
+            state. The dictionary contains ``nis``, ``residual``, ``scale``,
+            and ``action``.
+        scale : float, optional
+            Multiplicative measurement-noise scale used for the update.
+        action : str, optional
+            Caller-defined diagnostic label for the update action.
         """
-        new_mean, new_covariance = linear_gaussian_update(
+        result = linear_gaussian_update(
             mean=self._filter_state.mu,
             covariance=self._filter_state.C,
             measurement=measurement,
             measurement_matrix=measurement_matrix,
             meas_noise=meas_noise,
+            return_diagnostics=return_diagnostics,
+            scale=scale,
+            action=action,
         )
+        if return_diagnostics:
+            new_mean, new_covariance, diagnostics = result
+        else:
+            new_mean, new_covariance = result
+            diagnostics = None
         self._filter_state = GaussianDistribution(
             new_mean,
             new_covariance,
             check_validity=False,
         )
+        return diagnostics
 
-    def update_model(self, measurement_model, measurement):
+    def update_model(
+        self,
+        measurement_model,
+        measurement,
+        *,
+        return_diagnostics=False,
+        scale=1.0,
+        action="updated",
+    ):
         """Update the state with a linear Gaussian measurement model object.
 
         The model object is consumed structurally. It must expose a
@@ -235,6 +281,12 @@ class KalmanFilter(AbstractFilter, EuclideanFilterMixin):
             :meth:`update_linear`.
         measurement : array-like, shape (m,)
             Measurement vector ``z``.
+        return_diagnostics : bool, optional
+            If true, return update diagnostics after updating the filter state.
+        scale : float, optional
+            Multiplicative measurement-noise scale used for the update.
+        action : str, optional
+            Caller-defined diagnostic label for the update action.
         """
         measurement_matrix = _get_required_model_attribute(
             measurement_model,
@@ -245,7 +297,14 @@ class KalmanFilter(AbstractFilter, EuclideanFilterMixin):
             "meas_noise",
             "measurement_noise_cov",
         )
-        self.update_linear(measurement, measurement_matrix, meas_noise)
+        return self.update_linear(
+            measurement,
+            measurement_matrix,
+            meas_noise,
+            return_diagnostics=return_diagnostics,
+            scale=scale,
+            action=action,
+        )
 
     def get_point_estimate(self):
         """Return the posterior mean vector with shape ``(n,)``."""

@@ -1,3 +1,4 @@
+from ._linear_gaussian import student_t_covariance_scale
 from .abstract_axial_filter import AbstractAxialFilter
 from .abstract_dummy_filter import AbstractDummyFilter
 from .abstract_extended_object_tracker import AbstractExtendedObjectTracker
@@ -195,6 +196,7 @@ __all__ = [
     "build_linear_gaussian_predictor",
     "build_linear_gaussian_updater",
     "solve_global_nearest_neighbor",
+    "student_t_covariance_scale",
     "SE2FilterMixin",
     "SE2UKF",
     "SO3ProductParticleFilter",
