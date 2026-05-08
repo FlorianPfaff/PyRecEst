@@ -3,7 +3,11 @@
 from pyrecest.backend import atleast_1d, atleast_2d, eye
 from pyrecest.distributions import GaussianDistribution
 
-from ._linear_gaussian import linear_gaussian_predict, linear_gaussian_update
+from ._linear_gaussian import (
+    linear_gaussian_predict,
+    linear_gaussian_update,
+    linear_gaussian_update_robust,
+)
 from .abstract_filter import AbstractFilter
 from .manifold_mixins import EuclideanFilterMixin
 
@@ -258,6 +262,50 @@ class KalmanFilter(AbstractFilter, EuclideanFilterMixin):
             check_validity=False,
         )
         return diagnostics
+
+    def update_linear_robust(
+        self,
+        measurement,
+        measurement_matrix,
+        meas_noise,
+        *,
+        robust_update="student-t",
+        gate_threshold=None,
+        student_t_dof=4.0,
+        huber_threshold=2.0,
+        inflation_alpha=1.0,
+        return_diagnostics=False,
+    ):
+        """Robustly update the state with a linear measurement model.
+
+        The Gaussian measurement covariance is adaptively inflated according to
+        the normalized innovation squared. Supported modes are
+        ``"student-t"``, ``"huber"``, ``"nis-inflate"``, and ``None``/
+        ``"none"``. With ``robust_update=None`` and ``gate_threshold`` set,
+        measurements above the gate are rejected and the prior state is kept.
+        """
+        result = linear_gaussian_update_robust(
+            mean=self._filter_state.mu,
+            covariance=self._filter_state.C,
+            measurement=measurement,
+            measurement_matrix=measurement_matrix,
+            meas_noise=meas_noise,
+            robust_update=robust_update,
+            gate_threshold=gate_threshold,
+            student_t_dof=student_t_dof,
+            huber_threshold=huber_threshold,
+            inflation_alpha=inflation_alpha,
+            return_diagnostics=True,
+        )
+        new_mean, new_covariance, diagnostics = result
+        self._filter_state = GaussianDistribution(
+            new_mean,
+            new_covariance,
+            check_validity=False,
+        )
+        if return_diagnostics:
+            return diagnostics
+        return None
 
     def update_model(
         self,
