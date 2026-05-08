@@ -13,7 +13,6 @@ from pyrecest.backend import (
     all,
     amax,
     amin,
-    any,
     arange,
     array,
     diag,
