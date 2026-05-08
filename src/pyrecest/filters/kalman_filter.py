@@ -3,7 +3,11 @@
 from pyrecest.backend import atleast_1d, atleast_2d, eye
 from pyrecest.distributions import GaussianDistribution
 
-from ._linear_gaussian import linear_gaussian_predict, linear_gaussian_update
+from ._linear_gaussian import (
+    linear_gaussian_predict,
+    linear_gaussian_update,
+    linear_gaussian_update_robust,
+)
 from .abstract_filter import AbstractFilter
 from .manifold_mixins import EuclideanFilterMixin
 
@@ -258,6 +262,77 @@ class KalmanFilter(AbstractFilter, EuclideanFilterMixin):
             check_validity=False,
         )
         return diagnostics
+
+    def update_linear_robust(
+        self,
+        measurement,
+        measurement_matrix,
+        meas_noise,
+        robust_method="student-t",
+        *,
+        student_t_dof=4.0,
+        huber_threshold=2.0,
+        gate_threshold=None,
+        inflation_alpha=1.0,
+        return_diagnostics=False,
+    ):
+        """Update with a robust linear Gaussian measurement model.
+
+        This method preserves the standard Kalman update behavior when
+        ``robust_method`` is ``None`` or ``"none"``. For ``"student-t"`` and
+        ``"huber"``, the measurement covariance is adaptively inflated based on
+        the innovation's normalized squared Mahalanobis distance before the
+        Joseph-form update is applied.
+        """
+        result = linear_gaussian_update_robust(
+            mean=self._filter_state.mu,
+            covariance=self._filter_state.C,
+            measurement=measurement,
+            measurement_matrix=measurement_matrix,
+            meas_noise=meas_noise,
+            robust_method=robust_method,
+            student_t_dof=student_t_dof,
+            huber_threshold=huber_threshold,
+            gate_threshold=gate_threshold,
+            inflation_alpha=inflation_alpha,
+            return_diagnostics=return_diagnostics,
+        )
+        if return_diagnostics:
+            new_mean, new_covariance, diagnostics = result
+        else:
+            new_mean, new_covariance = result
+            diagnostics = None
+        self._filter_state = GaussianDistribution(
+            new_mean,
+            new_covariance,
+            check_validity=False,
+        )
+        return diagnostics
+
+    def update_model_robust(
+        self,
+        measurement_model,
+        measurement,
+        robust_method="student-t",
+        **kwargs,
+    ):
+        """Robustly update using a structural linear Gaussian model object."""
+        measurement_matrix = _get_required_model_attribute(
+            measurement_model,
+            "measurement_matrix",
+        )
+        meas_noise = _get_required_model_attribute(
+            measurement_model,
+            "meas_noise",
+            "measurement_noise_cov",
+        )
+        return self.update_linear_robust(
+            measurement,
+            measurement_matrix,
+            meas_noise,
+            robust_method=robust_method,
+            **kwargs,
+        )
 
     def update_model(
         self,
