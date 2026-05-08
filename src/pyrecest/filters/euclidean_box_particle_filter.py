@@ -80,9 +80,7 @@ class EuclideanBoxParticleFilter(AbstractParticleFilter, EuclideanFilterMixin):
         lower = -ones((n_particles, dim)) * reshape(
             self.default_box_half_width, (1, -1)
         )
-        upper = ones((n_particles, dim)) * reshape(
-            self.default_box_half_width, (1, -1)
-        )
+        upper = ones((n_particles, dim)) * reshape(self.default_box_half_width, (1, -1))
         initial_distribution = LinearBoxParticleDistribution(lower, upper)
 
         EuclideanFilterMixin.__init__(self)
@@ -131,7 +129,9 @@ class EuclideanBoxParticleFilter(AbstractParticleFilter, EuclideanFilterMixin):
             )
         if process_noise_bounds is None:
             return self
-        return self.predict_interval(lambda lower, upper: (lower, upper), process_noise_bounds)
+        return self.predict_interval(
+            lambda lower, upper: (lower, upper), process_noise_bounds
+        )
 
     def predict_interval(
         self,
@@ -219,7 +219,9 @@ class EuclideanBoxParticleFilter(AbstractParticleFilter, EuclideanFilterMixin):
             )
             pred_lower = pred_lower + reshape(noise_lower, (1, -1))
             pred_upper = pred_upper + reshape(noise_upper, (1, -1))
-        self._filter_state = LinearBoxParticleDistribution(pred_lower, pred_upper, prior.w)
+        self._filter_state = LinearBoxParticleDistribution(
+            pred_lower, pred_upper, prior.w
+        )
         return self
 
     def update_identity_box(
@@ -359,7 +361,9 @@ class EuclideanBoxParticleFilter(AbstractParticleFilter, EuclideanFilterMixin):
             if split_resampled_boxes and multiplicity > 1:
                 occurrence = seen[source_idx]
                 split_dim = int(_np.argmax(upper - lower))
-                edges = _np.linspace(lower[split_dim], upper[split_dim], multiplicity + 1)
+                edges = _np.linspace(
+                    lower[split_dim], upper[split_dim], multiplicity + 1
+                )
                 lower[split_dim] = edges[occurrence]
                 upper[split_dim] = edges[occurrence + 1]
                 seen[source_idx] += 1
@@ -382,7 +386,9 @@ class EuclideanBoxParticleFilter(AbstractParticleFilter, EuclideanFilterMixin):
 
         lower_np = _np.asarray(to_numpy(lower), dtype=float)
         upper_np = _np.asarray(to_numpy(upper), dtype=float)
-        corners_np = _np.where(patterns[None, :, :], upper_np[:, None, :], lower_np[:, None, :])
+        corners_np = _np.where(
+            patterns[None, :, :], upper_np[:, None, :], lower_np[:, None, :]
+        )
         corners = array(corners_np.reshape(n_boxes * n_corners, dim))
 
         if function_is_vectorized:
@@ -401,7 +407,9 @@ class EuclideanBoxParticleFilter(AbstractParticleFilter, EuclideanFilterMixin):
             return self._coerce_interval(noise_distribution, None, self.dim)
         if hasattr(noise_distribution, "bounds"):
             return self._coerce_interval(noise_distribution.bounds, None, self.dim)
-        if hasattr(noise_distribution, "mean") and hasattr(noise_distribution, "covariance"):
+        if hasattr(noise_distribution, "mean") and hasattr(
+            noise_distribution, "covariance"
+        ):
             mean = noise_distribution.mean()
             std = sqrt(diag(noise_distribution.covariance()))
             return mean - scaling_factor * std, mean + scaling_factor * std
@@ -431,7 +439,9 @@ class EuclideanBoxParticleFilter(AbstractParticleFilter, EuclideanFilterMixin):
     def _coerce_interval(lower, upper, dim: int):
         if upper is None:
             if isinstance(lower, (tuple, list)) and len(lower) == 2:
-                return EuclideanBoxParticleFilter._coerce_interval(lower[0], lower[1], dim)
+                return EuclideanBoxParticleFilter._coerce_interval(
+                    lower[0], lower[1], dim
+                )
             bounds = array(lower)
             if bounds.ndim == 1 and dim == 1 and bounds.shape[0] == 2:
                 return reshape(bounds[0], (1,)), reshape(bounds[1], (1,))
