@@ -56,9 +56,7 @@ class AbstractParticleFilter(AbstractFilter):
         The particle locations are sampled with replacement from the current
         weighted particle set, and the resulting weights are reset to uniform.
         """
-        self._filter_state.d = self.filter_state.sample(
-            self.filter_state.w.shape[0]
-        )
+        self._filter_state.d = self.filter_state.sample(self.filter_state.w.shape[0])
         self._filter_state.w = (
             ones_like(self.filter_state.w) / self.filter_state.w.shape[0]
         )
