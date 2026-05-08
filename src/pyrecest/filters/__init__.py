@@ -76,6 +76,7 @@ from .mem_ekf_star_tracker import MEMEKFStarTracker, MemEkfStarTracker
 from .mem_ekf_tracker import MEMEKFTracker, MemEkfTracker
 from .mem_soekf_tracker import MEMSOEKFTracker, MemSoekfTracker
 from .multi_bernoulli_tracker import BernoulliComponent, MultiBernoulliTracker
+from .partitioned_so3_product_particle_filter import PartitionedSO3ProductParticleFilter
 from .piecewise_constant_filter import PiecewiseConstantFilter
 from .random_matrix_tracker import RandomMatrixTracker
 from .se2_ukf import SE2UKF
@@ -180,6 +181,7 @@ __all__ = [
     "MemEkfStarTracker",
     "MemEkfTracker",
     "MemSoekfTracker",
+    "PartitionedSO3ProductParticleFilter",
     "PiecewiseConstantFilter",
     "RandomMatrixTracker",
     "SCGPTracker",

@@ -8,7 +8,7 @@ from typing import Union
 
 import numpy as _np
 
-# pylint: disable=no-name-in-module,no-member,redefined-builtin
+# pylint: disable=no-name-in-module,no-member,redefined-builtin,too-many-positional-arguments
 from pyrecest.backend import (
     all,
     amax,
@@ -346,7 +346,7 @@ class EuclideanBoxParticleFilter(AbstractParticleFilter, EuclideanFilterMixin):
         upper_np = _np.asarray(to_numpy(state.upper), dtype=float)
 
         counts = Counter(indices_np.tolist())
-        seen = defaultdict(int)
+        seen: defaultdict[int, int] = defaultdict(int)
         new_lower = _np.empty_like(lower_np)
         new_upper = _np.empty_like(upper_np)
 
