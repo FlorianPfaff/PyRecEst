@@ -3,7 +3,7 @@ import unittest
 import numpy.testing as npt
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import array, linalg, ones, pi, sin, stack
+from pyrecest.backend import array, cos, linalg, ones, pi, sin, stack
 from pyrecest.filters import PartitionedSO3ProductParticleFilter, SO3ProductParticleFilter
 
 ATOL = 1e-6
@@ -35,11 +35,11 @@ class PartitionedSO3ProductParticleFilterTest(unittest.TestCase):
 
     def test_named_partitions_and_validation(self):
         self.assertEqual(
-            PartitionedSO3ProductParticleFilter._validate_partition("global", 3),
+            PartitionedSO3ProductParticleFilter(2, 3, partition="global").partition,
             ((0, 1, 2),),
         )
         self.assertEqual(
-            PartitionedSO3ProductParticleFilter._validate_partition("singleton", 3),
+            PartitionedSO3ProductParticleFilter(2, 3, partition="singleton").partition,
             ((0,), (1,), (2,)),
         )
         with self.assertRaises(ValueError):
