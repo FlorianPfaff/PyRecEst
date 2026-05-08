@@ -33,7 +33,7 @@ from .abstract_linear_distribution import AbstractLinearDistribution
 
 
 class LinearBoxParticleDistribution(AbstractLinearDistribution):
-    """Mixture of uniform densities supported on axis-aligned boxes.
+    r"""Mixture of uniform densities supported on axis-aligned boxes.
 
     The represented density is
 
@@ -254,7 +254,7 @@ class LinearBoxParticleDistribution(AbstractLinearDistribution):
             raise ValueError(f"{name} must have dimension {self.dim}")
         return value
 
-    def mode(self, rel_tol=0.001):  # pylint: disable=unused-argument
+    def mode(self, starting_point=None):  # pylint: disable=unused-argument
         """Return the center of the box with highest mixture density."""
         volumes = self.volumes()
         safe_volumes = where(volumes > 0, volumes, ones_like(volumes))
