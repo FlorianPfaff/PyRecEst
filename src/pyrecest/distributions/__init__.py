@@ -259,6 +259,7 @@ from .nonperiodic.gaussian_mixture import GaussianMixture
 from .nonperiodic.hyperrectangular_uniform_distribution import (
     HyperrectangularUniformDistribution,
 )
+from .nonperiodic.linear_box_particle_distribution import LinearBoxParticleDistribution
 from .nonperiodic.linear_dirac_distribution import LinearDiracDistribution
 from .nonperiodic.linear_mixture import LinearMixture
 from .se2_dirac_distribution import SE2DiracDistribution
@@ -433,6 +434,7 @@ __all__ = aliases + [
     "CustomLinearDistribution",
     "GaussianDistribution",
     "GaussianMixture",
+    "LinearBoxParticleDistribution",
     "HyperrectangularUniformDistribution",
     "LinearDiracDistribution",
     "LinearMixture",
