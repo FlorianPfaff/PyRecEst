@@ -22,6 +22,10 @@ from .nonrigid_point_set_registration import (
     estimate_thin_plate_spline,
     joint_tps_registration_assignment,
 )
+from .pairwise_covariance_features import (
+    pairwise_covariance_shape_components,
+    pairwise_mahalanobis_distances,
+)
 
 __all__ = [
     "MultiSessionAssignmentResult",
@@ -38,4 +42,6 @@ __all__ = [
     "estimate_thin_plate_spline",
     "joint_tps_registration_assignment",
     "murty_k_best_assignments",
+    "pairwise_covariance_shape_components",
+    "pairwise_mahalanobis_distances",
 ]
