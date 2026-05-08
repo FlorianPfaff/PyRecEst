@@ -144,7 +144,8 @@ Common starting points include:
 ### `pyrecest.utils`
 
 Reusable utility helpers for assignment, association models, history recording,
-multi-session assignment, and point-set registration.
+multi-session assignment, generic track-matrix evaluation, and point-set
+registration.
 
 Common starting points include:
 
@@ -152,6 +153,9 @@ Common starting points include:
 - `LogisticPairwiseAssociationModel`;
 - `HistoryRecorder`;
 - `solve_multisession_assignment`;
+- `normalize_track_matrix`;
+- `score_track_links`;
+- `track_error_ledger`;
 - `estimate_thin_plate_spline`.
 
 ## Where To Look Next
