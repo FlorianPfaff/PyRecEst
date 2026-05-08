@@ -2,7 +2,7 @@
 
 from collections.abc import Callable, Sequence
 
-# pylint: disable=no-name-in-module,no-member
+# pylint: disable=no-name-in-module,no-member,too-many-positional-arguments
 from pyrecest.backend import all, array, exp, ndim, ones, random, stack, sum, to_numpy
 from pyrecest.distributions import SO3DiracDistribution
 from pyrecest.distributions._so3_helpers import geodesic_distance
@@ -207,12 +207,7 @@ class PartitionedSO3ProductParticleFilter(SO3ProductParticleFilter):
         block_weights = to_numpy(self._block_weights)
         mode_particle = particles[0].copy()
         for block_idx, block in enumerate(self.partition):
-            source_idx = int(
-                max(
-                    range(self.n_particles),
-                    key=lambda idx: block_weights[block_idx, idx],
-                )
-            )
+            source_idx = int(block_weights[block_idx].argmax())
             mode_particle[list(block)] = particles[source_idx, list(block)]
         return array(mode_particle)
 
