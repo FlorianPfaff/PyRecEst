@@ -52,6 +52,54 @@ def huber_covariance_scale(normalized_innovation_squared, huber_threshold=2.0):
     return maximum(1.0, sqrt(nis) / huber_threshold)
 
 
+def student_t_covariance_scale(
+    normalized_innovation_squared,
+    measurement_dim,
+    dof=4.0,
+    min_scale=1.0,
+):
+    """Return Student-t measurement-covariance scaling from innovation NIS.
+
+    This helper implements the scale-mixture weight used for an approximate
+    Student-t Kalman measurement update. For normalized innovation squared
+    ``nis``, measurement dimension ``d``, and degrees of freedom ``nu``, the
+    Student-t IRLS/EM weight is
+
+    ``w = (nu + d) / (nu + nis)``.
+
+    A Gaussian update can therefore be made heavy-tailed by replacing the
+    measurement covariance ``R`` with ``R * scale``, where ``scale = 1 / w``.
+    The default ``min_scale=1`` prevents inliers from becoming more confident
+    than the supplied Gaussian measurement model.
+
+    Parameters
+    ----------
+    normalized_innovation_squared : scalar or array-like
+        Squared Mahalanobis innovation, i.e. NIS.
+    measurement_dim : int
+        Dimension ``d`` of the measurement vector. Must be positive.
+    dof : float, optional
+        Student-t degrees of freedom ``nu``. Must be greater than two.
+    min_scale : float, optional
+        Lower bound on the returned covariance scale. Must be nonnegative.
+    """
+    measurement_dim = int(measurement_dim)
+    if measurement_dim <= 0:
+        raise ValueError("measurement_dim must be positive")
+
+    dof = float(dof)
+    if dof <= 2.0:
+        raise ValueError("dof must be greater than 2")
+
+    min_scale = float(min_scale)
+    if min_scale < 0.0:
+        raise ValueError("min_scale must be nonnegative")
+
+    nis = asarray(normalized_innovation_squared, dtype=float64)
+    scale = (dof + nis) / (dof + measurement_dim)
+    return maximum(min_scale, scale)
+
+
 def linear_gaussian_predict(
     mean, covariance, system_matrix, sys_noise_cov, sys_input=None
 ):
