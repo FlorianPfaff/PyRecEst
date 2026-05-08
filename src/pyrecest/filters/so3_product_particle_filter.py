@@ -361,6 +361,39 @@ class SO3ProductParticleFilter(HyperhemisphereCartProdParticleFilter):
             self.resample_systematic()
         return ess
 
+    def update_with_log_likelihood(
+        self,
+        log_likelihood,
+        measurement=None,
+        resample: bool = True,
+        ess_threshold=None,
+    ):
+        """Update weights from log-likelihoods evaluated on product particles.
+
+        This is the log-domain counterpart of :meth:`update_with_likelihood`.
+        It is useful when likelihood values are so small that converting them
+        to ordinary probabilities would underflow before normalization.
+        """
+        if callable(log_likelihood):
+            if measurement is None:
+                log_likelihood_values = log_likelihood(self.particles)
+            else:
+                log_likelihood_values = log_likelihood(measurement, self.particles)
+        else:
+            log_likelihood_values = log_likelihood
+        log_likelihood_values = array(log_likelihood_values, dtype=float)
+        if log_likelihood_values.shape != self.weights.shape:
+            raise ValueError("log_likelihood must return one value per particle.")
+
+        self.filter_state.w = self._normalize_log_weights(
+            log(self._normalize_weights(self.weights)) + log_likelihood_values
+        )
+        ess = self.effective_sample_size()
+        threshold = self.n_particles / 2.0 if ess_threshold is None else ess_threshold
+        if resample and ess < threshold:
+            self.resample_systematic()
+        return ess
+
     def update_with_geodesic_likelihood(
         self,
         measurement,
