@@ -4,7 +4,10 @@ import numpy.testing as npt
 
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import array, cos, linalg, ones, pi, sin, stack
-from pyrecest.filters import PartitionedSO3ProductParticleFilter, SO3ProductParticleFilter
+from pyrecest.filters import (
+    PartitionedSO3ProductParticleFilter,
+    SO3ProductParticleFilter,
+)
 
 ATOL = 1e-6
 

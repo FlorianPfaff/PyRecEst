@@ -9,8 +9,8 @@ from pyrecest.backend import (
     all,
     any,
     arange,
-    array,
     argmax,
+    array,
     diag,
     expand_dims,
     int32,
@@ -206,7 +206,9 @@ class LinearBoxParticleDistribution(AbstractLinearDistribution):
                 return reshape(xs, (-1, 1))
             if xs.shape[0] == self.dim:
                 return reshape(xs, (1, self.dim))
-            raise ValueError(f"Point dimension {xs.shape[0]} does not match dim {self.dim}")
+            raise ValueError(
+                f"Point dimension {xs.shape[0]} does not match dim {self.dim}"
+            )
         if xs.ndim != 2 or xs.shape[1] != self.dim:
             raise ValueError(f"xs must have shape (n, {self.dim})")
         return xs
@@ -241,7 +243,9 @@ class LinearBoxParticleDistribution(AbstractLinearDistribution):
         )
         volumes = self.volumes()
         safe_volumes = where(volumes > 0, volumes, ones_like(volumes))
-        ratios = where(volumes > 0, intersection_volumes / safe_volumes, zeros_like(volumes))
+        ratios = where(
+            volumes > 0, intersection_volumes / safe_volumes, zeros_like(volumes)
+        )
         return sum(self.w * ratios)
 
     def _coerce_vector(self, value, name):
@@ -262,7 +266,9 @@ class LinearBoxParticleDistribution(AbstractLinearDistribution):
         return self.centers()[int(argmax(box_densities))]
 
     @staticmethod
-    def from_distribution(distribution, n_particles=None, n_samples=None, n=None, box_half_width=0.5):
+    def from_distribution(
+        distribution, n_particles=None, n_samples=None, n=None, box_half_width=0.5
+    ):
         """Create equally sized boxes around samples from another distribution."""
         particle_count = LinearBoxParticleDistribution._resolve_particle_count(
             n_particles=n_particles,
