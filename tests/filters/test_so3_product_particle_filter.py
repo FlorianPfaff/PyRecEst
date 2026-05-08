@@ -128,6 +128,62 @@ class SO3ProductParticleFilterTest(unittest.TestCase):
 
         npt.assert_allclose(filt.weights, array([0.5, 0.5]), atol=ATOL)
 
+    def test_log_likelihood_update_supports_zero_likelihoods(self):
+        filt = SO3ProductParticleFilter(n_particles=3, num_rotations=1)
+
+        ess = filt.update_with_log_likelihood(
+            array([0.0, -1000.0, -float("inf")]),
+            resample=False,
+        )
+
+        self.assertLess(float(ess), 2.0)
+        self.assertGreater(float(filt.weights[0]), 0.999)
+        npt.assert_allclose(float(filt.weights[2]), 0.0, atol=ATOL)
+
+    def test_confidence_to_noise_std_maps_confidence_to_scale(self):
+        sigma = SO3ProductParticleFilter.confidence_to_noise_std(
+            array([1.0, 0.5, 0.0]),
+            noise_std=0.1,
+            max_noise_std=1.0,
+        )
+
+        npt.assert_allclose(float(sigma[0]), 0.1, atol=ATOL)
+        npt.assert_allclose(float(sigma[2]), 1.0, atol=ATOL)
+        self.assertGreater(float(sigma[1]), 0.1)
+        self.assertLess(float(sigma[1]), 1.0)
+
+    def test_geodesic_log_likelihood_uses_confidence_and_component_noise(self):
+        measurement = array([[0.0, 0.0, 0.0, 1.0], z_quaternion(pi / 2.0)])
+        particles = stack(
+            [
+                array([[0.0, 0.0, 0.0, 1.0], z_quaternion(0.0)]),
+                array([z_quaternion(pi / 2.0), z_quaternion(pi / 2.0)]),
+            ],
+            axis=0,
+        )
+
+        confidence_filter = SO3ProductParticleFilter(n_particles=2, num_rotations=2)
+        confidence_filter.set_particles(particles)
+        confidence_filter.update_with_geodesic_log_likelihood(
+            measurement,
+            noise_std=0.2,
+            confidence=array([1.0, 0.0]),
+            resample=False,
+        )
+        self.assertGreater(float(confidence_filter.weights[0]), 0.99)
+
+        heteroskedastic_filter = SO3ProductParticleFilter(n_particles=2, num_rotations=2)
+        heteroskedastic_filter.set_particles(particles)
+        heteroskedastic_filter.update_with_geodesic_log_likelihood(
+            measurement,
+            component_noise_std=array([10.0, 0.2]),
+            resample=False,
+        )
+        self.assertGreater(
+            float(heteroskedastic_filter.weights[1]),
+            float(heteroskedastic_filter.weights[0]),
+        )
+
     def test_systematic_resampling_resets_weights(self):
         random.seed(0)
         filt = SO3ProductParticleFilter(n_particles=3, num_rotations=1)

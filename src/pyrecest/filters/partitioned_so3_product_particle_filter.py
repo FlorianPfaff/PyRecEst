@@ -3,9 +3,8 @@
 from collections.abc import Callable, Sequence
 
 # pylint: disable=no-name-in-module,no-member,too-many-positional-arguments
-from pyrecest.backend import all, array, exp, log, ndim, ones, random, stack, sum, to_numpy
+from pyrecest.backend import all, array, log, ndim, ones, random, stack, sum, to_numpy
 from pyrecest.distributions import SO3DiracDistribution
-from pyrecest.distributions._so3_helpers import geodesic_distance
 
 from .so3_product_particle_filter import SO3ProductParticleFilter
 
@@ -290,32 +289,15 @@ class PartitionedSO3ProductParticleFilter(SO3ProductParticleFilter):
         if not all(likelihood_values >= 0.0):
             raise ValueError("likelihood values must be nonnegative.")
 
-        self._block_weights = stack(
-            [
-                self._normalize_weights(
-                    self._block_weights[block_idx] * likelihood_values[block_idx]
-                )
-                for block_idx in range(len(self.partition))
-            ],
-            axis=0,
+        return self.update_with_block_log_likelihoods(
+            log(likelihood_values),
+            resample=resample,
+            ess_threshold=ess_threshold,
         )
-        self._sync_global_weights()
-        ess = self.block_effective_sample_size()
-        threshold = self.n_particles / 2.0 if ess_threshold is None else ess_threshold
-        if resample:
-            ess_values = to_numpy(ess).reshape(-1)
-            resample_blocks = [
-                block_idx
-                for block_idx, block_ess in enumerate(ess_values)
-                if float(block_ess) < threshold
-            ]
-            if resample_blocks:
-                self.resample_blocks_systematic(resample_blocks)
-        return ess
 
     def update_with_block_log_likelihoods(
         self,
-        log_likelihood,
+        log_likelihood: Callable | Sequence,
         measurement=None,
         resample: bool = True,
         ess_threshold=None,
@@ -324,7 +306,7 @@ class PartitionedSO3ProductParticleFilter(SO3ProductParticleFilter):
 
         The log-likelihood must evaluate to an array shaped
         ``(n_blocks, n_particles)``. Each row updates the corresponding block's
-        weights independently in log space, avoiding likelihood underflow.
+        weights independently using log-sum-exp normalization.
         """
         if callable(log_likelihood):
             if measurement is None:
@@ -343,7 +325,7 @@ class PartitionedSO3ProductParticleFilter(SO3ProductParticleFilter):
         self._block_weights = stack(
             [
                 self._normalize_log_weights(
-                    log(self._normalize_weights(self._block_weights[block_idx]))
+                    log(self._block_weights[block_idx])
                     + log_likelihood_values[block_idx]
                 )
                 for block_idx in range(len(self.partition))
@@ -381,16 +363,8 @@ class PartitionedSO3ProductParticleFilter(SO3ProductParticleFilter):
         if not all(component_likelihoods >= 0.0):
             raise ValueError("likelihood values must be nonnegative.")
 
-        block_likelihoods = []
-        for block in self.partition:
-            block_likelihood = ones(self.n_particles)
-            for component_idx in block:
-                block_likelihood = (
-                    block_likelihood * component_likelihoods[:, component_idx]
-                )
-            block_likelihoods.append(block_likelihood)
-        return self.update_with_block_likelihoods(
-            stack(block_likelihoods, axis=0),
+        return self.update_with_component_log_likelihoods(
+            log(component_likelihoods),
             resample=resample,
             ess_threshold=ess_threshold,
         )
@@ -404,10 +378,7 @@ class PartitionedSO3ProductParticleFilter(SO3ProductParticleFilter):
     ):
         """Update from per-component log-likelihoods shaped ``(n_particles, K)``."""
         component_log_likelihoods = array(component_log_likelihoods, dtype=float)
-        if component_log_likelihoods.shape != (
-            self.n_particles,
-            self.num_rotations,
-        ):
+        if component_log_likelihoods.shape != (self.n_particles, self.num_rotations):
             raise ValueError(
                 "component_log_likelihoods must have shape "
                 f"({self.n_particles}, {self.num_rotations})."
@@ -415,14 +386,50 @@ class PartitionedSO3ProductParticleFilter(SO3ProductParticleFilter):
 
         block_log_likelihoods = []
         for block in self.partition:
-            block_log_likelihood = component_log_likelihoods[:, block[0]]
-            for component_idx in block[1:]:
-                block_log_likelihood = (
-                    block_log_likelihood + component_log_likelihoods[:, component_idx]
+            block_log_likelihoods.append(
+                sum(
+                    stack(
+                        [
+                            component_log_likelihoods[:, component_idx]
+                            for component_idx in block
+                        ],
+                        axis=1,
+                    ),
+                    axis=1,
                 )
-            block_log_likelihoods.append(block_log_likelihood)
+            )
         return self.update_with_block_log_likelihoods(
             stack(block_log_likelihoods, axis=0),
+            resample=resample,
+            ess_threshold=ess_threshold,
+        )
+
+    def update_with_geodesic_log_likelihood(
+        self,
+        measurement,
+        noise_std=None,
+        *,
+        component_noise_std=None,
+        mask=None,
+        confidence=None,
+        max_noise_std=None,
+        confidence_exponent: float = 1.0,
+        outlier_prob: float = 0.0,
+        resample: bool = True,
+        ess_threshold=None,
+    ):
+        """Update partition weights with masked component geodesic log-likelihoods."""
+        return self.update_with_component_log_likelihoods(
+            self.component_geodesic_log_likelihood(
+                measurement,
+                noise_std,
+                component_noise_std=component_noise_std,
+                mask=mask,
+                confidence=confidence,
+                max_noise_std=max_noise_std,
+                confidence_exponent=confidence_exponent,
+                outlier_prob=outlier_prob,
+            ),
             resample=resample,
             ess_threshold=ess_threshold,
         )
@@ -432,39 +439,29 @@ class PartitionedSO3ProductParticleFilter(SO3ProductParticleFilter):
         measurement,
         noise_std,
         *,
+        component_noise_std=None,
         mask=None,
+        confidence=None,
+        max_noise_std=None,
+        confidence_exponent: float = 1.0,
+        outlier_prob: float = 0.0,
         resample: bool = True,
         ess_threshold=None,
     ):
-        """Update with isotropic masked geodesic likelihoods per partition block."""
-        if noise_std <= 0.0:
-            raise ValueError("noise_std must be positive.")
+        """Update with masked geodesic likelihoods per partition block.
 
-        measurement = self._as_product_point(measurement, self.num_rotations)
-        if mask is None:
-            mask = ones(self.num_rotations)
-        else:
-            mask = array(mask, dtype=float)
-            if mask.shape != (self.num_rotations,):
-                raise ValueError("mask must have shape (num_rotations,).")
-
-        distances = stack(
-            [
-                geodesic_distance(self.particles[:, i, :], measurement[i, :])
-                for i in range(self.num_rotations)
-            ],
-            axis=1,
-        )
-        block_likelihoods = []
-        for block in self.partition:
-            quadratic_terms = stack(
-                [mask[i] * distances[:, i] ** 2 for i in block],
-                axis=1,
-            )
-            quadratic = sum(quadratic_terms, axis=1) / (noise_std**2)
-            block_likelihoods.append(exp(-0.5 * quadratic))
-        return self.update_with_block_likelihoods(
-            stack(block_likelihoods, axis=0),
+        This preserves the existing likelihood-space API while delegating to the
+        log-likelihood implementation for numerical stability.
+        """
+        return self.update_with_geodesic_log_likelihood(
+            measurement,
+            noise_std,
+            component_noise_std=component_noise_std,
+            mask=mask,
+            confidence=confidence,
+            max_noise_std=max_noise_std,
+            confidence_exponent=confidence_exponent,
+            outlier_prob=outlier_prob,
             resample=resample,
             ess_threshold=ess_threshold,
         )
