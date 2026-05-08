@@ -9,6 +9,7 @@ from pyrecest.backend import (
     float64,
     linalg,
     maximum,
+    power,
     sqrt,
     transpose,
 )
@@ -114,6 +115,55 @@ def student_t_covariance_scale(
     nis = asarray(normalized_innovation_squared, dtype=float64)
     scale = (dof + nis) / (dof + measurement_dim)
     return maximum(min_scale, scale)
+
+
+def nis_inflation_covariance_scale(nis, gate_threshold, inflation_alpha=1.0):
+    """Return thresholded NIS-inflation measurement-covariance scaling."""
+    gate_threshold = float(gate_threshold)
+    if gate_threshold <= 0.0:
+        raise ValueError("gate_threshold must be positive")
+
+    inflation_alpha = float(inflation_alpha)
+    if inflation_alpha <= 0.0:
+        raise ValueError("inflation_alpha must be positive")
+
+    nis = asarray(nis, dtype=float64)
+    return maximum(1.0, power(nis / gate_threshold, inflation_alpha))
+
+
+def robust_measurement_covariance_scale(
+    normalized_innovation_squared,
+    measurement_dim,
+    robust_method="student-t",
+    *,
+    student_t_dof=4.0,
+    huber_threshold=2.0,
+    gate_threshold=None,
+    inflation_alpha=1.0,
+):
+    """Return covariance scaling for a robust linear-Gaussian update."""
+    if robust_method in (None, "none"):
+        return asarray(1.0, dtype=float64)
+    if robust_method == "student-t":
+        return student_t_covariance_scale(
+            normalized_innovation_squared,
+            measurement_dim,
+            dof=student_t_dof,
+        )
+    if robust_method == "huber":
+        return huber_covariance_scale(
+            normalized_innovation_squared,
+            huber_threshold=huber_threshold,
+        )
+    if robust_method == "nis-inflate":
+        if gate_threshold is None:
+            raise ValueError("gate_threshold is required for nis-inflate")
+        return nis_inflation_covariance_scale(
+            normalized_innovation_squared,
+            gate_threshold,
+            inflation_alpha,
+        )
+    raise ValueError(f"unknown robust_method {robust_method!r}")
 
 
 def linear_gaussian_predict(
@@ -229,3 +279,77 @@ def linear_gaussian_update(
         return updated_mean, updated_covariance, diagnostics
 
     return updated_mean, updated_covariance
+
+
+def linear_gaussian_innovation_statistics(
+    mean, covariance, measurement, measurement_matrix, meas_noise
+):
+    """Return innovation, innovation covariance, and NIS for a linear update."""
+    _, _, diagnostics = linear_gaussian_update(
+        mean,
+        covariance,
+        measurement,
+        measurement_matrix,
+        meas_noise,
+        return_diagnostics=True,
+    )
+    return (
+        diagnostics["residual"],
+        measurement_matrix @ _as_matrix(covariance, "covariance") @ transpose(
+            _as_matrix(measurement_matrix, "measurement_matrix")
+        )
+        + _as_matrix(meas_noise, "meas_noise"),
+        diagnostics["nis"],
+    )
+
+
+def linear_gaussian_update_robust(
+    mean,
+    covariance,
+    measurement,
+    measurement_matrix,
+    meas_noise,
+    robust_method="student-t",
+    *,
+    student_t_dof=4.0,
+    huber_threshold=2.0,
+    gate_threshold=None,
+    inflation_alpha=1.0,
+    return_diagnostics=False,
+):
+    """Robust linear-Gaussian update via adaptive measurement covariance."""
+    _, _, diagnostics = linear_gaussian_update(
+        mean,
+        covariance,
+        measurement,
+        measurement_matrix,
+        meas_noise,
+        return_diagnostics=True,
+    )
+    meas_dim = _as_matrix(measurement_matrix, "measurement_matrix").shape[0]
+    scale = robust_measurement_covariance_scale(
+        diagnostics["nis"],
+        meas_dim,
+        robust_method,
+        student_t_dof=student_t_dof,
+        huber_threshold=huber_threshold,
+        gate_threshold=gate_threshold,
+        inflation_alpha=inflation_alpha,
+    )
+    action = "updated" if robust_method in (None, "none") else str(robust_method)
+    result = linear_gaussian_update(
+        mean,
+        covariance,
+        measurement,
+        measurement_matrix,
+        meas_noise,
+        return_diagnostics=return_diagnostics,
+        scale=scale,
+        action=action,
+    )
+    if not return_diagnostics:
+        return result
+
+    updated_mean, updated_covariance, robust_diagnostics = result
+    robust_diagnostics["scaled_meas_noise"] = _as_matrix(meas_noise, "meas_noise") * scale
+    return updated_mean, updated_covariance, robust_diagnostics
