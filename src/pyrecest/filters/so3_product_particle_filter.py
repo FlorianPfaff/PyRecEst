@@ -5,9 +5,11 @@ from collections.abc import Callable
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import (
     all,
+    amax,
     array,
     diag,
     exp,
+    log,
     ndim,
     ones,
     random,
@@ -128,6 +130,14 @@ class SO3ProductParticleFilter(HyperhemisphereCartProdParticleFilter):
         if weight_sum <= 0.0:
             raise ValueError("At least one particle weight must be positive.")
         return weights / weight_sum
+
+    @staticmethod
+    def _normalize_log_weights(log_weights):
+        log_weights = array(log_weights, dtype=float)
+        if ndim(log_weights) != 1:
+            log_weights = reshape(log_weights, (-1,))
+        shifted = log_weights - amax(log_weights)
+        return SO3ProductParticleFilter._normalize_weights(exp(shifted))
 
     @staticmethod
     def _as_tangent_array(tangent_vectors, n_particles, num_rotations):
