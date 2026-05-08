@@ -5,16 +5,24 @@ from collections.abc import Callable
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import (
     all,
+    any,
     array,
     diag,
     exp,
+    isfinite,
+    isnan,
+    log,
+    max,
+    maximum,
     ndim,
     ones,
     random,
     reshape,
+    sqrt,
     stack,
     sum,
     to_numpy,
+    where,
     zeros,
 )
 from pyrecest.distributions import SO3DiracDistribution
@@ -128,6 +136,122 @@ class SO3ProductParticleFilter(HyperhemisphereCartProdParticleFilter):
         if weight_sum <= 0.0:
             raise ValueError("At least one particle weight must be positive.")
         return weights / weight_sum
+
+    @staticmethod
+    def _normalize_log_weights(log_weights):
+        """Normalize possibly unscaled log weights with log-sum-exp stability."""
+        log_weights = array(log_weights, dtype=float)
+        if ndim(log_weights) != 1:
+            log_weights = reshape(log_weights, (-1,))
+        if any(isnan(log_weights)):
+            raise ValueError("log weights must not contain NaN.")
+        max_log_weight = max(log_weights)
+        if not isfinite(max_log_weight):
+            raise ValueError(
+                "At least one log weight must be finite and no log weight may be +inf."
+            )
+        return SO3ProductParticleFilter._normalize_weights(
+            exp(log_weights - max_log_weight)
+        )
+
+    @staticmethod
+    def _validate_probability(name: str, value: float) -> float:
+        value = float(value)
+        if not isfinite(value) or value < 0.0 or value > 1.0:
+            raise ValueError(f"{name} must be a finite probability in [0, 1].")
+        return value
+
+    @staticmethod
+    def _as_component_mask(mask, num_rotations):
+        if mask is None:
+            return ones(num_rotations)
+        mask = array(mask, dtype=float)
+        if mask.shape != (num_rotations,):
+            raise ValueError("mask must have shape (num_rotations,).")
+        if not all(isfinite(mask)):
+            raise ValueError("mask values must be finite.")
+        if not all(mask >= 0.0):
+            raise ValueError("mask values must be nonnegative.")
+        return mask
+
+    @staticmethod
+    def _as_component_confidence(confidence, num_rotations):
+        if confidence is None:
+            return ones(num_rotations)
+        confidence = array(confidence, dtype=float)
+        if confidence.shape != (num_rotations,):
+            raise ValueError("confidence must have shape (num_rotations,).")
+        if not all(isfinite(confidence)):
+            raise ValueError("confidence values must be finite.")
+        if not all(confidence >= 0.0) or not all(confidence <= 1.0):
+            raise ValueError("confidence values must be in [0, 1].")
+        return confidence
+
+    @staticmethod
+    def _as_component_noise_std(noise_std, component_noise_std, num_rotations):
+        if component_noise_std is None:
+            if noise_std is None:
+                raise ValueError("noise_std or component_noise_std must be provided.")
+            sigma = array(noise_std, dtype=float)
+        else:
+            sigma = array(component_noise_std, dtype=float)
+
+        if ndim(sigma) == 0:
+            if not isfinite(sigma) or sigma <= 0.0:
+                raise ValueError("noise standard deviations must be positive and finite.")
+            return ones(num_rotations) * sigma
+        if sigma.shape != (num_rotations,):
+            raise ValueError("component_noise_std must have shape (num_rotations,).")
+        if not all(isfinite(sigma)):
+            raise ValueError("noise standard deviations must be finite.")
+        if not all(sigma > 0.0):
+            raise ValueError("noise standard deviations must be positive.")
+        return sigma
+
+    @staticmethod
+    def confidence_to_noise_std(
+        confidence,
+        noise_std,
+        max_noise_std,
+        *,
+        confidence_exponent: float = 1.0,
+        mask=None,
+    ):
+        """Map detector confidence values in ``[0, 1]`` to SO(3) noise scales.
+
+        The mapping is
+        ``sigma(c)^2 = noise_std^2 + (1 - c)^confidence_exponent *``
+        ``(max_noise_std^2 - noise_std^2)``.
+        """
+        confidence = array(confidence, dtype=float)
+        if ndim(confidence) != 1:
+            raise ValueError("confidence must be a one-dimensional array.")
+        num_rotations = confidence.shape[0]
+        confidence = SO3ProductParticleFilter._as_component_confidence(
+            confidence, num_rotations
+        )
+        if noise_std is None or max_noise_std is None:
+            raise ValueError("noise_std and max_noise_std must be provided.")
+        min_sigma = float(noise_std)
+        max_sigma = float(max_noise_std)
+        exponent = float(confidence_exponent)
+        if min_sigma <= 0.0 or not isfinite(min_sigma):
+            raise ValueError("noise_std must be positive and finite.")
+        if max_sigma <= 0.0 or not isfinite(max_sigma):
+            raise ValueError("max_noise_std must be positive and finite.")
+        if max_sigma < min_sigma:
+            raise ValueError("max_noise_std must be greater than or equal to noise_std.")
+        if exponent <= 0.0 or not isfinite(exponent):
+            raise ValueError("confidence_exponent must be positive and finite.")
+
+        variance = min_sigma * min_sigma + (1.0 - confidence) ** exponent * (
+            max_sigma * max_sigma - min_sigma * min_sigma
+        )
+        sigma = sqrt(maximum(variance, 1e-16))
+        if mask is not None:
+            mask = SO3ProductParticleFilter._as_component_mask(mask, num_rotations)
+            sigma = where(mask > 0.0, sigma, max_sigma)
+        return sigma
 
     @staticmethod
     def _as_tangent_array(tangent_vectors, n_particles, num_rotations):
@@ -344,33 +468,88 @@ class SO3ProductParticleFilter(HyperhemisphereCartProdParticleFilter):
         if not all(likelihood_values >= 0.0):
             raise ValueError("likelihood values must be nonnegative.")
 
-        self.filter_state.w = self._normalize_weights(self.weights * likelihood_values)
+        return self.update_with_log_likelihood(
+            log(likelihood_values),
+            resample=resample,
+            ess_threshold=ess_threshold,
+        )
+
+    def update_with_log_likelihood(
+        self,
+        log_likelihood: Callable,
+        measurement=None,
+        resample: bool = True,
+        ess_threshold=None,
+    ):
+        """Update weights from log-likelihoods evaluated on product particles."""
+        if callable(log_likelihood):
+            if measurement is None:
+                log_likelihood_values = log_likelihood(self.particles)
+            else:
+                log_likelihood_values = log_likelihood(measurement, self.particles)
+        else:
+            log_likelihood_values = log_likelihood
+        log_likelihood_values = array(log_likelihood_values, dtype=float)
+        if log_likelihood_values.shape != self.weights.shape:
+            raise ValueError("log_likelihood must return one value per particle.")
+
+        self.filter_state.w = self._normalize_log_weights(
+            log(self.weights) + log_likelihood_values
+        )
         ess = self.effective_sample_size()
         threshold = self.n_particles / 2.0 if ess_threshold is None else ess_threshold
         if resample and ess < threshold:
             self.resample_systematic()
         return ess
 
-    def update_with_geodesic_likelihood(
+    def component_geodesic_log_likelihood(
         self,
         measurement,
-        noise_std,
+        noise_std=None,
         *,
+        component_noise_std=None,
         mask=None,
-        resample: bool = True,
-        ess_threshold=None,
+        confidence=None,
+        max_noise_std=None,
+        confidence_exponent: float = 1.0,
+        outlier_prob: float = 0.0,
     ):
-        """Update with an isotropic masked geodesic likelihood on SO(3)^K."""
-        if noise_std <= 0.0:
-            raise ValueError("noise_std must be positive.")
+        """Return per-component masked geodesic log-likelihoods.
+
+        The returned array has shape ``(n_particles, num_rotations)``.  Masks
+        deactivate components, confidence values in ``[0, 1]`` scale each
+        component's log-likelihood contribution, ``component_noise_std`` supplies
+        heteroskedastic per-component noise, and ``outlier_prob`` adds an
+        unnormalized constant likelihood floor for robustness.
+        """
+        if max_noise_std is not None and component_noise_std is not None:
+            raise ValueError(
+                "component_noise_std and max_noise_std are mutually exclusive."
+            )
 
         measurement = self._as_product_point(measurement, self.num_rotations)
-        if mask is None:
-            mask = ones(self.num_rotations)
-        else:
-            mask = array(mask, dtype=float)
-            if mask.shape != (self.num_rotations,):
-                raise ValueError("mask must have shape (num_rotations,).")
+        mask = self._as_component_mask(mask, self.num_rotations)
+        confidence_weights = self._as_component_confidence(
+            confidence, self.num_rotations
+        )
+        component_weights = mask * confidence_weights
+
+        if max_noise_std is not None:
+            if confidence is None:
+                raise ValueError(
+                    "confidence must be provided when max_noise_std is used."
+                )
+            component_noise_std = self.confidence_to_noise_std(
+                confidence,
+                noise_std,
+                max_noise_std,
+                confidence_exponent=confidence_exponent,
+                mask=mask,
+            )
+        sigma = self._as_component_noise_std(
+            noise_std, component_noise_std, self.num_rotations
+        )
+        eps = self._validate_probability("outlier_prob", outlier_prob)
 
         distances = stack(
             [
@@ -379,10 +558,103 @@ class SO3ProductParticleFilter(HyperhemisphereCartProdParticleFilter):
             ],
             axis=1,
         )
-        quadratic = sum(mask * distances**2, axis=1) / (noise_std**2)
-        likelihood_values = exp(-0.5 * quadratic)
-        return self.update_with_likelihood(
-            lambda _: likelihood_values,
+        clean_log_likelihood = -0.5 * (distances / sigma) ** 2
+        if eps > 0.0:
+            clean_probability = eps if eps < 1.0 - 1e-12 else 1.0 - 1e-12
+            outlier_probability = eps if eps > 1e-12 else 1e-12
+            clean_term = log(1.0 - clean_probability) + clean_log_likelihood
+            outlier_term = log(outlier_probability)
+            normalizer = maximum(clean_term, outlier_term)
+            clean_log_likelihood = normalizer + log(
+                exp(clean_term - normalizer) + exp(outlier_term - normalizer)
+            )
+        return component_weights * clean_log_likelihood
+
+    def geodesic_log_likelihood(
+        self,
+        measurement,
+        noise_std=None,
+        *,
+        component_noise_std=None,
+        mask=None,
+        confidence=None,
+        max_noise_std=None,
+        confidence_exponent: float = 1.0,
+        outlier_prob: float = 0.0,
+    ):
+        """Return one masked geodesic log-likelihood per product particle."""
+        return sum(
+            self.component_geodesic_log_likelihood(
+                measurement,
+                noise_std,
+                component_noise_std=component_noise_std,
+                mask=mask,
+                confidence=confidence,
+                max_noise_std=max_noise_std,
+                confidence_exponent=confidence_exponent,
+                outlier_prob=outlier_prob,
+            ),
+            axis=1,
+        )
+
+    def update_with_geodesic_log_likelihood(
+        self,
+        measurement,
+        noise_std=None,
+        *,
+        component_noise_std=None,
+        mask=None,
+        confidence=None,
+        max_noise_std=None,
+        confidence_exponent: float = 1.0,
+        outlier_prob: float = 0.0,
+        resample: bool = True,
+        ess_threshold=None,
+    ):
+        """Update with a masked, confidence-aware geodesic log-likelihood."""
+        return self.update_with_log_likelihood(
+            self.geodesic_log_likelihood(
+                measurement,
+                noise_std,
+                component_noise_std=component_noise_std,
+                mask=mask,
+                confidence=confidence,
+                max_noise_std=max_noise_std,
+                confidence_exponent=confidence_exponent,
+                outlier_prob=outlier_prob,
+            ),
+            resample=resample,
+            ess_threshold=ess_threshold,
+        )
+
+    def update_with_geodesic_likelihood(
+        self,
+        measurement,
+        noise_std,
+        *,
+        component_noise_std=None,
+        mask=None,
+        confidence=None,
+        max_noise_std=None,
+        confidence_exponent: float = 1.0,
+        outlier_prob: float = 0.0,
+        resample: bool = True,
+        ess_threshold=None,
+    ):
+        """Update with a masked geodesic likelihood on SO(3)^K.
+
+        This method preserves the existing likelihood-space API and delegates to
+        the log-likelihood implementation for numerical stability.
+        """
+        return self.update_with_geodesic_log_likelihood(
+            measurement,
+            noise_std,
+            component_noise_std=component_noise_std,
+            mask=mask,
+            confidence=confidence,
+            max_noise_std=max_noise_std,
+            confidence_exponent=confidence_exponent,
+            outlier_prob=outlier_prob,
             resample=resample,
             ess_threshold=ess_threshold,
         )
