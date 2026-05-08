@@ -120,6 +120,53 @@ class PartitionedSO3ProductParticleFilterTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             filt.update_with_component_likelihoods(array([[1.0, -1.0], [1.0, 1.0]]))
 
+    def test_block_log_likelihood_update(self):
+        filt = PartitionedSO3ProductParticleFilter(
+            n_particles=2,
+            num_rotations=2,
+            partition="singleton",
+        )
+
+        filt.update_with_block_log_likelihoods(
+            array([[0.0, -float("inf")], [-float("inf"), 0.0]]),
+            resample=False,
+        )
+
+        npt.assert_allclose(filt.block_weights, array([[1.0, 0.0], [0.0, 1.0]]))
+
+    def test_geodesic_log_update_uses_confidence_per_component(self):
+        filt = PartitionedSO3ProductParticleFilter(
+            n_particles=2,
+            num_rotations=2,
+            partition="singleton",
+        )
+        filt.set_particles(
+            stack(
+                [
+                    array([[0.0, 0.0, 0.0, 1.0], z_quaternion(0.0)]),
+                    array([z_quaternion(pi / 2.0), z_quaternion(pi / 2.0)]),
+                ],
+                axis=0,
+            )
+        )
+
+        filt.update_with_geodesic_log_likelihood(
+            array([[0.0, 0.0, 0.0, 1.0], z_quaternion(pi / 2.0)]),
+            noise_std=0.2,
+            confidence=array([1.0, 0.0]),
+            resample=False,
+        )
+
+        self.assertGreater(float(filt.block_weights[0, 0]), 0.99)
+        npt.assert_allclose(filt.block_weights[1], array([0.5, 0.5]), atol=ATOL)
+
+        filt.update_with_geodesic_log_likelihood(
+            array([[0.0, 0.0, 0.0, 1.0], z_quaternion(pi / 2.0)]),
+            component_noise_std=array([10.0, 0.2]),
+            resample=False,
+        )
+        self.assertGreater(float(filt.block_weights[1, 1]), 0.99)
+
 
 if __name__ == "__main__":
     unittest.main()
