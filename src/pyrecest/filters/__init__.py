@@ -81,6 +81,10 @@ from .partitioned_so3_product_particle_filter import PartitionedSO3ProductPartic
 from .piecewise_constant_filter import PiecewiseConstantFilter
 from .random_matrix_tracker import RandomMatrixTracker
 from .se2_ukf import SE2UKF
+from .so3_grid_transition import (
+    quaternion_grid_transition_density,
+    so3_right_multiplication_grid_transition,
+)
 from .so3_product_particle_filter import SO3ProductParticleFilter
 from .spherical_harmonics_eot_tracker import (
     SphericalHarmonicsEOTTracker,
@@ -187,6 +191,7 @@ __all__ = [
     "RandomMatrixTracker",
     "SCGPTracker",
     "ScGpTracker",
+    "quaternion_grid_transition_density",
     "Track",
     "TrackManager",
     "TrackManagerStepResult",
@@ -200,6 +205,7 @@ __all__ = [
     "SE2FilterMixin",
     "SE2UKF",
     "SO3ProductParticleFilter",
+    "so3_right_multiplication_grid_transition",
     "SphericalHarmonicsEOTTracker",
     "SphericalHarmonicsExtendedObjectTracker",
     "StateSpaceSubdivisionFilter",
