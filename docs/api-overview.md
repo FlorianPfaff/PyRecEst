@@ -144,12 +144,15 @@ Common starting points include:
 ### `pyrecest.utils`
 
 Reusable utility helpers for assignment, association models, history recording,
-multi-session assignment, and point-set registration.
+multi-session assignment, Gaussian/covariance pairwise features, and point-set
+registration.
 
 Common starting points include:
 
 - `murty_k_best_assignments`;
 - `LogisticPairwiseAssociationModel`;
+- `pairwise_mahalanobis_distances`;
+- `pairwise_covariance_shape_components`;
 - `HistoryRecorder`;
 - `solve_multisession_assignment`;
 - `estimate_thin_plate_spline`.
