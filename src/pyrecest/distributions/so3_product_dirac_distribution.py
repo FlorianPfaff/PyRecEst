@@ -1,17 +1,22 @@
 """Dirac distributions on Cartesian products of SO(3)."""
 
 # pylint: disable=no-name-in-module,no-member,arguments-renamed
+from math import prod
+
 from pyrecest.backend import (
     abs,
     all,
     arange,
     arccos,
     array,
+    asarray,
     clip,
     linalg,
+    ndim,
     pi,
     random,
     reshape,
+    spatial,
     stack,
     sum,
     where,
@@ -104,6 +109,42 @@ class SO3ProductDiracDistribution(HyperhemisphereCartProdDiracDistribution):
     @staticmethod
     def _canonicalize_quaternions(quaternions):
         return where(quaternions[..., -1:] < 0.0, -quaternions, quaternions)
+
+    @staticmethod
+    def _require_rotation_method(method_name):
+        if not hasattr(spatial.Rotation, method_name):
+            raise NotImplementedError(
+                f"Rotation.{method_name} is not supported by the active backend."
+            )
+
+    @classmethod
+    def from_rotation_matrices(cls, rotation_matrices, w=None):
+        """Create an SO(3)^K Dirac distribution from rotation matrices."""
+        cls._require_rotation_method("from_matrix")
+        rotation_matrices = asarray(rotation_matrices)
+        if ndim(rotation_matrices) < 2 or rotation_matrices.shape[-2:] != (3, 3):
+            raise ValueError("Rotation matrices must have shape (..., 3, 3).")
+
+        if ndim(rotation_matrices) == 2:
+            quaternions = array(
+                spatial.Rotation.from_matrix(rotation_matrices).as_quat()
+            )
+            return cls(reshape(quaternions, (1, 1, 4)), w=w)
+
+        if ndim(rotation_matrices) == 3:
+            quaternions = array(
+                spatial.Rotation.from_matrix(rotation_matrices).as_quat()
+            )
+            return cls(quaternions, w=w, num_rotations=quaternions.shape[0])
+
+        num_rotations = int(rotation_matrices.shape[-3])
+        leading_shape = tuple(rotation_matrices.shape[:-3])
+        num_particles = int(prod(leading_shape))
+        flat_matrices = reshape(
+            rotation_matrices, (num_particles * num_rotations, 3, 3)
+        )
+        quaternions = array(spatial.Rotation.from_matrix(flat_matrices).as_quat())
+        return cls(reshape(quaternions, (num_particles, num_rotations, 4)), w=w)
 
     def as_quaternions(self):
         """Return Dirac locations with shape ``(n, K, 4)``."""

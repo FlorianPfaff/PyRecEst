@@ -1,5 +1,4 @@
 import pytest
-
 from pyrecest.backend import allclose, array
 from pyrecest.filters import student_t_covariance_scale
 

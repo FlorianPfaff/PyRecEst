@@ -2,9 +2,10 @@ import unittest
 from math import sqrt
 
 import numpy.testing as npt
+import pyrecest.backend
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import array, linalg, ones, pi, random, sum
+from pyrecest.backend import array, eye, linalg, ones, pi, random, stack, sum
 from pyrecest.distributions import SO3ProductDiracDistribution
 from pyrecest.distributions.cart_prod.hyperhemisphere_cart_prod_dirac_distribution import (
     HyperhemisphereCartProdDiracDistribution,
@@ -159,6 +160,47 @@ class SO3ProductDiracDistributionTest(unittest.TestCase):
 
         npt.assert_allclose(mean_quaternions, array([self.identity, self.z_ninety]))
         npt.assert_allclose(rotation_matrices, expected_rotation_matrices, atol=1e-6)
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ == "pytorch",
+        reason="Rotation matrix conversion is not supported on the PyTorch backend.",
+    )
+    def test_rotation_matrix_roundtrip(self):
+        z_matrix = array([[0.0, -1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0]])
+        x_matrix = array([[1.0, 0.0, 0.0], [0.0, 0.0, -1.0], [0.0, 1.0, 0.0]])
+        rotations = stack(
+            [stack([eye(3), z_matrix], axis=0), stack([eye(3), x_matrix], axis=0)],
+            axis=0,
+        )
+        weights = array([0.2, 0.8])
+
+        dist = SO3ProductDiracDistribution.from_rotation_matrices(rotations, w=weights)
+
+        self.assertEqual(dist.d.shape, (2, 2, 4))
+        self.assertEqual(dist.num_rotations, 2)
+        npt.assert_allclose(dist.w, weights)
+        npt.assert_allclose(
+            SO3ProductDiracDistribution.as_rotation_matrices(dist.as_quaternions()),
+            rotations,
+            atol=1e-6,
+        )
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ == "pytorch",
+        reason="Rotation matrix conversion is not supported on the PyTorch backend.",
+    )
+    def test_single_product_rotation_matrix_roundtrip(self):
+        z_matrix = array([[0.0, -1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0]])
+        rotations = stack([eye(3), z_matrix], axis=0)
+
+        dist = SO3ProductDiracDistribution.from_rotation_matrices(rotations)
+
+        self.assertEqual(dist.d.shape, (1, 2, 4))
+        npt.assert_allclose(
+            SO3ProductDiracDistribution.as_rotation_matrices(dist.as_quaternions())[0],
+            rotations,
+            atol=1e-6,
+        )
 
     def test_sampling(self):
         random.seed(0)
