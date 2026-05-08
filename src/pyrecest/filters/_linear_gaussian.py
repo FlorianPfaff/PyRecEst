@@ -154,6 +154,34 @@ def linear_gaussian_predict(
     return predicted_mean, predicted_covariance
 
 
+def linear_gaussian_innovation(mean, covariance, measurement, measurement_matrix, meas_noise):
+    """Return innovation and innovation covariance for a linear measurement."""
+    mean = _as_vector(mean, "mean")
+    covariance = _as_matrix(covariance, "covariance")
+    measurement = _as_vector(measurement, "measurement")
+    measurement_matrix = _as_matrix(measurement_matrix, "measurement_matrix")
+    meas_noise = _as_matrix(meas_noise, "meas_noise")
+
+    state_dim = mean.shape[0]
+    meas_dim = measurement_matrix.shape[0]
+
+    if covariance.shape != (state_dim, state_dim):
+        raise ValueError("covariance must have shape (state_dim, state_dim)")
+    if measurement_matrix.shape[1] != state_dim:
+        raise ValueError("measurement_matrix has incompatible shape")
+    if measurement.shape[0] != meas_dim:
+        raise ValueError("measurement has incompatible shape")
+    if meas_noise.shape != (meas_dim, meas_dim):
+        raise ValueError("meas_noise must have shape (meas_dim, meas_dim)")
+
+    innovation = measurement - measurement_matrix @ mean
+    innovation_cov = (
+        measurement_matrix @ covariance @ transpose(measurement_matrix) + meas_noise
+    )
+    innovation_cov = 0.5 * (innovation_cov + transpose(innovation_cov))
+    return innovation, innovation_cov
+
+
 def linear_gaussian_update(
     mean,
     covariance,
