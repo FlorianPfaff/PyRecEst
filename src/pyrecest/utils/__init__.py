@@ -1,12 +1,12 @@
 """Utility helpers for :mod:`pyrecest`."""
 
 from .assignment import murty_k_best_assignments
-from .association_models import (
+from .association_features import (
     CalibratedPairwiseAssociationModel,
-    LogisticPairwiseAssociationModel,
     NamedPairwiseFeatureSchema,
     pairwise_feature_tensor,
 )
+from .association_models import LogisticPairwiseAssociationModel
 from .history_recorder import HistoryRecorder
 from .multisession_assignment import (
     MultiSessionAssignmentResult,
