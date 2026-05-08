@@ -28,6 +28,13 @@ def _as_matrix(x, name):
     return x
 
 
+def _as_positive_float(x, name):
+    x = float(x)
+    if x <= 0.0:
+        raise ValueError(f"{name} must be positive")
+    return x
+
+
 def normalized_innovation_squared(innovation, innovation_covariance):
     """Return innovation.T @ inv(innovation_covariance) @ innovation."""
     innovation = _as_vector(innovation, "innovation")
@@ -114,6 +121,46 @@ def student_t_covariance_scale(
     nis = asarray(normalized_innovation_squared, dtype=float64)
     scale = (dof + nis) / (dof + measurement_dim)
     return maximum(min_scale, scale)
+
+
+def _robust_update_decision(
+    normalized_innovation_squared_value,
+    measurement_dim,
+    robust_update,
+    gate_threshold,
+    student_t_dof,
+    huber_threshold,
+    inflation_alpha,
+):
+    robust_update = None if robust_update in (None, "none") else robust_update
+    nis = float(normalized_innovation_squared_value)
+
+    if robust_update is None:
+        if gate_threshold is not None:
+            gate_threshold = _as_positive_float(gate_threshold, "gate_threshold")
+            if nis > gate_threshold:
+                return False, "rejected", 1.0
+        return True, "updated", 1.0
+
+    if robust_update == "nis-inflate":
+        inflation_alpha = _as_positive_float(inflation_alpha, "inflation_alpha")
+        if gate_threshold is None:
+            return True, "updated", 1.0
+        gate_threshold = _as_positive_float(gate_threshold, "gate_threshold")
+        scale = max(1.0, (nis / gate_threshold) ** inflation_alpha)
+        return True, "inflated" if scale > 1.0 else "updated", scale
+
+    if robust_update == "student-t":
+        scale = float(
+            student_t_covariance_scale(nis, measurement_dim, dof=student_t_dof)
+        )
+        return True, "student_t" if scale > 1.0 else "updated", scale
+
+    if robust_update == "huber":
+        scale = float(huber_covariance_scale(nis, huber_threshold=huber_threshold))
+        return True, "huberized" if scale > 1.0 else "updated", scale
+
+    raise ValueError(f"unknown robust update mode {robust_update!r}")
 
 
 def linear_gaussian_predict(
@@ -229,3 +276,79 @@ def linear_gaussian_update(
         return updated_mean, updated_covariance, diagnostics
 
     return updated_mean, updated_covariance
+
+
+def linear_gaussian_update_robust(
+    mean,
+    covariance,
+    measurement,
+    measurement_matrix,
+    meas_noise,
+    *,
+    robust_update="student-t",
+    gate_threshold=None,
+    student_t_dof=4.0,
+    huber_threshold=2.0,
+    inflation_alpha=1.0,
+    return_diagnostics=False,
+):
+    """Robust linear-Gaussian update with adaptive measurement covariance.
+
+    Supported modes are ``None``/``"none"`` for ordinary Gaussian updates with
+    optional NIS rejection, ``"student-t"`` for Student-t down-weighting,
+    ``"huber"`` for Huber down-weighting, and ``"nis-inflate"`` for
+    threshold-based covariance inflation.
+    """
+    mean = _as_vector(mean, "mean")
+    covariance = _as_matrix(covariance, "covariance")
+    measurement = _as_vector(measurement, "measurement")
+    measurement_matrix = _as_matrix(measurement_matrix, "measurement_matrix")
+    meas_noise = _as_matrix(meas_noise, "meas_noise")
+
+    meas_dim = measurement_matrix.shape[0]
+    innovation = measurement - measurement_matrix @ mean
+    nominal_innovation_cov = (
+        measurement_matrix @ covariance @ transpose(measurement_matrix) + meas_noise
+    )
+    nis = normalized_innovation_squared(innovation, nominal_innovation_cov)
+    accepted, action, scale = _robust_update_decision(
+        nis,
+        meas_dim,
+        robust_update,
+        gate_threshold,
+        student_t_dof,
+        huber_threshold,
+        inflation_alpha,
+    )
+
+    if not accepted:
+        diagnostics = {
+            "nis": nis,
+            "residual": innovation,
+            "scale": scale,
+            "action": action,
+            "accepted": False,
+            "robust_update": robust_update,
+        }
+        if return_diagnostics:
+            return mean, covariance, diagnostics
+        return mean, covariance
+
+    result = linear_gaussian_update(
+        mean,
+        covariance,
+        measurement,
+        measurement_matrix,
+        meas_noise,
+        return_diagnostics=return_diagnostics,
+        scale=scale,
+        action=action,
+    )
+
+    if return_diagnostics:
+        updated_mean, updated_covariance, diagnostics = result
+        diagnostics["accepted"] = True
+        diagnostics["robust_update"] = robust_update
+        return updated_mean, updated_covariance, diagnostics
+
+    return result
