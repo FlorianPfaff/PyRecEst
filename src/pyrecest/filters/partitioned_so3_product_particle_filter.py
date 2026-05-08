@@ -3,7 +3,7 @@
 from collections.abc import Callable, Sequence
 
 # pylint: disable=no-name-in-module,no-member,too-many-positional-arguments
-from pyrecest.backend import all, array, exp, ndim, ones, random, stack, sum, to_numpy
+from pyrecest.backend import all, array, exp, log, ndim, ones, random, stack, sum, to_numpy
 from pyrecest.distributions import SO3DiracDistribution
 from pyrecest.distributions._so3_helpers import geodesic_distance
 
@@ -313,6 +313,57 @@ class PartitionedSO3ProductParticleFilter(SO3ProductParticleFilter):
                 self.resample_blocks_systematic(resample_blocks)
         return ess
 
+    def update_with_block_log_likelihoods(
+        self,
+        log_likelihood,
+        measurement=None,
+        resample: bool = True,
+        ess_threshold=None,
+    ):
+        """Update block weights from block log-likelihoods.
+
+        The log-likelihood must evaluate to an array shaped
+        ``(n_blocks, n_particles)``. Each row updates the corresponding block's
+        weights independently in log space, avoiding likelihood underflow.
+        """
+        if callable(log_likelihood):
+            if measurement is None:
+                log_likelihood_values = log_likelihood(self.particles)
+            else:
+                log_likelihood_values = log_likelihood(measurement, self.particles)
+        else:
+            log_likelihood_values = log_likelihood
+        log_likelihood_values = array(log_likelihood_values, dtype=float)
+        if log_likelihood_values.shape != (len(self.partition), self.n_particles):
+            raise ValueError(
+                "block log-likelihoods must have shape "
+                f"({len(self.partition)}, {self.n_particles})."
+            )
+
+        self._block_weights = stack(
+            [
+                self._normalize_log_weights(
+                    log(self._normalize_weights(self._block_weights[block_idx]))
+                    + log_likelihood_values[block_idx]
+                )
+                for block_idx in range(len(self.partition))
+            ],
+            axis=0,
+        )
+        self._sync_global_weights()
+        ess = self.block_effective_sample_size()
+        threshold = self.n_particles / 2.0 if ess_threshold is None else ess_threshold
+        if resample:
+            ess_values = to_numpy(ess).reshape(-1)
+            resample_blocks = [
+                block_idx
+                for block_idx, block_ess in enumerate(ess_values)
+                if float(block_ess) < threshold
+            ]
+            if resample_blocks:
+                self.resample_blocks_systematic(resample_blocks)
+        return ess
+
     def update_with_component_likelihoods(
         self,
         component_likelihoods,
@@ -340,6 +391,38 @@ class PartitionedSO3ProductParticleFilter(SO3ProductParticleFilter):
             block_likelihoods.append(block_likelihood)
         return self.update_with_block_likelihoods(
             stack(block_likelihoods, axis=0),
+            resample=resample,
+            ess_threshold=ess_threshold,
+        )
+
+    def update_with_component_log_likelihoods(
+        self,
+        component_log_likelihoods,
+        *,
+        resample: bool = True,
+        ess_threshold=None,
+    ):
+        """Update from per-component log-likelihoods shaped ``(n_particles, K)``."""
+        component_log_likelihoods = array(component_log_likelihoods, dtype=float)
+        if component_log_likelihoods.shape != (
+            self.n_particles,
+            self.num_rotations,
+        ):
+            raise ValueError(
+                "component_log_likelihoods must have shape "
+                f"({self.n_particles}, {self.num_rotations})."
+            )
+
+        block_log_likelihoods = []
+        for block in self.partition:
+            block_log_likelihood = component_log_likelihoods[:, block[0]]
+            for component_idx in block[1:]:
+                block_log_likelihood = (
+                    block_log_likelihood + component_log_likelihoods[:, component_idx]
+                )
+            block_log_likelihoods.append(block_log_likelihood)
+        return self.update_with_block_log_likelihoods(
+            stack(block_log_likelihoods, axis=0),
             resample=resample,
             ess_threshold=ess_threshold,
         )
