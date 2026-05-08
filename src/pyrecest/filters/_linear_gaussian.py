@@ -8,6 +8,8 @@ from pyrecest.backend import (
     eye,
     float64,
     linalg,
+    maximum,
+    sqrt,
     transpose,
 )
 
@@ -24,6 +26,30 @@ def _as_matrix(x, name):
     if len(x.shape) != 2:
         raise ValueError(f"{name} must be two-dimensional after coercion")
     return x
+
+
+def huber_covariance_scale(normalized_innovation_squared, huber_threshold=2.0):
+    """Return measurement-covariance scaling for a Huber robust update.
+
+    The Huber weight is one for Mahalanobis innovation norm below ``k`` and
+    ``k / norm`` for outliers. Inflating the measurement covariance by the
+    reciprocal weight gives
+
+    ``max(1, sqrt(normalized_innovation_squared) / huber_threshold)``.
+
+    Parameters
+    ----------
+    normalized_innovation_squared : scalar or array-like
+        Squared Mahalanobis innovation, i.e. NIS.
+    huber_threshold : float, optional
+        Huber threshold ``k`` in Mahalanobis-norm units. Must be positive.
+    """
+    huber_threshold = float(huber_threshold)
+    if huber_threshold <= 0.0:
+        raise ValueError("huber_threshold must be positive")
+
+    nis = asarray(normalized_innovation_squared, dtype=float64)
+    return maximum(1.0, sqrt(nis) / huber_threshold)
 
 
 def linear_gaussian_predict(
