@@ -57,8 +57,8 @@ class SdHalfCondSdHalfGridDistribution(AbstractConditionalDistribution):
 
     def _check_normalization(self, tol=0.01):
         """Warn if any column is not normalized to 1 over the hemisphere."""
-        # Match HyperhemisphericalGridDistribution.get_manifold_size(): for a
-        # hemisphere embedded in R^d, the represented manifold is S^(d-1).
+        # Match HyperhemisphericalGridDistribution.get_manifold_size(): a grid
+        # in R^d represents S^{d-1}, so the quadrature surface uses d - 1.
         hemisphere_surface = 0.5 * (
             AbstractHypersphereSubsetDistribution.compute_unit_hypersphere_surface(
                 self.grid.shape[1] - 1
