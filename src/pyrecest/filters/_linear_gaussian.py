@@ -50,7 +50,10 @@ def normalized_innovation_squared(innovation, innovation_covariance):
     return transpose(innovation) @ linalg.solve(innovation_covariance, innovation)
 
 
-def huber_covariance_scale(normalized_innovation_squared, huber_threshold=2.0):
+def huber_covariance_scale(  # pylint: disable=redefined-outer-name
+    normalized_innovation_squared,
+    huber_threshold=2.0,
+):
     """Return measurement-covariance scaling for a Huber robust update.
 
     The Huber weight is one for Mahalanobis innovation norm below ``k`` and
@@ -74,7 +77,7 @@ def huber_covariance_scale(normalized_innovation_squared, huber_threshold=2.0):
     return maximum(1.0, sqrt(nis) / huber_threshold)
 
 
-def student_t_covariance_scale(
+def student_t_covariance_scale(  # pylint: disable=redefined-outer-name
     normalized_innovation_squared,
     measurement_dim,
     dof=4.0,
@@ -125,6 +128,7 @@ def student_t_covariance_scale(
 def _robust_update_decision(
     normalized_innovation_squared_value,
     measurement_dim,
+    *,
     robust_update,
     gate_threshold,
     student_t_dof,
@@ -313,11 +317,11 @@ def linear_gaussian_update_robust(
     accepted, action, scale = _robust_update_decision(
         nis,
         meas_dim,
-        robust_update,
-        gate_threshold,
-        student_t_dof,
-        huber_threshold,
-        inflation_alpha,
+        robust_update=robust_update,
+        gate_threshold=gate_threshold,
+        student_t_dof=student_t_dof,
+        huber_threshold=huber_threshold,
+        inflation_alpha=inflation_alpha,
     )
 
     if not accepted:

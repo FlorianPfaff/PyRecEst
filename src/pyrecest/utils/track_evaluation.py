@@ -1,3 +1,4 @@
+# pylint: disable=too-many-positional-arguments
 """Generic evaluation helpers for multi-session track matrices."""
 
 from __future__ import annotations
@@ -50,21 +51,30 @@ def normalize_track_matrix(track_matrix: Any) -> np.ndarray:
 def track_lengths(track_matrix: Any) -> np.ndarray:
     """Return the number of present observations in each track row."""
     matrix = normalize_track_matrix(track_matrix)
-    return np.asarray([sum(value is not None for value in row) for row in matrix], dtype=int)
+    return np.asarray(
+        [sum(value is not None for value in row) for row in matrix], dtype=int
+    )
 
 
-def complete_track_set(track_matrix: Any, *, session_indices: Sequence[int] | None = None) -> set[tuple[int, ...]]:
+def complete_track_set(
+    track_matrix: Any, *, session_indices: Sequence[int] | None = None
+) -> set[tuple[int, ...]]:
     """Return exact full-track tuples present in every selected session."""
     matrix = normalize_track_matrix(track_matrix)
     complete_tracks: set[tuple[int, ...]] = set()
     for row in matrix:
-        values = [row[session_idx] for session_idx in _selected_sessions(matrix, session_indices)]
+        values = [
+            row[session_idx]
+            for session_idx in _selected_sessions(matrix, session_indices)
+        ]
         if all(value is not None for value in values):
             complete_tracks.add(tuple(int(value) for value in values))
     return complete_tracks
 
 
-def track_pair_set(track_matrix: Any, *, session_pairs: Iterable[tuple[int, int]] | None = None) -> set[TrackLink]:
+def track_pair_set(
+    track_matrix: Any, *, session_pairs: Iterable[tuple[int, int]] | None = None
+) -> set[TrackLink]:
     """Return pairwise track links as ``(session_a, session_b, obs_a, obs_b)``."""
     matrix = normalize_track_matrix(track_matrix)
     links: set[TrackLink] = set()
@@ -77,12 +87,16 @@ def track_pair_set(track_matrix: Any, *, session_pairs: Iterable[tuple[int, int]
     return links
 
 
-def pairwise_track_set(track_matrix: Any, *, session_pairs: Iterable[tuple[int, int]] | None = None) -> set[TrackLink]:
+def pairwise_track_set(
+    track_matrix: Any, *, session_pairs: Iterable[tuple[int, int]] | None = None
+) -> set[TrackLink]:
     """Backward-compatible alias for :func:`track_pair_set`."""
     return track_pair_set(track_matrix, session_pairs=session_pairs)
 
 
-def reference_fragment_counts(predicted_track_matrix: Any, reference_track_matrix: Any) -> np.ndarray:
+def reference_fragment_counts(
+    predicted_track_matrix: Any, reference_track_matrix: Any
+) -> np.ndarray:
     """Return the number of predicted fragments covering each reference track."""
     predicted = normalize_track_matrix(predicted_track_matrix)
     reference = normalize_track_matrix(reference_track_matrix)
@@ -93,12 +107,19 @@ def reference_fragment_counts(predicted_track_matrix: Any, reference_track_matri
         covering_tracks: set[int] = set()
         for session_idx, observation in enumerate(row):
             if observation is not None:
-                covering_tracks.update(predicted_lookup.get((int(session_idx), int(observation)), ()))
+                covering_tracks.update(
+                    predicted_lookup.get((int(session_idx), int(observation)), ())
+                )
         counts[reference_idx] = len(covering_tracks)
     return counts
 
 
-def score_complete_tracks(predicted_track_matrix: Any, reference_track_matrix: Any, *, session_indices: Sequence[int] | None = None) -> dict[str, float | int]:
+def score_complete_tracks(
+    predicted_track_matrix: Any,
+    reference_track_matrix: Any,
+    *,
+    session_indices: Sequence[int] | None = None,
+) -> dict[str, float | int]:
     """Score exact complete-track recovery with precision, recall, and F1."""
     predicted = normalize_track_matrix(predicted_track_matrix)
     reference = normalize_track_matrix(reference_track_matrix)
@@ -112,7 +133,12 @@ def score_complete_tracks(predicted_track_matrix: Any, reference_track_matrix: A
     )
 
 
-def score_track_links(predicted_track_matrix: Any, reference_track_matrix: Any, *, session_pairs: Iterable[tuple[int, int]] | None = None) -> dict[str, float | int]:
+def score_track_links(
+    predicted_track_matrix: Any,
+    reference_track_matrix: Any,
+    *,
+    session_pairs: Iterable[tuple[int, int]] | None = None,
+) -> dict[str, float | int]:
     """Score pairwise links induced by predicted and reference track matrices."""
     predicted = normalize_track_matrix(predicted_track_matrix)
     reference = normalize_track_matrix(reference_track_matrix)
@@ -126,7 +152,12 @@ def score_track_links(predicted_track_matrix: Any, reference_track_matrix: Any, 
     )
 
 
-def score_pairwise_tracks(predicted_track_matrix: Any, reference_track_matrix: Any, *, session_pairs: Iterable[tuple[int, int]] | None = None) -> dict[str, float | int]:
+def score_pairwise_tracks(
+    predicted_track_matrix: Any,
+    reference_track_matrix: Any,
+    *,
+    session_pairs: Iterable[tuple[int, int]] | None = None,
+) -> dict[str, float | int]:
     """Score pairwise links using BayesCaTrack-compatible metric names."""
     predicted = normalize_track_matrix(predicted_track_matrix)
     reference = normalize_track_matrix(reference_track_matrix)
@@ -140,7 +171,12 @@ def score_pairwise_tracks(predicted_track_matrix: Any, reference_track_matrix: A
     )
 
 
-def score_false_continuations(predicted_track_matrix: Any, reference_track_matrix: Any, *, session_pairs: Iterable[tuple[int, int]] | None = None) -> dict[str, float | int]:
+def score_false_continuations(
+    predicted_track_matrix: Any,
+    reference_track_matrix: Any,
+    *,
+    session_pairs: Iterable[tuple[int, int]] | None = None,
+) -> dict[str, float | int]:
     """Score predicted forward links that contradict the reference identity map."""
     predicted = normalize_track_matrix(predicted_track_matrix)
     reference = normalize_track_matrix(reference_track_matrix)
@@ -175,7 +211,9 @@ def score_false_continuations(predicted_track_matrix: Any, reference_track_matri
     }
 
 
-def score_track_fragmentation(predicted_track_matrix: Any, reference_track_matrix: Any) -> dict[str, float | int]:
+def score_track_fragmentation(
+    predicted_track_matrix: Any, reference_track_matrix: Any
+) -> dict[str, float | int]:
     """Score fragmentation of reference identities across predicted tracks."""
     reference = normalize_track_matrix(reference_track_matrix)
     counts = reference_fragment_counts(predicted_track_matrix, reference)
@@ -194,12 +232,18 @@ def score_track_fragmentation(predicted_track_matrix: Any, reference_track_matri
         "fragmentation_rate": _zero_ratio(fragmented_tracks, reference_tracks),
         "fragmentation_covered_rate": _zero_ratio(fragmented_tracks, covered_tracks),
         "fragmentation_mean_fragments_per_reference_track": _mean_or_zero(valid_counts),
-        "fragmentation_mean_fragments_per_covered_reference_track": _mean_or_zero(valid_counts[covered_mask]),
-        "fragmentation_max_fragments_per_reference_track": int(np.max(valid_counts)) if reference_tracks else 0,
+        "fragmentation_mean_fragments_per_covered_reference_track": _mean_or_zero(
+            valid_counts[covered_mask]
+        ),
+        "fragmentation_max_fragments_per_reference_track": (
+            int(np.max(valid_counts)) if reference_tracks else 0
+        ),
     }
 
 
-def score_fragmentation(predicted_track_matrix: Any, reference_track_matrix: Any) -> dict[str, float | int]:
+def score_fragmentation(
+    predicted_track_matrix: Any, reference_track_matrix: Any
+) -> dict[str, float | int]:
     """Backward-compatible alias for :func:`score_track_fragmentation`."""
     return score_track_fragmentation(predicted_track_matrix, reference_track_matrix)
 
@@ -215,7 +259,12 @@ def summarize_tracks(track_matrix: Any) -> dict[str, float | int]:
     }
 
 
-def track_error_ledger(predicted_track_matrix: Any, reference_track_matrix: Any, *, session_pairs: Iterable[tuple[int, int]] | None = None) -> dict[str, Any]:
+def track_error_ledger(
+    predicted_track_matrix: Any,
+    reference_track_matrix: Any,
+    *,
+    session_pairs: Iterable[tuple[int, int]] | None = None,
+) -> dict[str, Any]:
     """Return detailed track-, link-, and duplicate-observation error ledgers."""
     predicted = normalize_track_matrix(predicted_track_matrix)
     reference = normalize_track_matrix(reference_track_matrix)
@@ -229,13 +278,34 @@ def track_error_ledger(predicted_track_matrix: Any, reference_track_matrix: Any,
     reference_links = track_pair_set(reference, session_pairs=pairs)
     false_links = sorted(predicted_links.difference(reference_links))
     missed_links = sorted(reference_links.difference(predicted_links))
-    predicted_rows = _track_rows(predicted_observations, reference_lookup, pairs, predicted=True)
-    reference_rows = _track_rows(reference_observations, predicted_lookup, pairs, predicted=False)
-    link_rows = [_false_link_row(link, predicted_lookup, reference_lookup) for link in false_links]
-    link_rows.extend(_missed_link_row(link, predicted_lookup, reference_lookup) for link in missed_links)
-    duplicate_rows = _duplicate_rows("predicted", predicted_duplicates) + _duplicate_rows("reference", reference_duplicates)
+    predicted_rows = _track_rows(
+        predicted_observations, reference_lookup, pairs, predicted=True
+    )
+    reference_rows = _track_rows(
+        reference_observations, predicted_lookup, pairs, predicted=False
+    )
+    link_rows = [
+        _false_link_row(link, predicted_lookup, reference_lookup)
+        for link in false_links
+    ]
+    link_rows.extend(
+        _missed_link_row(link, predicted_lookup, reference_lookup)
+        for link in missed_links
+    )
+    duplicate_rows = _duplicate_rows(
+        "predicted", predicted_duplicates
+    ) + _duplicate_rows("reference", reference_duplicates)
     return {
-        "summary": _summary_rows(predicted_rows, reference_rows, false_links, missed_links, predicted_links, reference_links, predicted_duplicates, reference_duplicates),
+        "summary": _summary_rows(
+            predicted_rows,
+            reference_rows,
+            false_links,
+            missed_links,
+            predicted_links,
+            reference_links,
+            predicted_duplicates,
+            reference_duplicates,
+        ),
         "predicted_tracks": predicted_rows,
         "reference_tracks": reference_rows,
         "link_errors": link_rows,
@@ -243,9 +313,16 @@ def track_error_ledger(predicted_track_matrix: Any, reference_track_matrix: Any,
     }
 
 
-def summarize_track_errors(predicted_track_matrix: Any, reference_track_matrix: Any, *, session_pairs: Iterable[tuple[int, int]] | None = None) -> dict[str, int | float]:
+def summarize_track_errors(
+    predicted_track_matrix: Any,
+    reference_track_matrix: Any,
+    *,
+    session_pairs: Iterable[tuple[int, int]] | None = None,
+) -> dict[str, int | float]:
     """Return aggregate track-level error metrics."""
-    return track_error_ledger(predicted_track_matrix, reference_track_matrix, session_pairs=session_pairs)["summary"]
+    return track_error_ledger(
+        predicted_track_matrix, reference_track_matrix, session_pairs=session_pairs
+    )["summary"]
 
 
 def score_track_matrices(
@@ -261,12 +338,22 @@ def score_track_matrices(
     _validate_compatible_shapes(predicted, reference)
     scores: dict[str, float | int] = {}
     scores.update(score_track_links(predicted, reference, session_pairs=session_pairs))
-    scores.update(score_pairwise_tracks(predicted, reference, session_pairs=session_pairs))
-    scores.update(score_complete_tracks(predicted, reference, session_indices=complete_session_indices))
-    scores.update(score_false_continuations(predicted, reference, session_pairs=session_pairs))
+    scores.update(
+        score_pairwise_tracks(predicted, reference, session_pairs=session_pairs)
+    )
+    scores.update(
+        score_complete_tracks(
+            predicted, reference, session_indices=complete_session_indices
+        )
+    )
+    scores.update(
+        score_false_continuations(predicted, reference, session_pairs=session_pairs)
+    )
     scores.update(score_track_fragmentation(predicted, reference))
     scores.update(summarize_tracks(predicted))
-    error_scores = dict(summarize_track_errors(predicted, reference, session_pairs=session_pairs))
+    error_scores = dict(
+        summarize_track_errors(predicted, reference, session_pairs=session_pairs)
+    )
     false_continuation_link_rate = error_scores.pop("false_continuation_rate", None)
     scores.update(error_scores)
     if false_continuation_link_rate is not None:
@@ -278,7 +365,10 @@ def _parse_optional_int(value: Any) -> int | None:
     candidate = _optional_int_candidate(value)
     if candidate is _MISSING:
         return None
-    if isinstance(candidate, (float, np.floating)) and not float(candidate).is_integer():
+    if (
+        isinstance(candidate, (float, np.floating))
+        and not float(candidate).is_integer()
+    ):
         return None
     try:
         parsed = int(candidate)
@@ -300,15 +390,27 @@ def _optional_int_candidate(value: Any) -> Any:
     return value
 
 
-def _selected_sessions(matrix: np.ndarray, session_indices: Sequence[int] | None) -> list[int]:
-    selected = list(range(matrix.shape[1])) if session_indices is None else [int(index) for index in session_indices]
+def _selected_sessions(
+    matrix: np.ndarray, session_indices: Sequence[int] | None
+) -> list[int]:
+    selected = (
+        list(range(matrix.shape[1]))
+        if session_indices is None
+        else [int(index) for index in session_indices]
+    )
     for session_idx in selected:
         _validate_session_index(matrix, session_idx)
     return selected
 
 
-def _session_pairs(matrix: np.ndarray, session_pairs: Iterable[tuple[int, int]] | None) -> tuple[tuple[int, int], ...]:
-    pairs = tuple((idx, idx + 1) for idx in range(max(0, matrix.shape[1] - 1))) if session_pairs is None else tuple((int(a), int(b)) for a, b in session_pairs)
+def _session_pairs(
+    matrix: np.ndarray, session_pairs: Iterable[tuple[int, int]] | None
+) -> tuple[tuple[int, int], ...]:
+    pairs = (
+        tuple((idx, idx + 1) for idx in range(max(0, matrix.shape[1] - 1)))
+        if session_pairs is None
+        else tuple((int(a), int(b)) for a, b in session_pairs)
+    )
     for session_a, session_b in pairs:
         _validate_session_index(matrix, session_a)
         _validate_session_index(matrix, session_b)
@@ -319,12 +421,16 @@ def _session_pairs(matrix: np.ndarray, session_pairs: Iterable[tuple[int, int]] 
 
 def _validate_session_index(matrix: np.ndarray, session_idx: int) -> None:
     if session_idx < 0 or session_idx >= matrix.shape[1]:
-        raise IndexError(f"session index {session_idx} out of bounds for {matrix.shape[1]} sessions")
+        raise IndexError(
+            f"session index {session_idx} out of bounds for {matrix.shape[1]} sessions"
+        )
 
 
 def _validate_compatible_shapes(predicted: np.ndarray, reference: np.ndarray) -> None:
     if predicted.shape[1] != reference.shape[1]:
-        raise ValueError("Predicted and reference matrices must have the same number of sessions")
+        raise ValueError(
+            "Predicted and reference matrices must have the same number of sessions"
+        )
 
 
 def _multi_observation_lookup(matrix: np.ndarray) -> dict[Observation, set[int]]:
@@ -332,11 +438,15 @@ def _multi_observation_lookup(matrix: np.ndarray) -> dict[Observation, set[int]]
     for track_idx, row in enumerate(matrix):
         for session_idx, observation in enumerate(row):
             if observation is not None:
-                lookup.setdefault((int(session_idx), int(observation)), set()).add(int(track_idx))
+                lookup.setdefault((int(session_idx), int(observation)), set()).add(
+                    int(track_idx)
+                )
     return lookup
 
 
-def _single_observation_lookup(matrix: np.ndarray) -> tuple[dict[Observation, int], list[tuple[Observation, int, int]]]:
+def _single_observation_lookup(
+    matrix: np.ndarray,
+) -> tuple[dict[Observation, int], list[tuple[Observation, int, int]]]:
     lookup: dict[Observation, int] = {}
     duplicates: list[tuple[Observation, int, int]] = []
     for track_idx, row in enumerate(matrix):
@@ -353,85 +463,155 @@ def _single_observation_lookup(matrix: np.ndarray) -> tuple[dict[Observation, in
 
 
 def _observations_by_track(matrix: np.ndarray) -> list[list[Observation]]:
-    return [[(int(session_idx), int(value)) for session_idx, value in enumerate(row) if value is not None] for row in matrix]
+    return [
+        [
+            (int(session_idx), int(value))
+            for session_idx, value in enumerate(row)
+            if value is not None
+        ]
+        for row in matrix
+    ]
 
 
-def _track_rows(observations_by_track: list[list[Observation]], lookup: dict[Observation, int], pairs: tuple[tuple[int, int], ...], *, predicted: bool) -> list[dict[str, Any]]:
+def _track_rows(
+    observations_by_track: list[list[Observation]],
+    lookup: dict[Observation, int],
+    pairs: tuple[tuple[int, int], ...],
+    *,
+    predicted: bool,
+) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for track_id, observations in enumerate(observations_by_track):
-        matched_ids = [lookup[observation] for observation in observations if observation in lookup]
+        matched_ids = [
+            lookup[observation] for observation in observations if observation in lookup
+        ]
         counts = Counter(matched_ids)
-        missing = [observation for observation in observations if observation not in lookup]
+        missing = [
+            observation for observation in observations if observation not in lookup
+        ]
         if predicted:
             switches = _identity_switches(observations, lookup)
-            rows.append({
-                "track_id": int(track_id),
-                "category": _predicted_track_category(counts, missing, switches),
-                "length": len(observations),
-                "reference_track_ids": sorted(int(track_id) for track_id in counts),
-                "dominant_reference_track_id": _dominant_counter_key(counts),
-                "matched_reference_observations": int(sum(counts.values())),
-                "unreferenced_observations": len(missing),
-                "identity_switches": switches,
-                "false_continuation_links": _track_disagreement_links(observations, lookup, pairs),
-            })
+            rows.append(
+                {
+                    "track_id": int(track_id),
+                    "category": _predicted_track_category(counts, missing, switches),
+                    "length": len(observations),
+                    "reference_track_ids": sorted(int(track_id) for track_id in counts),
+                    "dominant_reference_track_id": _dominant_counter_key(counts),
+                    "matched_reference_observations": int(sum(counts.values())),
+                    "unreferenced_observations": len(missing),
+                    "identity_switches": switches,
+                    "false_continuation_links": _track_disagreement_links(
+                        observations, lookup, pairs
+                    ),
+                }
+            )
         else:
-            rows.append({
-                "track_id": int(track_id),
-                "category": _reference_track_category(counts, missing),
-                "length": len(observations),
-                "predicted_track_ids": sorted(int(track_id) for track_id in counts),
-                "dominant_predicted_track_id": _dominant_counter_key(counts),
-                "matched_predicted_observations": int(sum(counts.values())),
-                "missed_observations": len(missing),
-                "fragment_count": max(0, len(counts) - 1),
-                "missed_reference_links": _track_disagreement_links(observations, lookup, pairs),
-            })
+            rows.append(
+                {
+                    "track_id": int(track_id),
+                    "category": _reference_track_category(counts, missing),
+                    "length": len(observations),
+                    "predicted_track_ids": sorted(int(track_id) for track_id in counts),
+                    "dominant_predicted_track_id": _dominant_counter_key(counts),
+                    "matched_predicted_observations": int(sum(counts.values())),
+                    "missed_observations": len(missing),
+                    "fragment_count": max(0, len(counts) - 1),
+                    "missed_reference_links": _track_disagreement_links(
+                        observations, lookup, pairs
+                    ),
+                }
+            )
     return rows
 
 
-def _summary_rows(predicted_rows, reference_rows, false_links, missed_links, predicted_links, reference_links, predicted_duplicates, reference_duplicates):
+def _summary_rows(
+    predicted_rows,
+    reference_rows,
+    false_links,
+    missed_links,
+    predicted_links,
+    reference_links,
+    predicted_duplicates,
+    reference_duplicates,
+):
     reference_tracks = len(reference_rows)
     predicted_tracks = len(predicted_rows)
     fragmented = sum(1 for row in reference_rows if row["fragment_count"] > 0)
     missed_tracks = sum(1 for row in reference_rows if row["category"] == "missed")
-    partial_tracks = sum(1 for row in reference_rows if row["category"] in {"partial", "fragmented_partial"})
-    mixed_tracks = sum(1 for row in predicted_rows if row["category"] == "mixed_identity")
+    partial_tracks = sum(
+        1
+        for row in reference_rows
+        if row["category"] in {"partial", "fragmented_partial"}
+    )
+    mixed_tracks = sum(
+        1 for row in predicted_rows if row["category"] == "mixed_identity"
+    )
     spurious_tracks = sum(1 for row in predicted_rows if row["category"] == "spurious")
-    predicted_error_tracks = sum(1 for row in predicted_rows if row["category"] != "single_identity")
-    reference_error_tracks = sum(1 for row in reference_rows if row["category"] != "recovered")
+    predicted_error_tracks = sum(
+        1 for row in predicted_rows if row["category"] != "single_identity"
+    )
+    reference_error_tracks = sum(
+        1 for row in reference_rows if row["category"] != "recovered"
+    )
     return {
-        "identity_switches": int(sum(row["identity_switches"] for row in predicted_rows)),
+        "identity_switches": int(
+            sum(row["identity_switches"] for row in predicted_rows)
+        ),
         "mixed_identity_tracks": int(mixed_tracks),
         "spurious_tracks": int(spurious_tracks),
-        "spurious_predicted_observations": int(sum(row["unreferenced_observations"] for row in predicted_rows)),
+        "spurious_predicted_observations": int(
+            sum(row["unreferenced_observations"] for row in predicted_rows)
+        ),
         "false_continuation_links": len(false_links),
         "false_continuation_rate": _zero_ratio(len(false_links), len(predicted_links)),
         "missed_reference_links": len(missed_links),
-        "missed_reference_link_rate": _zero_ratio(len(missed_links), len(reference_links)),
+        "missed_reference_link_rate": _zero_ratio(
+            len(missed_links), len(reference_links)
+        ),
         "fragmented_reference_tracks": int(fragmented),
-        "track_fragmentations": int(sum(row["fragment_count"] for row in reference_rows)),
+        "track_fragmentations": int(
+            sum(row["fragment_count"] for row in reference_rows)
+        ),
         "track_fragmentation_rate": _zero_ratio(fragmented, reference_tracks),
         "missed_reference_tracks": int(missed_tracks),
         "missed_reference_track_rate": _zero_ratio(missed_tracks, reference_tracks),
         "partial_reference_tracks": int(partial_tracks),
-        "missed_reference_observations": int(sum(row["missed_observations"] for row in reference_rows)),
+        "missed_reference_observations": int(
+            sum(row["missed_observations"] for row in reference_rows)
+        ),
         "predicted_duplicate_observations": len(predicted_duplicates),
         "reference_duplicate_observations": len(reference_duplicates),
         "predicted_tracks_with_errors": int(predicted_error_tracks),
         "reference_tracks_with_errors": int(reference_error_tracks),
-        "predicted_track_error_rate": _zero_ratio(predicted_error_tracks, predicted_tracks),
-        "reference_track_error_rate": _zero_ratio(reference_error_tracks, reference_tracks),
+        "predicted_track_error_rate": _zero_ratio(
+            predicted_error_tracks, predicted_tracks
+        ),
+        "reference_track_error_rate": _zero_ratio(
+            reference_error_tracks, reference_tracks
+        ),
     }
 
 
-def _false_link_row(link: TrackLink, predicted_lookup: dict[Observation, int], reference_lookup: dict[Observation, int]) -> dict[str, Any]:
+def _false_link_row(
+    link: TrackLink,
+    predicted_lookup: dict[Observation, int],
+    reference_lookup: dict[Observation, int],
+) -> dict[str, Any]:
     session_a, session_b, obs_a, obs_b = link
     obs_key_a = (session_a, obs_a)
     obs_key_b = (session_b, obs_b)
     reference_a = reference_lookup.get(obs_key_a)
     reference_b = reference_lookup.get(obs_key_b)
-    reason = "unreferenced_observation" if reference_a is None or reference_b is None else "different_reference_tracks" if reference_a != reference_b else "missing_reference_link"
+    reason = (
+        "unreferenced_observation"
+        if reference_a is None or reference_b is None
+        else (
+            "different_reference_tracks"
+            if reference_a != reference_b
+            else "missing_reference_link"
+        )
+    )
     return {
         "error_type": "false_continuation",
         "reason": reason,
@@ -439,19 +619,33 @@ def _false_link_row(link: TrackLink, predicted_lookup: dict[Observation, int], r
         "session_b": int(session_b),
         "observation_a": int(obs_a),
         "observation_b": int(obs_b),
-        "predicted_track_id": _same_or_none(predicted_lookup.get(obs_key_a), predicted_lookup.get(obs_key_b)),
+        "predicted_track_id": _same_or_none(
+            predicted_lookup.get(obs_key_a), predicted_lookup.get(obs_key_b)
+        ),
         "reference_track_a": _optional_int(reference_a),
         "reference_track_b": _optional_int(reference_b),
     }
 
 
-def _missed_link_row(link: TrackLink, predicted_lookup: dict[Observation, int], reference_lookup: dict[Observation, int]) -> dict[str, Any]:
+def _missed_link_row(
+    link: TrackLink,
+    predicted_lookup: dict[Observation, int],
+    reference_lookup: dict[Observation, int],
+) -> dict[str, Any]:
     session_a, session_b, obs_a, obs_b = link
     obs_key_a = (session_a, obs_a)
     obs_key_b = (session_b, obs_b)
     predicted_a = predicted_lookup.get(obs_key_a)
     predicted_b = predicted_lookup.get(obs_key_b)
-    reason = "missing_prediction_observation" if predicted_a is None or predicted_b is None else "split_across_predicted_tracks" if predicted_a != predicted_b else "missing_predicted_link"
+    reason = (
+        "missing_prediction_observation"
+        if predicted_a is None or predicted_b is None
+        else (
+            "split_across_predicted_tracks"
+            if predicted_a != predicted_b
+            else "missing_predicted_link"
+        )
+    )
     return {
         "error_type": "missed_reference_link",
         "reason": reason,
@@ -459,17 +653,34 @@ def _missed_link_row(link: TrackLink, predicted_lookup: dict[Observation, int], 
         "session_b": int(session_b),
         "observation_a": int(obs_a),
         "observation_b": int(obs_b),
-        "reference_track_id": _same_or_none(reference_lookup.get(obs_key_a), reference_lookup.get(obs_key_b)),
+        "reference_track_id": _same_or_none(
+            reference_lookup.get(obs_key_a), reference_lookup.get(obs_key_b)
+        ),
         "predicted_track_a": _optional_int(predicted_a),
         "predicted_track_b": _optional_int(predicted_b),
     }
 
 
-def _duplicate_rows(kind: str, duplicates: list[tuple[Observation, int, int]]) -> list[dict[str, int | str]]:
-    return [{"matrix": kind, "session": int(obs[0]), "observation": int(obs[1]), "first_track_id": int(first), "duplicate_track_id": int(duplicate)} for obs, first, duplicate in duplicates]
+def _duplicate_rows(
+    kind: str, duplicates: list[tuple[Observation, int, int]]
+) -> list[dict[str, int | str]]:
+    return [
+        {
+            "matrix": kind,
+            "session": int(obs[0]),
+            "observation": int(obs[1]),
+            "first_track_id": int(first),
+            "duplicate_track_id": int(duplicate),
+        }
+        for obs, first, duplicate in duplicates
+    ]
 
 
-def _track_disagreement_links(observations: list[Observation], lookup: dict[Observation, int], pairs: tuple[tuple[int, int], ...]) -> int:
+def _track_disagreement_links(
+    observations: list[Observation],
+    lookup: dict[Observation, int],
+    pairs: tuple[tuple[int, int], ...],
+) -> int:
     by_session = dict(observations)
     errors = 0
     for session_a, session_b in pairs:
@@ -482,7 +693,9 @@ def _track_disagreement_links(observations: list[Observation], lookup: dict[Obse
     return errors
 
 
-def _identity_switches(observations: list[Observation], lookup: dict[Observation, int]) -> int:
+def _identity_switches(
+    observations: list[Observation], lookup: dict[Observation, int]
+) -> int:
     last_id: int | None = None
     switches = 0
     for observation in sorted(observations):
@@ -495,15 +708,25 @@ def _identity_switches(observations: list[Observation], lookup: dict[Observation
     return switches
 
 
-def _predicted_track_category(reference_counts: Counter[int], unknown_observations: list[Observation], identity_switches: int) -> str:
+def _predicted_track_category(
+    reference_counts: Counter[int],
+    unknown_observations: list[Observation],
+    identity_switches: int,
+) -> str:
     if not reference_counts:
         return "spurious"
     if identity_switches > 0 or len(reference_counts) > 1:
         return "mixed_identity"
-    return "single_identity_with_unreferenced_observations" if unknown_observations else "single_identity"
+    return (
+        "single_identity_with_unreferenced_observations"
+        if unknown_observations
+        else "single_identity"
+    )
 
 
-def _reference_track_category(predicted_counts: Counter[int], missed_observations: list[Observation]) -> str:
+def _reference_track_category(
+    predicted_counts: Counter[int], missed_observations: list[Observation]
+) -> str:
     if not predicted_counts:
         return "missed"
     fragmented = len(predicted_counts) > 1
@@ -515,7 +738,14 @@ def _reference_track_category(predicted_counts: Counter[int], missed_observation
     return "partial" if partial else "recovered"
 
 
-def _score_identity_sets(predicted: set[Any], reference: set[Any], *, prefix: str, predicted_total_name: str, reference_total_name: str) -> dict[str, float | int]:
+def _score_identity_sets(
+    predicted: set[Any],
+    reference: set[Any],
+    *,
+    prefix: str,
+    predicted_total_name: str,
+    reference_total_name: str,
+) -> dict[str, float | int]:
     true_positives = len(predicted & reference)
     false_positives = len(predicted - reference)
     false_negatives = len(reference - predicted)
@@ -535,7 +765,9 @@ def _score_identity_sets(predicted: set[Any], reference: set[Any], *, prefix: st
 
 
 def _dominant_counter_key(counter: Counter[int]) -> int | None:
-    return None if not counter else int(max(counter, key=lambda key: (counter[key], -key)))
+    return (
+        None if not counter else int(max(counter, key=lambda key: (counter[key], -key)))
+    )
 
 
 def _same_or_none(left: int | None, right: int | None) -> int | None:
