@@ -1,4 +1,4 @@
-# pylint: disable=no-name-in-module,no-member
+# pylint: disable=no-name-in-module,no-member,redefined-outer-name
 """Backend-native linear-Gaussian predict/update primitives."""
 
 from pyrecest.backend import (
@@ -45,8 +45,7 @@ def normalized_innovation_squared(innovation, innovation_covariance):
     innovation_dim = innovation.shape[0]
     if innovation_covariance.shape != (innovation_dim, innovation_dim):
         raise ValueError(
-            "innovation_covariance must have shape "
-            "(innovation_dim, innovation_dim)"
+            "innovation_covariance must have shape (innovation_dim, innovation_dim)"
         )
     return transpose(innovation) @ linalg.solve(innovation_covariance, innovation)
 
@@ -261,8 +260,8 @@ def linear_gaussian_update(
     identity = eye(state_dim)
     correction = identity - kalman_gain @ measurement_matrix
     updated_covariance = correction @ covariance @ transpose(correction)
-    updated_covariance = updated_covariance + kalman_gain @ scaled_meas_noise @ transpose(
-        kalman_gain
+    updated_covariance = (
+        updated_covariance + kalman_gain @ scaled_meas_noise @ transpose(kalman_gain)
     )
     updated_covariance = 0.5 * (updated_covariance + transpose(updated_covariance))
 

@@ -1,8 +1,11 @@
 import unittest
 
 import numpy.testing as npt
-from pyrecest.backend import array
+
+from pyrecest.backend import __backend_name__, array
 from pyrecest.utils.point_set_registration import AffineTransform
+
+_ATOL = 1e-6 if __backend_name__ == "jax" else 1e-10
 
 
 class TestAffineTransformAlgebra(unittest.TestCase):
@@ -15,7 +18,7 @@ class TestAffineTransformAlgebra(unittest.TestCase):
 
         recovered = transform.inverse().apply(transform.apply(points))
 
-        npt.assert_allclose(recovered, points, atol=1e-10)
+        npt.assert_allclose(recovered, points, atol=_ATOL)
 
     def test_compose_matches_sequential_application(self):
         points = array([[0.0, 0.0], [1.0, -2.0], [3.0, 4.0]])
@@ -33,7 +36,7 @@ class TestAffineTransformAlgebra(unittest.TestCase):
         npt.assert_allclose(
             composed.apply(points),
             second.apply(first.apply(points)),
-            atol=1e-10,
+            atol=_ATOL,
         )
 
     def test_compose_rejects_dimension_mismatch(self):

@@ -1,13 +1,15 @@
 import unittest
 
-from pyrecest.backend import allclose, array, eye, linalg, ones, zeros
+from pyrecest.backend import __backend_name__, allclose, array, eye, linalg, ones, zeros
 from pyrecest.distributions.cart_prod.state_space_subdivision_gaussian_distribution import (
     StateSpaceSubdivisionGaussianDistribution,
 )
 from pyrecest.distributions.hypersphere_subset.hyperhemispherical_grid_distribution import (
     HyperhemisphericalGridDistribution,
 )
-from pyrecest.distributions.nonperiodic.gaussian_distribution import GaussianDistribution
+from pyrecest.distributions.nonperiodic.gaussian_distribution import (
+    GaussianDistribution,
+)
 from pyrecest.filters.relaxed_s3f_so3 import (
     _cached_s3r3_cell_statistics,
     predict_s3r3_relaxed,
@@ -16,6 +18,8 @@ from pyrecest.filters.relaxed_s3f_so3 import (
     s3r3_orientation_distance,
 )
 from pyrecest.filters.state_space_subdivision_filter import StateSpaceSubdivisionFilter
+
+_JAX_ATOL = 1e-6 if __backend_name__ == "jax" else 1e-12
 
 
 class RelaxedS3FSO3Test(unittest.TestCase):
@@ -39,10 +43,15 @@ class RelaxedS3FSO3Test(unittest.TestCase):
         _cached_s3r3_cell_statistics.cache_clear()
         grid = _small_quaternion_grid()
 
-        stats_a = s3r3_cell_statistics(grid, array([0.4, 0.1, 0.2]), cell_sample_count=27)
-        stats_b = s3r3_cell_statistics(array(grid, dtype=float), array([0.4, 0.1, 0.2]), cell_sample_count=27)
+        stats_a = s3r3_cell_statistics(
+            grid, array([0.4, 0.1, 0.2]), cell_sample_count=27
+        )
+        stats_b = s3r3_cell_statistics(
+            array(grid, dtype=float), array([0.4, 0.1, 0.2]), cell_sample_count=27
+        )
 
         self.assertIs(stats_a, stats_b)
+        # pylint: disable-next=no-value-for-parameter
         cache_info = _cached_s3r3_cell_statistics.cache_info()
         self.assertEqual(cache_info.misses, 1)
         self.assertEqual(cache_info.hits, 1)
@@ -59,9 +68,20 @@ class RelaxedS3FSO3Test(unittest.TestCase):
             cell_sample_count=27,
         )
 
-        self.assertTrue(bool(allclose(filter_.filter_state.gd.grid_values, values_before, atol=1e-12)))
-        self.assertTrue(bool(allclose(float(filter_.filter_state.gd.integrate()), 1.0, atol=1e-12)))
-        self.assertTrue(any(float(linalg.norm(covariance)) > 0.0 for covariance in stats.covariance_inflations))
+        self.assertTrue(
+            bool(
+                allclose(filter_.filter_state.gd.grid_values, values_before, atol=1e-12)
+            )
+        )
+        self.assertTrue(
+            bool(allclose(float(filter_.filter_state.gd.integrate()), 1.0, atol=1e-12))
+        )
+        self.assertTrue(
+            any(
+                float(linalg.norm(covariance)) > 0.0
+                for covariance in stats.covariance_inflations
+            )
+        )
 
     def test_baseline_and_r1_variants_use_expected_inputs(self):
         body_increment = array([0.4, 0.0, 0.0])
@@ -83,8 +103,18 @@ class RelaxedS3FSO3Test(unittest.TestCase):
 
         baseline_mean0 = baseline_filter.filter_state.linear_distributions[0].mu
         r1_mean0 = r1_filter.filter_state.linear_distributions[0].mu
-        self.assertTrue(bool(allclose(baseline_mean0, baseline_stats.representative_displacements[0], atol=1e-12)))
-        self.assertTrue(bool(allclose(r1_mean0, r1_stats.mean_displacements[0], atol=1e-12)))
+        self.assertTrue(
+            bool(
+                allclose(
+                    baseline_mean0,
+                    baseline_stats.representative_displacements[0],
+                    atol=1e-12,
+                )
+            )
+        )
+        self.assertTrue(
+            bool(allclose(r1_mean0, r1_stats.mean_displacements[0], atol=1e-12))
+        )
         self.assertFalse(bool(allclose(baseline_mean0, r1_mean0, atol=1e-14)))
 
     def test_quaternion_rotation_and_distance_helpers(self):
@@ -94,18 +124,32 @@ class RelaxedS3FSO3Test(unittest.TestCase):
         rotated = rotate_quaternion_body_increment(identity, array([0.4, 0.1, 0.2]))
 
         self.assertTrue(bool(allclose(rotated[0], array([0.4, 0.1, 0.2]), atol=1e-12)))
-        self.assertAlmostEqual(s3r3_orientation_distance(identity, -identity), 0.0, places=12)
-        self.assertAlmostEqual(s3r3_orientation_distance(identity, half_turn_z), 3.141592653589793, places=12)
+        self.assertAlmostEqual(
+            s3r3_orientation_distance(identity, -identity), 0.0, delta=_JAX_ATOL
+        )
+        self.assertAlmostEqual(
+            s3r3_orientation_distance(identity, half_turn_z),
+            3.141592653589793,
+            delta=_JAX_ATOL,
+        )
 
     def test_validation_errors_are_explicit(self):
         with self.assertRaisesRegex(ValueError, "method"):
-            s3r3_cell_statistics(_small_quaternion_grid(), array([0.4, 0.1, 0.2]), method="exact_voronoi")
+            s3r3_cell_statistics(
+                _small_quaternion_grid(), array([0.4, 0.1, 0.2]), method="exact_voronoi"
+            )
         with self.assertRaisesRegex(ValueError, "cell_sample_count"):
-            s3r3_cell_statistics(_small_quaternion_grid(), array([0.4, 0.1, 0.2]), cell_sample_count=0)
+            s3r3_cell_statistics(
+                _small_quaternion_grid(), array([0.4, 0.1, 0.2]), cell_sample_count=0
+            )
         with self.assertRaisesRegex(ValueError, "body_increment"):
-            s3r3_cell_statistics(_small_quaternion_grid(), array([0.4, 0.1]), cell_sample_count=27)
+            s3r3_cell_statistics(
+                _small_quaternion_grid(), array([0.4, 0.1]), cell_sample_count=27
+            )
         with self.assertRaisesRegex(ValueError, "variant"):
-            predict_s3r3_relaxed(_make_filter(), array([0.4, 0.1, 0.2]), variant="r2_only")
+            predict_s3r3_relaxed(
+                _make_filter(), array([0.4, 0.1, 0.2]), variant="r2_only"
+            )
 
 
 def _make_filter() -> StateSpaceSubdivisionFilter:
