@@ -4,9 +4,11 @@ from pyrecest.backend import atleast_1d, atleast_2d, eye
 from pyrecest.distributions import GaussianDistribution
 
 from ._linear_gaussian import (
+    linear_gaussian_innovation,
     linear_gaussian_predict,
     linear_gaussian_update,
     linear_gaussian_update_robust,
+    normalized_innovation_squared,
 )
 from .abstract_filter import AbstractFilter
 from .manifold_mixins import EuclideanFilterMixin
@@ -210,6 +212,30 @@ class KalmanFilter(AbstractFilter, EuclideanFilterMixin):
             scale=scale,
             action=action,
         )
+
+    def innovation_linear(self, measurement, measurement_matrix, meas_noise):
+        """Return innovation and innovation covariance for a linear measurement."""
+        return linear_gaussian_innovation(
+            self._filter_state.mu,
+            self._filter_state.C,
+            measurement,
+            measurement_matrix,
+            meas_noise,
+        )
+
+    def normalized_innovation_squared_linear(
+        self,
+        measurement,
+        measurement_matrix,
+        meas_noise,
+    ):
+        """Return the normalized innovation squared for a linear measurement."""
+        innovation, innovation_covariance = self.innovation_linear(
+            measurement,
+            measurement_matrix,
+            meas_noise,
+        )
+        return normalized_innovation_squared(innovation, innovation_covariance)
 
     def update_linear(
         self,
