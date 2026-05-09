@@ -67,7 +67,12 @@ def squared_error(estimates: ArrayLike, groundtruths: ArrayLike) -> np.ndarray:
     return np.sum(errors * errors, axis=-1)
 
 
-def mean_squared_error(estimates: ArrayLike, groundtruths: ArrayLike, *, axis: int | tuple[int, ...] | None = None):
+def mean_squared_error(
+    estimates: ArrayLike,
+    groundtruths: ArrayLike,
+    *,
+    axis: int | tuple[int, ...] | None = None,
+):
     """Return mean squared component error.
 
     ``axis=None`` averages all entries. Use ``axis=0`` to obtain a component-wise
@@ -77,12 +82,22 @@ def mean_squared_error(estimates: ArrayLike, groundtruths: ArrayLike, *, axis: i
     return np.mean(errors * errors, axis=axis)
 
 
-def root_mean_squared_error(estimates: ArrayLike, groundtruths: ArrayLike, *, axis: int | tuple[int, ...] | None = None):
+def root_mean_squared_error(
+    estimates: ArrayLike,
+    groundtruths: ArrayLike,
+    *,
+    axis: int | tuple[int, ...] | None = None,
+):
     """Return root mean squared component error."""
     return np.sqrt(mean_squared_error(estimates, groundtruths, axis=axis))
 
 
-def mean_absolute_error(estimates: ArrayLike, groundtruths: ArrayLike, *, axis: int | tuple[int, ...] | None = None):
+def mean_absolute_error(
+    estimates: ArrayLike,
+    groundtruths: ArrayLike,
+    *,
+    axis: int | tuple[int, ...] | None = None,
+):
     """Return mean absolute component error."""
     return np.mean(np.abs(error_vectors(estimates, groundtruths)), axis=axis)
 
@@ -92,7 +107,11 @@ rmse = root_mean_squared_error
 mae = mean_absolute_error
 
 
-def normalized_estimation_error_squared(estimates: ArrayLike, uncertainties: ArrayLike, groundtruths: ArrayLike | None = None):
+def normalized_estimation_error_squared(
+    estimates: ArrayLike,
+    uncertainties: ArrayLike,
+    groundtruths: ArrayLike | None = None,
+):
     """Return normalized estimation error squared values.
 
     If ``groundtruths`` is omitted, ``estimates`` is interpreted as an error
@@ -100,19 +119,43 @@ def normalized_estimation_error_squared(estimates: ArrayLike, uncertainties: Arr
     returned values have expected value equal to the state dimension for a
     consistent covariance.
     """
-    errors = _as_numeric_array(estimates, "estimates") if groundtruths is None else error_vectors(estimates, groundtruths)
+    errors = (
+        _as_numeric_array(estimates, "estimates")
+        if groundtruths is None
+        else error_vectors(estimates, groundtruths)
+    )
     errors = _as_sample_matrix(errors, "errors")
-    covariances = _as_covariance_stack(uncertainties, errors.shape[0], errors.shape[1], "uncertainties")
+    covariances = _as_covariance_stack(
+        uncertainties, errors.shape[0], errors.shape[1], "uncertainties"
+    )
     values = _quadratic_forms(errors, covariances)
-    return float(values[0]) if _is_single_vector(estimates) and groundtruths is None else values
+    return (
+        float(values[0])
+        if _is_single_vector(estimates) and groundtruths is None
+        else values
+    )
 
 
-def average_nees(estimates: ArrayLike, uncertainties: ArrayLike, groundtruths: ArrayLike | None = None) -> float:
+def average_nees(
+    estimates: ArrayLike,
+    uncertainties: ArrayLike,
+    groundtruths: ArrayLike | None = None,
+) -> float:
     """Return average normalized estimation error squared."""
-    return float(np.mean(np.atleast_1d(normalized_estimation_error_squared(estimates, uncertainties, groundtruths))))
+    return float(
+        np.mean(
+            np.atleast_1d(
+                normalized_estimation_error_squared(
+                    estimates, uncertainties, groundtruths
+                )
+            )
+        )
+    )
 
 
-def anees(estimates: ArrayLike, uncertainties: ArrayLike, groundtruths: ArrayLike) -> float:
+def anees(
+    estimates: ArrayLike, uncertainties: ArrayLike, groundtruths: ArrayLike
+) -> float:
     """Backward-compatible alias for average NEES."""
     return average_nees(estimates, uncertainties, groundtruths)
 
@@ -120,7 +163,11 @@ def anees(estimates: ArrayLike, uncertainties: ArrayLike, groundtruths: ArrayLik
 nees = normalized_estimation_error_squared
 
 
-def normalized_innovation_squared(innovations_or_measurements: ArrayLike, predicted_or_covariances: ArrayLike, innovation_covariances: ArrayLike | None = None):
+def normalized_innovation_squared(
+    innovations_or_measurements: ArrayLike,
+    predicted_or_covariances: ArrayLike,
+    innovation_covariances: ArrayLike | None = None,
+):
     """Return normalized innovation squared values.
 
     Two call styles are supported:
@@ -132,24 +179,51 @@ def normalized_innovation_squared(innovations_or_measurements: ArrayLike, predic
         innovations = _as_numeric_array(innovations_or_measurements, "innovations")
         covariances = predicted_or_covariances
     else:
-        innovations = error_vectors(innovations_or_measurements, predicted_or_covariances)
+        innovations = error_vectors(
+            innovations_or_measurements, predicted_or_covariances
+        )
         covariances = innovation_covariances
     innovations = _as_sample_matrix(innovations, "innovations")
-    covariance_stack = _as_covariance_stack(covariances, innovations.shape[0], innovations.shape[1], "innovation_covariances")
+    covariance_stack = _as_covariance_stack(
+        covariances,
+        innovations.shape[0],
+        innovations.shape[1],
+        "innovation_covariances",
+    )
     values = _quadratic_forms(innovations, covariance_stack)
-    return float(values[0]) if innovations.shape[0] == 1 and _is_single_vector(innovations_or_measurements) else values
+    return (
+        float(values[0])
+        if innovations.shape[0] == 1 and _is_single_vector(innovations_or_measurements)
+        else values
+    )
 
 
-def average_nis(innovations_or_measurements: ArrayLike, predicted_or_covariances: ArrayLike, innovation_covariances: ArrayLike | None = None) -> float:
+def average_nis(
+    innovations_or_measurements: ArrayLike,
+    predicted_or_covariances: ArrayLike,
+    innovation_covariances: ArrayLike | None = None,
+) -> float:
     """Return average normalized innovation squared."""
-    return float(np.mean(np.atleast_1d(normalized_innovation_squared(innovations_or_measurements, predicted_or_covariances, innovation_covariances))))
+    return float(
+        np.mean(
+            np.atleast_1d(
+                normalized_innovation_squared(
+                    innovations_or_measurements,
+                    predicted_or_covariances,
+                    innovation_covariances,
+                )
+            )
+        )
+    )
 
 
 nis = normalized_innovation_squared
 anis = average_nis
 
 
-def chi_square_confidence_bounds(degrees_of_freedom: int, *, n_samples: int = 1, confidence: float = 0.95) -> tuple[float, float]:
+def chi_square_confidence_bounds(
+    degrees_of_freedom: int, *, n_samples: int = 1, confidence: float = 0.95
+) -> tuple[float, float]:
     """Return two-sided chi-square bounds for an averaged NEES/NIS statistic."""
     if int(degrees_of_freedom) <= 0:
         raise ValueError("degrees_of_freedom must be positive")
@@ -164,40 +238,74 @@ def chi_square_confidence_bounds(degrees_of_freedom: int, *, n_samples: int = 1,
     return float(lower), float(upper)
 
 
-def chi_square_confidence_interval(degrees_of_freedom: int, *, n_samples: int = 1, confidence: float = 0.95) -> tuple[float, float]:
+def chi_square_confidence_interval(
+    degrees_of_freedom: int, *, n_samples: int = 1, confidence: float = 0.95
+) -> tuple[float, float]:
     """Alias for :func:`chi_square_confidence_bounds`."""
-    return chi_square_confidence_bounds(degrees_of_freedom, n_samples=n_samples, confidence=confidence)
+    return chi_square_confidence_bounds(
+        degrees_of_freedom, n_samples=n_samples, confidence=confidence
+    )
 
 
-def nees_confidence_bounds(state_dim: int, *, n_samples: int = 1, confidence: float = 0.95) -> tuple[float, float]:
+def nees_confidence_bounds(
+    state_dim: int, *, n_samples: int = 1, confidence: float = 0.95
+) -> tuple[float, float]:
     """Return chi-square consistency bounds for NEES or ANEES."""
-    return chi_square_confidence_bounds(state_dim, n_samples=n_samples, confidence=confidence)
+    return chi_square_confidence_bounds(
+        state_dim, n_samples=n_samples, confidence=confidence
+    )
 
 
-def nees_confidence_interval(state_dim: int, *, n_samples: int = 1, confidence: float = 0.95) -> tuple[float, float]:
+def nees_confidence_interval(
+    state_dim: int, *, n_samples: int = 1, confidence: float = 0.95
+) -> tuple[float, float]:
     """Alias for :func:`nees_confidence_bounds`."""
     return nees_confidence_bounds(state_dim, n_samples=n_samples, confidence=confidence)
 
 
-def nis_confidence_bounds(measurement_dim: int, *, n_samples: int = 1, confidence: float = 0.95) -> tuple[float, float]:
+def nis_confidence_bounds(
+    measurement_dim: int, *, n_samples: int = 1, confidence: float = 0.95
+) -> tuple[float, float]:
     """Return chi-square consistency bounds for NIS or ANIS."""
-    return chi_square_confidence_bounds(measurement_dim, n_samples=n_samples, confidence=confidence)
+    return chi_square_confidence_bounds(
+        measurement_dim, n_samples=n_samples, confidence=confidence
+    )
 
 
-def nis_confidence_interval(measurement_dim: int, *, n_samples: int = 1, confidence: float = 0.95) -> tuple[float, float]:
+def nis_confidence_interval(
+    measurement_dim: int, *, n_samples: int = 1, confidence: float = 0.95
+) -> tuple[float, float]:
     """Alias for :func:`nis_confidence_bounds`."""
-    return nis_confidence_bounds(measurement_dim, n_samples=n_samples, confidence=confidence)
+    return nis_confidence_bounds(
+        measurement_dim, n_samples=n_samples, confidence=confidence
+    )
 
 
-def is_chi_square_consistent(statistic: float, degrees_of_freedom: int, *, n_samples: int = 1, confidence: float = 0.95) -> bool:
+def is_chi_square_consistent(
+    statistic: float,
+    degrees_of_freedom: int,
+    *,
+    n_samples: int = 1,
+    confidence: float = 0.95,
+) -> bool:
     """Return whether a scalar statistic lies inside chi-square bounds."""
-    lower, upper = chi_square_confidence_bounds(degrees_of_freedom, n_samples=n_samples, confidence=confidence)
+    lower, upper = chi_square_confidence_bounds(
+        degrees_of_freedom, n_samples=n_samples, confidence=confidence
+    )
     return bool(lower <= float(statistic) <= upper)
 
 
-def is_within_chi_square_confidence_interval(statistic: float, degrees_of_freedom: int, *, n_samples: int = 1, confidence: float = 0.95) -> bool:
+def is_within_chi_square_confidence_interval(
+    statistic: float,
+    degrees_of_freedom: int,
+    *,
+    n_samples: int = 1,
+    confidence: float = 0.95,
+) -> bool:
     """Alias for :func:`is_chi_square_consistent`."""
-    return is_chi_square_consistent(statistic, degrees_of_freedom, n_samples=n_samples, confidence=confidence)
+    return is_chi_square_consistent(
+        statistic, degrees_of_freedom, n_samples=n_samples, confidence=confidence
+    )
 
 
 def consistency_fraction(values: ArrayLike, lower: float, upper: float) -> float:
@@ -205,7 +313,9 @@ def consistency_fraction(values: ArrayLike, lower: float, upper: float) -> float
     values_array = _as_numeric_array(values, "values")
     if values_array.size == 0:
         return 0.0
-    return float(np.mean((values_array >= float(lower)) & (values_array <= float(upper))))
+    return float(
+        np.mean((values_array >= float(lower)) & (values_array <= float(upper)))
+    )
 
 
 def ospa_distance(
@@ -226,14 +336,25 @@ def ospa_distance(
     if normalizer == 0:
         return _components_or_distance("ospa", 0.0, 0.0, 0.0, 0, return_components)
     if n_estimated == 0 or n_reference == 0:
-        return _components_or_distance("ospa", cutoff, 0.0, cutoff, 0, return_components)
+        return _components_or_distance(
+            "ospa", cutoff, 0.0, cutoff, 0, return_components
+        )
 
-    assignment_cost, assignments = _clipped_assignment_cost(estimated, reference, order=order, cutoff=cutoff, distance_fn=distance_fn)
+    assignment_cost, assignments = _clipped_assignment_cost(
+        estimated, reference, order=order, cutoff=cutoff, distance_fn=distance_fn
+    )
     cardinality_cost = cutoff**order * abs(n_estimated - n_reference)
     localization_component = assignment_cost / float(normalizer)
     cardinality_component = cardinality_cost / float(normalizer)
     distance = (localization_component + cardinality_component) ** (1.0 / order)
-    return _components_or_distance("ospa", distance, localization_component ** (1.0 / order), cardinality_component ** (1.0 / order), len(assignments), return_components)
+    return _components_or_distance(
+        "ospa",
+        distance,
+        localization_component ** (1.0 / order),
+        cardinality_component ** (1.0 / order),
+        len(assignments),
+        return_components,
+    )
 
 
 def mospa_distance(
@@ -247,9 +368,20 @@ def mospa_distance(
 ) -> float | tuple[float, np.ndarray]:
     """Return mean OSPA over a sequence of finite-set estimates."""
     if len(estimated_point_sets) != len(reference_point_sets):
-        raise ValueError("estimated_point_sets and reference_point_sets must have the same length")
+        raise ValueError(
+            "estimated_point_sets and reference_point_sets must have the same length"
+        )
     distances = np.asarray(
-        [ospa_distance(estimated, reference, cutoff=cutoff, order=order, distance_fn=distance_fn) for estimated, reference in zip(estimated_point_sets, reference_point_sets)],
+        [
+            ospa_distance(
+                estimated,
+                reference,
+                cutoff=cutoff,
+                order=order,
+                distance_fn=distance_fn,
+            )
+            for estimated, reference in zip(estimated_point_sets, reference_point_sets)
+        ],
         dtype=float,
     )
     mean_distance = float(np.mean(distances)) if distances.size else 0.0
@@ -274,10 +406,21 @@ def gospa_distance(
     if estimated.shape[0] == 0 and reference.shape[0] == 0:
         return _components_or_distance("gospa", 0.0, 0.0, 0.0, 0, return_components)
 
-    assignment_cost, assignments = _clipped_assignment_cost(estimated, reference, order=order, cutoff=cutoff, distance_fn=distance_fn)
-    cardinality_cost = cutoff**order / float(alpha) * abs(estimated.shape[0] - reference.shape[0])
+    assignment_cost, assignments = _clipped_assignment_cost(
+        estimated, reference, order=order, cutoff=cutoff, distance_fn=distance_fn
+    )
+    cardinality_cost = (
+        cutoff**order / float(alpha) * abs(estimated.shape[0] - reference.shape[0])
+    )
     distance = (assignment_cost + cardinality_cost) ** (1.0 / order)
-    return _components_or_distance("gospa", distance, assignment_cost ** (1.0 / order), cardinality_cost ** (1.0 / order), len(assignments), return_components)
+    return _components_or_distance(
+        "gospa",
+        distance,
+        assignment_cost ** (1.0 / order),
+        cardinality_cost ** (1.0 / order),
+        len(assignments),
+        return_components,
+    )
 
 
 def iou_polygon(polygon1, polygon2):
@@ -301,7 +444,14 @@ def extent_intersection_over_union(shape1, shape2) -> float:
     return eot_shape_iou(shape1, shape2)
 
 
-def gaussian_wasserstein_distance(mean1: ArrayLike, covariance1: ArrayLike, mean2: ArrayLike, covariance2: ArrayLike, *, squared: bool = False) -> float:
+def gaussian_wasserstein_distance(
+    mean1: ArrayLike,
+    covariance1: ArrayLike,
+    mean2: ArrayLike,
+    covariance2: ArrayLike,
+    *,
+    squared: bool = False,
+) -> float:
     """Return the 2-Wasserstein distance between Gaussian distributions."""
     mean1_np = _as_numeric_array(mean1, "mean1").reshape(-1)
     mean2_np = _as_numeric_array(mean2, "mean2").reshape(-1)
@@ -319,30 +469,46 @@ def gaussian_wasserstein_distance(mean1: ArrayLike, covariance1: ArrayLike, mean
     mean_error = mean1_np - mean2_np
     mean_term = float(mean_error @ mean_error)
     covariance1_sqrt = _symmetric_matrix_square_root(covariance1_np)
-    middle_sqrt = _symmetric_matrix_square_root(covariance1_sqrt @ covariance2_np @ covariance1_sqrt)
+    middle_sqrt = _symmetric_matrix_square_root(
+        covariance1_sqrt @ covariance2_np @ covariance1_sqrt
+    )
     trace_term = float(np.trace(covariance1_np + covariance2_np - 2.0 * middle_sqrt))
     squared_distance = max(mean_term + trace_term, 0.0)
     return float(squared_distance) if squared else float(np.sqrt(squared_distance))
 
 
-def extent_wasserstein_distance(estimated_extent: ArrayLike, reference_extent: ArrayLike, *, squared: bool = False) -> float:
+def extent_wasserstein_distance(
+    estimated_extent: ArrayLike, reference_extent: ArrayLike, *, squared: bool = False
+) -> float:
     """Return the covariance/extent part of the Gaussian 2-Wasserstein distance."""
     estimated = _as_numeric_array(estimated_extent, "estimated_extent")
     reference = _as_numeric_array(reference_extent, "reference_extent")
     _validate_square_matrix(estimated, "estimated_extent")
     _validate_square_matrix(reference, "reference_extent")
     if estimated.shape != reference.shape:
-        raise ValueError("estimated_extent and reference_extent must have the same shape")
+        raise ValueError(
+            "estimated_extent and reference_extent must have the same shape"
+        )
     zeros = np.zeros(estimated.shape[0], dtype=float)
-    return gaussian_wasserstein_distance(zeros, estimated, zeros, reference, squared=squared)
+    return gaussian_wasserstein_distance(
+        zeros, estimated, zeros, reference, squared=squared
+    )
 
 
-def extent_matrix_error(estimated_extent: ArrayLike, reference_extent: ArrayLike, *, ord: str | int | float = "fro", relative: bool = False) -> float:
+def extent_matrix_error(
+    estimated_extent: ArrayLike,
+    reference_extent: ArrayLike,
+    *,
+    ord: str | int | float = "fro",
+    relative: bool = False,
+) -> float:
     """Return matrix-norm error between estimated and reference extents."""
     estimated = _as_numeric_array(estimated_extent, "estimated_extent")
     reference = _as_numeric_array(reference_extent, "reference_extent")
     if estimated.shape != reference.shape:
-        raise ValueError("estimated_extent and reference_extent must have the same shape")
+        raise ValueError(
+            "estimated_extent and reference_extent must have the same shape"
+        )
     error = float(np.linalg.norm(estimated - reference, ord=ord))
     if not relative:
         return error
@@ -352,9 +518,17 @@ def extent_matrix_error(estimated_extent: ArrayLike, reference_extent: ArrayLike
     return error / denominator
 
 
-def extent_error(estimated_extent: ArrayLike, reference_extent: ArrayLike, *, ord: str | int | float = "fro", relative: bool = False) -> float:
+def extent_error(
+    estimated_extent: ArrayLike,
+    reference_extent: ArrayLike,
+    *,
+    ord: str | int | float = "fro",
+    relative: bool = False,
+) -> float:
     """Alias for :func:`extent_matrix_error`."""
-    return extent_matrix_error(estimated_extent, reference_extent, ord=ord, relative=relative)
+    return extent_matrix_error(
+        estimated_extent, reference_extent, ord=ord, relative=relative
+    )
 
 
 def _as_numeric_array(value: ArrayLike, name: str) -> np.ndarray:
@@ -392,7 +566,9 @@ def _is_single_vector(values: ArrayLike) -> bool:
     return _as_numeric_array(values, "values").ndim == 1
 
 
-def _as_covariance_stack(covariances: ArrayLike, n_samples: int, dim: int, name: str) -> np.ndarray:
+def _as_covariance_stack(
+    covariances: ArrayLike, n_samples: int, dim: int, name: str
+) -> np.ndarray:
     covariance_array = _as_numeric_array(covariances, name)
     if covariance_array.ndim == 2:
         if covariance_array.shape != (dim, dim):
@@ -420,7 +596,9 @@ def _validate_order_cutoff(order: float, cutoff: float) -> tuple[float, float]:
     return order, cutoff
 
 
-def _coerce_point_sets(points1: ArrayLike, points2: ArrayLike) -> tuple[np.ndarray, np.ndarray]:
+def _coerce_point_sets(
+    points1: ArrayLike, points2: ArrayLike
+) -> tuple[np.ndarray, np.ndarray]:
     first = _coerce_point_set(points1, "estimated_points")
     second = _coerce_point_set(points2, "reference_points")
     if first.shape[0] and second.shape[0] and first.shape[1] != second.shape[1]:
@@ -439,7 +617,14 @@ def _coerce_point_set(points: ArrayLike, name: str) -> np.ndarray:
     return points_np
 
 
-def _clipped_assignment_cost(estimated: np.ndarray, reference: np.ndarray, *, order: float, cutoff: float, distance_fn: DistanceFunction | None) -> tuple[float, list[tuple[int, int]]]:
+def _clipped_assignment_cost(
+    estimated: np.ndarray,
+    reference: np.ndarray,
+    *,
+    order: float,
+    cutoff: float,
+    distance_fn: DistanceFunction | None,
+) -> tuple[float, list[tuple[int, int]]]:
     if estimated.shape[0] == 0 or reference.shape[0] == 0:
         return 0.0, []
     distances = _pairwise_distances(estimated, reference, distance_fn)
@@ -449,7 +634,9 @@ def _clipped_assignment_cost(estimated: np.ndarray, reference: np.ndarray, *, or
     return assignment_cost, [(int(row), int(col)) for row, col in zip(row_ind, col_ind)]
 
 
-def _pairwise_distances(estimated: np.ndarray, reference: np.ndarray, distance_fn: DistanceFunction | None) -> np.ndarray:
+def _pairwise_distances(
+    estimated: np.ndarray, reference: np.ndarray, distance_fn: DistanceFunction | None
+) -> np.ndarray:
     if distance_fn is None:
         differences = estimated[:, None, :] - reference[None, :, :]
         return np.linalg.norm(differences, axis=-1)
@@ -460,7 +647,14 @@ def _pairwise_distances(estimated: np.ndarray, reference: np.ndarray, distance_f
     return distances
 
 
-def _components_or_distance(name: str, distance: float, localization_component: float, cardinality_component: float, assignments: int, return_components: bool) -> float | dict[str, float | int]:
+def _components_or_distance(
+    name: str,
+    distance: float,
+    localization_component: float,
+    cardinality_component: float,
+    assignments: int,
+    return_components: bool,
+) -> float | dict[str, float | int]:
     if not return_components:
         return float(distance)
     return {
