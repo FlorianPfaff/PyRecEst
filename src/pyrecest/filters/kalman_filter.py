@@ -307,6 +307,29 @@ class KalmanFilter(AbstractFilter, EuclideanFilterMixin):
             return diagnostics
         return None
 
+    def update_model_robust(
+        self,
+        measurement_model,
+        measurement,
+        **kwargs,
+    ):
+        """Robustly update with a structural linear Gaussian model object."""
+        measurement_matrix = _get_required_model_attribute(
+            measurement_model,
+            "measurement_matrix",
+        )
+        meas_noise = _get_required_model_attribute(
+            measurement_model,
+            "meas_noise",
+            "measurement_noise_cov",
+        )
+        return self.update_linear_robust(
+            measurement,
+            measurement_matrix,
+            meas_noise,
+            **kwargs,
+        )
+
     def update_model(
         self,
         measurement_model,
