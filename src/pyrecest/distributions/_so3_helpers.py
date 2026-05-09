@@ -117,10 +117,12 @@ def log_map_identity(rotations):
 
 def geodesic_distance(rotation_a, rotation_b):
     """Return the SO(3) geodesic distance between quaternions in radians."""
+    scalar_input = ndim(array(rotation_a, dtype=float)) == 1 and ndim(array(rotation_b, dtype=float)) == 1
     quat_a = normalize_quaternions(rotation_a)
     quat_b = normalize_quaternions(rotation_b)
     inner = abs(sum(quat_a * quat_b, axis=-1))
-    return 2.0 * arccos(clip(inner, 0.0, 1.0))
+    distances = 2.0 * arccos(clip(inner, 0.0, 1.0))
+    return distances[0] if scalar_input else distances
 
 
 def quaternions_to_rotation_matrices(quaternions):

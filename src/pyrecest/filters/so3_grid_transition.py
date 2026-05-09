@@ -9,8 +9,8 @@ from pyrecest.backend import (
     clip,
     exp,
     linalg,
+    mean,
     ndim,
-    sum,
     transpose,
 )
 from pyrecest.distributions._so3_helpers import (
@@ -84,15 +84,15 @@ def so3_right_multiplication_grid_transition(
     # large kappa without changing the normalized conditional density.
     exponents = kappa * inner_products**2
     scores = exp(exponents - amax(exponents, axis=0, keepdims=True))
-    density_values = scores / sum(scores, axis=0, keepdims=True)
 
     manifold_size = (
         0.5
         * AbstractHypersphereSubsetDistribution.compute_unit_hypersphere_surface(
-            quaternion_grid.shape[1] - 1
+            quaternion_grid.shape[1]
         )
     )
-    density_values = density_values * (quaternion_grid.shape[0] / manifold_size)
+    column_integrals = mean(scores, axis=0, keepdims=True) * manifold_size
+    density_values = scores / column_integrals
 
     return SdHalfCondSdHalfGridDistribution(
         quaternion_grid,
