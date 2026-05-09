@@ -17,8 +17,8 @@ from functools import lru_cache
 from math import ceil, pi, sqrt
 from typing import Any
 
+from pyrecest.backend import abs as backend_abs
 from pyrecest.backend import (
-    abs as backend_abs,
     arccos,
     array,
     asarray,
@@ -256,7 +256,9 @@ def _compute_s3r3_cell_statistics(
     tangent_offsets = _tangent_cell_offsets(cell_radius, cell_sample_count)
     local_quaternions = exp_map_identity(tangent_offsets)
 
-    representative_displacements = rotate_quaternion_body_increment(grid, body_increment)
+    representative_displacements = rotate_quaternion_body_increment(
+        grid, body_increment
+    )
     mean_displacements = []
     covariance_inflations = []
     for idx in range(grid.shape[0]):
@@ -317,13 +319,15 @@ def _tangent_cell_offsets(cell_radius: float, sample_count: int) -> Any:
         if levels == 1
         else [float(value) for value in linspace(-cell_radius, cell_radius, levels)]
     )
-    offsets = [
-        (x, y, z)
-        for x in axis_values
-        for y in axis_values
-        for z in axis_values
-    ]
-    offsets.sort(key=lambda value: (sqrt(value[0] ** 2 + value[1] ** 2 + value[2] ** 2), value[0], value[1], value[2]))
+    offsets = [(x, y, z) for x in axis_values for y in axis_values for z in axis_values]
+    offsets.sort(
+        key=lambda value: (
+            sqrt(value[0] ** 2 + value[1] ** 2 + value[2] ** 2),
+            value[0],
+            value[1],
+            value[2],
+        )
+    )
     return array(offsets[:sample_count], dtype=float)
 
 
