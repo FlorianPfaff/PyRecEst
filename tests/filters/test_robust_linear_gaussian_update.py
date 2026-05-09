@@ -3,8 +3,7 @@ import unittest
 import numpy as np
 import numpy.testing as npt
 
-import pyrecest.backend
-from pyrecest.backend import array, eye, to_numpy
+from pyrecest.backend import __backend_name__, array, eye, to_numpy
 from pyrecest.distributions import GaussianDistribution
 from pyrecest.filters import KalmanFilter
 from pyrecest.filters._linear_gaussian import (
@@ -17,7 +16,7 @@ from pyrecest.filters._linear_gaussian import (
 
 
 @unittest.skipIf(
-    pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
+    __backend_name__ in ("pytorch", "jax"),
     reason="tests compare backend scalars with NumPy helpers",
 )
 class RobustLinearGaussianUpdateTest(unittest.TestCase):
