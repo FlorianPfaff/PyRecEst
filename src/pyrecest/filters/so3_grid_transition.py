@@ -67,8 +67,9 @@ def so3_right_multiplication_grid_transition(
 
     ``exp(kappa * |<q_next, q_current * delta_q>|**2)``.
 
-    The columns are normalized by the S3 upper-hemisphere grid quadrature rule,
-    so ``mean(grid_values[:, j]) * surface(S3+) == 1`` for every column.
+    The columns are normalized by the hyperhemispherical grid quadrature rule
+    used by :class:`HyperhemisphericalGridFilter`, so
+    ``mean(grid_values[:, j]) * manifold_size == 1`` for every column.
     """
 
     if kappa <= 0.0:
@@ -88,7 +89,7 @@ def so3_right_multiplication_grid_transition(
     manifold_size = (
         0.5
         * AbstractHypersphereSubsetDistribution.compute_unit_hypersphere_surface(
-            quaternion_grid.shape[1] - 1
+            quaternion_grid.shape[1]
         )
     )
     column_integrals = mean(scores, axis=0, keepdims=True) * manifold_size
@@ -121,7 +122,9 @@ def _as_quaternion_grid(grid):
 
     quaternion_grid = array(grid, dtype=float)
     if ndim(quaternion_grid) != 2 or quaternion_grid.shape[1] != 4:
-        raise ValueError("grid must have shape (n_grid, 4) with scalar-last quaternions.")
+        raise ValueError(
+            "grid must have shape (n_grid, 4) with scalar-last quaternions."
+        )
     if quaternion_grid.shape[0] == 0:
         raise ValueError("grid must contain at least one quaternion.")
     if not all(linalg.norm(quaternion_grid, axis=1) > 0.0):
