@@ -19,7 +19,12 @@ from pyrecest.backend import (
     vstack,
     zeros,
 )
-from pyrecest.utils import LogisticPairwiseAssociationModel
+from pyrecest.utils import (
+    CalibratedPairwiseAssociationModel,
+    LogisticPairwiseAssociationModel,
+    NamedPairwiseFeatureSchema,
+    pairwise_feature_tensor,
+)
 
 
 class TestLogisticPairwiseAssociationModel(unittest.TestCase):
@@ -127,6 +132,60 @@ class TestLogisticPairwiseAssociationModel(unittest.TestCase):
             model.fit(
                 self.training_features, zeros(self.training_labels.shape, dtype=int) + 2
             )
+
+    def test_pairwise_feature_tensor_stacks_named_components_and_sanitizes(self):
+        components = {
+            "distance": array([[0.0, float("inf")], [float("nan"), -float("inf")]]),
+            "overlap": array([[0.9, 0.2], [0.1, 0.8]]),
+        }
+
+        features = pairwise_feature_tensor(
+            components,
+            ("distance", "one_minus_overlap"),
+            transforms={"one_minus_overlap": lambda item: 1.0 - item["overlap"]},
+        )
+
+        self.assertEqual(features.shape, (2, 2, 2))
+        npt.assert_allclose(
+            features[:, :, 0], array([[0.0, 1.0e6], [0.0, -1.0e6]])
+        )
+        npt.assert_allclose(features[:, :, 1], array([[0.1, 0.8], [0.9, 0.2]]))
+
+    def test_named_pairwise_feature_schema_validates_feature_layout(self):
+        schema = NamedPairwiseFeatureSchema(("distance", "similarity"))
+        self.assertEqual(schema.feature_index("similarity"), 1)
+
+        with self.assertRaises(KeyError):
+            schema.build_tensor({"distance": array([[1.0]])})
+        with self.assertRaises(ValueError):
+            pairwise_feature_tensor(
+                {
+                    "distance": array([[1.0, 2.0]]),
+                    "similarity": array([[1.0], [2.0]]),
+                },
+                ("distance", "similarity"),
+            )
+
+    def test_calibrated_pairwise_association_model_uses_named_components(self):
+        model = LogisticPairwiseAssociationModel(class_weight="balanced")
+        model.fit(self.training_features, self.training_labels)
+        calibrated_model = CalibratedPairwiseAssociationModel(
+            model, feature_names=("distance", "similarity")
+        )
+        components = {
+            "distance": array([[0.15, 2.2], [2.6, 0.18]]),
+            "similarity": array([[0.92, 0.15], [0.08, 0.88]]),
+        }
+
+        probabilities = calibrated_model.pairwise_probability_matrix_from_components(
+            components
+        )
+        costs = calibrated_model.pairwise_cost_matrix_from_components(components)
+
+        self.assertEqual(probabilities.shape, (2, 2))
+        self.assertEqual(costs.shape, (2, 2))
+        npt.assert_array_equal(argmax(probabilities, axis=1), array([0, 1]))
+        npt.assert_array_equal(argmin(costs, axis=1), array([0, 1]))
 
 
 if __name__ == "__main__":
