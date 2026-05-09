@@ -45,8 +45,8 @@ SUPPORTED_RELAXED_S3F_SO3_VARIANTS = ("baseline", "r1", "r1_r2")
 SUPPORTED_S3R3_CELL_METHODS = ("local_tangent_samples",)
 
 
-@dataclass(frozen=True)
-class S3R3CellStatistics:  # pylint: disable=too-many-instance-attributes
+@dataclass(frozen=True)  # pylint: disable=too-many-instance-attributes
+class S3R3CellStatistics:
     """Numerical R1/R2 statistics for local tangent cells around S3+ points.
 
     Attributes

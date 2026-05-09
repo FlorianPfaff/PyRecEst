@@ -1,3 +1,4 @@
+# pylint: disable=too-many-positional-arguments
 """Generic evaluation helpers for multi-session track matrices."""
 
 from __future__ import annotations
@@ -298,12 +299,12 @@ def track_error_ledger(
         "summary": _summary_rows(
             predicted_rows,
             reference_rows,
-            false_links=false_links,
-            missed_links=missed_links,
-            predicted_links=predicted_links,
-            reference_links=reference_links,
-            predicted_duplicates=predicted_duplicates,
-            reference_duplicates=reference_duplicates,
+            false_links,
+            missed_links,
+            predicted_links,
+            reference_links,
+            predicted_duplicates,
+            reference_duplicates,
         ),
         "predicted_tracks": predicted_rows,
         "reference_tracks": reference_rows,
@@ -527,7 +528,6 @@ def _track_rows(
 def _summary_rows(
     predicted_rows,
     reference_rows,
-    *,
     false_links,
     missed_links,
     predicted_links,

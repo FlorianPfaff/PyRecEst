@@ -3,7 +3,6 @@
 import unittest
 
 import numpy as np
-
 from pyrecest.utils.track_evaluation import (
     complete_track_set,
     normalize_track_matrix,
