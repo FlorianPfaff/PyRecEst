@@ -54,9 +54,7 @@ class NamedPairwiseFeatureSchema:
             normalized_names, transforms
         )
         object.__setattr__(self, "feature_names", normalized_names)
-        object.__setattr__(
-            self, "transforms", MappingProxyType(normalized_transforms)
-        )
+        object.__setattr__(self, "transforms", MappingProxyType(normalized_transforms))
 
     def __len__(self) -> int:
         return len(self.feature_names)
@@ -98,9 +96,7 @@ def pairwise_feature_tensor(
         )
 
     normalized_names = _normalize_feature_names(feature_names)
-    normalized_transforms = _normalize_feature_transforms(
-        normalized_names, transforms
-    )
+    normalized_transforms = _normalize_feature_transforms(normalized_names, transforms)
     feature_planes = [
         _component_feature(components, feature_name, normalized_transforms)
         for feature_name in normalized_names
@@ -143,9 +139,7 @@ class CalibratedPairwiseAssociationModel:
         if schema is None:
             if feature_names is None:
                 raise ValueError("feature_names or schema is required")
-            schema = NamedPairwiseFeatureSchema(
-                feature_names, transforms=transforms
-            )
+            schema = NamedPairwiseFeatureSchema(feature_names, transforms=transforms)
         if not 0.0 < probability_clip < 0.5:
             raise ValueError("probability_clip must lie in (0, 0.5)")
 
