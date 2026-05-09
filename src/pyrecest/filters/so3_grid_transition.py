@@ -88,10 +88,10 @@ def so3_right_multiplication_grid_transition(
     column_maxima = reshape(amax(exponents, axis=0), (1, exponents.shape[1]))
     scores = exp(exponents - column_maxima)
 
-    manifold_size = (
-        0.5
-        * AbstractHypersphereSubsetDistribution.compute_unit_hypersphere_surface(
-            quaternion_grid.shape[1]
+    manifold_dim = quaternion_grid.shape[1] - 1
+    manifold_size = 0.5 * (
+        AbstractHypersphereSubsetDistribution.compute_unit_hypersphere_surface(
+            manifold_dim
         )
     )
     column_integrals = sum(scores, axis=0, keepdims=True) / scores.shape[0]
