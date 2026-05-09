@@ -1,3 +1,4 @@
+# pylint: disable=no-value-for-parameter
 import unittest
 
 from pyrecest.backend import allclose, array, eye, linalg, ones, zeros
