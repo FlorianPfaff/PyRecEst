@@ -1,3 +1,4 @@
+# pylint: disable=too-many-positional-arguments
 """Generic evaluation helpers for multi-session track matrices."""
 
 from __future__ import annotations
