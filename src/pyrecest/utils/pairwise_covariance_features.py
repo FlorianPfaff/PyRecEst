@@ -19,25 +19,29 @@ from typing import Any
 # pylint: disable=no-name-in-module,no-member,redefined-builtin
 from pyrecest.backend import (
     abs,
-    all as backend_all,
+)
+from pyrecest.backend import all as backend_all
+from pyrecest.backend import (
     asarray,
     einsum,
     exp,
     eye,
     float64,
     isfinite,
+    linalg,
     log,
     maximum,
     moveaxis,
     reshape,
     sqrt,
-    sum as backend_sum,
+)
+from pyrecest.backend import sum as backend_sum
+from pyrecest.backend import (
     trace,
     transpose,
     where,
     zeros,
 )
-from pyrecest.backend import linalg
 
 
 def pairwise_mahalanobis_distances(
@@ -89,9 +93,7 @@ def pairwise_mahalanobis_distances(
     dim, n_a = means_a.shape
     dim_b, n_b = means_b.shape
     if dim != dim_b:
-        raise ValueError(
-            "means_a and means_b must have the same leading dimension"
-        )
+        raise ValueError("means_a and means_b must have the same leading dimension")
 
     if n_a == 0 or n_b == 0:
         return zeros((n_a, n_b), dtype=float64)
@@ -102,9 +104,9 @@ def pairwise_mahalanobis_distances(
         moved_covariances_a[:, None, :, :] + moved_covariances_b[None, :, :, :]
     )
     if regularization > 0.0:
-        covariance_sums = covariance_sums + float(regularization) * eye(dim)[
-            None, None, :, :
-        ]
+        covariance_sums = (
+            covariance_sums + float(regularization) * eye(dim)[None, None, :, :]
+        )
 
     mean_differences = transpose(means_a)[:, None, :] - transpose(means_b)[None, :, :]
     flat_differences = reshape(mean_differences, (n_a * n_b, dim))
@@ -163,12 +165,8 @@ def pairwise_covariance_shape_components(
     moved_covariances_a = _symmetrized_covariance_batch(covariances_a)
     moved_covariances_b = _symmetrized_covariance_batch(covariances_b)
 
-    traces_a = _positive_floor(
-        trace(moved_covariances_a, axis1=1, axis2=2), epsilon
-    )
-    traces_b = _positive_floor(
-        trace(moved_covariances_b, axis1=1, axis2=2), epsilon
-    )
+    traces_a = _positive_floor(trace(moved_covariances_a), epsilon)
+    traces_b = _positive_floor(trace(moved_covariances_b), epsilon)
     normalized_a = moved_covariances_a / traces_a[:, None, None]
     normalized_b = moved_covariances_b / traces_b[:, None, None]
 
