@@ -1,4 +1,4 @@
-# pylint: disable=no-name-in-module,no-member
+# pylint: disable=no-name-in-module,no-member,redefined-outer-name
 """Backend-native linear-Gaussian predict/update primitives."""
 
 from pyrecest.backend import (

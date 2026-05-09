@@ -1,6 +1,6 @@
 import unittest
 
-from pyrecest.backend import allclose, array, eye, linalg, ones, zeros
+from pyrecest.backend import __backend_name__, allclose, array, eye, linalg, ones, zeros
 from pyrecest.distributions.cart_prod.state_space_subdivision_gaussian_distribution import (
     StateSpaceSubdivisionGaussianDistribution,
 )
@@ -18,6 +18,8 @@ from pyrecest.filters.relaxed_s3f_so3 import (
     s3r3_orientation_distance,
 )
 from pyrecest.filters.state_space_subdivision_filter import StateSpaceSubdivisionFilter
+
+_JAX_ATOL = 1e-6 if __backend_name__ == "jax" else 1e-12
 
 
 class RelaxedS3FSO3Test(unittest.TestCase):
@@ -123,12 +125,12 @@ class RelaxedS3FSO3Test(unittest.TestCase):
 
         self.assertTrue(bool(allclose(rotated[0], array([0.4, 0.1, 0.2]), atol=1e-12)))
         self.assertAlmostEqual(
-            s3r3_orientation_distance(identity, -identity), 0.0, places=12
+            s3r3_orientation_distance(identity, -identity), 0.0, delta=_JAX_ATOL
         )
         self.assertAlmostEqual(
             s3r3_orientation_distance(identity, half_turn_z),
             3.141592653589793,
-            places=12,
+            delta=_JAX_ATOL,
         )
 
     def test_validation_errors_are_explicit(self):

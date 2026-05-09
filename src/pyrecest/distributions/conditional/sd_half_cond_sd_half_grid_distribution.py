@@ -59,7 +59,7 @@ class SdHalfCondSdHalfGridDistribution(AbstractConditionalDistribution):
         """Warn if any column is not normalized to 1 over the hemisphere."""
         hemisphere_surface = 0.5 * (
             AbstractHypersphereSubsetDistribution.compute_unit_hypersphere_surface(
-                self.grid.shape[1]
+                self.grid.shape[1] - 1
             )
         )
         ints = mean(self.grid_values, axis=0) * hemisphere_surface
