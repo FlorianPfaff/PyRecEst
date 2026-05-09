@@ -91,7 +91,7 @@ def so3_right_multiplication_grid_transition(
     manifold_size = (
         0.5
         * AbstractHypersphereSubsetDistribution.compute_unit_hypersphere_surface(
-            quaternion_grid.shape[1]
+            quaternion_grid.shape[1] - 1
         )
     )
     column_integrals = sum(scores, axis=0, keepdims=True) / scores.shape[0]
