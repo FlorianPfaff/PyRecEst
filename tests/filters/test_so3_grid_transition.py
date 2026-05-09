@@ -1,17 +1,21 @@
 import unittest
 
 import pyrecest.backend
+from pyrecest.backend import abs as backend_abs
 from pyrecest.backend import (
-    abs as backend_abs,
     allclose,
     arange,
     argmax,
     array,
     array_equal,
     diagonal,
-    max as backend_max,
+)
+from pyrecest.backend import max as backend_max
+from pyrecest.backend import (
     mean,
-    sum as backend_sum,
+)
+from pyrecest.backend import sum as backend_sum
+from pyrecest.backend import (
     transpose,
 )
 from pyrecest.distributions import SdHalfCondSdHalfGridDistribution

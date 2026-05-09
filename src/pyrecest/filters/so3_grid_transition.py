@@ -121,7 +121,9 @@ def _as_quaternion_grid(grid):
 
     quaternion_grid = array(grid, dtype=float)
     if ndim(quaternion_grid) != 2 or quaternion_grid.shape[1] != 4:
-        raise ValueError("grid must have shape (n_grid, 4) with scalar-last quaternions.")
+        raise ValueError(
+            "grid must have shape (n_grid, 4) with scalar-last quaternions."
+        )
     if quaternion_grid.shape[0] == 0:
         raise ValueError("grid must contain at least one quaternion.")
     if not all(linalg.norm(quaternion_grid, axis=1) > 0.0):
