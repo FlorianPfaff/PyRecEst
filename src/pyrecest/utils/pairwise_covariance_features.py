@@ -37,7 +37,6 @@ from pyrecest.backend import (
 )
 from pyrecest.backend import sum as backend_sum
 from pyrecest.backend import (
-    trace,
     transpose,
     where,
     zeros,
@@ -165,8 +164,8 @@ def pairwise_covariance_shape_components(
     moved_covariances_a = _symmetrized_covariance_batch(covariances_a)
     moved_covariances_b = _symmetrized_covariance_batch(covariances_b)
 
-    traces_a = _positive_floor(trace(moved_covariances_a), epsilon)
-    traces_b = _positive_floor(trace(moved_covariances_b), epsilon)
+    traces_a = _positive_floor(_batch_trace(moved_covariances_a), epsilon)
+    traces_b = _positive_floor(_batch_trace(moved_covariances_b), epsilon)
     normalized_a = moved_covariances_a / traces_a[:, None, None]
     normalized_b = moved_covariances_b / traces_b[:, None, None]
 
@@ -219,6 +218,10 @@ def _validate_covariance_stack(name: str, covariances: Any) -> Any:
 def _symmetrized_covariance_batch(covariances: Any) -> Any:
     moved = moveaxis(covariances, -1, 0)
     return 0.5 * (moved + transpose(moved, (0, 2, 1)))
+
+
+def _batch_trace(matrices: Any) -> Any:
+    return einsum("nii->n", matrices)
 
 
 def _positive_floor(values: Any, epsilon: float) -> Any:
