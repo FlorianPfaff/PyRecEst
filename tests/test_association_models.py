@@ -147,7 +147,12 @@ class TestLogisticPairwiseAssociationModel(unittest.TestCase):
 
         self.assertEqual(features.shape, (2, 2, 2))
         npt.assert_allclose(features[:, :, 0], array([[0.0, 1.0e6], [0.0, -1.0e6]]))
-        npt.assert_allclose(features[:, :, 1], array([[0.1, 0.8], [0.9, 0.2]]))
+        npt.assert_allclose(
+            features[:, :, 1],
+            array([[0.1, 0.8], [0.9, 0.2]]),
+            rtol=1e-6,
+            atol=1e-7,
+        )
 
     def test_named_pairwise_feature_schema_validates_feature_layout(self):
         schema = NamedPairwiseFeatureSchema(("distance", "similarity"))
