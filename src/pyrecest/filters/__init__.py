@@ -77,6 +77,17 @@ from .mem_ekf_star_tracker import MEMEKFStarTracker, MemEkfStarTracker
 from .mem_ekf_tracker import MEMEKFTracker, MemEkfTracker
 from .mem_soekf_tracker import MEMSOEKFTracker, MemSoekfTracker
 from .multi_bernoulli_tracker import BernoulliComponent, MultiBernoulliTracker
+from .out_of_sequence import (
+    FixedLagBuffer,
+    MeasurementRecord,
+    MeasurementTimeBuffer,
+    OutOfSequenceKalmanUpdater,
+    OutOfSequenceParticleUpdater,
+    OutOfSequenceResult,
+    TimestampedItem,
+    retrodict_linear_gaussian,
+    retrodict_linear_gaussian_state,
+)
 from .partitioned_so3_product_particle_filter import PartitionedSO3ProductParticleFilter
 from .piecewise_constant_filter import PiecewiseConstantFilter
 from .random_matrix_tracker import RandomMatrixTracker
@@ -141,6 +152,7 @@ __all__ = [
     "FullSCGPTracker",
     "ExtendedObjectAssociationResult",
     "ExtendedObjectEstimate",
+    "FixedLagBuffer",
     "FourierRHMTracker",
     "GoalConditionedReplayIMMFilter",
     "GoalConditionedReplayParticleFilter",
@@ -177,6 +189,8 @@ __all__ = [
     "LinPeriodicFilterMixin",
     "BernoulliComponent",
     "ManifoldExponentialMovingAverage",
+    "MeasurementRecord",
+    "MeasurementTimeBuffer",
     "MultiBernoulliTracker",
     "MultipleExtendedObjectStepResult",
     "LinPeriodicParticleFilter",
@@ -186,11 +200,15 @@ __all__ = [
     "MemEkfStarTracker",
     "MemEkfTracker",
     "MemSoekfTracker",
+    "OutOfSequenceKalmanUpdater",
+    "OutOfSequenceParticleUpdater",
+    "OutOfSequenceResult",
     "PartitionedSO3ProductParticleFilter",
     "PiecewiseConstantFilter",
     "RandomMatrixTracker",
     "SCGPTracker",
     "ScGpTracker",
+    "TimestampedItem",
     "quaternion_grid_transition_density",
     "Track",
     "TrackManager",
@@ -202,6 +220,8 @@ __all__ = [
     "build_linear_gaussian_updater",
     "solve_global_nearest_neighbor",
     "student_t_covariance_scale",
+    "retrodict_linear_gaussian",
+    "retrodict_linear_gaussian_state",
     "SE2FilterMixin",
     "SE2UKF",
     "SO3ProductParticleFilter",

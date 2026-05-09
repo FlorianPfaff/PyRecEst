@@ -92,6 +92,9 @@ track-management utilities.
 Common starting points include:
 
 - `KalmanFilter` for linear Gaussian Euclidean state estimation;
+- `OutOfSequenceKalmanUpdater`, `OutOfSequenceParticleUpdater`,
+  `FixedLagBuffer`, and `MeasurementTimeBuffer` for fixed-lag delayed
+  measurement handling;
 - `UnscentedKalmanFilter` and `UKFOnManifolds` for nonlinear models;
 - `ManifoldExponentialMovingAverage` for streaming manifold-valued samples;
 - `EuclideanParticleFilter` and manifold-specific particle filters;
