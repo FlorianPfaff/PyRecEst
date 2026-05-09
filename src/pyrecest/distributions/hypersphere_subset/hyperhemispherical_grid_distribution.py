@@ -19,6 +19,9 @@ from ...sampling.hyperspherical_sampler import get_grid_hyperhemisphere
 from .abstract_hyperhemispherical_distribution import (
     AbstractHyperhemisphericalDistribution,
 )
+from .abstract_hypersphere_subset_distribution import (
+    AbstractHypersphereSubsetDistribution,
+)
 from .abstract_hypersphere_subset_grid_distribution import (
     AbstractHypersphereSubsetGridDistribution,
 )
@@ -151,7 +154,11 @@ class HyperhemisphericalGridDistribution(
         return points, indices
 
     def get_manifold_size(self):
-        return AbstractHyperhemisphericalDistribution.get_manifold_size(self)
+        return 0.5 * (
+            AbstractHypersphereSubsetDistribution.compute_unit_hypersphere_surface(
+                self.grid.shape[1] - 1
+            )
+        )
 
     # ------------------------------------------------------------------
     # Multiplication on the hemisphere
