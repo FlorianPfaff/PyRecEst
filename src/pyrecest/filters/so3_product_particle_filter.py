@@ -1,5 +1,6 @@
 """Particle filter for Cartesian products of SO(3)."""
 
+import math
 from collections.abc import Callable
 
 # pylint: disable=no-name-in-module,no-member
@@ -157,7 +158,7 @@ class SO3ProductParticleFilter(HyperhemisphereCartProdParticleFilter):
     @staticmethod
     def _validate_probability(name: str, value: float) -> float:
         value = float(value)
-        if not isfinite(value) or value < 0.0 or value > 1.0:
+        if not math.isfinite(value) or value < 0.0 or value > 1.0:
             raise ValueError(f"{name} must be a finite probability in [0, 1].")
         return value
 
@@ -198,7 +199,9 @@ class SO3ProductParticleFilter(HyperhemisphereCartProdParticleFilter):
 
         if ndim(sigma) == 0:
             if not isfinite(sigma) or sigma <= 0.0:
-                raise ValueError("noise standard deviations must be positive and finite.")
+                raise ValueError(
+                    "noise standard deviations must be positive and finite."
+                )
             return ones(num_rotations) * sigma
         if sigma.shape != (num_rotations,):
             raise ValueError("component_noise_std must have shape (num_rotations,).")
@@ -235,13 +238,15 @@ class SO3ProductParticleFilter(HyperhemisphereCartProdParticleFilter):
         min_sigma = float(noise_std)
         max_sigma = float(max_noise_std)
         exponent = float(confidence_exponent)
-        if min_sigma <= 0.0 or not isfinite(min_sigma):
+        if min_sigma <= 0.0 or not math.isfinite(min_sigma):
             raise ValueError("noise_std must be positive and finite.")
-        if max_sigma <= 0.0 or not isfinite(max_sigma):
+        if max_sigma <= 0.0 or not math.isfinite(max_sigma):
             raise ValueError("max_noise_std must be positive and finite.")
         if max_sigma < min_sigma:
-            raise ValueError("max_noise_std must be greater than or equal to noise_std.")
-        if exponent <= 0.0 or not isfinite(exponent):
+            raise ValueError(
+                "max_noise_std must be greater than or equal to noise_std."
+            )
+        if exponent <= 0.0 or not math.isfinite(exponent):
             raise ValueError("confidence_exponent must be positive and finite.")
 
         variance = min_sigma * min_sigma + (1.0 - confidence) ** exponent * (
