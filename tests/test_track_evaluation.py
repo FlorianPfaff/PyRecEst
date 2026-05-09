@@ -3,7 +3,6 @@
 import unittest
 
 import numpy as np
-
 from pyrecest.utils.track_evaluation import (
     complete_track_set,
     normalize_track_matrix,
@@ -24,7 +23,9 @@ from pyrecest.utils.track_evaluation import (
 
 class TestTrackEvaluation(unittest.TestCase):
     def test_normalize_track_matrix_parses_common_missing_values(self):
-        matrix = normalize_track_matrix([[0, "1", None, -1, np.nan, "", b"2", 3.0, 4.5, "None", "null"]])
+        matrix = normalize_track_matrix(
+            [[0, "1", None, -1, np.nan, "", b"2", 3.0, 4.5, "None", "null"]]
+        )
 
         self.assertEqual(matrix.shape, (1, 11))
         self.assertEqual(matrix[0, 0], 0)
@@ -44,14 +45,21 @@ class TestTrackEvaluation(unittest.TestCase):
 
         np.testing.assert_array_equal(track_lengths(tracks), np.asarray([3, 2, 2]))
         self.assertEqual(complete_track_set(tracks), {(0, 1, 2)})
-        self.assertEqual(complete_track_set(tracks, session_indices=[1, 2]), {(1, 2), (5, 6)})
-        self.assertEqual(summarize_tracks(tracks), {"tracks": 3, "mean_track_length": 7.0 / 3.0, "max_track_length": 3})
+        self.assertEqual(
+            complete_track_set(tracks, session_indices=[1, 2]), {(1, 2), (5, 6)}
+        )
+        self.assertEqual(
+            summarize_tracks(tracks),
+            {"tracks": 3, "mean_track_length": 7.0 / 3.0, "max_track_length": 3},
+        )
 
     def test_track_pair_set_defaults_to_adjacent_sessions(self):
         tracks = [[0, 1, 2], [3, None, 4]]
 
         self.assertEqual(track_pair_set(tracks), {(0, 1, 0, 1), (1, 2, 1, 2)})
-        self.assertEqual(track_pair_set(tracks, session_pairs=[(0, 2)]), {(0, 2, 0, 2), (0, 2, 3, 4)})
+        self.assertEqual(
+            track_pair_set(tracks, session_pairs=[(0, 2)]), {(0, 2, 0, 2), (0, 2, 3, 4)}
+        )
 
     def test_score_track_links_and_pairwise_alias(self):
         predicted = [[0, 1, 2], [3, None, 5]]
@@ -63,7 +71,9 @@ class TestTrackEvaluation(unittest.TestCase):
         self.assertEqual(scores["track_link_false_negatives"], 0)
         self.assertEqual(scores["track_link_precision"], 1.0)
 
-        pairwise_scores = score_pairwise_tracks(predicted, reference, session_pairs=[(0, 2)])
+        pairwise_scores = score_pairwise_tracks(
+            predicted, reference, session_pairs=[(0, 2)]
+        )
         self.assertEqual(pairwise_scores["pairwise_true_positives"], 1)
         self.assertEqual(pairwise_scores["pairwise_false_positives"], 1)
         self.assertEqual(pairwise_scores["pairwise_false_negatives"], 1)
@@ -92,7 +102,9 @@ class TestTrackEvaluation(unittest.TestCase):
         predicted = [[0, 1, None], [None, None, 2], [3, 4, 5]]
         reference = [[0, 1, 2], [3, 4, 5]]
 
-        np.testing.assert_array_equal(reference_fragment_counts(predicted, reference), np.asarray([2, 1]))
+        np.testing.assert_array_equal(
+            reference_fragment_counts(predicted, reference), np.asarray([2, 1])
+        )
         scores = score_track_fragmentation(predicted, reference)
         self.assertEqual(scores["fragmentation_fragmented_reference_tracks"], 1)
         self.assertEqual(scores["fragmentation_events"], 1)
@@ -116,7 +128,10 @@ class TestTrackEvaluation(unittest.TestCase):
         predicted = [[0, 10], [None, 1]]
         reference = [[0, 1]]
 
-        self.assertEqual(summarize_track_errors(predicted, reference), track_error_ledger(predicted, reference)["summary"])
+        self.assertEqual(
+            summarize_track_errors(predicted, reference),
+            track_error_ledger(predicted, reference)["summary"],
+        )
 
     def test_score_track_matrices_combines_metric_families(self):
         predicted = [[0, 1, None], [None, None, 2]]

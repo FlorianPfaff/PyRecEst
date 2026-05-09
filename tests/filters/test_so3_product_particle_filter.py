@@ -172,7 +172,9 @@ class SO3ProductParticleFilterTest(unittest.TestCase):
         )
         self.assertGreater(float(confidence_filter.weights[0]), 0.99)
 
-        heteroskedastic_filter = SO3ProductParticleFilter(n_particles=2, num_rotations=2)
+        heteroskedastic_filter = SO3ProductParticleFilter(
+            n_particles=2, num_rotations=2
+        )
         heteroskedastic_filter.set_particles(particles)
         heteroskedastic_filter.update_with_geodesic_log_likelihood(
             measurement,
