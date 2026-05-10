@@ -4,7 +4,6 @@ import unittest
 
 import numpy as np
 import numpy.testing as npt
-
 from pyrecest.utils.track_metrics import (
     false_track_rate,
     missed_track_rate,
@@ -46,8 +45,12 @@ class TestTrackMetrics(unittest.TestCase):
         npt.assert_allclose(missed_track_rate(self.predicted, self.reference), 0.0)
 
     def test_track_latency_and_combined_scores(self):
-        npt.assert_allclose(track_latencies(self.predicted, self.reference), np.array([0.0, 0.0]))
-        summary = score_track_latency(self.predicted, self.reference, session_times=[0.0, 5.0, 9.0])
+        npt.assert_allclose(
+            track_latencies(self.predicted, self.reference), np.array([0.0, 0.0])
+        )
+        summary = score_track_latency(
+            self.predicted, self.reference, session_times=[0.0, 5.0, 9.0]
+        )
         self.assertEqual(summary["latency_detected_tracks"], 2)
         self.assertEqual(summary["mean_track_latency"], 0.0)
 
