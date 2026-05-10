@@ -9,8 +9,8 @@ from .association_features import (
 from .association_models import LogisticPairwiseAssociationModel
 from .history_recorder import HistoryRecorder
 from .metrics import (
-    anis,
     anees,
+    anis,
     chi_square_confidence_bounds,
     chi_square_confidence_interval,
     consistency_fraction,
