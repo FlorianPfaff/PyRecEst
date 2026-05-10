@@ -87,13 +87,22 @@ def range_bearing_jacobian(
     range_sq = dx * dx + dy * dy
     range_value = sqrt(range_sq)
     state_dim = int(state.shape[0])
-    range_row = zeros((state_dim,))
-    bearing_row = zeros((state_dim,))
-    range_row[int(position_indices[0])] = dx / range_value
-    range_row[int(position_indices[1])] = dy / range_value
-    bearing_row[int(position_indices[0])] = -dy / range_sq
-    bearing_row[int(position_indices[1])] = dx / range_sq
-    return stack([range_row, bearing_row])
+    x_index = int(position_indices[0])
+    y_index = int(position_indices[1])
+    zero = range_value * 0.0
+    range_entries = []
+    bearing_entries = []
+    for column in range(state_dim):
+        if column == x_index:
+            range_entries.append(dx / range_value)
+            bearing_entries.append(-dy / range_sq)
+        elif column == y_index:
+            range_entries.append(dy / range_value)
+            bearing_entries.append(dx / range_sq)
+        else:
+            range_entries.append(zero)
+            bearing_entries.append(zero)
+    return stack([stack(range_entries), stack(bearing_entries)])
 
 
 def radar_range_bearing_doppler_measurement(
