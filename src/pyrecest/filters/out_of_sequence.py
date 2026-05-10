@@ -9,6 +9,7 @@ order.
 
 import copy
 from dataclasses import dataclass
+from math import isfinite
 
 from pyrecest.backend import asarray, atleast_1d, atleast_2d, float64, linalg, transpose
 from pyrecest.distributions import GaussianDistribution
@@ -29,7 +30,7 @@ def _coerce_time(time):
         time = float(time)
     except (TypeError, ValueError) as exc:
         raise ValueError("time must be a real scalar") from exc
-    if time != time or time in (float("inf"), float("-inf")):
+    if not isfinite(time):
         raise ValueError("time must be finite")
     return time
 
