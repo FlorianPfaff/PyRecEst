@@ -61,6 +61,14 @@ class AssociationHypothesis:
         return replace(self, accepted=bool(accepted), reason=reason)
 
 
+def _measurement_index(hypothesis: AssociationHypothesis) -> int:
+    """Return the concrete measurement index for a non-missed hypothesis."""
+    measurement_index = hypothesis.measurement_index
+    if measurement_index is None:
+        raise ValueError("missed-detection hypotheses do not have a measurement index")
+    return int(measurement_index)
+
+
 def missed_detection_hypothesis(
     track_index: int,
     *,
@@ -186,8 +194,8 @@ class TopKGate:
             if hypothesis.is_missed_detection:
                 missed.append(hypothesis)
                 continue
-            key = hypothesis.track_index if self.mode == "track" else hypothesis.measurement_index
-            grouped[int(key)].append(hypothesis)
+            key = hypothesis.track_index if self.mode == "track" else _measurement_index(hypothesis)
+            grouped[key].append(hypothesis)
 
         for group in grouped.values():
             sorted_group = sorted(
@@ -353,7 +361,7 @@ def hypotheses_to_cost_matrix(
         cost = hypothesis_cost(hypothesis, missing_cost=missing_cost)
         if not hypothesis.accepted:
             cost = float(rejected_cost)
-        matrix[hypothesis.track_index, int(hypothesis.measurement_index)] = cost
+        matrix[hypothesis.track_index, _measurement_index(hypothesis)] = cost
     return matrix
 
 
@@ -383,7 +391,7 @@ def hypotheses_to_log_likelihood_matrix(
             value = log(float(hypothesis.probability))
         else:
             value = -hypothesis_cost(hypothesis)
-        matrix[hypothesis.track_index, int(hypothesis.measurement_index)] = value
+        matrix[hypothesis.track_index, _measurement_index(hypothesis)] = value
     return matrix
 
 
@@ -413,7 +421,7 @@ def hypotheses_to_probability_matrix(
             value = float(np.exp(hypothesis.log_likelihood))
         else:
             value = float(np.exp(-hypothesis_cost(hypothesis)))
-        matrix[hypothesis.track_index, int(hypothesis.measurement_index)] = value
+        matrix[hypothesis.track_index, _measurement_index(hypothesis)] = value
     return matrix
 
 
@@ -487,7 +495,7 @@ def infer_hypothesis_shape(
             num_tracks = max(hypothesis.track_index for hypothesis in hypotheses) + 1
     if num_measurements is None:
         measurement_indices = [
-            int(hypothesis.measurement_index)
+            _measurement_index(hypothesis)
             for hypothesis in hypotheses
             if hypothesis.measurement_index is not None
         ]
