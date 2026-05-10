@@ -92,6 +92,9 @@ track-management utilities.
 Common starting points include:
 
 - `KalmanFilter` for linear Gaussian Euclidean state estimation;
+- `AssociationHypothesis`, `NISGate`, `CostThresholdGate`, `TopKGate`,
+  and `linear_gaussian_association_hypotheses` for reusable association
+  diagnostics, gating, and cost-matrix conversion;
 - `OutOfSequenceKalmanUpdater`, `OutOfSequenceParticleUpdater`,
   `FixedLagBuffer`, and `MeasurementTimeBuffer` for fixed-lag delayed
   measurement handling;
