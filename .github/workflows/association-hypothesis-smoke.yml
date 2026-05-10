@@ -1,0 +1,60 @@
+name: Association hypothesis smoke tests
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "src/pyrecest/filters/association_hypotheses.py"
+      - "src/pyrecest/filters/__init__.py"
+      - "tests/filters/test_association_hypotheses.py"
+      - "docs/api-overview.md"
+      - ".github/workflows/association-hypothesis-smoke.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
+      - name: Install package and test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+          python -m pip install pytest
+
+      - name: Import smoke test
+        run: |
+          python - <<'PY'
+          from pyrecest.filters import (
+              AssociationHypothesis,
+              NISGate,
+              CostThresholdGate,
+              ProbabilityThresholdGate,
+              TopKGate,
+              linear_gaussian_association_hypotheses,
+              hypotheses_to_cost_matrix,
+              build_linear_gaussian_hypothesis_associator,
+          )
+          print("association hypothesis imports OK")
+          PY
+
+      - name: Run targeted tests
+        run: |
+          python -m pytest tests/filters/test_association_hypotheses.py -q
