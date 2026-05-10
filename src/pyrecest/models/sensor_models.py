@@ -6,7 +6,9 @@ from collections.abc import Sequence
 from typing import Any
 
 # pylint: disable=no-name-in-module,no-member,too-many-arguments,too-many-positional-arguments
-from pyrecest.backend import arctan2, asarray, matmul, sqrt, stack, sum as _sum, zeros
+from pyrecest.backend import arctan2, asarray, matmul, sqrt, stack
+from pyrecest.backend import sum as _sum
+from pyrecest.backend import zeros
 from pyrecest.models.additive_noise import AdditiveNoiseMeasurementModel
 
 __all__ = [
@@ -44,7 +46,9 @@ def _as_vector(value, length: int, name: str):
     return vector
 
 
-def range_bearing_measurement(state, sensor_position: Any | None = None, position_indices: Sequence[int] = (0, 1)):
+def range_bearing_measurement(
+    state, sensor_position: Any | None = None, position_indices: Sequence[int] = (0, 1)
+):
     """Return 2D range-bearing measurement ``[range, bearing]``."""
     position = _select(state, position_indices)
     sensor_position = _as_vector(sensor_position, 2, "sensor_position")
@@ -54,12 +58,24 @@ def range_bearing_measurement(state, sensor_position: Any | None = None, positio
     return stack([range_value, bearing])
 
 
-def bearing_only_measurement(state, sensor_position: Any | None = None, position_indices: Sequence[int] = (0, 1)):
+def bearing_only_measurement(
+    state, sensor_position: Any | None = None, position_indices: Sequence[int] = (0, 1)
+):
     """Return a scalar 2D bearing-only measurement."""
-    return stack([range_bearing_measurement(state, sensor_position=sensor_position, position_indices=position_indices)[1]])
+    return stack(
+        [
+            range_bearing_measurement(
+                state,
+                sensor_position=sensor_position,
+                position_indices=position_indices,
+            )[1]
+        ]
+    )
 
 
-def range_bearing_jacobian(state, sensor_position: Any | None = None, position_indices: Sequence[int] = (0, 1)):
+def range_bearing_jacobian(
+    state, sensor_position: Any | None = None, position_indices: Sequence[int] = (0, 1)
+):
     """Return the Jacobian of :func:`range_bearing_measurement`.
 
     The Jacobian has shape ``(2, state_dim)`` and nonzero columns only at
@@ -96,9 +112,15 @@ def radar_range_bearing_doppler_measurement(
     sensor_velocity = _as_vector(sensor_velocity, 2, "sensor_velocity")
     relative_position = position - sensor_position
     relative_velocity = velocity - sensor_velocity
-    range_value = sqrt(relative_position[0] * relative_position[0] + relative_position[1] * relative_position[1])
+    range_value = sqrt(
+        relative_position[0] * relative_position[0]
+        + relative_position[1] * relative_position[1]
+    )
     bearing = arctan2(relative_position[1], relative_position[0])
-    range_rate = (relative_position[0] * relative_velocity[0] + relative_position[1] * relative_velocity[1]) / range_value
+    range_rate = (
+        relative_position[0] * relative_velocity[0]
+        + relative_position[1] * relative_velocity[1]
+    ) / range_value
     return stack([range_value, bearing, range_rate])
 
 
@@ -146,12 +168,19 @@ def fdoa_measurement(
         sensor_velocities = zeros(tuple(sensors.shape))
     sensor_velocities = asarray(sensor_velocities)
     reference_sensor = int(reference_sensor)
-    reference_rate = _range_rate(position, velocity, sensors[reference_sensor], sensor_velocities[reference_sensor])
+    reference_rate = _range_rate(
+        position,
+        velocity,
+        sensors[reference_sensor],
+        sensor_velocities[reference_sensor],
+    )
     measurements = []
     for sensor_idx in range(int(sensors.shape[0])):
         if sensor_idx == reference_sensor:
             continue
-        rate = _range_rate(position, velocity, sensors[sensor_idx], sensor_velocities[sensor_idx])
+        rate = _range_rate(
+            position, velocity, sensors[sensor_idx], sensor_velocities[sensor_idx]
+        )
         measurements.append((rate - reference_rate) / float(propagation_speed))
     return stack(measurements)
 
@@ -175,29 +204,51 @@ def camera_projection_measurement(
     translation = _as_vector(translation, 3, "translation")
     camera_position = position if rotation is None else matmul(rotation, position)
     camera_position = camera_position + translation
-    normalized = stack([camera_position[0] / camera_position[2], camera_position[1] / camera_position[2], 1.0])
+    normalized = stack(
+        [
+            camera_position[0] / camera_position[2],
+            camera_position[1] / camera_position[2],
+            1.0,
+        ]
+    )
     if camera_matrix is None:
         return stack([normalized[0], normalized[1]])
     homogeneous = matmul(asarray(camera_matrix), normalized)
     return stack([homogeneous[0] / homogeneous[2], homogeneous[1] / homogeneous[2]])
 
 
-def range_bearing_model(noise_covariance, sensor_position: Any | None = None, position_indices: Sequence[int] = (0, 1)) -> AdditiveNoiseMeasurementModel:
+def range_bearing_model(
+    noise_covariance,
+    sensor_position: Any | None = None,
+    position_indices: Sequence[int] = (0, 1),
+) -> AdditiveNoiseMeasurementModel:
     """Return an additive-noise 2D range-bearing model."""
     return AdditiveNoiseMeasurementModel(
         measurement_function=range_bearing_measurement,
         noise_covariance=noise_covariance,
-        jacobian=lambda state: range_bearing_jacobian(state, sensor_position=sensor_position, position_indices=position_indices),
-        function_args={"sensor_position": sensor_position, "position_indices": tuple(position_indices)},
+        jacobian=lambda state: range_bearing_jacobian(
+            state, sensor_position=sensor_position, position_indices=position_indices
+        ),
+        function_args={
+            "sensor_position": sensor_position,
+            "position_indices": tuple(position_indices),
+        },
     )
 
 
-def bearing_only_model(noise_covariance, sensor_position: Any | None = None, position_indices: Sequence[int] = (0, 1)) -> AdditiveNoiseMeasurementModel:
+def bearing_only_model(
+    noise_covariance,
+    sensor_position: Any | None = None,
+    position_indices: Sequence[int] = (0, 1),
+) -> AdditiveNoiseMeasurementModel:
     """Return an additive-noise 2D bearing-only model."""
     return AdditiveNoiseMeasurementModel(
         measurement_function=bearing_only_measurement,
         noise_covariance=noise_covariance,
-        function_args={"sensor_position": sensor_position, "position_indices": tuple(position_indices)},
+        function_args={
+            "sensor_position": sensor_position,
+            "position_indices": tuple(position_indices),
+        },
     )
 
 
