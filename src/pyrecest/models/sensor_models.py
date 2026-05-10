@@ -6,7 +6,7 @@ from collections.abc import Sequence
 from typing import Any
 
 # pylint: disable=no-name-in-module,no-member,too-many-arguments,too-many-positional-arguments
-from pyrecest.backend import arctan2, asarray, matmul, sqrt, stack, sum as _sum, zeros
+from pyrecest.backend import arctan2, asarray, matvec, sqrt, stack, sum as _sum, zeros
 from pyrecest.models.additive_noise import AdditiveNoiseMeasurementModel
 
 __all__ = [
@@ -173,12 +173,12 @@ def camera_projection_measurement(
     position = _select(state, position_indices)
     rotation = asarray(rotation) if rotation is not None else None
     translation = _as_vector(translation, 3, "translation")
-    camera_position = position if rotation is None else matmul(rotation, position)
+    camera_position = position if rotation is None else matvec(rotation, position)
     camera_position = camera_position + translation
     normalized = stack([camera_position[0] / camera_position[2], camera_position[1] / camera_position[2], 1.0])
     if camera_matrix is None:
         return stack([normalized[0], normalized[1]])
-    homogeneous = matmul(asarray(camera_matrix), normalized)
+    homogeneous = matvec(asarray(camera_matrix), normalized)
     return stack([homogeneous[0] / homogeneous[2], homogeneous[1] / homogeneous[2]])
 
 
