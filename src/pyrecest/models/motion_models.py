@@ -16,7 +16,7 @@ from scipy.linalg import expm
 
 # pylint: disable=no-name-in-module,no-member,too-many-arguments,too-many-positional-arguments
 from pyrecest.backend import abs as _abs
-from pyrecest.backend import arctan2, asarray, cos, sin, stack, where, zeros
+from pyrecest.backend import asarray, cos, sin, stack, where, zeros
 from pyrecest.models.additive_noise import AdditiveNoiseTransitionModel
 from pyrecest.models.linear_gaussian import LinearGaussianTransitionModel
 
@@ -71,7 +71,10 @@ def kinematic_transition_matrix(dt: float, spatial_dim: int = 2, derivative_orde
             power = derivative_col - derivative_row
             coefficient = dt**power / float(factorial(power))
             for axis in range(int(spatial_dim)):
-                matrix[_state_index(derivative_row, axis, int(spatial_dim)), _state_index(derivative_col, axis, int(spatial_dim))] = coefficient
+                matrix[
+                    _state_index(derivative_row, axis, int(spatial_dim)),
+                    _state_index(derivative_col, axis, int(spatial_dim)),
+                ] = coefficient
     return asarray(matrix)
 
 
@@ -134,7 +137,10 @@ def integrated_white_noise_covariance(
             )
             coefficient = dt**exponent / float(denominator)
             for axis, density in enumerate(densities):
-                covariance[_state_index(derivative_row, axis, int(spatial_dim)), _state_index(derivative_col, axis, int(spatial_dim))] = float(density) * coefficient
+                covariance[
+                    _state_index(derivative_row, axis, int(spatial_dim)),
+                    _state_index(derivative_col, axis, int(spatial_dim)),
+                ] = float(density) * coefficient
     return asarray(covariance)
 
 
@@ -157,7 +163,9 @@ def constant_velocity_model(dt: float, spatial_dim: int = 2, spectral_density: f
     """Return a linear Gaussian constant-velocity transition model."""
     return LinearGaussianTransitionModel(
         constant_velocity_transition_matrix(dt, spatial_dim=spatial_dim),
-        white_noise_acceleration_covariance(dt, spatial_dim=spatial_dim, spectral_density=spectral_density),
+        white_noise_acceleration_covariance(
+            dt, spatial_dim=spatial_dim, spectral_density=spectral_density
+        ),
     )
 
 
@@ -165,7 +173,9 @@ def constant_acceleration_model(dt: float, spatial_dim: int = 2, spectral_densit
     """Return a linear Gaussian constant-acceleration transition model."""
     return LinearGaussianTransitionModel(
         constant_acceleration_transition_matrix(dt, spatial_dim=spatial_dim),
-        white_noise_jerk_covariance(dt, spatial_dim=spatial_dim, spectral_density=spectral_density),
+        white_noise_jerk_covariance(
+            dt, spatial_dim=spatial_dim, spectral_density=spectral_density
+        ),
     )
 
 
@@ -173,11 +183,18 @@ def constant_jerk_model(dt: float, spatial_dim: int = 2, spectral_density: float
     """Return a linear Gaussian constant-jerk transition model."""
     return LinearGaussianTransitionModel(
         constant_jerk_transition_matrix(dt, spatial_dim=spatial_dim),
-        white_noise_snap_covariance(dt, spatial_dim=spatial_dim, spectral_density=spectral_density),
+        white_noise_snap_covariance(
+            dt, spatial_dim=spatial_dim, spectral_density=spectral_density
+        ),
     )
 
 
-def continuous_to_discrete_lti(continuous_matrix: Any, noise_input_matrix: Any | None = None, continuous_noise_covariance: Any | None = None, dt: float = 1.0):
+def continuous_to_discrete_lti(
+    continuous_matrix: Any,
+    noise_input_matrix: Any | None = None,
+    continuous_noise_covariance: Any | None = None,
+    dt: float = 1.0,
+):
     """Discretize a continuous-time LTI model and process noise.
 
     For ``dx/dt = A x + L w`` with continuous white-noise covariance ``Qc``, the
@@ -193,13 +210,19 @@ def continuous_to_discrete_lti(continuous_matrix: Any, noise_input_matrix: Any |
     if noise_input_matrix is None and continuous_noise_covariance is None:
         return asarray(transition), zeros((dim, dim))
     if noise_input_matrix is None or continuous_noise_covariance is None:
-        raise ValueError("noise_input_matrix and continuous_noise_covariance must be supplied together")
+        raise ValueError(
+            "noise_input_matrix and continuous_noise_covariance must be supplied together"
+        )
 
     noise_input_np = np.asarray(noise_input_matrix, dtype=float)
     continuous_noise_np = np.asarray(continuous_noise_covariance, dtype=float)
     if noise_input_np.ndim != 2 or noise_input_np.shape[0] != dim:
         raise ValueError("noise_input_matrix has incompatible shape")
-    if continuous_noise_np.ndim != 2 or continuous_noise_np.shape[0] != continuous_noise_np.shape[1] or continuous_noise_np.shape[0] != noise_input_np.shape[1]:
+    if (
+        continuous_noise_np.ndim != 2
+        or continuous_noise_np.shape[0] != continuous_noise_np.shape[1]
+        or continuous_noise_np.shape[0] != noise_input_np.shape[1]
+    ):
         raise ValueError("continuous_noise_covariance has incompatible shape")
 
     spectral = noise_input_np @ continuous_noise_np @ noise_input_np.T
@@ -231,7 +254,10 @@ def singer_transition_matrix(dt: float, spatial_dim: int = 2, tau: float = 20.0)
     for row_derivative in range(3):
         for col_derivative in range(3):
             for axis in range(int(spatial_dim)):
-                matrix[_state_index(row_derivative, axis, int(spatial_dim)), _state_index(col_derivative, axis, int(spatial_dim))] = block[row_derivative, col_derivative]
+                matrix[
+                    _state_index(row_derivative, axis, int(spatial_dim)),
+                    _state_index(col_derivative, axis, int(spatial_dim)),
+                ] = block[row_derivative, col_derivative]
     return asarray(matrix)
 
 
@@ -248,7 +274,10 @@ def singer_process_noise_covariance(dt: float, spatial_dim: int = 2, tau: float 
     else:
         raise ValueError("acceleration_variance must be scalar or have shape (spatial_dim,)")
 
-    continuous_block = np.array([[0.0, 1.0, 0.0], [0.0, 0.0, 1.0], [0.0, 0.0, -alpha]], dtype=float)
+    continuous_block = np.array(
+        [[0.0, 1.0, 0.0], [0.0, 0.0, 1.0], [0.0, 0.0, -alpha]],
+        dtype=float,
+    )
     noise_input = np.array([[0.0], [0.0], [1.0]], dtype=float)
     covariance = np.zeros((3 * int(spatial_dim), 3 * int(spatial_dim)), dtype=float)
     for axis, variance in enumerate(variances):
@@ -261,7 +290,10 @@ def singer_process_noise_covariance(dt: float, spatial_dim: int = 2, tau: float 
         q_block_np = np.asarray(q_block, dtype=float)
         for row_derivative in range(3):
             for col_derivative in range(3):
-                covariance[_state_index(row_derivative, axis, int(spatial_dim)), _state_index(col_derivative, axis, int(spatial_dim))] = q_block_np[row_derivative, col_derivative]
+                covariance[
+                    _state_index(row_derivative, axis, int(spatial_dim)),
+                    _state_index(col_derivative, axis, int(spatial_dim)),
+                ] = q_block_np[row_derivative, col_derivative]
     return asarray(covariance)
 
 
@@ -269,7 +301,12 @@ def singer_model(dt: float, spatial_dim: int = 2, tau: float = 20.0, acceleratio
     """Return a linear Gaussian Singer acceleration transition model."""
     return LinearGaussianTransitionModel(
         singer_transition_matrix(dt, spatial_dim=spatial_dim, tau=tau),
-        singer_process_noise_covariance(dt, spatial_dim=spatial_dim, tau=tau, acceleration_variance=acceleration_variance),
+        singer_process_noise_covariance(
+            dt,
+            spatial_dim=spatial_dim,
+            tau=tau,
+            acceleration_variance=acceleration_variance,
+        ),
     )
 
 
@@ -315,7 +352,12 @@ def coordinated_turn_model(dt: float = 1.0, noise_covariance: Any | None = None)
 def nearly_coordinated_turn_model(dt: float = 1.0, position_spectral_density: float = 1.0, turn_rate_variance: float = 1e-4) -> AdditiveNoiseTransitionModel:
     """Return a coordinated-turn model with a simple nearly-constant-turn covariance."""
     covariance = np.zeros((5, 5), dtype=float)
-    covariance[:4, :4] = np.asarray(white_noise_acceleration_covariance(dt, spatial_dim=2, spectral_density=position_spectral_density), dtype=float)
+    covariance[:4, :4] = np.asarray(
+        white_noise_acceleration_covariance(
+            dt, spatial_dim=2, spectral_density=position_spectral_density
+        ),
+        dtype=float,
+    )
     covariance[4, 4] = float(turn_rate_variance) * float(dt)
     return coordinated_turn_model(dt=dt, noise_covariance=asarray(covariance))
 
@@ -324,7 +366,14 @@ def nearly_constant_speed_transition(state, dt: float = 1.0):
     """Propagate a 2D ``[x, y, speed, heading]`` nearly-constant-speed state."""
     state = asarray(state)
     x_pos, y_pos, speed, heading = state[0], state[1], state[2], state[3]
-    return stack([x_pos + speed * cos(heading) * float(dt), y_pos + speed * sin(heading) * float(dt), speed, heading])
+    return stack(
+        [
+            x_pos + speed * cos(heading) * float(dt),
+            y_pos + speed * sin(heading) * float(dt),
+            speed,
+            heading,
+        ]
+    )
 
 
 def nearly_constant_speed_model(dt: float = 1.0, noise_covariance: Any | None = None) -> AdditiveNoiseTransitionModel:
