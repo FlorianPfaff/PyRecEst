@@ -25,7 +25,9 @@ __all__ = [
 ]
 
 
-def score_track_purity(predicted_track_matrix: Any, reference_track_matrix: Any) -> dict[str, float | int]:
+def score_track_purity(
+    predicted_track_matrix: Any, reference_track_matrix: Any
+) -> dict[str, float | int]:
     """Return predicted-track identity purity metrics.
 
     A predicted track's purity is the fraction of its observations that belong
@@ -33,7 +35,9 @@ def score_track_purity(predicted_track_matrix: Any, reference_track_matrix: Any)
     matrix count as impure in ``mean_track_purity`` and
     ``observation_weighted_track_purity``.
     """
-    predicted, reference = _normalized_pair(predicted_track_matrix, reference_track_matrix)
+    predicted, reference = _normalized_pair(
+        predicted_track_matrix, reference_track_matrix
+    )
     reference_lookup = _single_observation_lookup(reference)
 
     purities: list[float] = []
@@ -51,7 +55,11 @@ def score_track_purity(predicted_track_matrix: Any, reference_track_matrix: Any)
             empty_tracks += 1
             continue
         total_observations += len(observations)
-        matched_reference_ids = [reference_lookup[observation] for observation in observations if observation in reference_lookup]
+        matched_reference_ids = [
+            reference_lookup[observation]
+            for observation in observations
+            if observation in reference_lookup
+        ]
         counts = Counter(matched_reference_ids)
         labeled_count = int(sum(counts.values()))
         dominant_count = max(counts.values(), default=0)
@@ -72,24 +80,38 @@ def score_track_purity(predicted_track_matrix: Any, reference_track_matrix: Any)
         "pure_tracks": int(pure_tracks),
         "impure_tracks": int(impure_tracks),
         "mean_track_purity": _mean_or_zero(purities),
-        "observation_weighted_track_purity": _zero_ratio(dominant_observations, total_observations),
+        "observation_weighted_track_purity": _zero_ratio(
+            dominant_observations, total_observations
+        ),
         "mean_labeled_track_purity": _mean_or_zero(labeled_purities),
-        "observation_weighted_labeled_track_purity": _zero_ratio(dominant_observations, labeled_observations),
+        "observation_weighted_labeled_track_purity": _zero_ratio(
+            dominant_observations, labeled_observations
+        ),
         "unreferenced_predicted_observations": int(unreferenced_observations),
-        "unreferenced_observation_rate": _zero_ratio(unreferenced_observations, total_observations),
+        "unreferenced_observation_rate": _zero_ratio(
+            unreferenced_observations, total_observations
+        ),
     }
 
 
 def track_purity(predicted_track_matrix: Any, reference_track_matrix: Any) -> float:
     """Return observation-weighted predicted-track purity."""
-    return float(score_track_purity(predicted_track_matrix, reference_track_matrix)["observation_weighted_track_purity"])
+    return float(
+        score_track_purity(predicted_track_matrix, reference_track_matrix)[
+            "observation_weighted_track_purity"
+        ]
+    )
 
 
-def score_false_tracks(predicted_track_matrix: Any, reference_track_matrix: Any, *, min_length: int = 1) -> dict[str, float | int]:
+def score_false_tracks(
+    predicted_track_matrix: Any, reference_track_matrix: Any, *, min_length: int = 1
+) -> dict[str, float | int]:
     """Return metrics for predicted tracks that contain no reference observation."""
     if int(min_length) <= 0:
         raise ValueError("min_length must be positive")
-    predicted, reference = _normalized_pair(predicted_track_matrix, reference_track_matrix)
+    predicted, reference = _normalized_pair(
+        predicted_track_matrix, reference_track_matrix
+    )
     reference_lookup = _single_observation_lookup(reference)
 
     evaluated_tracks = 0
@@ -102,7 +124,9 @@ def score_false_tracks(predicted_track_matrix: Any, reference_track_matrix: Any,
         if len(observations) < int(min_length):
             continue
         evaluated_tracks += 1
-        matched = sum(1 for observation in observations if observation in reference_lookup)
+        matched = sum(
+            1 for observation in observations if observation in reference_lookup
+        )
         unreferenced_observations += len(observations) - matched
         if matched == 0:
             false_tracks += 1
@@ -114,20 +138,32 @@ def score_false_tracks(predicted_track_matrix: Any, reference_track_matrix: Any,
         "false_track_rate": _zero_ratio(false_tracks, evaluated_tracks),
         "false_track_observations": int(false_track_observations),
         "unreferenced_predicted_observations": int(unreferenced_observations),
-        "unreferenced_predicted_observation_rate": _zero_ratio(unreferenced_observations, total_observations),
+        "unreferenced_predicted_observation_rate": _zero_ratio(
+            unreferenced_observations, total_observations
+        ),
     }
 
 
-def false_track_rate(predicted_track_matrix: Any, reference_track_matrix: Any, *, min_length: int = 1) -> float:
+def false_track_rate(
+    predicted_track_matrix: Any, reference_track_matrix: Any, *, min_length: int = 1
+) -> float:
     """Return the fraction of evaluated predicted tracks that are false."""
-    return float(score_false_tracks(predicted_track_matrix, reference_track_matrix, min_length=min_length)["false_track_rate"])
+    return float(
+        score_false_tracks(
+            predicted_track_matrix, reference_track_matrix, min_length=min_length
+        )["false_track_rate"]
+    )
 
 
-def score_missed_tracks(predicted_track_matrix: Any, reference_track_matrix: Any, *, min_length: int = 1) -> dict[str, float | int]:
+def score_missed_tracks(
+    predicted_track_matrix: Any, reference_track_matrix: Any, *, min_length: int = 1
+) -> dict[str, float | int]:
     """Return metrics for reference tracks with no predicted observation support."""
     if int(min_length) <= 0:
         raise ValueError("min_length must be positive")
-    predicted, reference = _normalized_pair(predicted_track_matrix, reference_track_matrix)
+    predicted, reference = _normalized_pair(
+        predicted_track_matrix, reference_track_matrix
+    )
     predicted_lookup = _single_observation_lookup(predicted)
 
     evaluated_tracks = 0
@@ -140,7 +176,9 @@ def score_missed_tracks(predicted_track_matrix: Any, reference_track_matrix: Any
         if len(observations) < int(min_length):
             continue
         evaluated_tracks += 1
-        recovered = sum(1 for observation in observations if observation in predicted_lookup)
+        recovered = sum(
+            1 for observation in observations if observation in predicted_lookup
+        )
         missed_observations += len(observations) - recovered
         if recovered == 0:
             missed_tracks += 1
@@ -153,18 +191,34 @@ def score_missed_tracks(predicted_track_matrix: Any, reference_track_matrix: Any
         "missed_track_evaluated_reference_tracks": int(evaluated_tracks),
         "missed_track_rate": _zero_ratio(missed_tracks, evaluated_tracks),
         "missed_reference_observations": int(missed_observations),
-        "missed_reference_observation_rate": _zero_ratio(missed_observations, total_observations),
+        "missed_reference_observation_rate": _zero_ratio(
+            missed_observations, total_observations
+        ),
     }
 
 
-def missed_track_rate(predicted_track_matrix: Any, reference_track_matrix: Any, *, min_length: int = 1) -> float:
+def missed_track_rate(
+    predicted_track_matrix: Any, reference_track_matrix: Any, *, min_length: int = 1
+) -> float:
     """Return the fraction of evaluated reference tracks that are missed."""
-    return float(score_missed_tracks(predicted_track_matrix, reference_track_matrix, min_length=min_length)["missed_track_rate"])
+    return float(
+        score_missed_tracks(
+            predicted_track_matrix, reference_track_matrix, min_length=min_length
+        )["missed_track_rate"]
+    )
 
 
-def track_latencies(predicted_track_matrix: Any, reference_track_matrix: Any, *, session_times: Sequence[float] | None = None, missed_value=np.nan) -> np.ndarray:
+def track_latencies(
+    predicted_track_matrix: Any,
+    reference_track_matrix: Any,
+    *,
+    session_times: Sequence[float] | None = None,
+    missed_value=np.nan,
+) -> np.ndarray:
     """Return first-detection latency for each non-empty reference track."""
-    predicted, reference = _normalized_pair(predicted_track_matrix, reference_track_matrix)
+    predicted, reference = _normalized_pair(
+        predicted_track_matrix, reference_track_matrix
+    )
     predicted_lookup = _single_observation_lookup(predicted)
     times = _session_times(reference.shape[1], session_times)
     values: list[float] = []
@@ -172,17 +226,30 @@ def track_latencies(predicted_track_matrix: Any, reference_track_matrix: Any, *,
         if not observations:
             continue
         first_reference_session = min(session for session, _ in observations)
-        detected_sessions = [session for session, observation in observations if (session, observation) in predicted_lookup]
+        detected_sessions = [
+            session
+            for session, observation in observations
+            if (session, observation) in predicted_lookup
+        ]
         if not detected_sessions:
             values.append(float(missed_value))
             continue
-        values.append(float(times[min(detected_sessions)] - times[first_reference_session]))
+        values.append(
+            float(times[min(detected_sessions)] - times[first_reference_session])
+        )
     return np.asarray(values, dtype=float)
 
 
-def score_track_latency(predicted_track_matrix: Any, reference_track_matrix: Any, *, session_times: Sequence[float] | None = None) -> dict[str, float | int]:
+def score_track_latency(
+    predicted_track_matrix: Any,
+    reference_track_matrix: Any,
+    *,
+    session_times: Sequence[float] | None = None,
+) -> dict[str, float | int]:
     """Return aggregate first-detection latency metrics."""
-    values = track_latencies(predicted_track_matrix, reference_track_matrix, session_times=session_times)
+    values = track_latencies(
+        predicted_track_matrix, reference_track_matrix, session_times=session_times
+    )
     detected_values = values[np.isfinite(values)]
     return {
         "latency_reference_tracks": int(values.size),
@@ -190,32 +257,58 @@ def score_track_latency(predicted_track_matrix: Any, reference_track_matrix: Any
         "latency_missed_tracks": int(values.size - detected_values.size),
         "track_detection_rate": _zero_ratio(detected_values.size, values.size),
         "mean_track_latency": _mean_or_zero(detected_values),
-        "median_track_latency": float(np.median(detected_values)) if detected_values.size else 0.0,
-        "max_track_latency": float(np.max(detected_values)) if detected_values.size else 0.0,
+        "median_track_latency": (
+            float(np.median(detected_values)) if detected_values.size else 0.0
+        ),
+        "max_track_latency": (
+            float(np.max(detected_values)) if detected_values.size else 0.0
+        ),
     }
 
 
-def score_track_outcomes(predicted_track_matrix: Any, reference_track_matrix: Any, *, session_times: Sequence[float] | None = None) -> dict[str, float | int]:
+def score_track_outcomes(
+    predicted_track_matrix: Any,
+    reference_track_matrix: Any,
+    *,
+    session_times: Sequence[float] | None = None,
+) -> dict[str, float | int]:
     """Return fragmentation, purity, false-track, missed-track, and latency metrics."""
     scores: dict[str, float | int] = {}
-    scores.update(score_track_fragmentation(predicted_track_matrix, reference_track_matrix))
+    scores.update(
+        score_track_fragmentation(predicted_track_matrix, reference_track_matrix)
+    )
     scores.update(score_track_purity(predicted_track_matrix, reference_track_matrix))
     scores.update(score_false_tracks(predicted_track_matrix, reference_track_matrix))
     scores.update(score_missed_tracks(predicted_track_matrix, reference_track_matrix))
-    scores.update(score_track_latency(predicted_track_matrix, reference_track_matrix, session_times=session_times))
+    scores.update(
+        score_track_latency(
+            predicted_track_matrix, reference_track_matrix, session_times=session_times
+        )
+    )
     return scores
 
 
-def _normalized_pair(predicted_track_matrix: Any, reference_track_matrix: Any) -> tuple[np.ndarray, np.ndarray]:
+def _normalized_pair(
+    predicted_track_matrix: Any, reference_track_matrix: Any
+) -> tuple[np.ndarray, np.ndarray]:
     predicted = normalize_track_matrix(predicted_track_matrix)
     reference = normalize_track_matrix(reference_track_matrix)
     if predicted.shape[1] != reference.shape[1]:
-        raise ValueError("Predicted and reference matrices must have the same number of sessions")
+        raise ValueError(
+            "Predicted and reference matrices must have the same number of sessions"
+        )
     return predicted, reference
 
 
 def _observations_by_track(matrix: np.ndarray) -> list[list[Observation]]:
-    return [[(int(session_idx), int(value)) for session_idx, value in enumerate(row) if value is not None] for row in matrix]
+    return [
+        [
+            (int(session_idx), int(value))
+            for session_idx, value in enumerate(row)
+            if value is not None
+        ]
+        for row in matrix
+    ]
 
 
 def _single_observation_lookup(matrix: np.ndarray) -> dict[Observation, int]:
@@ -227,12 +320,16 @@ def _single_observation_lookup(matrix: np.ndarray) -> dict[Observation, int]:
     return lookup
 
 
-def _session_times(n_sessions: int, session_times: Sequence[float] | None) -> np.ndarray:
+def _session_times(
+    n_sessions: int, session_times: Sequence[float] | None
+) -> np.ndarray:
     if session_times is None:
         return np.arange(n_sessions, dtype=float)
     times = np.asarray(session_times, dtype=float)
     if times.shape != (n_sessions,):
-        raise ValueError("session_times must have length equal to the number of sessions")
+        raise ValueError(
+            "session_times must have length equal to the number of sessions"
+        )
     return times
 
 

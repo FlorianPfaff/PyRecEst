@@ -6,7 +6,9 @@ from collections.abc import Sequence
 from typing import Any
 
 # pylint: disable=no-name-in-module,no-member,too-many-arguments,too-many-positional-arguments
-from pyrecest.backend import arctan2, asarray, matvec, sqrt, stack, sum as _sum, zeros
+from pyrecest.backend import arctan2, asarray, matvec, sqrt, stack
+from pyrecest.backend import sum as _sum
+from pyrecest.backend import zeros
 from pyrecest.models.additive_noise import AdditiveNoiseMeasurementModel
 
 __all__ = [
