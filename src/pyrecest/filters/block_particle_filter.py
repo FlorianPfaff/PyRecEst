@@ -1,6 +1,7 @@
 """Generic block particle-filter mechanics for product-state particle filters."""
 
 from collections.abc import Callable, Sequence
+from typing import Any, Protocol
 
 # pylint: disable=no-name-in-module,no-member,too-many-positional-arguments
 from pyrecest.backend import (
@@ -13,13 +14,17 @@ from pyrecest.backend import (
     log,
     max,
     ndim,
-    ones,
     random,
     reshape,
     stack,
     sum,
     to_numpy,
 )
+
+
+class _WeightedParticleState(Protocol):
+    d: Any
+    w: Any
 
 
 class BlockParticleFilter:
@@ -32,6 +37,12 @@ class BlockParticleFilter:
     ``n_particles`` and ``filter_state.w`` and usually inherit from a concrete
     particle filter that implements ``set_particles``.
     """
+
+    filter_state: _WeightedParticleState
+    _n_block_components: int
+    partition: tuple[tuple[int, ...], ...]
+    _component_to_block: tuple[int, ...]
+    _block_weights: Any
 
     def _initialize_block_particle_filter(
         self,
@@ -76,6 +87,11 @@ class BlockParticleFilter:
         if hasattr(self, "weights"):
             return self.weights
         return self.filter_state.w
+
+    @property
+    def n_particles(self) -> int:
+        """Return the number of weighted product-state particles."""
+        return int(self._global_weights().shape[0])
 
     @property
     def n_blocks(self) -> int:
@@ -205,12 +221,15 @@ class BlockParticleFilter:
 
     def set_particles(self, particles, weights=None, block_weights=None):
         """Replace particles and optionally global or block weights."""
-        try:
-            super().set_particles(particles, weights=weights)
-        except AttributeError:
+        parent_set_particles = getattr(super(), "set_particles", None)
+        if parent_set_particles is not None:
+            parent_set_particles(particles, weights=weights)
+        else:
             particles = array(particles, dtype=float)
             if particles.shape != self._block_particle_array().shape:
-                raise ValueError("New particles must match the existing particle shape.")
+                raise ValueError(
+                    "New particles must match the existing particle shape."
+                )
             self.filter_state.d = particles
             if weights is not None:
                 weights = self._normalize_weights(weights)
@@ -475,7 +494,12 @@ class BlockParticleFilter:
         block_logs = []
         for block in self.partition:
             block_logs.append(
-                sum(stack([values[:, component_idx] for component_idx in block], axis=1), axis=1)
+                sum(
+                    stack(
+                        [values[:, component_idx] for component_idx in block], axis=1
+                    ),
+                    axis=1,
+                )
             )
         return self.update_with_block_log_likelihoods(
             stack(block_logs, axis=0), resample=resample, ess_threshold=ess_threshold
