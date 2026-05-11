@@ -90,13 +90,19 @@ class TestANEES(unittest.TestCase):
         groundtruths = array([[0.0, 0.0], [0.0, 0.0]])
         covariances = array([np.eye(2), np.eye(2)])
 
-        npt.assert_allclose(nees(estimates, covariances, groundtruths), np.array([2.0, 4.0]))
+        npt.assert_allclose(
+            nees(estimates, covariances, groundtruths), np.array([2.0, 4.0])
+        )
         self.assertEqual(anees(estimates, covariances, groundtruths), 3.0)
 
         innovations = array([[1.0, 0.0], [0.0, 2.0]])
         innovation_covariances = array([np.eye(2), 2.0 * np.eye(2)])
-        npt.assert_allclose(nis(innovations, innovation_covariances), np.array([1.0, 2.0]))
-        npt.assert_allclose(nis(innovations, groundtruths, innovation_covariances), np.array([1.0, 2.0]))
+        npt.assert_allclose(
+            nis(innovations, innovation_covariances), np.array([1.0, 2.0])
+        )
+        npt.assert_allclose(
+            nis(innovations, groundtruths, innovation_covariances), np.array([1.0, 2.0])
+        )
         self.assertEqual(anis(innovations, innovation_covariances), 1.5)
 
         lower, upper = nees_confidence_bounds(2, n_samples=2)
@@ -105,16 +111,27 @@ class TestANEES(unittest.TestCase):
         self.assertTrue(is_chi_square_consistent(3.0, 2, n_samples=2))
         nis_lower, nis_upper = nis_confidence_bounds(2, n_samples=2)
         self.assertEqual((lower, upper), (nis_lower, nis_upper))
-        self.assertEqual(consistency_fraction([lower - 1.0, 2.0, upper + 1.0], lower, upper), 1.0 / 3.0)
+        self.assertEqual(
+            consistency_fraction([lower - 1.0, 2.0, upper + 1.0], lower, upper),
+            1.0 / 3.0,
+        )
 
 
 class TestSetDistances(unittest.TestCase):
     def test_ospa_distance(self):
         estimates = array([[0.0], [2.0]])
         groundtruths = array([[0.0], [3.0]])
-        npt.assert_allclose(ospa_distance(estimates, groundtruths, cutoff=10.0, order=2.0), np.sqrt(0.5))
+        npt.assert_allclose(
+            ospa_distance(estimates, groundtruths, cutoff=10.0, order=2.0), np.sqrt(0.5)
+        )
 
-        cardinality_case = ospa_distance(array([[0.0]]), array([[0.0], [3.0]]), cutoff=2.0, order=1.0, return_components=True)
+        cardinality_case = ospa_distance(
+            array([[0.0]]),
+            array([[0.0], [3.0]]),
+            cutoff=2.0,
+            order=1.0,
+            return_components=True,
+        )
         self.assertEqual(cardinality_case["ospa"], 1.0)
         self.assertEqual(cardinality_case["localization"], 0.0)
         self.assertEqual(cardinality_case["cardinality"], 1.0)
@@ -123,13 +140,29 @@ class TestSetDistances(unittest.TestCase):
     def test_mospa_distance(self):
         estimated_sets = [array([[0.0]]), array([[1.0]])]
         groundtruth_sets = [array([[0.0]]), array([[3.0]])]
-        self.assertEqual(mospa_distance(estimated_sets, groundtruth_sets, cutoff=10.0, order=1.0), 1.0)
-        mean_distance, per_step = mospa_distance(estimated_sets, groundtruth_sets, cutoff=10.0, order=1.0, return_per_step=True)
+        self.assertEqual(
+            mospa_distance(estimated_sets, groundtruth_sets, cutoff=10.0, order=1.0),
+            1.0,
+        )
+        mean_distance, per_step = mospa_distance(
+            estimated_sets,
+            groundtruth_sets,
+            cutoff=10.0,
+            order=1.0,
+            return_per_step=True,
+        )
         self.assertEqual(mean_distance, 1.0)
         npt.assert_allclose(per_step, np.array([0.0, 2.0]))
 
     def test_gospa_distance(self):
-        result = gospa_distance(array([[0.0]]), array([[0.0], [4.0]]), cutoff=2.0, order=1.0, alpha=2.0, return_components=True)
+        result = gospa_distance(
+            array([[0.0]]),
+            array([[0.0], [4.0]]),
+            cutoff=2.0,
+            order=1.0,
+            alpha=2.0,
+            return_components=True,
+        )
         self.assertEqual(result["gospa"], 1.0)
         self.assertEqual(result["localization"], 0.0)
         self.assertEqual(result["cardinality"], 1.0)
@@ -142,7 +175,9 @@ class TestEOTMetrics(unittest.TestCase):
         cov = array(np.eye(2))
         self.assertEqual(gaussian_wasserstein_distance(mean, cov, mean, cov), 0.0)
         self.assertEqual(extent_wasserstein_distance(cov, cov), 0.0)
-        npt.assert_allclose(gaussian_wasserstein_distance(mean, cov, array([1.0, 0.0]), cov), 1.0)
+        npt.assert_allclose(
+            gaussian_wasserstein_distance(mean, cov, array([1.0, 0.0]), cov), 1.0
+        )
         npt.assert_allclose(extent_matrix_error(cov, 2.0 * cov), np.sqrt(2.0))
         npt.assert_allclose(extent_error(cov, 2.0 * cov, relative=True), 0.5)
 

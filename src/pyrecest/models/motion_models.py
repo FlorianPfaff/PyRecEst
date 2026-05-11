@@ -12,13 +12,13 @@ from math import factorial
 from typing import Any
 
 import numpy as np
-from scipy.linalg import expm
 
 # pylint: disable=no-name-in-module,no-member,too-many-arguments,too-many-positional-arguments
 from pyrecest.backend import abs as _abs
 from pyrecest.backend import asarray, cos, sin, stack, where, zeros
 from pyrecest.models.additive_noise import AdditiveNoiseTransitionModel
 from pyrecest.models.linear_gaussian import LinearGaussianTransitionModel
+from scipy.linalg import expm
 
 __all__ = [
     "constant_acceleration_model",
@@ -48,7 +48,9 @@ __all__ = [
 ]
 
 
-def kinematic_transition_matrix(dt: float, spatial_dim: int = 2, derivative_order: int = 1):
+def kinematic_transition_matrix(
+    dt: float, spatial_dim: int = 2, derivative_order: int = 1
+):
     """Return a block kinematic transition matrix.
 
     ``derivative_order=1`` yields constant velocity states ``[p, v]``;
@@ -140,26 +142,51 @@ def integrated_white_noise_covariance(
                 covariance[
                     _state_index(derivative_row, axis, int(spatial_dim)),
                     _state_index(derivative_col, axis, int(spatial_dim)),
-                ] = float(density) * coefficient
+                ] = (
+                    float(density) * coefficient
+                )
     return asarray(covariance)
 
 
-def white_noise_acceleration_covariance(dt: float, spatial_dim: int = 2, spectral_density: float | np.ndarray = 1.0):
+def white_noise_acceleration_covariance(
+    dt: float, spatial_dim: int = 2, spectral_density: float | np.ndarray = 1.0
+):
     """Return white-noise-acceleration covariance for constant-velocity states."""
-    return integrated_white_noise_covariance(dt, spatial_dim=spatial_dim, derivative_order=1, spectral_density=spectral_density)
+    return integrated_white_noise_covariance(
+        dt,
+        spatial_dim=spatial_dim,
+        derivative_order=1,
+        spectral_density=spectral_density,
+    )
 
 
-def white_noise_jerk_covariance(dt: float, spatial_dim: int = 2, spectral_density: float | np.ndarray = 1.0):
+def white_noise_jerk_covariance(
+    dt: float, spatial_dim: int = 2, spectral_density: float | np.ndarray = 1.0
+):
     """Return white-noise-jerk covariance for constant-acceleration states."""
-    return integrated_white_noise_covariance(dt, spatial_dim=spatial_dim, derivative_order=2, spectral_density=spectral_density)
+    return integrated_white_noise_covariance(
+        dt,
+        spatial_dim=spatial_dim,
+        derivative_order=2,
+        spectral_density=spectral_density,
+    )
 
 
-def white_noise_snap_covariance(dt: float, spatial_dim: int = 2, spectral_density: float | np.ndarray = 1.0):
+def white_noise_snap_covariance(
+    dt: float, spatial_dim: int = 2, spectral_density: float | np.ndarray = 1.0
+):
     """Return white-noise-snap covariance for constant-jerk states."""
-    return integrated_white_noise_covariance(dt, spatial_dim=spatial_dim, derivative_order=3, spectral_density=spectral_density)
+    return integrated_white_noise_covariance(
+        dt,
+        spatial_dim=spatial_dim,
+        derivative_order=3,
+        spectral_density=spectral_density,
+    )
 
 
-def constant_velocity_model(dt: float, spatial_dim: int = 2, spectral_density: float | np.ndarray = 1.0) -> LinearGaussianTransitionModel:
+def constant_velocity_model(
+    dt: float, spatial_dim: int = 2, spectral_density: float | np.ndarray = 1.0
+) -> LinearGaussianTransitionModel:
     """Return a linear Gaussian constant-velocity transition model."""
     return LinearGaussianTransitionModel(
         constant_velocity_transition_matrix(dt, spatial_dim=spatial_dim),
@@ -169,7 +196,9 @@ def constant_velocity_model(dt: float, spatial_dim: int = 2, spectral_density: f
     )
 
 
-def constant_acceleration_model(dt: float, spatial_dim: int = 2, spectral_density: float | np.ndarray = 1.0) -> LinearGaussianTransitionModel:
+def constant_acceleration_model(
+    dt: float, spatial_dim: int = 2, spectral_density: float | np.ndarray = 1.0
+) -> LinearGaussianTransitionModel:
     """Return a linear Gaussian constant-acceleration transition model."""
     return LinearGaussianTransitionModel(
         constant_acceleration_transition_matrix(dt, spatial_dim=spatial_dim),
@@ -179,7 +208,9 @@ def constant_acceleration_model(dt: float, spatial_dim: int = 2, spectral_densit
     )
 
 
-def constant_jerk_model(dt: float, spatial_dim: int = 2, spectral_density: float | np.ndarray = 1.0) -> LinearGaussianTransitionModel:
+def constant_jerk_model(
+    dt: float, spatial_dim: int = 2, spectral_density: float | np.ndarray = 1.0
+) -> LinearGaussianTransitionModel:
     """Return a linear Gaussian constant-jerk transition model."""
     return LinearGaussianTransitionModel(
         constant_jerk_transition_matrix(dt, spatial_dim=spatial_dim),
@@ -202,7 +233,10 @@ def continuous_to_discrete_lti(
     zero matrix.
     """
     continuous_matrix_np = np.asarray(continuous_matrix, dtype=float)
-    if continuous_matrix_np.ndim != 2 or continuous_matrix_np.shape[0] != continuous_matrix_np.shape[1]:
+    if (
+        continuous_matrix_np.ndim != 2
+        or continuous_matrix_np.shape[0] != continuous_matrix_np.shape[1]
+    ):
         raise ValueError("continuous_matrix must be square")
     dim = continuous_matrix_np.shape[0]
     transition = expm(continuous_matrix_np * float(dt))
@@ -261,7 +295,12 @@ def singer_transition_matrix(dt: float, spatial_dim: int = 2, tau: float = 20.0)
     return asarray(matrix)
 
 
-def singer_process_noise_covariance(dt: float, spatial_dim: int = 2, tau: float = 20.0, acceleration_variance: float | np.ndarray = 1.0):
+def singer_process_noise_covariance(
+    dt: float,
+    spatial_dim: int = 2,
+    tau: float = 20.0,
+    acceleration_variance: float | np.ndarray = 1.0,
+):
     """Return Singer process noise covariance via Van Loan discretization."""
     if float(tau) <= 0.0:
         raise ValueError("tau must be positive")
@@ -272,7 +311,9 @@ def singer_process_noise_covariance(dt: float, spatial_dim: int = 2, tau: float 
     elif acceleration_variance_array.shape == (int(spatial_dim),):
         variances = acceleration_variance_array
     else:
-        raise ValueError("acceleration_variance must be scalar or have shape (spatial_dim,)")
+        raise ValueError(
+            "acceleration_variance must be scalar or have shape (spatial_dim,)"
+        )
 
     continuous_block = np.array(
         [[0.0, 1.0, 0.0], [0.0, 0.0, 1.0], [0.0, 0.0, -alpha]],
@@ -297,7 +338,12 @@ def singer_process_noise_covariance(dt: float, spatial_dim: int = 2, tau: float 
     return asarray(covariance)
 
 
-def singer_model(dt: float, spatial_dim: int = 2, tau: float = 20.0, acceleration_variance: float | np.ndarray = 1.0) -> LinearGaussianTransitionModel:
+def singer_model(
+    dt: float,
+    spatial_dim: int = 2,
+    tau: float = 20.0,
+    acceleration_variance: float | np.ndarray = 1.0,
+) -> LinearGaussianTransitionModel:
     """Return a linear Gaussian Singer acceleration transition model."""
     return LinearGaussianTransitionModel(
         singer_transition_matrix(dt, spatial_dim=spatial_dim, tau=tau),
@@ -319,8 +365,16 @@ def coordinated_turn_transition(state, dt: float = 1.0, turn_threshold: float = 
     cos_omega_dt = cos(omega_dt)
     safe_omega = where(_abs(omega) < float(turn_threshold), 1.0, omega)
 
-    turn_x = x_pos + sin_omega_dt / safe_omega * x_vel - (1.0 - cos_omega_dt) / safe_omega * y_vel
-    turn_y = y_pos + (1.0 - cos_omega_dt) / safe_omega * x_vel + sin_omega_dt / safe_omega * y_vel
+    turn_x = (
+        x_pos
+        + sin_omega_dt / safe_omega * x_vel
+        - (1.0 - cos_omega_dt) / safe_omega * y_vel
+    )
+    turn_y = (
+        y_pos
+        + (1.0 - cos_omega_dt) / safe_omega * x_vel
+        + sin_omega_dt / safe_omega * y_vel
+    )
     turn_vx = cos_omega_dt * x_vel - sin_omega_dt * y_vel
     turn_vy = sin_omega_dt * x_vel + cos_omega_dt * y_vel
 
@@ -338,7 +392,9 @@ def coordinated_turn_transition(state, dt: float = 1.0, turn_threshold: float = 
     )
 
 
-def coordinated_turn_model(dt: float = 1.0, noise_covariance: Any | None = None) -> AdditiveNoiseTransitionModel:
+def coordinated_turn_model(
+    dt: float = 1.0, noise_covariance: Any | None = None
+) -> AdditiveNoiseTransitionModel:
     """Return an additive-noise coordinated-turn model for ``[x, y, vx, vy, omega]``."""
     if noise_covariance is None:
         noise_covariance = zeros((5, 5))
@@ -349,7 +405,11 @@ def coordinated_turn_model(dt: float = 1.0, noise_covariance: Any | None = None)
     )
 
 
-def nearly_coordinated_turn_model(dt: float = 1.0, position_spectral_density: float = 1.0, turn_rate_variance: float = 1e-4) -> AdditiveNoiseTransitionModel:
+def nearly_coordinated_turn_model(
+    dt: float = 1.0,
+    position_spectral_density: float = 1.0,
+    turn_rate_variance: float = 1e-4,
+) -> AdditiveNoiseTransitionModel:
     """Return a coordinated-turn model with a simple nearly-constant-turn covariance."""
     covariance = np.zeros((5, 5), dtype=float)
     covariance[:4, :4] = np.asarray(
@@ -376,7 +436,9 @@ def nearly_constant_speed_transition(state, dt: float = 1.0):
     )
 
 
-def nearly_constant_speed_model(dt: float = 1.0, noise_covariance: Any | None = None) -> AdditiveNoiseTransitionModel:
+def nearly_constant_speed_model(
+    dt: float = 1.0, noise_covariance: Any | None = None
+) -> AdditiveNoiseTransitionModel:
     """Return an additive-noise nearly-constant-speed model."""
     if noise_covariance is None:
         noise_covariance = zeros((4, 4))
@@ -409,7 +471,9 @@ def se2_unicycle_transition(state, dt: float = 1.0, turn_threshold: float = 1e-8
     )
 
 
-def se2_unicycle_model(dt: float = 1.0, noise_covariance: Any | None = None) -> AdditiveNoiseTransitionModel:
+def se2_unicycle_model(
+    dt: float = 1.0, noise_covariance: Any | None = None
+) -> AdditiveNoiseTransitionModel:
     """Return an additive-noise SE(2)-style unicycle transition model."""
     if noise_covariance is None:
         noise_covariance = zeros((5, 5))
@@ -446,7 +510,9 @@ def se3_pose_twist_transition(state, dt: float = 1.0):
     )
 
 
-def se3_pose_twist_model(dt: float = 1.0, noise_covariance: Any | None = None) -> AdditiveNoiseTransitionModel:
+def se3_pose_twist_model(
+    dt: float = 1.0, noise_covariance: Any | None = None
+) -> AdditiveNoiseTransitionModel:
     """Return an additive-noise local SE(3) pose/twist transition model."""
     if noise_covariance is None:
         noise_covariance = zeros((12, 12))
