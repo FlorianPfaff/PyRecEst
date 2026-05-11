@@ -205,7 +205,9 @@ class EuclideanBoxedParticleFilter(EuclideanParticleFilter):
         lower, upper = self._resolve_box(box_lower, box_upper)
         self._validate_box(lower, upper, require_positive_volume=False)
         inside = self._points_inside_box(self.filter_state.d, lower, upper)
-        weight_update = where(inside, self.filter_state.w, zeros_like(self.filter_state.w))
+        weight_update = where(
+            inside, self.filter_state.w, zeros_like(self.filter_state.w)
+        )
 
         if likelihood is not None:
             if isinstance(likelihood, AbstractManifoldSpecificDistribution):
@@ -390,9 +392,11 @@ class EuclideanBoxedParticleFilter(EuclideanParticleFilter):
             None,
         )
         gaussian_sigma_scale = self._validate_positive_float(
-            self.gaussian_sigma_scale
-            if gaussian_sigma_scale is None
-            else gaussian_sigma_scale,
+            (
+                self.gaussian_sigma_scale
+                if gaussian_sigma_scale is None
+                else gaussian_sigma_scale
+            ),
             "gaussian_sigma_scale",
         )
         lower_np = _np.asarray(to_numpy(lower), dtype=float).reshape(-1)
