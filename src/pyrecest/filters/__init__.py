@@ -34,6 +34,7 @@ from .association_hypotheses import (
 )
 from .axial_kalman_filter import AxialKalmanFilter
 from .bingham_filter import BinghamFilter
+from .block_particle_filter import BlockParticleFilter
 from .circular_particle_filter import CircularParticleFilter
 from .circular_ukf import CircularUKF
 from .ekf_spline_tracker import EKFSplineTracker, EkfSplineTracker
@@ -114,6 +115,7 @@ from .so3_grid_transition import (
     quaternion_grid_transition_density,
     so3_right_multiplication_grid_transition,
 )
+from .so3_product_block_particle_filter import SO3ProductBlockParticleFilter
 from .so3_product_particle_filter import SO3ProductParticleFilter
 from .spherical_harmonics_eot_tracker import (
     SphericalHarmonicsEOTTracker,
@@ -157,6 +159,7 @@ __all__ = [
     "AssociationHypothesis",
     "AssociationResult",
     "BinghamFilter",
+    "BlockParticleFilter",
     "BoxParticleFilter",
     "CircularFilterMixin",
     "CircularParticleFilter",
@@ -259,6 +262,7 @@ __all__ = [
     "retrodict_linear_gaussian_state",
     "SE2FilterMixin",
     "SE2UKF",
+    "SO3ProductBlockParticleFilter",
     "SO3ProductParticleFilter",
     "so3_right_multiplication_grid_transition",
     "SphericalHarmonicsEOTTracker",
