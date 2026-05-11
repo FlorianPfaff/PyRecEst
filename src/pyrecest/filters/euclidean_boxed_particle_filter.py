@@ -142,8 +142,8 @@ class EuclideanBoxedParticleFilter(EuclideanParticleFilter):
         max_sampling_iterations : int, optional
             Maximum number of proposal batches.
         max_tries_per_particle : int, optional
-            Backward-compatible shorthand for setting ``max_sampling_iterations``
-            relative to ``n_particles`` in ``"upsample"`` mode.
+            Backward-compatible shorthand for ``max_sampling_iterations`` in
+            ``"upsample"`` mode.
         gaussian_sigma_scale : float, optional
             Number of marginal standard deviations corresponding to the box
             half-width for ``"inscribed_gaussian"``.
@@ -350,7 +350,6 @@ class EuclideanBoxedParticleFilter(EuclideanParticleFilter):
         batch_size = self._resolve_batch_size(batch_size, n_particles)
         max_sampling_iterations = self._resolve_max_sampling_iterations(
             max_sampling_iterations,
-            n_particles,
             max_tries_per_particle,
         )
         accepted_parts = []
@@ -388,7 +387,6 @@ class EuclideanBoxedParticleFilter(EuclideanParticleFilter):
         batch_size = self._resolve_batch_size(batch_size, n_particles)
         max_sampling_iterations = self._resolve_max_sampling_iterations(
             max_sampling_iterations,
-            n_particles,
             None,
         )
         gaussian_sigma_scale = self._validate_positive_float(
@@ -494,7 +492,6 @@ class EuclideanBoxedParticleFilter(EuclideanParticleFilter):
     def _resolve_max_sampling_iterations(
         self,
         max_sampling_iterations,
-        n_particles: int,
         max_tries_per_particle,
     ):
         if max_sampling_iterations is not None:
