@@ -1,5 +1,4 @@
 import numpy as np
-
 from pyrecest.filters.mem_rbpf_tracker import MEMRBPFTracker, MemRbpfTracker
 
 
