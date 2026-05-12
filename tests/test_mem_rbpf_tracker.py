@@ -1,18 +1,27 @@
 import numpy as np
+import pytest
+
+from pyrecest import backend
+from pyrecest.backend import array, diag, eye, random
 from pyrecest.filters.mem_rbpf_tracker import MEMRBPFTracker, MemRbpfTracker
+
+pytestmark = pytest.mark.skipif(
+    backend.__backend_name__ != "numpy",
+    reason="MEM-RBPF tests cover resampling paths currently supported on numpy only",
+)
 
 
 def _make_tracker():
+    random.seed(0)
     return MEMRBPFTracker(
-        kinematic_state=np.array([0.0, 0.0, 1.0, -0.5]),
-        covariance=np.eye(4),
-        shape_state=np.array([0.2, 2.0, 1.0]),
-        shape_covariance=np.diag([0.05, 0.1, 0.1]),
-        meas_noise_cov=0.05 * np.eye(2),
-        sys_noise=0.01 * np.eye(4),
-        shape_sys_noise=np.diag([0.01, 0.01, 0.01]),
+        kinematic_state=array([0.0, 0.0, 1.0, -0.5]),
+        covariance=eye(4),
+        shape_state=array([0.2, 2.0, 1.0]),
+        shape_covariance=diag(array([0.05, 0.1, 0.1])),
+        meas_noise_cov=0.05 * eye(2),
+        sys_noise=0.01 * eye(4),
+        shape_sys_noise=diag(array([0.01, 0.01, 0.01])),
         n_particles=32,
-        rng=np.random.default_rng(0),
         resampling_threshold=16,
         axis_floor=1e-3,
     )
@@ -36,16 +45,16 @@ def test_mem_rbpf_predict_update_smoke():
 
 
 def test_mem_rbpf_original_parameter_constructor_alias():
+    random.seed(1)
     tracker = MEMRBPFTracker.from_original_parameters(
-        m_init=np.zeros(4),
-        p_init=np.array([0.0, 2.0, 1.0]),
-        p_kinematic_init=np.eye(4),
-        p_shape_init=np.diag([0.01, 0.1, 0.1]),
-        r=0.05 * np.eye(2),
-        q_kinematic=0.01 * np.eye(4),
-        q_shape=np.diag([0.02, 0.01, 0.01]),
+        m_init=array([0.0, 0.0, 0.0, 0.0]),
+        p_init=array([0.0, 2.0, 1.0]),
+        p_kinematic_init=eye(4),
+        p_shape_init=diag(array([0.01, 0.1, 0.1])),
+        r=0.05 * eye(2),
+        q_kinematic=0.01 * eye(4),
+        q_shape=diag(array([0.02, 0.01, 0.01])),
         n_particles=8,
-        rng=np.random.default_rng(1),
     )
 
     assert isinstance(tracker, MemRbpfTracker)

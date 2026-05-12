@@ -1,17 +1,44 @@
 from __future__ import annotations
 
-import numpy as np
+from numbers import Integral
+
+from pyrecest import backend
+from pyrecest.backend import any as backend_any
 from pyrecest.backend import (
+    arange,
+    arctan2,
     array,
     concatenate,
+    copy,
     cos,
+    cumsum,
     diag,
+    einsum,
+    exp,
     eye,
+    floor,
+    full,
+    isfinite,
     linalg,
     linspace,
+    log,
+)
+from pyrecest.backend import max as backend_max
+from pyrecest.backend import (
+    maximum,
+    mean,
+    ones,
     pi,
+    random,
+    searchsorted,
     sin,
-    to_numpy,
+    sqrt,
+    stack,
+)
+from pyrecest.backend import sum as backend_sum
+from pyrecest.backend import (
+    transpose,
+    where,
     zeros,
 )
 
@@ -56,6 +83,7 @@ class MEMRBPFTracker(AbstractExtendedObjectTracker):
         log_prior_extents=False,
         log_posterior_extents=False,
     ):
+        self._raise_if_backend_unsupported()
         super().__init__(
             log_prior_estimates=log_prior_estimates,
             log_posterior_estimates=log_posterior_estimates,
@@ -65,7 +93,7 @@ class MEMRBPFTracker(AbstractExtendedObjectTracker):
         if n_particles <= 0:
             raise ValueError("n_particles must be positive")
         self.n_particles = int(n_particles)
-        self.rng = np.random.default_rng() if rng is None else rng
+        self._seed_backend_random(rng)
         self.resampling_mode = str(resampling_mode).lower()
         self.resampling_threshold = resampling_threshold
         self.covariance_regularization = float(covariance_regularization)
@@ -121,17 +149,41 @@ class MEMRBPFTracker(AbstractExtendedObjectTracker):
         self.orientation_process_variance = float(self.shape_sys_noise[0, 0])
         self.axis_sys_noise = self.shape_sys_noise[1:, 1:]
 
-        shape_np = self._np(shape_state)
-        shape_cov_np = self._np(self.shape_covariance)
-        theta_std = np.sqrt(max(shape_cov_np[0, 0], 0.0))
+        theta_std = sqrt(maximum(self.shape_covariance[0, 0], 0.0))
         self.theta = array(
-            self.rng.normal(shape_np[0], theta_std, self.n_particles) % (2.0 * np.pi)
+            random.normal(
+                loc=float(shape_state[0]),
+                scale=float(theta_std),
+                size=(self.n_particles,),
+            )
+            % (2.0 * pi)
         )
-        self.axis = array(np.repeat(shape_np[1:][None, :], self.n_particles, axis=0))
-        self.axis_covariances = array(
-            np.repeat(shape_cov_np[1:, 1:][None, :, :], self.n_particles, axis=0)
+        self.axis = ones((self.n_particles, 1)) * shape_state[1:].reshape((1, 2))
+        self.axis_covariances = (
+            ones((self.n_particles, 1, 1)) * self.shape_covariance[1:, 1:]
         )
-        self.weights = array(np.full(self.n_particles, 1.0 / self.n_particles))
+        self.weights = full((self.n_particles,), 1.0 / self.n_particles)
+
+    @staticmethod
+    def _raise_if_backend_unsupported():
+        if backend.__backend_name__ == "jax":
+            raise NotImplementedError(
+                "MEMRBPFTracker is not supported on the JAX backend because "
+                "the filter mutates per-particle state during RBPF updates."
+            )
+
+    @staticmethod
+    def _seed_backend_random(rng):
+        if rng is None:
+            return
+        if isinstance(rng, Integral):
+            random.seed(int(rng))
+            return
+        raise NotImplementedError(
+            "MEMRBPFTracker uses pyrecest.backend.random internally. Pass an "
+            "integer seed as rng, or seed pyrecest.backend.random before "
+            "constructing the tracker."
+        )
 
     @classmethod
     def from_original_parameters(
@@ -148,9 +200,10 @@ class MEMRBPFTracker(AbstractExtendedObjectTracker):
         **kwargs,
     ):
         """Build from the argument names used in the MEM-QKF clone."""
-        q_shape_np = np.asarray(q_shape, dtype=float).copy()
+        cls._raise_if_backend_unsupported()
+        q_shape = copy(array(q_shape))
         if resampling_var is not None:
-            q_shape_np[0, 0] = float(resampling_var)
+            q_shape[0, 0] = float(resampling_var)
         return cls(
             kinematic_state=m_init,
             covariance=p_kinematic_init,
@@ -158,22 +211,10 @@ class MEMRBPFTracker(AbstractExtendedObjectTracker):
             shape_covariance=p_shape_init,
             meas_noise_cov=r,
             sys_noise=q_kinematic,
-            shape_sys_noise=q_shape_np,
+            shape_sys_noise=q_shape,
             n_particles=n_particles,
             **kwargs,
         )
-
-    @staticmethod
-    def _np(value):
-        try:
-            return np.asarray(to_numpy(value), dtype=float)
-        except (
-            AttributeError,
-            TypeError,
-            ValueError,
-            RuntimeError,
-        ):  # pragma: no cover
-            return np.asarray(value, dtype=float)
 
     @staticmethod
     def _symmetrize(matrix):
@@ -181,7 +222,8 @@ class MEMRBPFTracker(AbstractExtendedObjectTracker):
 
     @staticmethod
     def _symmetrize_stack(matrices):
-        return 0.5 * (matrices + np.swapaxes(matrices, -1, -2))
+        axes = tuple(range(matrices.ndim - 2)) + (matrices.ndim - 1, matrices.ndim - 2)
+        return 0.5 * (matrices + transpose(matrices, axes))
 
     @classmethod
     def _as_covariance(cls, value, dim, name, require_pd=True):
@@ -234,17 +276,12 @@ class MEMRBPFTracker(AbstractExtendedObjectTracker):
         )
 
     @staticmethod
-    def _rotation_np(theta):
-        theta = np.asarray(theta)
-        ctheta = np.cos(theta)
-        stheta = np.sin(theta)
-        rotation = np.array([[ctheta, -stheta], [stheta, ctheta]])
-        if rotation.ndim == 3:
-            rotation = np.moveaxis(rotation, -1, 0)
-        return rotation
-
-    def _rotation(self, theta):
-        return array(self._rotation_np(self._np(theta)))
+    def _rotation(theta):
+        ctheta = cos(theta)
+        stheta = sin(theta)
+        first_row = stack([ctheta, -stheta], axis=-1)
+        second_row = stack([stheta, ctheta], axis=-1)
+        return stack([first_row, second_row], axis=-2)
 
     def _normalize_measurements(self, measurements):
         measurements = array(measurements)
@@ -301,13 +338,9 @@ class MEMRBPFTracker(AbstractExtendedObjectTracker):
             else:
                 raise ValueError("shape_sys_noise must be 3x3 or 2x2")
         self.axis = self.axis @ axis_matrix.T
-        axis_cov_np = self._np(self.axis_covariances)
-        axis_mat_np = self._np(axis_matrix)
-        q_axis_np = self._np(self.axis_sys_noise)
-        self.axis_covariances = array(
-            self._symmetrize_stack(
-                axis_mat_np @ axis_cov_np @ axis_mat_np.T + q_axis_np[None, :, :]
-            )
+        self.axis_covariances = self._symmetrize_stack(
+            axis_matrix @ self.axis_covariances @ axis_matrix.T
+            + self.axis_sys_noise.reshape((1, 2, 2))
         )
         self._apply_axis_floor()
         if self.log_prior_estimates:
@@ -354,12 +387,12 @@ class MEMRBPFTracker(AbstractExtendedObjectTracker):
         self._propagate_orientation_particles()
         centered = measurements - (meas_mat @ self.kinematic_state)
         self._update_particle_weights(centered, meas_noise_cov, multiplicative_variance)
-        aligned = np.einsum(
+        aligned = einsum(
             "pab,mb->pma",
-            self._rotation_np(-self._np(self.theta)),
-            self._np(centered),
+            self._rotation(-self.theta),
+            centered,
         )
-        self._update_axes(array(aligned), meas_noise_cov, multiplicative_variance)
+        self._update_axes(aligned, meas_noise_cov, multiplicative_variance)
         self._apply_axis_floor()
         if self._should_resample():
             self.resample()
@@ -381,9 +414,7 @@ class MEMRBPFTracker(AbstractExtendedObjectTracker):
         )
         if self.covariance_regularization > 0.0:
             innovation_cov = innovation_cov + self.covariance_regularization * eye(2)
-        innovation = array(np.mean(self._np(measurements), axis=0)) - (
-            meas_mat @ self.kinematic_state
-        )
+        innovation = mean(measurements, axis=0) - (meas_mat @ self.kinematic_state)
         cross_cov = self.covariance @ meas_mat.T
         gain = linalg.solve(innovation_cov.T, cross_cov.T).T
         self.kinematic_state = self.kinematic_state + gain @ innovation
@@ -394,95 +425,94 @@ class MEMRBPFTracker(AbstractExtendedObjectTracker):
     def _propagate_orientation_particles(self):
         if self.orientation_process_variance <= 0.0:
             return
-        theta = self._np(self.theta)
-        theta = theta + self.rng.normal(
-            0.0, np.sqrt(self.orientation_process_variance), self.n_particles
-        )
-        self.theta = array(theta % (2.0 * np.pi))
+        self.theta = (
+            self.theta
+            + random.normal(
+                loc=0.0,
+                scale=sqrt(self.orientation_process_variance),
+                size=(self.n_particles,),
+            )
+        ) % (2.0 * pi)
 
     def _update_particle_weights(self, centered, meas_noise_cov, mult_var):
-        centered_np = self._np(centered)
-        axis_np = self._np(self.axis)
-        axis_cov_np = self._np(self.axis_covariances)
-        noise_np = self._np(meas_noise_cov)
-        theta_np = self._np(self.theta)
-        log_likelihoods = np.zeros(self.n_particles)
+        log_likelihoods = []
         for particle_index in range(self.n_particles):
-            rotation = self._rotation_np(theta_np[particle_index])
-            extent_cov = np.diag(mult_var * axis_np[particle_index] ** 2)
-            extent_cov += mult_var * axis_cov_np[particle_index]
-            marginal_cov = rotation @ extent_cov @ rotation.T + noise_np
+            rotation = self._rotation(self.theta[particle_index])
+            extent_cov = diag(mult_var * self.axis[particle_index] ** 2)
+            extent_cov = extent_cov + mult_var * self.axis_covariances[particle_index]
+            marginal_cov = rotation @ extent_cov @ rotation.T + meas_noise_cov
             marginal_cov = self._symmetrize(marginal_cov)
             if self.covariance_regularization > 0.0:
-                marginal_cov += self.covariance_regularization * np.eye(2)
-            sign, log_det = np.linalg.slogdet(marginal_cov)
-            if sign <= 0.0:
-                log_likelihoods[particle_index] = -np.inf
+                marginal_cov = marginal_cov + self.covariance_regularization * eye(2)
+            determinant = linalg.det(marginal_cov)
+            if float(determinant) <= 0.0:
+                log_likelihoods.append(array(-float("inf")))
                 continue
-            inverse_cov = np.linalg.pinv(marginal_cov)
-            quad = np.einsum("ma,ab,mb->m", centered_np, inverse_cov, centered_np)
-            log_likelihoods[particle_index] = -0.5 * np.sum(log_det + quad)
-        log_weights = np.log(np.maximum(self._np(self.weights), 1e-300))
-        self.weights = array(self._normalize_log_weights(log_weights + log_likelihoods))
+            inverse_cov = linalg.pinv(marginal_cov)
+            quad = einsum("ma,ab,mb->m", centered, inverse_cov, centered)
+            log_likelihoods.append(-0.5 * backend_sum(log(determinant) + quad))
+        log_likelihoods = array(log_likelihoods)
+        log_weights = log(maximum(self.weights, 1e-300))
+        self.weights = self._normalize_log_weights(log_weights + log_likelihoods)
 
     def _update_axes(self, aligned, meas_noise_cov, mult_var):
-        aligned_np = self._np(aligned)
-        theta_np = self._np(self.theta)
-        noise_np = self._np(meas_noise_cov)
-        axis_np = self._np(self.axis).copy()
-        cov_np = self._np(self.axis_covariances).copy()
-        for measurement_index in range(aligned_np.shape[1]):
-            y = aligned_np[:, measurement_index, :]
+        axis_state = copy(self.axis)
+        covariances = copy(self.axis_covariances)
+        for measurement_index in range(aligned.shape[1]):
+            y = aligned[:, measurement_index, :]
             pseudo_measurement = y**2
             for particle_index in range(self.n_particles):
+                rotation_to_axis_frame = self._rotation(-self.theta[particle_index])
                 local_noise = (
-                    self._rotation_np(-theta_np[particle_index])
-                    @ noise_np
-                    @ self._rotation_np(theta_np[particle_index])
+                    rotation_to_axis_frame @ meas_noise_cov @ rotation_to_axis_frame.T
                 )
-                expected = np.diag(local_noise) + mult_var * (
-                    np.diag(cov_np[particle_index]) + axis_np[particle_index] ** 2
+                expected = diag(local_noise) + mult_var * (
+                    diag(covariances[particle_index]) + axis_state[particle_index] ** 2
                 )
-                pseudo_cov = np.array(
+                pseudo_cov = array(
                     [
                         [2.0 * expected[0] ** 2, 2.0 * local_noise[0, 1] ** 2],
                         [2.0 * local_noise[1, 0] ** 2, 2.0 * expected[1] ** 2],
                     ]
                 )
                 if self.covariance_regularization > 0.0:
-                    pseudo_cov += self.covariance_regularization * np.eye(2)
-                cross_cov = np.diag(
+                    pseudo_cov = pseudo_cov + self.covariance_regularization * eye(2)
+                cross_cov = diag(
                     2.0
                     * mult_var
-                    * axis_np[particle_index]
-                    * np.diag(cov_np[particle_index])
+                    * axis_state[particle_index]
+                    * diag(covariances[particle_index])
                 )
-                gain = cross_cov @ np.linalg.pinv(pseudo_cov)
-                axis_np[particle_index] += gain @ (
+                gain = cross_cov @ linalg.pinv(pseudo_cov)
+                axis_state[particle_index] = axis_state[particle_index] + gain @ (
                     pseudo_measurement[particle_index] - expected
                 )
-                cov_np[particle_index] -= gain @ pseudo_cov @ gain.T
-                cov_np[particle_index] = self._symmetrize(cov_np[particle_index])
-        self.axis = array(axis_np)
-        self.axis_covariances = array(cov_np)
+                covariances[particle_index] = covariances[particle_index] - (
+                    gain @ pseudo_cov @ gain.T
+                )
+                covariances[particle_index] = self._symmetrize(
+                    covariances[particle_index]
+                )
+        self.axis = axis_state
+        self.axis_covariances = covariances
 
     @staticmethod
     def _normalize_log_weights(log_weights):
-        finite = np.isfinite(log_weights)
-        if not np.any(finite):
-            return np.full(log_weights.shape, 1.0 / log_weights.size)
-        shifted = log_weights - np.max(log_weights[finite])
-        weights = np.zeros_like(shifted)
-        weights[finite] = np.exp(shifted[finite])
-        weight_sum: float = float(np.sum(weights))
-        if weight_sum <= 0.0 or not np.isfinite(weight_sum):
-            return np.full(log_weights.shape, 1.0 / log_weights.size)
+        finite = isfinite(log_weights)
+        n_weights = int(log_weights.shape[0])
+        if not bool(backend_any(finite)):
+            return full((n_weights,), 1.0 / n_weights)
+        shifted = log_weights - backend_max(where(finite, log_weights, -float("inf")))
+        weights = where(finite, exp(shifted), 0.0)
+        weight_sum = backend_sum(weights)
+        if float(weight_sum) <= 0.0 or not bool(isfinite(weight_sum)):
+            return full((n_weights,), 1.0 / n_weights)
         return weights / weight_sum
 
     @property
     def effective_sample_size(self):
-        weights = self._np(self.weights)
-        return float(1.0 / np.sum(weights**2))
+        weights = self.weights / backend_sum(self.weights)
+        return float(1.0 / backend_sum(weights**2))
 
     def _should_resample(self):
         if self.resampling_threshold is None:
@@ -490,72 +520,93 @@ class MEMRBPFTracker(AbstractExtendedObjectTracker):
         return self.effective_sample_size <= float(self.resampling_threshold)
 
     def _resample_indices(self):
-        weights = self._np(self.weights)
-        weights = weights / np.sum(weights)
+        weights = self.weights / backend_sum(self.weights)
+        particles = arange(self.n_particles)
         if self.resampling_mode == "multinomial":
-            return self.rng.choice(self.n_particles, self.n_particles, p=weights)
+            return random.choice(
+                particles,
+                size=(self.n_particles,),
+                replace=True,
+                p=weights,
+            )
         if self.resampling_mode == "systematic":
-            positions = (
-                self.rng.uniform() + np.arange(self.n_particles)
-            ) / self.n_particles
+            positions = (random.uniform(size=()) + arange(self.n_particles)) / (
+                self.n_particles
+            )
         elif self.resampling_mode == "stratified":
             positions = (
-                self.rng.uniform(size=self.n_particles) + np.arange(self.n_particles)
+                random.uniform(size=(self.n_particles,)) + arange(self.n_particles)
             ) / self.n_particles
         elif self.resampling_mode == "residual":
-            counts = np.floor(self.n_particles * weights).astype(int)
-            residual_count = self.n_particles - int(np.sum(counts))
-            deterministic: np.ndarray = np.repeat(np.arange(self.n_particles), counts)
-            if residual_count <= 0:
-                return deterministic[: self.n_particles]
-            residual_weights = weights - counts / self.n_particles
-            residual_weights /= np.sum(residual_weights)
-            residual = self.rng.choice(
-                self.n_particles, residual_count, p=residual_weights
-            )
-            indices = np.concatenate([deterministic, residual])
-            self.rng.shuffle(indices)
-            return indices
+            return self._residual_resample_indices(weights, particles)
         else:
             raise NotImplementedError(
                 f"unknown resampling mode: {self.resampling_mode}"
             )
-        cumulative_sum = np.cumsum(weights)
-        cumulative_sum[-1] = 1.0
-        return np.searchsorted(cumulative_sum, positions)
+
+        cumulative_sum = cumsum(weights)
+        try:
+            return searchsorted(cumulative_sum, positions)
+        except NotImplementedError as exc:
+            raise NotImplementedError(
+                f"MEMRBPFTracker {self.resampling_mode!r} resampling requires "
+                f"backend.searchsorted, which is not supported by the "
+                f"{backend.__backend_name__!r} backend."
+            ) from exc
+
+    def _residual_resample_indices(self, weights, particles):
+        counts = floor(self.n_particles * weights)
+        count_values = [int(counts[index]) for index in range(self.n_particles)]
+        deterministic_indices = []
+        for particle_index, count in enumerate(count_values):
+            deterministic_indices.extend([particle_index] * count)
+        deterministic = array(deterministic_indices)
+        residual_count = self.n_particles - len(deterministic_indices)
+        if residual_count <= 0:
+            return deterministic[: self.n_particles]
+
+        residual_weights = weights - counts / self.n_particles
+        residual_weight_sum = backend_sum(residual_weights)
+        if float(residual_weight_sum) <= 0.0:
+            residual_weights = full((self.n_particles,), 1.0 / self.n_particles)
+        else:
+            residual_weights = residual_weights / residual_weight_sum
+        residual = random.choice(
+            particles,
+            size=(residual_count,),
+            replace=True,
+            p=residual_weights,
+        )
+        if deterministic_indices:
+            return concatenate([deterministic, residual])
+        return residual
 
     def resample(self):
         indices = self._resample_indices()
         self.theta = self.theta[indices]
         self.axis = self.axis[indices]
         self.axis_covariances = self.axis_covariances[indices]
-        self.weights = array(np.full(self.n_particles, 1.0 / self.n_particles))
+        self.weights = full((self.n_particles,), 1.0 / self.n_particles)
 
     def _apply_axis_floor(self):
         if self.axis_floor is None:
             return
-        self.axis = array(np.maximum(self._np(self.axis), float(self.axis_floor)))
+        self.axis = maximum(self.axis, float(self.axis_floor))
 
     def get_point_estimate_shape(self):
-        weights = self._np(self.weights)
-        weights = weights / np.sum(weights)
-        theta = self._np(self.theta)
-        axis = self._np(self.axis)
-        shape_matrices = np.empty((self.n_particles, 2, 2))
-        for particle_index in range(self.n_particles):
-            rotation = self._rotation_np(theta[particle_index])
-            shape_matrices[particle_index] = (
-                rotation @ np.diag(axis[particle_index]) @ rotation.T
-            )
-        mean_shape_matrix = np.average(shape_matrices, axis=0, weights=weights)
+        weights = self.weights / backend_sum(self.weights)
+        rotations = self._rotation(self.theta)
+        shape_matrices = rotations * self.axis.reshape((self.n_particles, 1, 2))
+        mean_shape_matrix = backend_sum(
+            shape_matrices * weights.reshape((self.n_particles, 1, 1)),
+            axis=0,
+        )
         extent = mean_shape_matrix @ mean_shape_matrix.T
-        evals, evecs = np.linalg.eigh(extent)
-        order = np.argsort(evals)[::-1]
-        evals = np.maximum(evals[order], 0.0)
-        evecs = evecs[:, order]
-        orientation = np.arctan2(evecs[1, 0], evecs[0, 0]) % (2.0 * np.pi)
-        semi_axes = np.sqrt(evals)
-        return array([orientation, semi_axes[0], semi_axes[1]])
+        eigenvalues, eigenvectors = linalg.eigh(extent)
+        major_eigenvalue = maximum(eigenvalues[1], 0.0)
+        minor_eigenvalue = maximum(eigenvalues[0], 0.0)
+        orientation = arctan2(eigenvectors[1, 1], eigenvectors[0, 1]) % (2.0 * pi)
+        return array([orientation, sqrt(major_eigenvalue), sqrt(minor_eigenvalue)])
 
     @property
     def shape_state(self):
@@ -580,25 +631,25 @@ class MEMRBPFTracker(AbstractExtendedObjectTracker):
         return extent
 
     def get_state(self, full_axis_lengths=True):
-        state = self._np(self.get_point_estimate()).copy()
+        state = self.get_point_estimate()
         if full_axis_lengths:
-            state[-2:] *= 2.0
-        return array(state)
+            return concatenate([state[:-2], 2.0 * state[-2:]])
+        return state
 
     def get_state_array(self, with_weight=False, full_axis_lengths=False):
-        kinematic = self._np(self.kinematic_state)
-        theta = self._np(self.theta)
-        axis = self._np(self.axis).copy()
+        kinematic_rows = ones((self.n_particles, self.state_dim)) * self.kinematic_state
+        axis = self.axis
         if full_axis_lengths:
-            axis *= 2.0
-        weights = self._np(self.weights)
-        rows = []
-        for particle_index in range(self.n_particles):
-            row = [*kinematic, theta[particle_index], *axis[particle_index]]
-            if with_weight:
-                row.append(weights[particle_index])
-            rows.append(row)
-        return array(rows)
+            axis = 2.0 * axis
+        rows = concatenate(
+            [kinematic_rows, self.theta.reshape((self.n_particles, 1)), axis],
+            axis=1,
+        )
+        if with_weight:
+            rows = concatenate(
+                [rows, self.weights.reshape((self.n_particles, 1))], axis=1
+            )
+        return rows
 
     def set_R(self, meas_noise_cov):
         self.meas_noise_cov = self._as_covariance(
