@@ -1,5 +1,4 @@
 import numpy as np
-
 from pyrecest.backend import array, diag, eye
 from pyrecest.filters.velocity_locked_mem_qkf_tracker import VelocityLockedMEMQKFTracker
 
