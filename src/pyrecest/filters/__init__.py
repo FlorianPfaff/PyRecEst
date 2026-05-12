@@ -140,7 +140,9 @@ from .track_manager import (
 )
 from .ukf_on_manifolds import UKFOnManifolds
 from .unscented_kalman_filter import UnscentedKalmanFilter
-from .velocity_locked_mem_qkf_tracker import (
+from .velocity_aligned_mem_qkf_tracker import (
+    VelocityAlignedMEMQKFTracker,
+    VelocityAlignedMemQkfTracker,
     VelocityLockedMEMQKFTracker,
     VelocityLockedMemQkfTracker,
 )
@@ -245,6 +247,8 @@ __all__ = [
     "ScGpTracker",
     "TimestampedItem",
     "TopKGate",
+    "VelocityAlignedMEMQKFTracker",
+    "VelocityAlignedMemQkfTracker",
     "VelocityLockedMEMQKFTracker",
     "VelocityLockedMemQkfTracker",
     "association_result_from_hypotheses",
