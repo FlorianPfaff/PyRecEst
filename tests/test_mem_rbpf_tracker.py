@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest import backend
 from pyrecest.backend import array, diag, eye, random
 from pyrecest.filters.mem_rbpf_tracker import MEMRBPFTracker, MemRbpfTracker
