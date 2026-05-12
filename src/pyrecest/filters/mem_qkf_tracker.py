@@ -321,8 +321,8 @@ class MEMQKFTracker(MEMEKFTracker):
                 shifted_measurement[0] * shifted_measurement[1],
             ]
         )
-        expected_pseudo_measurement = (
-            selection_matrix @ self._vectorize_columns(quadratic_covariance)
+        expected_pseudo_measurement = selection_matrix @ self._vectorize_columns(
+            quadratic_covariance
         )
         pseudo_covariance = self._regularize_covariance(
             selection_matrix
@@ -356,9 +356,10 @@ class MEMQKFTracker(MEMEKFTracker):
         )
         innovation = pseudo_measurement - expected_pseudo_measurement
         posterior_orientation = orientation + (orientation_gain @ innovation)[0]
-        posterior_orientation_variance = orientation_variance - (
-            orientation_gain @ orientation_cross_covariance.T
-        )[0, 0]
+        posterior_orientation_variance = (
+            orientation_variance
+            - (orientation_gain @ orientation_cross_covariance.T)[0, 0]
+        )
         return posterior_orientation, posterior_orientation_variance
 
     # pylint: disable=too-many-arguments

@@ -254,20 +254,12 @@ class VBRMTracker(AbstractExtendedObjectTracker):
         return 0.5 * array(
             [
                 [
-                    a * (1.0 + cos_term)
-                    + d * (1.0 - cos_term)
-                    - (c + b) * sin_term,
-                    b * (1.0 + cos_term)
-                    - c * (1.0 - cos_term)
-                    + (a - d) * sin_term,
+                    a * (1.0 + cos_term) + d * (1.0 - cos_term) - (c + b) * sin_term,
+                    b * (1.0 + cos_term) - c * (1.0 - cos_term) + (a - d) * sin_term,
                 ],
                 [
-                    c * (1.0 + cos_term)
-                    - b * (1.0 - cos_term)
-                    + (a - d) * sin_term,
-                    d * (1.0 + cos_term)
-                    + a * (1.0 - cos_term)
-                    + (c + b) * sin_term,
+                    c * (1.0 + cos_term) - b * (1.0 - cos_term) + (a - d) * sin_term,
+                    d * (1.0 + cos_term) + a * (1.0 - cos_term) + (c + b) * sin_term,
                 ],
             ]
         )
@@ -275,12 +267,16 @@ class VBRMTracker(AbstractExtendedObjectTracker):
     def _expected_scaled_extent(self, alpha, beta):
         return diag(self.extent_scale * beta / (alpha - 1.0))
 
-    def _expected_oriented_scaled_extent_inverse(self, theta, theta_variance, alpha, beta):
+    def _expected_oriented_scaled_extent_inverse(
+        self, theta, theta_variance, alpha, beta
+    ):
         extent_inverse = diag(alpha / (self.extent_scale * beta))
         rotation_matrix = self._rotation_matrix(theta)
         exp_term = exp(-2.0 * theta_variance)
         isotropic_part = (1.0 - exp_term) * 0.5 * trace(extent_inverse) * eye(2)
-        anisotropic_part = exp_term * rotation_matrix @ extent_inverse @ rotation_matrix.T
+        anisotropic_part = (
+            exp_term * rotation_matrix @ extent_inverse @ rotation_matrix.T
+        )
         return self._symmetrize(isotropic_part + anisotropic_part)
 
     def _semi_axis_lengths(self):
@@ -359,7 +355,11 @@ class VBRMTracker(AbstractExtendedObjectTracker):
             + orientation_sys_noise
         )
 
-        gamma = self.forgetting_factor if forgetting_factor is None else float(forgetting_factor)
+        gamma = (
+            self.forgetting_factor
+            if forgetting_factor is None
+            else float(forgetting_factor)
+        )
         if gamma <= 0.0:
             raise ValueError("forgetting_factor must be positive")
         self.alpha = gamma * self.alpha
@@ -388,7 +388,9 @@ class VBRMTracker(AbstractExtendedObjectTracker):
         forgetting_factor=None,
     ):
         if self.kinematic_state.shape[0] != 4:
-            raise ValueError("predict_constant_velocity expects a 4-D [x, y, vx, vy] state")
+            raise ValueError(
+                "predict_constant_velocity expects a 4-D [x, y, vx, vy] state"
+            )
         system_matrix = array(
             [
                 [1.0, 0.0, time_delta, 0.0],
@@ -417,7 +419,9 @@ class VBRMTracker(AbstractExtendedObjectTracker):
 
         measurement_matrix = self._get_measurement_matrix(meas_mat)
         meas_noise_cov = self._get_measurement_noise(meas_noise_cov)
-        num_iterations = self.num_iterations if num_iterations is None else int(num_iterations)
+        num_iterations = (
+            self.num_iterations if num_iterations is None else int(num_iterations)
+        )
         if num_iterations <= 0:
             raise ValueError("num_iterations must be positive")
 
@@ -433,7 +437,9 @@ class VBRMTracker(AbstractExtendedObjectTracker):
         if self.log_posterior_extents:
             self.store_posterior_extents()
 
-    def _update_vbrm(self, measurements, measurement_matrix, meas_noise_cov, num_iterations):
+    def _update_vbrm(
+        self, measurements, measurement_matrix, meas_noise_cov, num_iterations
+    ):
         x_prior = self.kinematic_state
         p_prior = self.covariance
         alpha_prior = self.alpha
@@ -455,7 +461,9 @@ class VBRMTracker(AbstractExtendedObjectTracker):
         sigma_iterations = [self._expected_scaled_extent(alpha_prior, beta_prior)]
 
         for _ in range(num_iterations):
-            z_current = z_iterations[-1].reshape((measurement_count, self.measurement_dim))
+            z_current = z_iterations[-1].reshape(
+                (measurement_count, self.measurement_dim)
+            )
             z_mean = mean(z_current, axis=0)
             exp_oriented_extent_inv = self._expected_oriented_scaled_extent_inverse(
                 theta_iterations[-1],
@@ -502,7 +510,9 @@ class VBRMTracker(AbstractExtendedObjectTracker):
             predicted_measurement_current = measurement_matrix @ x_current
 
             for measurement_index in range(measurement_count):
-                innovation = z_current[measurement_index] - predicted_measurement_current
+                innovation = (
+                    z_current[measurement_index] - predicted_measurement_current
+                )
                 innovation = innovation.reshape((self.measurement_dim, 1))
                 innovation_bar = (
                     measurement_matrix @ p_current @ measurement_matrix.T
@@ -526,9 +536,7 @@ class VBRMTracker(AbstractExtendedObjectTracker):
                 capital_delta = capital_delta + theta_information
 
             innovation_bar_sum = sum(innovation_bars, zeros((2, 2)))
-            theta_variance_next = 1.0 / (
-                1.0 / theta_variance_prior + capital_delta
-            )
+            theta_variance_next = 1.0 / (1.0 / theta_variance_prior + capital_delta)
             theta_next = theta_variance_next * (
                 theta_prior / theta_variance_prior + delta
             )
