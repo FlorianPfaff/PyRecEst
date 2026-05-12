@@ -77,6 +77,7 @@ from .kalman_filter import KalmanFilter
 from .kernel_sme_filter import KernelSMEFilter
 from .lin_bounded_particle_filter import LinBoundedParticleFilter
 from .lin_periodic_particle_filter import LinPeriodicParticleFilter
+from .lomem_tracker import LOMEMTracker, LomemTracker
 from .manifold_exponential_moving_average import ManifoldExponentialMovingAverage
 from .manifold_mixins import (
     AbstractFilterManifoldMixin,
@@ -215,6 +216,8 @@ __all__ = [
     "LinBoundedFilterMixin",
     "LinBoundedParticleFilter",
     "LinPeriodicFilterMixin",
+    "LOMEMTracker",
+    "LomemTracker",
     "BernoulliComponent",
     "ManifoldExponentialMovingAverage",
     "MeasurementRecord",
