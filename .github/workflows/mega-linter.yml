@@ -113,8 +113,8 @@ jobs:
           token: ${{ github.token }}
           commit-message: "[MegaLinter] Apply linters automatic fixes"
           title: "[MegaLinter] Apply linters automatic fixes"
-          # Avoid force-updating a stale or diverged auto-fix branch.
-          branch: megalinter-fixes-${{ github.run_id }}
+          # Keep one open auto-fix PR and update it on subsequent runs.
+          branch: megalinter-fixes
           labels: bot
           base: main
 
