@@ -89,7 +89,9 @@ class TestVBRMTracker(unittest.TestCase):
             self.tracker.kinematic_state,
             array([0.5, -0.5, 1.0, -1.0]),
         )
-        self.assertGreater(float(self.tracker.orientation_variance), self.orientation_variance)
+        self.assertGreater(
+            float(self.tracker.orientation_variance), self.orientation_variance
+        )
         alpha_post, beta_post = self.tracker.get_inverse_gamma_parameters()
         npt.assert_allclose(alpha_post, 0.95 * alpha_prior)
         npt.assert_allclose(beta_post, 0.95 * beta_prior)
