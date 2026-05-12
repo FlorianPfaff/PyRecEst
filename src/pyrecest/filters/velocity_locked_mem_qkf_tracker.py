@@ -103,8 +103,7 @@ class VelocityLockedMEMQKFTracker(MEMQKFTracker):
         jacobian_entries[velocity_y_index] = velocity_x / speed_squared
         heading_jacobian = array(jacobian_entries)
         orientation_variance = (
-            heading_jacobian @ covariance @ heading_jacobian.T
-            + self.sideslip_variance
+            heading_jacobian @ covariance @ heading_jacobian.T + self.sideslip_variance
         )
         orientation_variance = maximum(
             orientation_variance,
@@ -174,6 +173,7 @@ class VelocityLockedMEMQKFTracker(MEMQKFTracker):
         meas_noise_cov,
         multiplicative_noise_cov,
         shape_measurement_covariance,
+        update_kinematics=True,
     ):
         # Stationary/near-stationary fallback: keep the full MEM-QKF orientation
         # update so the filter remains usable for fixed targets.
@@ -185,18 +185,22 @@ class VelocityLockedMEMQKFTracker(MEMQKFTracker):
                 meas_noise_cov,
                 multiplicative_noise_cov,
                 shape_measurement_covariance,
+                update_kinematics=update_kinematics,
             )
             return
 
         semi_axes = self.shape_state[1:]
         axis_covariance = self.axis_covariance
 
-        kinematic_state, covariance = self._kinematic_update(
-            measurement,
-            measurement_matrix,
-            meas_noise_cov,
-            multiplicative_noise_cov,
-        )
+        kinematic_state = self.kinematic_state
+        covariance = self.covariance
+        if update_kinematics:
+            kinematic_state, covariance = self._kinematic_update(
+                measurement,
+                measurement_matrix,
+                meas_noise_cov,
+                multiplicative_noise_cov,
+            )
         covariance = self._project_symmetric_covariance(covariance)
         heading_moments = self._heading_moments_from_velocity(
             kinematic_state,

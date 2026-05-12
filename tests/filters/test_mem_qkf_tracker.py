@@ -154,8 +154,7 @@ class TestMEMQKFTracker(unittest.TestCase):
         centroid = np.mean(normalized_measurements, axis=1)
         extent_transform = tracker._extent_transform()
         centroid_covariance = (
-            extent_transform @ tracker.multiplicative_noise_cov @ extent_transform.T
-            + R
+            extent_transform @ tracker.multiplicative_noise_cov @ extent_transform.T + R
         ) / normalized_measurements.shape[1]
         innovation_covariance = (
             self.measurement_matrix @ self.covariance @ self.measurement_matrix.T

@@ -412,8 +412,7 @@ class MEMQKFTracker(MEMEKFTracker):
         innovation = centroid - measurement_matrix @ self.kinematic_state
         self.kinematic_state = self.kinematic_state + kinematic_gain @ innovation
         self.covariance = self._project_symmetric_covariance(
-            self.covariance
-            - kinematic_gain @ innovation_covariance @ kinematic_gain.T
+            self.covariance - kinematic_gain @ innovation_covariance @ kinematic_gain.T
         )
 
     # pylint: disable=too-many-arguments
