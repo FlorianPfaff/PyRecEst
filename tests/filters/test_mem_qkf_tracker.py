@@ -44,6 +44,7 @@ class TestMEMQKFTracker(unittest.TestCase):
 
     def test_initialization_and_alias(self):
         self.assertIs(MemQkfTracker, MEMQKFTracker)
+        self.assertEqual(self.tracker.update_mode, "sequential")
         npt.assert_allclose(self.tracker.kinematic_state, self.kinematic_state)
         npt.assert_allclose(self.tracker.shape_state, self.shape_state)
         npt.assert_allclose(
@@ -51,6 +52,17 @@ class TestMEMQKFTracker(unittest.TestCase):
             diag(array([4.0, 1.0])),
         )
         self.assertEqual(self.tracker.get_point_estimate().shape[0], 7)
+
+    def test_rejects_unknown_update_mode(self):
+        with self.assertRaises(ValueError):
+            MEMQKFTracker(
+                self.kinematic_state,
+                self.covariance,
+                self.shape_state,
+                self.shape_covariance,
+                measurement_matrix=self.measurement_matrix,
+                update_mode="unsupported",
+            )
 
     def test_initialization_drops_orientation_axis_cross_covariances(self):
         shape_covariance = array(
@@ -125,6 +137,75 @@ class TestMEMQKFTracker(unittest.TestCase):
 
         self.assertGreater(tracker.kinematic_state[0], 0.0)
         self.assertGreater(tracker.shape_state[1], 1.0)
+
+    def test_batch_update_uses_single_centroid_kinematic_update(self):
+        R = _rot(0.4) @ diag(array([0.4, 1.1])) @ _rot(0.4).T
+        measurements = array([[1.7, -0.4], [2.3, 0.8], [0.6, -1.1], [1.1, 0.2]])
+        tracker = MEMQKFTracker(
+            self.kinematic_state,
+            self.covariance,
+            self.shape_state,
+            self.shape_covariance,
+            measurement_matrix=self.measurement_matrix,
+            update_mode="batch",
+        )
+
+        normalized_measurements = tracker._normalize_measurements(measurements)
+        centroid = np.mean(normalized_measurements, axis=1)
+        extent_transform = tracker._extent_transform()
+        centroid_covariance = (
+            extent_transform @ tracker.multiplicative_noise_cov @ extent_transform.T + R
+        ) / normalized_measurements.shape[1]
+        innovation_covariance = (
+            self.measurement_matrix @ self.covariance @ self.measurement_matrix.T
+            + centroid_covariance
+        )
+        kinematic_gain = tracker._gain_from_cross_covariance(
+            self.covariance @ self.measurement_matrix.T,
+            innovation_covariance,
+        )
+        expected_state = self.kinematic_state + kinematic_gain @ (
+            centroid - self.measurement_matrix @ self.kinematic_state
+        )
+        expected_covariance = self.covariance - (
+            kinematic_gain @ innovation_covariance @ kinematic_gain.T
+        )
+
+        tracker.update(measurements, meas_noise_cov=R)
+
+        npt.assert_allclose(tracker.kinematic_state, expected_state)
+        npt.assert_allclose(tracker.covariance, expected_covariance)
+        self.assertTrue(all(linalg.eigvalsh(tracker.shape_covariance) > -1e-12))
+
+    def test_batch_update_differs_from_sequential_on_measurement_sets(self):
+        R = _rot(0.5) @ diag(array([0.7, 0.2])) @ _rot(0.5).T
+        measurements = array([[1.5, -0.3], [2.0, 0.6], [-0.2, 1.4], [0.8, -1.0]])
+        sequential_tracker = MEMQKFTracker(
+            self.kinematic_state,
+            self.covariance,
+            self.shape_state,
+            self.shape_covariance,
+            measurement_matrix=self.measurement_matrix,
+        )
+        batch_tracker = MEMQKFTracker(
+            self.kinematic_state,
+            self.covariance,
+            self.shape_state,
+            self.shape_covariance,
+            measurement_matrix=self.measurement_matrix,
+            update_mode="batch",
+        )
+
+        sequential_tracker.update(measurements, meas_noise_cov=R)
+        batch_tracker.update(measurements, meas_noise_cov=R)
+
+        self.assertFalse(
+            np.allclose(
+                batch_tracker.kinematic_state,
+                sequential_tracker.kinematic_state,
+            )
+        )
+        self.assertTrue(all(linalg.eigvalsh(batch_tracker.covariance) > 0.0))
 
     def test_update_without_measurements_is_noop(self):
         prior_kinematic_state = self.tracker.kinematic_state.copy()

@@ -31,12 +31,15 @@ class MEMQKFTracker(MEMEKFTracker):
     benchmark helper that reports full ``length`` and ``width`` by doubling its
     internal semi-axis states.
 
-    The update is sequential in target-originated point measurements. For each
-    point, it performs a kinematic Kalman update, a scalar quadratic orientation
-    update, and a two-dimensional quadratic semi-axis update. The reference
-    MEM-QKF equations keep the orientation covariance separate from the two
-    axis-length covariances. Consequently this implementation only retains the
-    block-diagonal terms of ``shape_covariance``:
+    By default, the update is sequential in target-originated point
+    measurements. For each point, it performs a kinematic Kalman update, a
+    scalar quadratic orientation update, and a two-dimensional quadratic
+    semi-axis update. With ``update_mode="batch"``, the kinematics are updated
+    once from the measurement-set centroid, while the extent update remains
+    sequential in the individual points. The reference MEM-QKF equations keep
+    the orientation covariance separate from the two axis-length covariances.
+    Consequently this implementation only retains the block-diagonal terms of
+    ``shape_covariance``:
     ``shape_covariance[0, 0]`` and ``shape_covariance[1:, 1:]``. Cross-covariance
     terms between orientation and axes are ignored and reset to zero after
     initialization, prediction, and update.
@@ -47,6 +50,10 @@ class MEMQKFTracker(MEMEKFTracker):
         Measurement-noise covariance used by :meth:`update` when
         ``meas_noise_cov`` is omitted. This is useful when porting code from
         reference implementations that store ``R`` in the tracker instance.
+    update_mode : {"sequential", "batch"}, default="sequential"
+        Selects whether every measurement performs a kinematic update
+        (``"sequential"``) or whether one centroid-based kinematic update is
+        performed before the sequential extent update (``"batch"``).
     minimum_axis_length : float, default=1e-9
         Lower bound applied to semi-axis lengths after updates.
     minimum_covariance_eigenvalue : float, default=0.0
@@ -74,6 +81,7 @@ class MEMQKFTracker(MEMEKFTracker):
         log_prior_extents=False,
         log_posterior_extents=False,
         default_meas_noise_cov=None,
+        update_mode="sequential",
         minimum_axis_length=1e-9,
         minimum_covariance_eigenvalue=0.0,
     ):
@@ -99,6 +107,7 @@ class MEMQKFTracker(MEMEKFTracker):
 
         self.default_meas_noise_cov = None
         self.set_default_measurement_noise_cov(default_meas_noise_cov)
+        self.update_mode = self._validate_update_mode(update_mode)
         self.shape_covariance = self._decoupled_shape_covariance(
             self._regularize_variance(self.shape_covariance[0, 0]),
             self._project_symmetric_covariance(self.shape_covariance[1:, 1:]),
@@ -113,6 +122,13 @@ class MEMQKFTracker(MEMEKFTracker):
             self.orientation_variance,
             axis_covariance,
         )
+
+    @staticmethod
+    def _validate_update_mode(update_mode):
+        update_mode = str(update_mode).lower()
+        if update_mode not in {"sequential", "batch"}:
+            raise ValueError("update_mode must be 'sequential' or 'batch'")
+        return update_mode
 
     @staticmethod
     def _rotation(angle):
@@ -259,6 +275,17 @@ class MEMQKFTracker(MEMEKFTracker):
             meas_noise_cov + additive_measurement_noise
         )
 
+        if self.update_mode == "batch":
+            self._batch_kinematic_update(
+                measurements,
+                measurement_matrix,
+                meas_noise_cov,
+                multiplicative_noise_cov,
+            )
+            update_kinematics = False
+        else:
+            update_kinematics = True
+
         for measurement_index in range(measurements.shape[1]):
             self._update_single_measurement_qkf(
                 measurements[:, measurement_index],
@@ -267,6 +294,7 @@ class MEMQKFTracker(MEMEKFTracker):
                 meas_noise_cov,
                 multiplicative_noise_cov,
                 shape_measurement_covariance,
+                update_kinematics=update_kinematics,
             )
 
         if self.log_posterior_estimates:
@@ -283,18 +311,22 @@ class MEMQKFTracker(MEMEKFTracker):
         meas_noise_cov,
         multiplicative_noise_cov,
         shape_measurement_covariance,
+        update_kinematics=True,
     ):
         orientation = self.shape_state[0]
         semi_axes = self.shape_state[1:]
         orientation_variance = self.orientation_variance
         axis_covariance = self.axis_covariance
 
-        kinematic_state, covariance = self._kinematic_update(
-            measurement,
-            measurement_matrix,
-            meas_noise_cov,
-            multiplicative_noise_cov,
-        )
+        kinematic_state = self.kinematic_state
+        covariance = self.covariance
+        if update_kinematics:
+            kinematic_state, covariance = self._kinematic_update(
+                measurement,
+                measurement_matrix,
+                meas_noise_cov,
+                multiplicative_noise_cov,
+            )
         orientation, orientation_variance = self._orientation_update(
             measurement,
             center_estimate,
@@ -350,6 +382,38 @@ class MEMQKFTracker(MEMEKFTracker):
             kinematic_gain @ innovation_covariance @ kinematic_gain.T
         )
         return kinematic_state, covariance
+
+    def _batch_kinematic_update(
+        self,
+        measurements,
+        measurement_matrix,
+        meas_noise_cov,
+        multiplicative_noise_cov,
+    ):
+        n_measurements = measurements.shape[1]
+        centroid = mean(measurements, axis=1)
+        extent_transform = self._extent_transform()
+        centroid_covariance = self._symmetrize(
+            (
+                extent_transform @ multiplicative_noise_cov @ extent_transform.T
+                + meas_noise_cov
+            )
+            / n_measurements
+        )
+        innovation_covariance = self._regularize_covariance(
+            measurement_matrix @ self.covariance @ measurement_matrix.T
+            + centroid_covariance
+        )
+        kinematic_cross_covariance = self.covariance @ measurement_matrix.T
+        kinematic_gain = self._gain_from_cross_covariance(
+            kinematic_cross_covariance,
+            innovation_covariance,
+        )
+        innovation = centroid - measurement_matrix @ self.kinematic_state
+        self.kinematic_state = self.kinematic_state + kinematic_gain @ innovation
+        self.covariance = self._project_symmetric_covariance(
+            self.covariance - kinematic_gain @ innovation_covariance @ kinematic_gain.T
+        )
 
     # pylint: disable=too-many-arguments
     def _orientation_update(
