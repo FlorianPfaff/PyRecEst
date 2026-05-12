@@ -103,8 +103,7 @@ class VelocityLockedMEMQKFTracker(MEMQKFTracker):
         jacobian_entries[velocity_y_index] = velocity_x / speed_squared
         heading_jacobian = array(jacobian_entries)
         orientation_variance = (
-            heading_jacobian @ covariance @ heading_jacobian.T
-            + self.sideslip_variance
+            heading_jacobian @ covariance @ heading_jacobian.T + self.sideslip_variance
         )
         orientation_variance = maximum(
             orientation_variance,
