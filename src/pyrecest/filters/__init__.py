@@ -94,6 +94,7 @@ from .manifold_mixins import (
 )
 from .mem_ekf_star_tracker import MEMEKFStarTracker, MemEkfStarTracker
 from .mem_ekf_tracker import MEMEKFTracker, MemEkfTracker
+from .mem_qkf_tracker import MEMQKFTracker, MemQkfTracker
 from .mem_soekf_tracker import MEMSOEKFTracker, MemSoekfTracker
 from .multi_bernoulli_tracker import BernoulliComponent, MultiBernoulliTracker
 from .out_of_sequence import (
@@ -219,9 +220,11 @@ __all__ = [
     "LinPeriodicParticleFilter",
     "MEMEKFStarTracker",
     "MEMEKFTracker",
+    "MEMQKFTracker",
     "MEMSOEKFTracker",
     "MemEkfStarTracker",
     "MemEkfTracker",
+    "MemQkfTracker",
     "MemSoekfTracker",
     "NISGate",
     "OutOfSequenceKalmanUpdater",
