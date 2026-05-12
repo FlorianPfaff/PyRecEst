@@ -1,28 +1,63 @@
 from __future__ import annotations
 
+from typing import Any
+
 # pylint: disable=no-name-in-module,no-member,duplicate-code,too-many-locals
-from pyrecest.backend import array, cos, eye, kron, linalg, mean, sin, zeros
+from pyrecest.backend import abs as backend_abs
+from pyrecest.backend import (
+    array,
+    cos,
+    diag,
+    eye,
+    kron,
+    linalg,
+    maximum,
+    mean,
+    sin,
+    where,
+    zeros,
+)
 
 from .mem_ekf_tracker import MEMEKFTracker
 
 
 class MEMQKFTracker(MEMEKFTracker):
-    """Quadratic Kalman-filter MEM tracker for one 2-D elliptical object.
+    """Sequential decoupled MEM-QKF tracker for one 2-D elliptical object.
 
     This filter ports the MEM-QKF update used in the quadratic extended-object
     tracking benchmark to PyRecEst's MEM tracker convention. The state is split
     into a Euclidean kinematic state and a shape state
-    ``[orientation, semi_axis_1, semi_axis_2]``. The update is sequential in the
-    point measurements and decomposes the shape update into an orientation
-    update and an axis-length update.
+    ``[orientation, semi_axis_1, semi_axis_2]``. This differs from the reference
+    benchmark helper that reports full ``length`` and ``width`` by doubling its
+    internal semi-axis states.
 
-    The reference MEM-QKF equations keep the orientation covariance separate
-    from the two axis-length covariances. Consequently this implementation only
-    retains the block-diagonal terms of ``shape_covariance``:
+    The update is sequential in target-originated point measurements. For each
+    point, it performs a kinematic Kalman update, a scalar quadratic orientation
+    update, and a two-dimensional quadratic semi-axis update. The reference
+    MEM-QKF equations keep the orientation covariance separate from the two
+    axis-length covariances. Consequently this implementation only retains the
+    block-diagonal terms of ``shape_covariance``:
     ``shape_covariance[0, 0]`` and ``shape_covariance[1:, 1:]``. Cross-covariance
     terms between orientation and axes are ignored and reset to zero after
     initialization, prediction, and update.
+
+    Parameters added by this subclass
+    ---------------------------------
+    default_meas_noise_cov : array-like, optional
+        Measurement-noise covariance used by :meth:`update` when
+        ``meas_noise_cov`` is omitted. This is useful when porting code from
+        reference implementations that store ``R`` in the tracker instance.
+    minimum_axis_length : float, default=1e-9
+        Lower bound applied to semi-axis lengths after updates.
+    minimum_covariance_eigenvalue : float, default=0.0
+        Lower bound used when projecting updated covariance matrices back to the
+        positive-semidefinite cone.
     """
+
+    kinematic_state: Any
+    covariance: Any
+    shape_state: Any
+    shape_covariance: Any
 
     # pylint: disable=too-many-arguments,too-many-positional-arguments
     def __init__(
@@ -38,6 +73,9 @@ class MEMQKFTracker(MEMEKFTracker):
         log_posterior_estimates=False,
         log_prior_extents=False,
         log_posterior_extents=False,
+        default_meas_noise_cov=None,
+        minimum_axis_length=1e-9,
+        minimum_covariance_eigenvalue=0.0,
     ):
         super().__init__(
             kinematic_state,
@@ -52,9 +90,28 @@ class MEMQKFTracker(MEMEKFTracker):
             log_prior_extents=log_prior_extents,
             log_posterior_extents=log_posterior_extents,
         )
+        self.minimum_axis_length = float(minimum_axis_length)
+        if self.minimum_axis_length <= 0.0:
+            raise ValueError("minimum_axis_length must be positive")
+        self.minimum_covariance_eigenvalue = float(minimum_covariance_eigenvalue)
+        if self.minimum_covariance_eigenvalue < 0.0:
+            raise ValueError("minimum_covariance_eigenvalue must be non-negative")
+
+        self.default_meas_noise_cov = None
+        self.set_default_measurement_noise_cov(default_meas_noise_cov)
         self.shape_covariance = self._decoupled_shape_covariance(
-            self.shape_covariance[0, 0],
-            self.shape_covariance[1:, 1:],
+            self._regularize_variance(self.shape_covariance[0, 0]),
+            self._project_symmetric_covariance(self.shape_covariance[1:, 1:]),
+        )
+        orientation = self.shape_state[0]
+        axes, axis_covariance = self._canonicalize_axes_and_axis_covariance(
+            self.shape_state[1:],
+            self.axis_covariance,
+        )
+        self.shape_state = array([orientation, axes[0], axes[1]])
+        self.shape_covariance = self._decoupled_shape_covariance(
+            self.orientation_variance,
+            axis_covariance,
         )
 
     @staticmethod
@@ -80,13 +137,34 @@ class MEMQKFTracker(MEMEKFTracker):
             linalg.block_diag(array([[orientation_variance]]), axis_covariance)
         )
 
+    def _regularize_variance(self, variance):
+        if float(variance) < self.minimum_covariance_eigenvalue:
+            return array(self.minimum_covariance_eigenvalue)
+        return variance
+
+    def _project_symmetric_covariance(self, covariance):
+        covariance = self._symmetrize(covariance)
+        eigenvalues, eigenvectors = linalg.eigh(covariance)
+        if float(eigenvalues[0]) >= self.minimum_covariance_eigenvalue:
+            return covariance
+        eigenvalues = maximum(eigenvalues, self.minimum_covariance_eigenvalue)
+        return self._symmetrize((eigenvectors * eigenvalues) @ eigenvectors.T)
+
+    def _canonicalize_axes_and_axis_covariance(self, axes, axis_covariance):
+        axes = array(axes)
+        signs = where(axes < 0.0, -1.0, 1.0)
+        sign_matrix = diag(signs)
+        axis_covariance = sign_matrix @ axis_covariance @ sign_matrix.T
+        axes = maximum(backend_abs(axes), self.minimum_axis_length)
+        return axes, self._project_symmetric_covariance(axis_covariance)
+
     def _regularize_covariance(self, covariance):
         covariance = self._symmetrize(covariance)
         if self.covariance_regularization > 0.0:
             covariance = covariance + self.covariance_regularization * eye(
                 covariance.shape[0]
             )
-        return self._symmetrize(covariance)
+        return self._project_symmetric_covariance(covariance)
 
     @staticmethod
     def _gain_from_cross_covariance(cross_covariance, innovation_covariance):
@@ -100,6 +178,22 @@ class MEMQKFTracker(MEMEKFTracker):
     @property
     def axis_covariance(self):
         return self.shape_covariance[1:, 1:]
+
+    def set_default_measurement_noise_cov(self, meas_noise_cov):
+        """Set the measurement-noise covariance used by default in updates."""
+        if meas_noise_cov is None:
+            self.default_meas_noise_cov = None
+            return
+        self.default_meas_noise_cov = self._get_measurement_noise(meas_noise_cov)
+
+    def set_R(self, meas_noise_cov):
+        """Compatibility alias for setting the default measurement covariance."""
+        self.set_default_measurement_noise_cov(meas_noise_cov)
+
+    def _get_update_measurement_noise(self, meas_noise_cov):
+        if meas_noise_cov is None and self.default_meas_noise_cov is not None:
+            return self.default_meas_noise_cov
+        return self._get_measurement_noise(meas_noise_cov)
 
     # pylint: disable=too-many-arguments,too-many-positional-arguments
     def predict_linear(
@@ -118,9 +212,14 @@ class MEMQKFTracker(MEMEKFTracker):
             shape_system_matrix=shape_system_matrix,
             shape_sys_noise=shape_sys_noise,
         )
-        self.shape_covariance = self._decoupled_shape_covariance(
-            self.shape_covariance[0, 0],
+        axes, axis_covariance = self._canonicalize_axes_and_axis_covariance(
+            self.shape_state[1:],
             self.shape_covariance[1:, 1:],
+        )
+        self.shape_state = array([self.shape_state[0], axes[0], axes[1]])
+        self.shape_covariance = self._decoupled_shape_covariance(
+            self._regularize_variance(self.shape_covariance[0, 0]),
+            axis_covariance,
         )
 
     def predict(self, *args, **kwargs):
@@ -140,7 +239,7 @@ class MEMQKFTracker(MEMEKFTracker):
             return
 
         measurement_matrix = self._get_measurement_matrix(meas_mat)
-        meas_noise_cov = self._get_measurement_noise(meas_noise_cov)
+        meas_noise_cov = self._get_update_measurement_noise(meas_noise_cov)
         multiplicative_noise_cov = self._get_multiplicative_noise_cov(
             multiplicative_noise_cov
         )
@@ -214,12 +313,16 @@ class MEMQKFTracker(MEMEKFTracker):
             multiplicative_noise_cov,
             shape_measurement_covariance,
         )
+        semi_axes, axis_covariance = self._canonicalize_axes_and_axis_covariance(
+            semi_axes,
+            axis_covariance,
+        )
 
         self.kinematic_state = kinematic_state
-        self.covariance = self._symmetrize(covariance)
+        self.covariance = self._project_symmetric_covariance(covariance)
         self.shape_state = array([orientation, semi_axes[0], semi_axes[1]])
         self.shape_covariance = self._decoupled_shape_covariance(
-            orientation_variance,
+            self._regularize_variance(orientation_variance),
             axis_covariance,
         )
 
@@ -321,8 +424,8 @@ class MEMQKFTracker(MEMEKFTracker):
                 shifted_measurement[0] * shifted_measurement[1],
             ]
         )
-        expected_pseudo_measurement = (
-            selection_matrix @ self._vectorize_columns(quadratic_covariance)
+        expected_pseudo_measurement = selection_matrix @ self._vectorize_columns(
+            quadratic_covariance
         )
         pseudo_covariance = self._regularize_covariance(
             selection_matrix
@@ -356,9 +459,10 @@ class MEMQKFTracker(MEMEKFTracker):
         )
         innovation = pseudo_measurement - expected_pseudo_measurement
         posterior_orientation = orientation + (orientation_gain @ innovation)[0]
-        posterior_orientation_variance = orientation_variance - (
-            orientation_gain @ orientation_cross_covariance.T
-        )[0, 0]
+        posterior_orientation_variance = (
+            orientation_variance
+            - (orientation_gain @ orientation_cross_covariance.T)[0, 0]
+        )
         return posterior_orientation, posterior_orientation_variance
 
     # pylint: disable=too-many-arguments
