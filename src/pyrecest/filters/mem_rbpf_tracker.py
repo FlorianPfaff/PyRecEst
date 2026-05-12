@@ -1,9 +1,5 @@
 from __future__ import annotations
 
-# pylint: disable=no-name-in-module,no-member,duplicate-code
-# pylint: disable=too-many-instance-attributes,too-many-arguments
-# pylint: disable=too-many-positional-arguments,too-many-locals
-
 import numpy as np
 
 from pyrecest.backend import (
@@ -21,6 +17,10 @@ from pyrecest.backend import (
 )
 
 from .abstract_extended_object_tracker import AbstractExtendedObjectTracker
+
+# pylint: disable=no-name-in-module,no-member,duplicate-code
+# pylint: disable=too-many-instance-attributes,too-many-arguments
+# pylint: disable=too-many-positional-arguments,too-many-locals
 
 
 class MEMRBPFTracker(AbstractExtendedObjectTracker):
@@ -168,7 +168,12 @@ class MEMRBPFTracker(AbstractExtendedObjectTracker):
     def _np(value):
         try:
             return np.asarray(to_numpy(value), dtype=float)
-        except Exception:  # pragma: no cover - backend fallback
+        except (
+            AttributeError,
+            TypeError,
+            ValueError,
+            RuntimeError,
+        ):  # pragma: no cover
             return np.asarray(value, dtype=float)
 
     @staticmethod
@@ -275,8 +280,7 @@ class MEMRBPFTracker(AbstractExtendedObjectTracker):
         if inputs is not None:
             self.kinematic_state = self.kinematic_state + array(inputs)
         self.covariance = self._symmetrize(
-            self.system_matrix @ self.covariance @ self.system_matrix.T
-            + self.sys_noise
+            self.system_matrix @ self.covariance @ self.system_matrix.T + self.sys_noise
         )
 
         axis_matrix = eye(2)
@@ -449,7 +453,9 @@ class MEMRBPFTracker(AbstractExtendedObjectTracker):
                 if self.covariance_regularization > 0.0:
                     pseudo_cov += self.covariance_regularization * np.eye(2)
                 cross_cov = np.diag(
-                    2.0 * mult_var * axis_np[particle_index]
+                    2.0
+                    * mult_var
+                    * axis_np[particle_index]
                     * np.diag(cov_np[particle_index])
                 )
                 gain = cross_cov @ np.linalg.pinv(pseudo_cov)
@@ -469,7 +475,7 @@ class MEMRBPFTracker(AbstractExtendedObjectTracker):
         shifted = log_weights - np.max(log_weights[finite])
         weights = np.zeros_like(shifted)
         weights[finite] = np.exp(shifted[finite])
-        weight_sum = np.sum(weights)
+        weight_sum: float = float(np.sum(weights))
         if weight_sum <= 0.0 or not np.isfinite(weight_sum):
             return np.full(log_weights.shape, 1.0 / log_weights.size)
         return weights / weight_sum
@@ -500,7 +506,7 @@ class MEMRBPFTracker(AbstractExtendedObjectTracker):
         elif self.resampling_mode == "residual":
             counts = np.floor(self.n_particles * weights).astype(int)
             residual_count = self.n_particles - int(np.sum(counts))
-            deterministic = np.repeat(np.arange(self.n_particles), counts)
+            deterministic: np.ndarray = np.repeat(np.arange(self.n_particles), counts)
             if residual_count <= 0:
                 return deterministic[: self.n_particles]
             residual_weights = weights - counts / self.n_particles
