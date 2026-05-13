@@ -247,3 +247,5 @@ class VelocityAlignedMEMQKFTracker(MEMQKFTracker):
 
 
 VelocityAlignedMemQkfTracker = VelocityAlignedMEMQKFTracker
+VelocityLockedMEMQKFTracker = VelocityAlignedMEMQKFTracker
+VelocityLockedMemQkfTracker = VelocityAlignedMEMQKFTracker
