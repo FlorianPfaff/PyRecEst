@@ -247,7 +247,3 @@ class VelocityAlignedMEMQKFTracker(MEMQKFTracker):
 
 
 VelocityAlignedMemQkfTracker = VelocityAlignedMEMQKFTracker
-
-# Backward-compatible aliases for the original public class names.
-VelocityLockedMEMQKFTracker = VelocityAlignedMEMQKFTracker
-VelocityLockedMemQkfTracker = VelocityAlignedMEMQKFTracker
