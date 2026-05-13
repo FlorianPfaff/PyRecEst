@@ -2,7 +2,6 @@ import numpy as np
 from pyrecest.backend import array, diag, eye
 from pyrecest.filters.velocity_aligned_mem_qkf_tracker import (
     VelocityAlignedMEMQKFTracker,
-    VelocityLockedMEMQKFTracker,
 )
 
 
@@ -91,7 +90,3 @@ def test_stationary_case_falls_back_to_standard_mem_qkf_update():
     assert np.isfinite(float(tracker.shape_state[0]))
     assert tracker.shape_state[1] > 0.0
     assert tracker.shape_state[2] > 0.0
-
-
-def test_legacy_velocity_locked_name_stays_available():
-    assert VelocityLockedMEMQKFTracker is VelocityAlignedMEMQKFTracker
