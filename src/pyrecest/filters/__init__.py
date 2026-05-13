@@ -94,6 +94,12 @@ from .manifold_mixins import (
     ToroidalFilterMixin,
 )
 from .mem_ekf_star_tracker import MEMEKFStarTracker, MemEkfStarTracker
+from .mem_ekf_star_oa_tracker import (
+    MEMEKFStarOATracker,
+    MemEkfStarOATracker,
+    VelocityAlignedMEMEKFStarTracker,
+    VelocityAlignedMemEkfStarTracker,
+)
 from .mem_ekf_tracker import MEMEKFTracker, MemEkfTracker
 from .mem_qkf_tracker import MEMQKFTracker, MemQkfTracker
 from .mem_soekf_tracker import MEMSOEKFTracker, MemSoekfTracker
@@ -226,10 +232,12 @@ __all__ = [
     "MultipleExtendedObjectStepResult",
     "LinPeriodicParticleFilter",
     "MEMEKFStarTracker",
+    "MEMEKFStarOATracker",
     "MEMEKFTracker",
     "MEMQKFTracker",
     "MEMSOEKFTracker",
     "MemEkfStarTracker",
+    "MemEkfStarOATracker",
     "MemEkfTracker",
     "MemQkfTracker",
     "MemSoekfTracker",
@@ -245,7 +253,9 @@ __all__ = [
     "ScGpTracker",
     "TimestampedItem",
     "TopKGate",
+    "VelocityAlignedMEMEKFStarTracker",
     "VelocityAlignedMEMQKFTracker",
+    "VelocityAlignedMemEkfStarTracker",
     "VelocityAlignedMemQkfTracker",
     "association_result_from_hypotheses",
     "build_global_nearest_neighbor_associator",
