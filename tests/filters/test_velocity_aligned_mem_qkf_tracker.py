@@ -1,12 +1,13 @@
 import numpy as np
 from pyrecest.backend import array, diag, eye
-from pyrecest.filters.velocity_aligned_mem_qkf_tracker import (
+from pyrecest.filters.velocity_locked_mem_qkf_tracker import (
     VelocityAlignedMEMQKFTracker,
+    VelocityLockedMEMQKFTracker,
 )
 
 
 def _make_tracker(speed_threshold=1e-9, **kwargs):
-    return VelocityAlignedMEMQKFTracker(
+    return VelocityLockedMEMQKFTracker(
         kinematic_state=array([0.0, 0.0, 3.0, 4.0]),
         covariance=diag(array([1.0, 1.0, 0.04, 0.04])),
         shape_state=array([0.0, 2.0, 1.0]),
@@ -17,14 +18,14 @@ def _make_tracker(speed_threshold=1e-9, **kwargs):
     )
 
 
-def test_velocity_aligned_orientation_is_initialized_from_heading():
+def test_velocity_locked_orientation_is_initialized_from_heading():
     tracker = _make_tracker()
 
     assert np.isclose(float(tracker.shape_state[0]), np.arctan2(4.0, 3.0))
     assert float(tracker.shape_covariance[0, 0]) > 0.0
 
 
-def test_velocity_aligned_orientation_tracks_prediction_heading():
+def test_velocity_locked_orientation_tracks_prediction_heading():
     tracker = _make_tracker()
     system_matrix = array(
         [
@@ -40,7 +41,7 @@ def test_velocity_aligned_orientation_tracks_prediction_heading():
     assert np.isclose(float(tracker.shape_state[0]), expected_heading)
 
 
-def test_velocity_aligned_update_keeps_orientation_coupled_to_velocity():
+def test_velocity_locked_update_keeps_orientation_coupled_to_velocity():
     tracker = _make_tracker()
     measurements = array(
         [
@@ -58,7 +59,7 @@ def test_velocity_aligned_update_keeps_orientation_coupled_to_velocity():
     assert tracker.shape_state[2] > 0.0
 
 
-def test_velocity_aligned_batch_update_keeps_orientation_coupled_to_velocity():
+def test_velocity_locked_batch_update_keeps_orientation_coupled_to_velocity():
     tracker = _make_tracker(update_mode="batch")
     measurements = array(
         [
@@ -77,7 +78,7 @@ def test_velocity_aligned_batch_update_keeps_orientation_coupled_to_velocity():
 
 
 def test_stationary_case_falls_back_to_standard_mem_qkf_update():
-    tracker = VelocityAlignedMEMQKFTracker(
+    tracker = VelocityLockedMEMQKFTracker(
         kinematic_state=array([0.0, 0.0, 0.0, 0.0]),
         covariance=diag(array([1.0, 1.0, 0.04, 0.04])),
         shape_state=array([0.2, 2.0, 1.0]),
@@ -90,3 +91,7 @@ def test_stationary_case_falls_back_to_standard_mem_qkf_update():
     assert np.isfinite(float(tracker.shape_state[0]))
     assert tracker.shape_state[1] > 0.0
     assert tracker.shape_state[2] > 0.0
+
+
+def test_velocity_aligned_name_is_backward_compatible_alias():
+    assert VelocityAlignedMEMQKFTracker is VelocityLockedMEMQKFTracker
