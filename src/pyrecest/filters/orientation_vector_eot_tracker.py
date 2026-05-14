@@ -11,8 +11,8 @@ from pyrecest.backend import (
     eye,
     linalg,
     linspace,
-    mean,
     maximum,
+    mean,
     pi,
     sin,
     sqrt,
@@ -314,7 +314,9 @@ class OrientationVectorEOTTracker(AbstractExtendedObjectTracker):
 
     def _project_orientation_gaussian(self, orientation_vector, covariance):
         orientation_vector = self._normalize_orientation_vector(orientation_vector)
-        covariance = self._project_orientation_covariance(orientation_vector, covariance)
+        covariance = self._project_orientation_covariance(
+            orientation_vector, covariance
+        )
         return orientation_vector, covariance
 
     @staticmethod
@@ -354,7 +356,9 @@ class OrientationVectorEOTTracker(AbstractExtendedObjectTracker):
         # through NumPy-compatible backends via the Python math fallback.
         from math import atan2  # pylint: disable=import-outside-toplevel
 
-        orientation = atan2(float(self.orientation_vector[1]), float(self.orientation_vector[0]))
+        orientation = atan2(
+            float(self.orientation_vector[1]), float(self.orientation_vector[0])
+        )
         return concatenate([array([orientation]), axes])
 
     def get_point_estimate_extent(self, flatten_matrix=False):
@@ -419,7 +423,11 @@ class OrientationVectorEOTTracker(AbstractExtendedObjectTracker):
             self.orientation_vector_covariance,
         )
 
-        gamma = self.forgetting_factor if forgetting_factor is None else float(forgetting_factor)
+        gamma = (
+            self.forgetting_factor
+            if forgetting_factor is None
+            else float(forgetting_factor)
+        )
         if gamma <= 0.0:
             raise ValueError("forgetting_factor must be positive")
         self.alpha = gamma * self.alpha
@@ -468,7 +476,10 @@ class OrientationVectorEOTTracker(AbstractExtendedObjectTracker):
     def _velocity_vector(self):
         velocity_x_index, velocity_y_index = self.velocity_indices
         return array(
-            [self.kinematic_state[velocity_x_index], self.kinematic_state[velocity_y_index]]
+            [
+                self.kinematic_state[velocity_x_index],
+                self.kinematic_state[velocity_y_index],
+            ]
         )
 
     def _fuse_orientation_vector(self, measurement, measurement_covariance):
@@ -517,9 +528,14 @@ class OrientationVectorEOTTracker(AbstractExtendedObjectTracker):
         velocity_covariance[1, 0] = self.covariance[velocity_y_index, velocity_x_index]
         velocity_covariance[1, 1] = self.covariance[velocity_y_index, velocity_y_index]
         tangent = array([-heading[1], heading[0]])
-        heading_variance = tangent @ velocity_covariance @ tangent.T / maximum(
-            speed_squared,
-            self.speed_threshold**2,
+        heading_variance = (
+            tangent
+            @ velocity_covariance
+            @ tangent.T
+            / maximum(
+                speed_squared,
+                self.speed_threshold**2,
+            )
         )
         heading_variance = maximum(heading_variance + self.heading_noise_variance, 0.0)
         measurement_covariance = heading_variance * self._outer(tangent)
@@ -566,7 +582,9 @@ class OrientationVectorEOTTracker(AbstractExtendedObjectTracker):
             return
         measurement_matrix = self._get_measurement_matrix(meas_mat)
         meas_noise_cov = self._get_measurement_noise(meas_noise_cov)
-        num_iterations = self.num_iterations if num_iterations is None else int(num_iterations)
+        num_iterations = (
+            self.num_iterations if num_iterations is None else int(num_iterations)
+        )
         if num_iterations <= 0:
             raise ValueError("num_iterations must be positive")
         old_use_heading_constraint = self.use_heading_constraint
@@ -605,16 +623,22 @@ class OrientationVectorEOTTracker(AbstractExtendedObjectTracker):
             self.covariance - gain @ innovation_cov @ gain.T
         )
 
-        self._update_orientation_from_measurement_cloud(measurements, measurement_matrix)
+        self._update_orientation_from_measurement_cloud(
+            measurements, measurement_matrix
+        )
         self._update_orientation_from_heading()
 
         predicted = measurement_matrix @ self.kinematic_state
         residuals = measurements - predicted[:, None]
-        body_residuals = self._rotation_matrix_from_vector(self.orientation_vector).T @ residuals
+        body_residuals = (
+            self._rotation_matrix_from_vector(self.orientation_vector).T @ residuals
+        )
         hph = measurement_matrix @ self.covariance @ measurement_matrix.T
-        noise_body = self._rotation_matrix_from_vector(self.orientation_vector).T @ (
-            hph + meas_noise_cov
-        ) @ self._rotation_matrix_from_vector(self.orientation_vector)
+        noise_body = (
+            self._rotation_matrix_from_vector(self.orientation_vector).T
+            @ (hph + meas_noise_cov)
+            @ self._rotation_matrix_from_vector(self.orientation_vector)
+        )
         scatter = body_residuals @ body_residuals.T
         scatter = scatter + measurement_count * noise_body
         self.alpha = self.alpha + 0.5 * measurement_count
