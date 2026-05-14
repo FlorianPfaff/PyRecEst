@@ -4,7 +4,6 @@ from typing import Any
 
 # pylint: disable=no-name-in-module,no-member,too-many-arguments,too-many-locals,protected-access
 import numpy as np
-
 from pyrecest.backend import array, diag, linalg, mean, zeros
 
 from .mem_qkf_tracker import MEMQKFTracker
@@ -151,9 +150,13 @@ class IteratedBatchMEMQKFTracker(MEMQKFTracker):
                     shape_measurement_covariance=shape_measurement_covariance,
                 )
             )
-            posterior_orientation = prior_orientation + self.damping * self._axial_delta(
-                prior_orientation,
-                full_orientation,
+            posterior_orientation = (
+                prior_orientation
+                + self.damping
+                * self._axial_delta(
+                    prior_orientation,
+                    full_orientation,
+                )
             )
 
             full_axes, posterior_axis_covariance = self._batch_axis_posterior(
@@ -208,7 +211,9 @@ class IteratedBatchMEMQKFTracker(MEMQKFTracker):
             return mean(measurements, axis=1), zeros((2, 2))
 
         center_estimate = measurement_matrix @ self.kinematic_state
-        additive_shape_covariance = measurement_matrix @ self.covariance @ measurement_matrix.T
+        additive_shape_covariance = (
+            measurement_matrix @ self.covariance @ measurement_matrix.T
+        )
         return center_estimate, additive_shape_covariance
 
     # pylint: disable=too-many-arguments,too-many-positional-arguments
@@ -247,7 +252,9 @@ class IteratedBatchMEMQKFTracker(MEMQKFTracker):
             ]
         )
 
-        extent_covariance = extent_transform @ multiplicative_noise_cov @ extent_transform.T
+        extent_covariance = (
+            extent_transform @ multiplicative_noise_cov @ extent_transform.T
+        )
         orientation_covariance = orientation_variance * array(
             [
                 [
@@ -428,7 +435,9 @@ class IteratedBatchMEMQKFTracker(MEMQKFTracker):
             - axis_sensitivity @ (prior_axes - semi_axes)
         )
         posterior_axes = prior_axes + axis_gain @ innovation
-        posterior_axis_covariance = axis_covariance - axis_gain @ axis_cross_covariance.T
+        posterior_axis_covariance = (
+            axis_covariance - axis_gain @ axis_cross_covariance.T
+        )
         return posterior_axes, self._symmetrize(posterior_axis_covariance)
 
     @staticmethod
