@@ -1,3 +1,4 @@
+# pylint: disable=protected-access
 import numpy as np
 from pyrecest.backend import array, diag, eye
 from pyrecest.filters.velocity_aided_mem_qkf_tracker import (
