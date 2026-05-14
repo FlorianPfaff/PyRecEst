@@ -104,6 +104,12 @@ from .mem_ekf_tracker import MEMEKFTracker, MemEkfTracker
 from .mem_qkf_tracker import MEMQKFTracker, MemQkfTracker
 from .mem_soekf_tracker import MEMSOEKFTracker, MemSoekfTracker
 from .multi_bernoulli_tracker import BernoulliComponent, MultiBernoulliTracker
+from .orientation_vector_eot_tracker import (
+    EOTOV0Tracker,
+    EOTOVTracker,
+    OrientationVectorEOT0Tracker,
+    OrientationVectorEOTTracker,
+)
 from .out_of_sequence import (
     FixedLagBuffer,
     MeasurementRecord,
@@ -185,6 +191,8 @@ __all__ = [
     "EuclideanFilterMixin",
     "EuclideanParticleFilter",
     "FullSCGPTracker",
+    "EOTOV0Tracker",
+    "EOTOVTracker",
     "ExtendedObjectAssociationResult",
     "ExtendedObjectEstimate",
     "FixedLagBuffer",
@@ -242,6 +250,8 @@ __all__ = [
     "MemQkfTracker",
     "MemSoekfTracker",
     "NISGate",
+    "OrientationVectorEOT0Tracker",
+    "OrientationVectorEOTTracker",
     "OutOfSequenceKalmanUpdater",
     "OutOfSequenceParticleUpdater",
     "OutOfSequenceResult",
