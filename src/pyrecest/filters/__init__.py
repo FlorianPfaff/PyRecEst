@@ -93,13 +93,13 @@ from .manifold_mixins import (
     SE2FilterMixin,
     ToroidalFilterMixin,
 )
-from .mem_ekf_star_tracker import MEMEKFStarTracker, MemEkfStarTracker
 from .mem_ekf_star_oa_tracker import (
     MEMEKFStarOATracker,
     MemEkfStarOATracker,
     VelocityAlignedMEMEKFStarTracker,
     VelocityAlignedMemEkfStarTracker,
 )
+from .mem_ekf_star_tracker import MEMEKFStarTracker, MemEkfStarTracker
 from .mem_ekf_tracker import MEMEKFTracker, MemEkfTracker
 from .mem_qkf_tracker import MEMQKFTracker, MemQkfTracker
 from .mem_soekf_tracker import MEMSOEKFTracker, MemSoekfTracker
