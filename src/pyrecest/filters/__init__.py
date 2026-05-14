@@ -156,9 +156,9 @@ from .track_manager import (
 )
 from .ukf_on_manifolds import UKFOnManifolds
 from .unscented_kalman_filter import UnscentedKalmanFilter
-from .velocity_aligned_mem_qkf_tracker import (
-    VelocityAlignedMEMQKFTracker,
-    VelocityAlignedMemQkfTracker,
+from .velocity_locked_mem_qkf_tracker import (
+    VelocityLockedMEMQKFTracker,
+    VelocityLockedMemQkfTracker,
 )
 from .von_mises_filter import VonMisesFilter
 from .von_mises_fisher_filter import VonMisesFisherFilter
@@ -270,9 +270,9 @@ __all__ = [
     "TimestampedItem",
     "TopKGate",
     "VelocityAlignedMEMEKFStarTracker",
-    "VelocityAlignedMEMQKFTracker",
     "VelocityAlignedMemEkfStarTracker",
-    "VelocityAlignedMemQkfTracker",
+    "VelocityLockedMEMQKFTracker",
+    "VelocityLockedMemQkfTracker",
     "association_result_from_hypotheses",
     "build_global_nearest_neighbor_associator",
     "build_kalman_measurement_initiator",
