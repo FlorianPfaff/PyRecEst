@@ -69,6 +69,10 @@ from .hypertoroidal_dummy_filter import HypertoroidalDummyFilter
 from .hypertoroidal_fourier_filter import HypertoroidalFourierFilter
 from .hypertoroidal_particle_filter import HypertoroidalParticleFilter
 from .interacting_multiple_model_filter import IMM, InteractingMultipleModelFilter
+from .iterated_batch_mem_qkf_tracker import (
+    IteratedBatchMEMQKFTracker,
+    IteratedBatchMemQkfTracker,
+)
 from .joint_probabilistic_data_association_filter import (
     JPDAF,
     JointProbabilisticDataAssociationFilter,
@@ -223,6 +227,8 @@ __all__ = [
     "AbstractParticleFilter",
     "HypercylindricalParticleFilter",
     "HypertoroidalParticleFilter",
+    "IteratedBatchMEMQKFTracker",
+    "IteratedBatchMemQkfTracker",
     "KalmanFilter",
     "UnscentedKalmanFilter",
     "UKFOnManifolds",
