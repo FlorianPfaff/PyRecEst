@@ -32,8 +32,12 @@ class FixedLagRandomMatrixSmootherTest(unittest.TestCase):
     def test_extent_smoothing_uses_future_information_increment(self):
         smoother = FixedLagRandomMatrixSmoother(lag=1)
         filtered_states = [
-            RandomMatrixTrackerState(array([0.0]), array([[1.0]]), array([[2.0]]), 10.0),
-            RandomMatrixTrackerState(array([0.0]), array([[1.0]]), array([[4.0]]), 13.0),
+            RandomMatrixTrackerState(
+                array([0.0]), array([[1.0]]), array([[2.0]]), 10.0
+            ),
+            RandomMatrixTrackerState(
+                array([0.0]), array([[1.0]]), array([[4.0]]), 13.0
+            ),
         ]
         predicted_states = [
             RandomMatrixTrackerState(array([0.0]), array([[1.0]]), array([[2.0]]), 8.0)
@@ -51,8 +55,12 @@ class FixedLagRandomMatrixSmootherTest(unittest.TestCase):
 
     def test_append_and_flush_emit_fixed_lag_sequence(self):
         smoother = FixedLagRandomMatrixSmoother(lag=1, extent_smoothing="none")
-        first = RandomMatrixTrackerState(array([0.5]), array([[0.5]]), array([[2.0]]), 2.0)
-        second = RandomMatrixTrackerState(array([1.4]), array([[0.6]]), array([[3.0]]), 3.0)
+        first = RandomMatrixTrackerState(
+            array([0.5]), array([[0.5]]), array([[2.0]]), 2.0
+        )
+        second = RandomMatrixTrackerState(
+            array([1.4]), array([[0.6]]), array([[3.0]]), 3.0
+        )
         predicted_second = RandomMatrixTrackerState(
             array([0.5]), array([[1.5]]), array([[2.0]]), 2.0
         )
@@ -76,7 +84,9 @@ class FixedLagRandomMatrixSmootherTest(unittest.TestCase):
 
         self.assertEqual(len(smoothed_states), 1)
         self.assertEqual(smoother_gains, [[]])
-        npt.assert_allclose(smoothed_states[0].kinematic_state, filtered_state.kinematic_state)
+        npt.assert_allclose(
+            smoothed_states[0].kinematic_state, filtered_state.kinematic_state
+        )
 
 
 if __name__ == "__main__":

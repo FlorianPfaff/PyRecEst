@@ -153,7 +153,9 @@ class VelocityAidedMEMQKFTracker(MEMQKFTracker):
         )
         gain = orientation_variance / innovation_variance
         posterior_orientation = orientation + gain * innovation
-        posterior_orientation_variance = orientation_variance - gain * orientation_variance
+        posterior_orientation_variance = (
+            orientation_variance - gain * orientation_variance
+        )
         posterior_orientation_variance = self._regularize_variance(
             posterior_orientation_variance
         )

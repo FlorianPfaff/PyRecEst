@@ -5,7 +5,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Sequence
 
-from pyrecest.backend import asarray, copy as backend_copy, eye, linalg
+from pyrecest.backend import asarray
+from pyrecest.backend import copy as backend_copy
+from pyrecest.backend import eye, linalg
 from pyrecest.filters.random_matrix_tracker import RandomMatrixTracker
 
 from .abstract_smoother import AbstractSmoother
@@ -30,9 +32,11 @@ class RandomMatrixTrackerState:
             backend_copy(tracker.covariance),
             backend_copy(tracker.extent),
             float(tracker.alpha),
-            None
-            if tracker.kinematic_state_to_pos_matrix is None
-            else backend_copy(tracker.kinematic_state_to_pos_matrix),
+            (
+                None
+                if tracker.kinematic_state_to_pos_matrix is None
+                else backend_copy(tracker.kinematic_state_to_pos_matrix)
+            ),
         )
 
     def copy(self) -> "RandomMatrixTrackerState":
@@ -43,9 +47,11 @@ class RandomMatrixTrackerState:
             backend_copy(self.covariance),
             backend_copy(self.extent),
             float(self.alpha),
-            None
-            if self.kinematic_state_to_pos_matrix is None
-            else backend_copy(self.kinematic_state_to_pos_matrix),
+            (
+                None
+                if self.kinematic_state_to_pos_matrix is None
+                else backend_copy(self.kinematic_state_to_pos_matrix)
+            ),
         )
 
     def to_tracker(self) -> RandomMatrixTracker:
@@ -55,9 +61,11 @@ class RandomMatrixTrackerState:
             backend_copy(self.kinematic_state),
             backend_copy(self.covariance),
             backend_copy(self.extent),
-            None
-            if self.kinematic_state_to_pos_matrix is None
-            else backend_copy(self.kinematic_state_to_pos_matrix),
+            (
+                None
+                if self.kinematic_state_to_pos_matrix is None
+                else backend_copy(self.kinematic_state_to_pos_matrix)
+            ),
         )
         tracker.alpha = float(self.alpha)
         return tracker
@@ -124,7 +132,9 @@ class FixedLagRandomMatrixSmoother(AbstractSmoother):
         )
 
     @classmethod
-    def _normalize_state_sequence(cls, states: Sequence) -> list[RandomMatrixTrackerState]:
+    def _normalize_state_sequence(
+        cls, states: Sequence
+    ) -> list[RandomMatrixTrackerState]:
         return [cls._as_state(state) for state in states]
 
     def _positive_extent_weight(self, alpha) -> float:
@@ -189,12 +199,17 @@ class FixedLagRandomMatrixSmoother(AbstractSmoother):
             ).T
             gains[time_idx] = smoother_gain
 
-            smoothed_kinematic_state = filtered_state.kinematic_state + smoother_gain @ (
-                next_smoothed.kinematic_state - predicted_state.kinematic_state
+            smoothed_kinematic_state = (
+                filtered_state.kinematic_state
+                + smoother_gain
+                @ (next_smoothed.kinematic_state - predicted_state.kinematic_state)
             )
-            smoothed_covariance = filtered_state.covariance + smoother_gain @ (
-                next_smoothed.covariance - predicted_state.covariance
-            ) @ smoother_gain.T
+            smoothed_covariance = (
+                filtered_state.covariance
+                + smoother_gain
+                @ (next_smoothed.covariance - predicted_state.covariance)
+                @ smoother_gain.T
+            )
             smoothed_extent, smoothed_alpha = self._smooth_extent(
                 filtered_state,
                 predicted_state,
@@ -230,7 +245,9 @@ class FixedLagRandomMatrixSmoother(AbstractSmoother):
             return [state.copy() for state in filt_list], [[] for _ in filt_list]
 
         if predicted_states is None:
-            raise ValueError("predicted_states must be provided for non-zero lag smoothing.")
+            raise ValueError(
+                "predicted_states must be provided for non-zero lag smoothing."
+            )
         pred_list = self._normalize_state_sequence(predicted_states)
         if len(pred_list) != len(filt_list) - 1:
             raise ValueError(
@@ -288,7 +305,9 @@ class FixedLagRandomMatrixSmoother(AbstractSmoother):
                 eye(state_dim) if system_matrix is None else asarray(system_matrix)
             )
         elif predicted_state is not None:
-            raise ValueError("predicted_state must not be provided for the first filtered state.")
+            raise ValueError(
+                "predicted_state must not be provided for the first filtered state."
+            )
 
         self._filtered_buffer.append(new_filtered_state)
         if len(self._filtered_buffer) <= self.lag:
