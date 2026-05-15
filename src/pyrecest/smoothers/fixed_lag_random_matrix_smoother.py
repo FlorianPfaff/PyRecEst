@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Sequence
+from typing import Any, Sequence
 
 from pyrecest.backend import asarray, copy as backend_copy, eye, linalg
 from pyrecest.filters.random_matrix_tracker import RandomMatrixTracker
@@ -15,11 +15,11 @@ from .abstract_smoother import AbstractSmoother
 class RandomMatrixTrackerState:
     """Detached snapshot of a :class:`RandomMatrixTracker` state."""
 
-    kinematic_state: object
-    covariance: object
-    extent: object
+    kinematic_state: Any
+    covariance: Any
+    extent: Any
     alpha: float = 0.0
-    kinematic_state_to_pos_matrix: object | None = None
+    kinematic_state_to_pos_matrix: Any | None = None
 
     @classmethod
     def from_tracker(cls, tracker: RandomMatrixTracker) -> "RandomMatrixTrackerState":
@@ -100,7 +100,7 @@ class FixedLagRandomMatrixSmoother(AbstractSmoother):
         self.minimum_extent_weight = float(minimum_extent_weight)
         self._filtered_buffer: list[RandomMatrixTrackerState] = []
         self._predicted_buffer: list[RandomMatrixTrackerState] = []
-        self._system_matrix_buffer: list = []
+        self._system_matrix_buffer: list[Any] = []
 
     @staticmethod
     def _as_state(state) -> RandomMatrixTrackerState:
@@ -135,7 +135,7 @@ class FixedLagRandomMatrixSmoother(AbstractSmoother):
         filtered_state: RandomMatrixTrackerState,
         predicted_state: RandomMatrixTrackerState,
         next_smoothed_state: RandomMatrixTrackerState,
-    ) -> tuple[object, float]:
+    ) -> tuple[Any, float]:
         if self.extent_smoothing == "none" or self.extent_smoothing_factor == 0.0:
             return backend_copy(filtered_state.extent), float(filtered_state.alpha)
 
@@ -159,7 +159,7 @@ class FixedLagRandomMatrixSmoother(AbstractSmoother):
         filtered_states: Sequence[RandomMatrixTrackerState],
         predicted_states: Sequence[RandomMatrixTrackerState],
         system_matrices: Sequence,
-    ) -> tuple[list[RandomMatrixTrackerState], list]:
+    ) -> tuple[list[RandomMatrixTrackerState], list[Any]]:
         n_states = len(filtered_states)
         if n_states == 0:
             return [], []
@@ -173,7 +173,7 @@ class FixedLagRandomMatrixSmoother(AbstractSmoother):
             )
 
         smoothed: list[RandomMatrixTrackerState | None] = [None] * n_states
-        gains: list = [None] * max(n_states - 1, 0)
+        gains: list[Any] = [None] * max(n_states - 1, 0)
         smoothed[-1] = filtered_states[-1].copy()
 
         for time_idx in range(n_states - 2, -1, -1):
@@ -216,7 +216,7 @@ class FixedLagRandomMatrixSmoother(AbstractSmoother):
         predicted_states: Sequence | None = None,
         system_matrices=None,
         lag: int | None = None,
-    ) -> tuple[list[RandomMatrixTrackerState], list[list]]:
+    ) -> tuple[list[RandomMatrixTrackerState], list[list[Any]]]:
         """Return fixed-lag smoothed random-matrix tracker states."""
 
         lag_value = self.lag if lag is None else int(lag)
@@ -247,7 +247,7 @@ class FixedLagRandomMatrixSmoother(AbstractSmoother):
         )
 
         smoothed_states: list[RandomMatrixTrackerState] = []
-        smoother_gains: list[list] = []
+        smoother_gains: list[list[Any]] = []
         for time_idx in range(len(filt_list)):
             window_end = min(time_idx + lag_value, len(filt_list) - 1)
             if window_end == time_idx:
