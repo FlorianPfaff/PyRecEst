@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Sequence
+from typing import Any, Sequence
 
 from pyrecest.backend import arctan2, array, asarray, copy as backend_copy, diag, eye, linalg, maximum, where
 from pyrecest.backend import abs as backend_abs
@@ -16,14 +16,14 @@ from .abstract_smoother import AbstractSmoother
 class VelocityLockedMEMQKFTrackerState:
     """Detached snapshot of a :class:`VelocityLockedMEMQKFTracker` state."""
 
-    kinematic_state: object
-    covariance: object
-    shape_state: object
-    shape_covariance: object
-    measurement_matrix: object | None = None
-    multiplicative_noise_cov: object | None = None
+    kinematic_state: Any
+    covariance: Any
+    shape_state: Any
+    shape_covariance: Any
+    measurement_matrix: Any | None = None
+    multiplicative_noise_cov: Any | None = None
     covariance_regularization: float = 0.0
-    default_meas_noise_cov: object | None = None
+    default_meas_noise_cov: Any | None = None
     update_mode: str = "sequential"
     minimum_axis_length: float = 1e-9
     minimum_covariance_eigenvalue: float = 0.0
@@ -36,6 +36,9 @@ class VelocityLockedMEMQKFTrackerState:
     @classmethod
     def from_tracker(cls, tracker: VelocityLockedMEMQKFTracker) -> "VelocityLockedMEMQKFTrackerState":
         """Create a detached snapshot from ``tracker``."""
+        velocity_indices = tuple(tracker.velocity_indices)
+        if len(velocity_indices) != 2:
+            raise ValueError("velocity_indices must contain exactly two entries.")
         return cls(
             backend_copy(tracker.kinematic_state),
             backend_copy(tracker.covariance),
@@ -48,7 +51,7 @@ class VelocityLockedMEMQKFTrackerState:
             str(tracker.update_mode),
             float(tracker.minimum_axis_length),
             float(tracker.minimum_covariance_eigenvalue),
-            tuple(tracker.velocity_indices),
+            (int(velocity_indices[0]), int(velocity_indices[1])),
             float(tracker.speed_threshold),
             float(tracker.orientation_offset),
             float(tracker.sideslip_variance),
@@ -69,7 +72,7 @@ class VelocityLockedMEMQKFTrackerState:
             str(self.update_mode),
             float(self.minimum_axis_length),
             float(self.minimum_covariance_eigenvalue),
-            tuple(self.velocity_indices),
+            (int(self.velocity_indices[0]), int(self.velocity_indices[1])),
             float(self.speed_threshold),
             float(self.orientation_offset),
             float(self.sideslip_variance),
@@ -90,7 +93,7 @@ class VelocityLockedMEMQKFTrackerState:
             update_mode=str(self.update_mode),
             minimum_axis_length=float(self.minimum_axis_length),
             minimum_covariance_eigenvalue=float(self.minimum_covariance_eigenvalue),
-            velocity_indices=tuple(self.velocity_indices),
+            velocity_indices=(int(self.velocity_indices[0]), int(self.velocity_indices[1])),
             speed_threshold=float(self.speed_threshold),
             orientation_offset=float(self.orientation_offset),
             sideslip_variance=float(self.sideslip_variance),
@@ -102,8 +105,8 @@ class VelocityLockedMEMQKFTrackerState:
 class VelocityLockedMEMQKFSmootherGain:
     """Smoother gains for one VL-MEM-QKF backward recursion step."""
 
-    kinematic: object
-    shape: object | None = None
+    kinematic: Any
+    shape: Any | None = None
 
 
 class FixedLagVelocityLockedMEMQKFSmoother(AbstractSmoother):
@@ -128,8 +131,8 @@ class FixedLagVelocityLockedMEMQKFSmoother(AbstractSmoother):
         self.shape_smoothing = shape_smoothing
         self._filtered_buffer: list[VelocityLockedMEMQKFTrackerState] = []
         self._predicted_buffer: list[VelocityLockedMEMQKFTrackerState] = []
-        self._system_matrix_buffer: list = []
-        self._shape_system_matrix_buffer: list = []
+        self._system_matrix_buffer: list[Any] = []
+        self._shape_system_matrix_buffer: list[Any] = []
 
     @staticmethod
     def _normalize_velocity_indices(velocity_indices, state_dim: int) -> tuple[int, int]:
@@ -145,7 +148,7 @@ class FixedLagVelocityLockedMEMQKFSmoother(AbstractSmoother):
             normalized.append(index)
         if normalized[0] == normalized[1]:
             raise ValueError("velocity_indices must refer to two distinct states.")
-        return tuple(normalized)
+        return int(normalized[0]), int(normalized[1])
 
     @classmethod
     def _as_state(cls, state) -> VelocityLockedMEMQKFTrackerState:
@@ -245,7 +248,7 @@ class FixedLagVelocityLockedMEMQKFSmoother(AbstractSmoother):
             str(reference_state.update_mode),
             float(reference_state.minimum_axis_length),
             float(reference_state.minimum_covariance_eigenvalue),
-            tuple(reference_state.velocity_indices),
+            (int(reference_state.velocity_indices[0]), int(reference_state.velocity_indices[1])),
             float(reference_state.speed_threshold),
             float(reference_state.orientation_offset),
             float(reference_state.sideslip_variance),
@@ -253,7 +256,7 @@ class FixedLagVelocityLockedMEMQKFSmoother(AbstractSmoother):
         )
 
     @staticmethod
-    def _shape_system_matrices(shape_system_matrices, length: int) -> list:
+    def _shape_system_matrices(shape_system_matrices, length: int) -> list[Any]:
         return AbstractSmoother._normalize_matrix_sequence(
             shape_system_matrices, length, "shape_system_matrices", 3, default=eye(3)
         )
@@ -282,13 +285,17 @@ class FixedLagVelocityLockedMEMQKFSmoother(AbstractSmoother):
         smoothed: list[VelocityLockedMEMQKFTrackerState | None] = [None] * n_states
         gains: list[VelocityLockedMEMQKFSmootherGain | None] = [None] * max(n_states - 1, 0)
         smoothed[-1] = self._postprocess_state(
-            filtered_states[-1], filtered_states[-1].kinematic_state, filtered_states[-1].covariance,
-            filtered_states[-1].shape_state, filtered_states[-1].shape_covariance
+            filtered_states[-1],
+            filtered_states[-1].kinematic_state,
+            filtered_states[-1].covariance,
+            filtered_states[-1].shape_state,
+            filtered_states[-1].shape_covariance,
         )
         for time_idx in range(n_states - 2, -1, -1):
             filtered_state = filtered_states[time_idx]
             predicted_state = predicted_states[time_idx]
             next_smoothed = smoothed[time_idx + 1]
+            assert next_smoothed is not None
             system_matrix = system_matrices[time_idx]
             kinematic_gain = linalg.solve(
                 predicted_state.covariance.T,
@@ -316,7 +323,7 @@ class FixedLagVelocityLockedMEMQKFSmoother(AbstractSmoother):
         system_matrices=None,
         shape_system_matrices=None,
         lag: int | None = None,
-    ) -> tuple[list[VelocityLockedMEMQKFTrackerState], list[list]]:
+    ) -> tuple[list[VelocityLockedMEMQKFTrackerState], list[list[Any]]]:
         """Return fixed-lag smoothed VL-MEM-QKF tracker states."""
         lag_value = self.lag if lag is None else int(lag)
         if lag_value < 0:
@@ -339,22 +346,27 @@ class FixedLagVelocityLockedMEMQKFSmoother(AbstractSmoother):
             system_matrices, len(filt_list) - 1, "system_matrices", state_dim, default=eye(state_dim)
         )
         shape_matrices_list = self._shape_system_matrices(shape_system_matrices, len(filt_list) - 1)
-        smoothed_states = []
-        smoother_gains = []
+        smoothed_states: list[VelocityLockedMEMQKFTrackerState] = []
+        smoother_gains: list[list[Any]] = []
         for time_idx in range(len(filt_list)):
             window_end = min(time_idx + lag_value, len(filt_list) - 1)
             if window_end == time_idx:
                 smoothed_states.append(
                     self._postprocess_state(
-                        filt_list[time_idx], filt_list[time_idx].kinematic_state, filt_list[time_idx].covariance,
-                        filt_list[time_idx].shape_state, filt_list[time_idx].shape_covariance
+                        filt_list[time_idx],
+                        filt_list[time_idx].kinematic_state,
+                        filt_list[time_idx].covariance,
+                        filt_list[time_idx].shape_state,
+                        filt_list[time_idx].shape_covariance,
                     )
                 )
                 smoother_gains.append([])
                 continue
             window_smoothed, window_gains = self._smooth_window(
-                filt_list[time_idx:window_end + 1], pred_list[time_idx:window_end],
-                sys_matrices_list[time_idx:window_end], shape_matrices_list[time_idx:window_end]
+                filt_list[time_idx : window_end + 1],
+                pred_list[time_idx:window_end],
+                sys_matrices_list[time_idx:window_end],
+                shape_matrices_list[time_idx:window_end],
             )
             smoothed_states.append(window_smoothed[0])
             smoother_gains.append(window_gains)
@@ -365,8 +377,11 @@ class FixedLagVelocityLockedMEMQKFSmoother(AbstractSmoother):
         new_filtered_state = self._as_state(filtered_state)
         if self.lag == 0:
             return self._postprocess_state(
-                new_filtered_state, new_filtered_state.kinematic_state, new_filtered_state.covariance,
-                new_filtered_state.shape_state, new_filtered_state.shape_covariance
+                new_filtered_state,
+                new_filtered_state.kinematic_state,
+                new_filtered_state.covariance,
+                new_filtered_state.shape_state,
+                new_filtered_state.shape_covariance,
             )
         if self._filtered_buffer:
             if predicted_state is None:
@@ -384,8 +399,10 @@ class FixedLagVelocityLockedMEMQKFSmoother(AbstractSmoother):
 
     def _emit_oldest(self):
         smoothed_states, _ = self._smooth_window(
-            self._filtered_buffer, self._predicted_buffer,
-            self._system_matrix_buffer, self._shape_system_matrix_buffer
+            self._filtered_buffer,
+            self._predicted_buffer,
+            self._system_matrix_buffer,
+            self._shape_system_matrix_buffer,
         )
         emitted = smoothed_states[0]
         self._filtered_buffer.pop(0)
@@ -401,7 +418,7 @@ class FixedLagVelocityLockedMEMQKFSmoother(AbstractSmoother):
         """Return all still-buffered states with truncated look-ahead windows."""
         if self.lag == 0:
             return []
-        remaining = []
+        remaining: list[VelocityLockedMEMQKFTrackerState] = []
         while self._filtered_buffer:
             if len(self._filtered_buffer) == 1:
                 state = self._filtered_buffer.pop(0)
