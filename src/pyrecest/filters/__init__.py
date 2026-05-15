@@ -107,6 +107,11 @@ from .mem_ekf_star_tracker import MEMEKFStarTracker, MemEkfStarTracker
 from .mem_ekf_tracker import MEMEKFTracker, MemEkfTracker
 from .mem_qkf_tracker import MEMQKFTracker, MemQkfTracker
 from .mem_soekf_tracker import MEMSOEKFTracker, MemSoekfTracker
+from .mode_rbpf_manifold_ukf_tracker import (
+    ModeRBPFManifoldUKF,
+    ModeRBPFManifoldUKFTracker,
+    ModeRbpfManifoldUkfTracker,
+)
 from .multi_bernoulli_tracker import BernoulliComponent, MultiBernoulliTracker
 from .orientation_vector_eot_tracker import (
     EOTOV0Tracker,
@@ -255,6 +260,9 @@ __all__ = [
     "MemEkfTracker",
     "MemQkfTracker",
     "MemSoekfTracker",
+    "ModeRBPFManifoldUKF",
+    "ModeRBPFManifoldUKFTracker",
+    "ModeRbpfManifoldUkfTracker",
     "NISGate",
     "OrientationVectorEOT0Tracker",
     "OrientationVectorEOTTracker",
