@@ -90,7 +90,9 @@ class TestIteratedBatchMEMQKFTracker(unittest.TestCase):
             iterated_batch_tracker.kinematic_state,
             sequential_tracker.kinematic_state,
         )
-        npt.assert_allclose(iterated_batch_tracker.covariance, sequential_tracker.covariance)
+        npt.assert_allclose(
+            iterated_batch_tracker.covariance, sequential_tracker.covariance
+        )
         npt.assert_allclose(
             iterated_batch_tracker.shape_state,
             sequential_tracker.shape_state,
@@ -114,7 +116,9 @@ class TestIteratedBatchMEMQKFTracker(unittest.TestCase):
         self.assertGreaterEqual(tracker.shape_state[2], tracker.minimum_axis_length)
 
     def test_iterated_batch_extent_update_differs_from_existing_batch_mode(self):
-        existing_batch_tracker = self.make_tracker(cls=MEMQKFTracker, update_mode="batch")
+        existing_batch_tracker = self.make_tracker(
+            cls=MEMQKFTracker, update_mode="batch"
+        )
         iterated_batch_tracker = self.make_tracker(n_iterations=3)
 
         existing_batch_tracker.update(self.measurements)
@@ -128,7 +132,9 @@ class TestIteratedBatchMEMQKFTracker(unittest.TestCase):
                 existing_batch_tracker.shape_state,
             )
         )
-        self.assertTrue(all(linalg.eigvalsh(iterated_batch_tracker.shape_covariance) > -1e-12))
+        self.assertTrue(
+            all(linalg.eigvalsh(iterated_batch_tracker.shape_covariance) > -1e-12)
+        )
 
     def test_update_without_measurements_is_noop(self):
         tracker = self.make_tracker()

@@ -1,6 +1,5 @@
 import numpy as np
 import numpy.testing as npt
-
 from pyrecest.backend import array, diag, eye
 from pyrecest.filters.velocity_locked_mem_qkf_tracker import VelocityLockedMEMQKFTracker
 from pyrecest.smoothers import (
