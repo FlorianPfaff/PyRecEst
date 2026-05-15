@@ -5,7 +5,7 @@ import numpy.testing as npt
 
 # pylint: disable=no-name-in-module,no-member,protected-access,duplicate-code
 import pyrecest.backend
-from pyrecest.backend import all, array, diag, eye, linalg
+from pyrecest.backend import all, array, diag, linalg
 from pyrecest.filters import (
     IteratedBatchMEMQKFTracker,
     IteratedBatchMemQkfTracker,
