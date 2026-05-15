@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 import numpy.testing as npt
 
-import pyrecest.backend
+import pyrecest.backend as pyrecest_backend
 from pyrecest.filters import (
     ModeRBPFManifoldUKF,
     ModeRBPFManifoldUKFTracker,
@@ -12,7 +12,7 @@ from pyrecest.filters import (
 
 
 @unittest.skipIf(
-    pyrecest.backend.__backend_name__ != "numpy",
+    pyrecest_backend.__backend_name__ != "numpy",
     reason="ModeRBPFManifoldUKFTracker is currently NumPy-backend only",
 )
 class TestModeRBPFManifoldUKFTracker(unittest.TestCase):
