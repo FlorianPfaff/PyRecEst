@@ -128,10 +128,6 @@ class VelocityLockedMEMQKFTracker(MEMQKFTracker):
         )
         return True
 
-    # Backward-compatible internal name for old subclasses/downstream code.
-    def _align_orientation_with_velocity_if_moving(self):
-        return self._lock_orientation_to_velocity_if_moving()
-
     # pylint: disable=too-many-positional-arguments
     def predict_linear(
         self,
@@ -251,7 +247,3 @@ class VelocityLockedMEMQKFTracker(MEMQKFTracker):
 
 
 VelocityLockedMemQkfTracker = VelocityLockedMEMQKFTracker
-
-# Backward-compatible aliases for the former name.
-VelocityAlignedMEMQKFTracker = VelocityLockedMEMQKFTracker
-VelocityAlignedMemQkfTracker = VelocityLockedMemQkfTracker
