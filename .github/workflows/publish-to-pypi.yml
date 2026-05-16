@@ -70,7 +70,7 @@ jobs:
             core.setOutput("release_tag", releaseTag);
 
       - name: Check out source
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ github.event_name == 'workflow_dispatch' && steps.manual_release.outputs.release_tag || github.event.workflow_run.head_sha }}

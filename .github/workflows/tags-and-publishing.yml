@@ -36,7 +36,7 @@ jobs:
       release_notes_mode: ${{ steps.set_mode.outputs.release_notes_mode }}
     steps:
       - name: Check out code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref || github.ref_name }}
@@ -87,7 +87,7 @@ jobs:
       tag_set: ${{ steps.create_tag.outputs.tag_set }}
     steps:
       - name: Check out code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref || github.ref_name }}
@@ -125,7 +125,7 @@ jobs:
       RELEASE_NOTES_MODE: ${{ needs.check_if_tag_exists.outputs.release_notes_mode }}
     steps:
       - name: Check out repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.ref || github.ref_name }}

@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -52,7 +52,7 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Install system build dependencies (when binary not available)
         run: |
@@ -97,7 +97,7 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}/src
 
       - name: Upload test result artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.backend }}-${{ matrix.python-version }}-test-results
           path: junit_test_results_${{ matrix.backend }}.xml
