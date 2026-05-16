@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import (
     arctan2,
+    array,
     atleast_1d,
     exp,
     imag,
@@ -136,9 +137,42 @@ class HypertoroidalDiracDistribution(
     def marginalize_out(self, dimensions: int | list[int]):
         from ..circle.circular_dirac_distribution import CircularDiracDistribution
 
-        remaining_dims = list(range(self.dim))
-        remaining_dims = [dim for dim in remaining_dims if dim != dimensions]
-        return CircularDiracDistribution(self.d[:, remaining_dims].squeeze(), self.w)
+        try:
+            dimensions = list(dimensions)
+        except TypeError:
+            dimensions = [dimensions]
+
+        dimensions = [int(dim) for dim in dimensions]
+        dimensions_to_remove = set(dimensions)
+
+        if len(dimensions) != len(dimensions_to_remove):
+            raise ValueError("dimensions must not contain duplicates.")
+
+        if any(dim < 0 or dim >= self.dim for dim in dimensions_to_remove):
+            raise ValueError(
+                f"All marginalized-out dimensions must be in [0, {self.dim - 1}]."
+            )
+
+        if len(dimensions_to_remove) == 0:
+            return copy.deepcopy(self)
+
+        remaining_dims = [
+            dim for dim in range(self.dim) if dim not in dimensions_to_remove
+        ]
+
+        if len(remaining_dims) == 0:
+            raise ValueError("Cannot marginalize out all dimensions.")
+
+        marginalized_particles = self.d[:, array(remaining_dims)]
+
+        if len(remaining_dims) == 1:
+            return CircularDiracDistribution(marginalized_particles[:, 0], self.w)
+
+        return HypertoroidalDiracDistribution(
+            marginalized_particles,
+            self.w,
+            dim=len(remaining_dims),
+        )
 
     def shift(self, shift_by) -> "HypertoroidalDiracDistribution":
         assert shift_by.shape[-1] == self.dim
