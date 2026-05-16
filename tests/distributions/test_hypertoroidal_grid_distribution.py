@@ -26,6 +26,24 @@ class HypertoroidalGridDistributionTest(unittest.TestCase):
         npt.assert_allclose(hgd.get_grid(), grid)
         npt.assert_allclose(hgd.get_grid().shape, (4, 2))
 
+    def test_custom_flat_grid_honors_explicit_dim(self):
+        grid = array([[0.0, 0.0], [pi, 0.0], [0.0, pi], [pi, pi]])
+        grid_values = array([1.0, 1.0, 1.0, 1.0]) / ((2.0 * pi) ** 2)
+
+        hgd = HypertoroidalGridDistribution(grid_values, grid=grid, dim=2)
+
+        self.assertEqual(hgd.dim, 2)
+        npt.assert_allclose(hgd.get_grid(), grid)
+
+    def test_custom_flat_grid_infers_dim_from_grid(self):
+        grid = array([[0.0, 0.0], [pi, 0.0], [0.0, pi], [pi, pi]])
+        grid_values = array([1.0, 1.0, 1.0, 1.0]) / ((2.0 * pi) ** 2)
+
+        hgd = HypertoroidalGridDistribution(grid_values, grid=grid)
+
+        self.assertEqual(hgd.dim, 2)
+        npt.assert_allclose(hgd.get_grid(), grid)
+
     def test_pdf_custom_grid_flattens_grid_values_for_nearest_neighbor(self):
         grid = array(
             [
