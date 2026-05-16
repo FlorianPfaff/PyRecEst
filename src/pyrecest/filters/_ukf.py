@@ -145,9 +145,7 @@ class UnscentedKalmanFilter:
         sigmas_h = None
         dim_z = None
         for i in range(sigmas_f.shape[0]):
-            sigma_h = reshape(
-                asarray(hx(sigmas_f[i], **hx_args), dtype=float64), (-1,)
-            )
+            sigma_h = reshape(asarray(hx(sigmas_f[i], **hx_args), dtype=float64), (-1,))
             if sigmas_h is None:
                 dim_z = sigma_h.shape[0]
                 sigmas_h = empty((sigmas_f.shape[0], dim_z))

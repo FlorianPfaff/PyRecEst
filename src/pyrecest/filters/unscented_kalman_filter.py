@@ -34,7 +34,11 @@ class UnscentedKalmanFilter(AbstractFilter, EuclideanFilterMixin):
             raise ValueError(
                 "initial_state must be a GaussianDistribution or a tuple of (mean, covariance)"
             )
-        dim_z = reshape(asarray(hx(initial_mean), dtype=float64), (-1,)).shape[0] if dim_z is None else dim_z
+        dim_z = (
+            reshape(asarray(hx(initial_mean), dtype=float64), (-1,)).shape[0]
+            if dim_z is None
+            else dim_z
+        )
 
         if points is None:
             # Standard settings for Gaussian approximations
