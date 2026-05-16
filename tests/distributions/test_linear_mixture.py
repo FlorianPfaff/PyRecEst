@@ -4,8 +4,9 @@ from warnings import catch_warnings, simplefilter
 import numpy.testing as npt
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import array, column_stack, diag, linspace, meshgrid
+from pyrecest.backend import array, column_stack, diag, linspace, meshgrid, reshape
 from pyrecest.distributions import GaussianDistribution
+from pyrecest.distributions.nonperiodic.gaussian_mixture import GaussianMixture
 from pyrecest.distributions.nonperiodic.linear_mixture import LinearMixture
 
 
@@ -64,6 +65,29 @@ class LinearMixtureTest(unittest.TestCase):
         npt.assert_allclose(
             lm.pdf(points), 0.3 * gm1.pdf(points) + 0.7 * gm2.pdf(points), atol=1e-20
         )
+
+    def test_pdf_accepts_vectorized_one_dimensional_inputs(self):
+        gm1 = GaussianDistribution(array([1.0]), array([[2.0]]))
+        gm2 = GaussianDistribution(-array([3.0]), array([[3.0]]))
+
+        with catch_warnings():
+            simplefilter("ignore", category=UserWarning)
+            lm = LinearMixture([gm1, gm2], array([0.3, 0.7]))
+
+        xs = linspace(-2.0, 2.0, 100)
+        expected = 0.3 * gm1.pdf(xs) + 0.7 * gm2.pdf(xs)
+        npt.assert_allclose(lm.pdf(xs), expected, atol=1e-20)
+        npt.assert_allclose(lm.pdf(reshape(xs, (-1, 1))), expected, atol=1e-20)
+
+    def test_gaussian_mixture_pdf_accepts_vectorized_one_dimensional_inputs(self):
+        gm1 = GaussianDistribution(array([1.0]), array([[2.0]]))
+        gm2 = GaussianDistribution(-array([3.0]), array([[3.0]]))
+        gmix = GaussianMixture([gm1, gm2], array([0.3, 0.7]))
+
+        xs = linspace(-2.0, 2.0, 100)
+        expected = 0.3 * gm1.pdf(xs) + 0.7 * gm2.pdf(xs)
+        npt.assert_allclose(gmix.pdf(xs), expected, atol=1e-20)
+        npt.assert_allclose(gmix.pdf(reshape(xs, (-1, 1))), expected, atol=1e-20)
 
 
 if __name__ == "__main__":
