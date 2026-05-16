@@ -4,7 +4,7 @@ import unittest
 import pyrecest.backend
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import allclose, arange, array, log, pi
+from pyrecest.backend import allclose, arange, array, log, mod, pi
 from pyrecest.distributions import (
     CircularUniformDistribution,
     VonMisesDistribution,
@@ -107,6 +107,31 @@ class AbstractCircularDistributionTest(unittest.TestCase):
                 vm.kld_numerical(uniform),
                 log(2.0 * pi) - vm.entropy(),
                 rtol=1e-8,
+            )
+        )
+
+    def test_shift_moves_density_forward(self):
+        """A positive shift should move mass from x to x + shift_by."""
+        dist = VonMisesDistribution(array(1.1), array(4.0))
+        shift_by = array([0.7])
+        shifted_dist = dist.shift(shift_by)
+
+        xs = array([0.2, 1.1, 1.8, 5.9])
+        self.assertTrue(
+            allclose(
+                shifted_dist.pdf(xs),
+                dist.pdf(mod(xs - shift_by[0], 2.0 * pi)),
+                rtol=1e-12,
+            )
+        )
+
+        original_mode = array([1.1])
+        shifted_mode = mod(original_mode + shift_by, 2.0 * pi)
+        self.assertTrue(
+            allclose(
+                shifted_dist.pdf(shifted_mode),
+                dist.pdf(original_mode),
+                rtol=1e-12,
             )
         )
 
