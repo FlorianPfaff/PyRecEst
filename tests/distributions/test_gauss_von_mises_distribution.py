@@ -1,7 +1,7 @@
 import unittest
 
 from pyrecest import backend
-from pyrecest.backend import all, allclose, cos, exp, linalg, pi, random, squeeze, zeros
+from pyrecest.backend import all, allclose, cos, exp, linalg, mod, pi, random, squeeze, zeros
 from pyrecest.distributions import GaussianDistribution
 from pyrecest.distributions.cart_prod.gauss_von_mises_distribution import (
     GaussVonMisesDistribution,
@@ -79,6 +79,20 @@ class GaussVonMisesDistributionTest(unittest.TestCase):
         d, w = self.g.sample_deterministic_horwood()
         self.assertEqual(d.shape, (self.g.lin_dim + self.g.bound_dim, expected_n))
         self.assertEqual(w.shape, (expected_n,))
+
+        # Columns 1 and 2 are the +/-eta circular sigma points.  They must not
+        # perturb the linear coordinate; the linear block remains at mu.
+        self.assertTrue(allclose(d[1:, 1], self.g.mu, atol=1e-10))
+        self.assertTrue(allclose(d[1:, 2], self.g.mu, atol=1e-10))
+
+        # Columns 3.. contain linear sigma points.  Their circular coordinate
+        # should equal get_theta evaluated at the transformed linear coordinate,
+        # i.e. there must be no residual standardized linear-coordinate error.
+        angle_error = mod(
+            d[0, 3:] - self.g.get_theta(d[1:, 3:]) + float(pi),
+            2.0 * float(pi),
+        ) - float(pi)
+        self.assertTrue(allclose(angle_error, zeros(expected_n - 3), atol=1e-10))
 
     def test_hybrid_moment(self):
         hm = self.g.hybrid_moment()
