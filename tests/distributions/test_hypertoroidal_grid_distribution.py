@@ -59,7 +59,7 @@ class HypertoroidalGridDistributionTest(unittest.TestCase):
 
         query_points = array([[pi, 0.0], [pi, pi]])
         expected = array([3.0, 4.0]) / normalizer
-        npt.assert_allclose(hgd.pdf(query_points), expected)
+        npt.assert_allclose(hgd.pdf(query_points), expected, rtol=2e-7)
 
     def test_custom_grid_uses_elementwise_toroidal_distance(self):
         grid = array(

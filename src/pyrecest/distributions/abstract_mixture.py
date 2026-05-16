@@ -58,7 +58,7 @@ class AbstractMixture(AbstractDistributionType):
                 "Elements with zero weights detected. Pruning elements in mixture with weight zero."
             )
             dists = [dists[i] for i in non_zero_indices]
-            weights = weights[non_zero_indices]
+            weights = weights[array(non_zero_indices, dtype=int64)]
 
         self.dists = dists
 
