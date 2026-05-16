@@ -7,7 +7,7 @@ import pyrecest.backend
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
 from pyrecest.backend import (
-    count_nonzero,
+    asarray,
     empty,
     int32,
     int64,
@@ -39,6 +39,8 @@ class AbstractMixture(AbstractDistributionType):
 
         if weights is None:
             weights = ones(num_distributions) / num_distributions
+        else:
+            weights = asarray(weights)
 
         if num_distributions != len(weights):
             raise ValueError("Sizes of distributions and weights must be equal")
@@ -46,9 +48,12 @@ class AbstractMixture(AbstractDistributionType):
         if not all(dists[0].dim == dist.dim for dist in dists):
             raise ValueError("All distributions must have the same dimension")
 
-        non_zero_indices = count_nonzero(weights)
+        non_zero_indices = [i for i, weight in enumerate(weights) if bool(weight != 0)]
 
-        if non_zero_indices < len(weights):
+        if len(non_zero_indices) == 0:
+            raise ValueError("At least one mixture weight must be nonzero")
+
+        if len(non_zero_indices) < len(weights):
             warnings.warn(
                 "Elements with zero weights detected. Pruning elements in mixture with weight zero."
             )
