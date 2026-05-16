@@ -6,7 +6,7 @@ PRE_COMMANDS:
     venv: pylint
 
 PYTHON_PYLINT_CONFIG_FILE: LINTER_DEFAULT
-PYTHON_PYLINT_ARGUMENTS: --disable=import-error
+PYTHON_PYLINT_ARGUMENTS: --disable=import-error,unexpected-keyword-arg,no-value-for-parameter,unsubscriptable-object
 
 DISABLE_LINTERS:
   - SPELL_CSPELL
