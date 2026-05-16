@@ -141,7 +141,10 @@ class AbstractParticleFilter(AbstractFilter):
                     noise = noise_distribution.sample(1)
                     updated_particles.append(d_f_applied[i] + noise)
                 else:
-                    noise_curr = noise_distribution.set_mean(d_f_applied[i])
+                    noise_curr = copy.deepcopy(noise_distribution)
+                    shifted_noise = noise_curr.set_mean(d_f_applied[i])
+                    if shifted_noise is not None:
+                        noise_curr = shifted_noise
                     updated_particles.append(noise_curr.sample(1))
 
             if self.filter_state.dim == 1:
