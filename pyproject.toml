@@ -3,7 +3,7 @@ name = "pyrecest"
 description = "Framework for recursive Bayesian estimation in Python."
 readme = "README.md"
 authors = ["Florian Pfaff <pfaff@ias.uni-stuttgart.de>"]
-version = "2.2.0"
+version = "2.2.1"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
