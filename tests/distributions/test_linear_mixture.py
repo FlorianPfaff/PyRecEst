@@ -27,6 +27,29 @@ class LinearMixtureTest(unittest.TestCase):
                 str(w[-1].message),
             )
 
+    def test_prunes_zero_weight_components(self):
+        gm1 = GaussianDistribution(array([1.0]), array([[1.0]]))
+        gm2 = GaussianDistribution(array([50.0]), array([[1.0]]))
+        gm3 = GaussianDistribution(array([100.0]), array([[1.0]]))
+
+        with catch_warnings():
+            simplefilter("ignore", category=UserWarning)
+            lm = LinearMixture([gm1, gm2, gm3], array([0.3, 0.0, 0.7]))
+
+        self.assertEqual(len(lm.dists), 2)
+        npt.assert_allclose(lm.w, array([0.3, 0.7]))
+        npt.assert_allclose(lm.dists[0].mu, gm1.mu)
+        npt.assert_allclose(lm.dists[1].mu, gm3.mu)
+
+    def test_rejects_all_zero_weights(self):
+        gm1 = GaussianDistribution(array([1.0]), array([[1.0]]))
+        gm2 = GaussianDistribution(array([50.0]), array([[1.0]]))
+
+        with catch_warnings():
+            simplefilter("ignore", category=UserWarning)
+            with self.assertRaises(ValueError):
+                LinearMixture([gm1, gm2], array([0.0, 0.0]))
+
     def test_pdf(self):
         gm1 = GaussianDistribution(array([1.0, 1.0]), diag(array([2.0, 3.0])))
         gm2 = GaussianDistribution(-array([3.0, 1.0]), diag(array([2.0, 3.0])))
