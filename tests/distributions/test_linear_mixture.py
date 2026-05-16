@@ -7,6 +7,7 @@ import numpy.testing as npt
 from pyrecest.backend import array, column_stack, diag, linspace, meshgrid, reshape
 from pyrecest.distributions import GaussianDistribution
 from pyrecest.distributions.nonperiodic.gaussian_mixture import GaussianMixture
+from pyrecest.distributions.nonperiodic.linear_dirac_distribution import LinearDiracDistribution
 from pyrecest.distributions.nonperiodic.linear_mixture import LinearMixture
 
 
@@ -88,6 +89,14 @@ class LinearMixtureTest(unittest.TestCase):
         expected = 0.3 * gm1.pdf(xs) + 0.7 * gm2.pdf(xs)
         npt.assert_allclose(gmix.pdf(xs), expected, atol=1e-20)
         npt.assert_allclose(gmix.pdf(reshape(xs, (-1, 1))), expected, atol=1e-20)
+
+    def test_sample_accepts_flat_one_dimensional_dirac_components(self):
+        dirac = LinearDiracDistribution(array([1.0, 2.0, 3.0]), array([0.2, 0.5, 0.3]))
+        lm = LinearMixture([dirac], array([1.0]))
+
+        samples = lm.sample(5)
+
+        self.assertEqual(samples.shape, (5, 1))
 
 
 if __name__ == "__main__":
