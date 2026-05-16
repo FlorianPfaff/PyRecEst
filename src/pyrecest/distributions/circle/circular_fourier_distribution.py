@@ -270,7 +270,7 @@ class CircularFourierDistribution(AbstractCircularDistribution):
 
     def get_c(self):
         if self.a is not None:
-            c = (self.a[0] + 1j * hstack((0, self.b))) * 0.5
+            c = hstack((self.a[0:1], self.a[1:] - 1j * self.b)) * 0.5
         elif self.c is not None:
             c = self.c
         else:
