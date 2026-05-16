@@ -15,11 +15,12 @@ class GaussianDistribution(AbstractLinearDistribution):
 
     Parameters
     ----------
-    mu : array-like, shape (n,) or scalar
-        Mean vector. Scalar input is treated as a one-dimensional Gaussian.
-    C : array-like, shape (n, n) or scalar
-        Positive-definite covariance matrix. Scalar input is treated as the
-        covariance of a one-dimensional Gaussian.
+    mu : backend array, shape (n,) or 0-D scalar array
+        Mean vector. A 0-D backend array is treated as a one-dimensional
+        Gaussian.
+    C : backend array, shape (n, n) or 0-D scalar array
+        Positive-definite covariance matrix. A 0-D backend array is treated as
+        the covariance of a one-dimensional Gaussian.
     check_validity : bool, optional
         If true, validate that ``C`` is positive definite.
 
