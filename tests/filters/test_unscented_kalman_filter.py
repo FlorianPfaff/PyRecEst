@@ -69,6 +69,41 @@ class UnscentedKalmanFilterTest(unittest.TestCase):
         pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
         reason="Not supported on this backend",
     )
+    def test_update_linear_rectangular_measurement(self):
+        kf = UnscentedKalmanFilter(
+            GaussianDistribution(array([0.0, 1.0]), diag(array([1.0, 2.0])))
+        )
+        kf.update_linear(array([1.0]), array([[1.0, 0.0]]), array([[0.5]]))
+
+        npt.assert_allclose(kf.get_point_estimate(), array([2.0 / 3.0, 1.0]))
+        npt.assert_allclose(
+            kf.filter_state.covariance(), diag(array([1.0 / 3.0, 2.0]))
+        )
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
+        reason="Not supported on this backend",
+    )
+    def test_update_nonlinear_scalar_measurement(self):
+        kf = UnscentedKalmanFilter(
+            GaussianDistribution(array([0.0, 1.0]), diag(array([1.0, 2.0])))
+        )
+
+        def hx(x):
+            return array([x[0] + x[1]])
+
+        kf.update_nonlinear(array([2.0]), hx, array([[0.5]]))
+
+        npt.assert_allclose(kf.get_point_estimate(), array([2.0 / 7.0, 11.0 / 7.0]))
+        npt.assert_allclose(
+            kf.filter_state.covariance(),
+            array([[5.0 / 7.0, -4.0 / 7.0], [-4.0 / 7.0, 6.0 / 7.0]]),
+        )
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
+        reason="Not supported on this backend",
+    )
     def test_predict_linear_2d(self):
         kf = UnscentedKalmanFilter(
             GaussianDistribution(array([0.0, 1.0]), diag(array([1.0, 2.0])))
