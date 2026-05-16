@@ -14,6 +14,7 @@ from pyrecest.distributions import (
     HypertoroidalDiracDistribution,
     HypertoroidalWrappedNormalDistribution,
     ToroidalDiracDistribution,
+    VonMisesDistribution,
 )
 
 from .test_abstract_dirac_distribution import TestAbstractDiracDistribution
@@ -31,6 +32,19 @@ class TestHypertoroidalDiracDistribution(TestAbstractDiracDistribution):
         self.assertIsInstance(self.twd, HypertoroidalDiracDistribution)
         npt.assert_array_almost_equal(self.twd.d, self.d)
         npt.assert_array_almost_equal(self.twd.w, self.w)
+
+    def test_from_distribution_sampling_1d(self):
+        n_particles = 5
+        vm = VonMisesDistribution(array(0.2), array(1.5))
+
+        wd = HypertoroidalDiracDistribution.from_distribution(vm, n_particles)
+
+        self.assertIsInstance(wd, HypertoroidalDiracDistribution)
+        self.assertEqual(wd.dim, 1)
+        self.assertEqual(wd.d.shape, (n_particles,))
+        self.assertEqual(wd.w.shape, (n_particles,))
+        npt.assert_array_almost_equal(wd.w, array([1.0 / n_particles] * n_particles))
+        npt.assert_array_almost_equal(wd.d, mod(wd.d, 2.0 * pi))
 
     def test_trigonometric_moment(self):
         m = self.twd.trigonometric_moment(1)
