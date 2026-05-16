@@ -72,9 +72,11 @@ class AbstractHypertoroidalDistribution(AbstractPeriodicDistribution):
             self.dim,
         ), "Shift vector must be of the same dimension as the distribution."
 
-        # Define the shifted PDF
+        # Define the shifted PDF. A positive shift moves mass forward on the
+        # hypertorus, hence the shifted density evaluates the original density
+        # at the inverse-shifted query point.
         def shifted_pdf(xs):
-            return self.pdf(mod(xs + shift_by, 2 * pi))
+            return self.pdf(mod(xs - shift_by, 2 * pi))
 
         # Create the shifted distribution
         shifted_distribution = CustomHypertoroidalDistribution(shifted_pdf, self.dim)
