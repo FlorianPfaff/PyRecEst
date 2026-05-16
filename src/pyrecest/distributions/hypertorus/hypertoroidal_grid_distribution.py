@@ -73,7 +73,18 @@ class HypertoroidalGridDistribution(
         enforce_pdf_nonnegative: bool = True,
         dim: int | None = None,
     ):
-        dim = grid_values.ndim
+        if dim is None:
+            if grid_type == "custom" and grid is not None:
+                # For custom grids, grid_values may be flat with one value per
+                # grid row, so grid_values.ndim is not a reliable manifold
+                # dimension. Infer the dimension from the grid coordinates.
+                dim = 1 if grid.ndim <= 1 else grid.shape[1]
+            else:
+                # Cartesian-product grid values are stored as an array whose
+                # number of axes is the hypertorus dimension.
+                dim = grid_values.ndim
+        elif dim <= 0:
+            raise ValueError("dim must be a positive integer.")
 
         # Initialize hypertoroidal base class
         AbstractHypertoroidalDistribution.__init__(self, dim)
