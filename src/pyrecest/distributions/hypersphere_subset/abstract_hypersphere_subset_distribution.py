@@ -330,7 +330,7 @@ class AbstractHypersphereSubsetDistribution(AbstractBoundedDomainDistribution):
             fangles_hellinger, self.dim
         )
 
-        return 0.5 * distance_integral
+        return sqrt(0.5 * distance_integral)
 
     def total_variation_distance_numerical(self, other, integration_boundaries=None):
         if integration_boundaries is None:
