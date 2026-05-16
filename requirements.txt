@@ -27,14 +27,14 @@ nvidia-cublas==13.1.0.3 ; python_version >= "3.11" and python_version < "3.15" a
 nvidia-cuda-cupti==13.0.85 ; python_version >= "3.11" and python_version < "3.15" and platform_system == "Linux" and (sys_platform == "linux" or sys_platform == "win32")
 nvidia-cuda-nvrtc==13.0.88 ; python_version >= "3.11" and python_version < "3.15" and platform_system == "Linux" and (sys_platform == "linux" or sys_platform == "win32")
 nvidia-cuda-runtime==13.0.96 ; python_version >= "3.11" and python_version < "3.15" and platform_system == "Linux" and (sys_platform == "linux" or sys_platform == "win32")
-nvidia-cudnn-cu13==9.19.0.56 ; python_version >= "3.11" and python_version < "3.15" and platform_system == "Linux"
+nvidia-cudnn-cu13==9.20.0.48 ; python_version >= "3.11" and python_version < "3.15" and platform_system == "Linux"
 nvidia-cufft==12.0.0.61 ; python_version >= "3.11" and python_version < "3.15" and platform_system == "Linux" and (sys_platform == "linux" or sys_platform == "win32")
 nvidia-cufile==1.15.1.6 ; python_version >= "3.11" and python_version < "3.15" and platform_system == "Linux" and sys_platform == "linux"
 nvidia-curand==10.4.0.35 ; python_version >= "3.11" and python_version < "3.15" and platform_system == "Linux" and (sys_platform == "linux" or sys_platform == "win32")
 nvidia-cusolver==12.0.4.66 ; python_version >= "3.11" and python_version < "3.15" and platform_system == "Linux" and (sys_platform == "linux" or sys_platform == "win32")
 nvidia-cusparse==12.6.3.3 ; python_version >= "3.11" and python_version < "3.15" and platform_system == "Linux" and (sys_platform == "linux" or sys_platform == "win32")
-nvidia-cusparselt-cu13==0.8.0 ; python_version >= "3.11" and python_version < "3.15" and platform_system == "Linux"
-nvidia-nccl-cu13==2.28.9 ; python_version >= "3.11" and python_version < "3.15" and platform_system == "Linux"
+nvidia-cusparselt-cu13==0.8.1 ; python_version >= "3.11" and python_version < "3.15" and platform_system == "Linux"
+nvidia-nccl-cu13==2.29.7 ; python_version >= "3.11" and python_version < "3.15" and platform_system == "Linux"
 nvidia-nvjitlink==13.0.88 ; python_version >= "3.11" and python_version < "3.15" and platform_system == "Linux" and (sys_platform == "linux" or sys_platform == "win32")
 nvidia-nvshmem-cu13==3.4.5 ; python_version >= "3.11" and python_version < "3.15" and platform_system == "Linux"
 nvidia-nvtx==13.0.85 ; python_version >= "3.11" and python_version < "3.15" and platform_system == "Linux" and (sys_platform == "linux" or sys_platform == "win32")
@@ -54,9 +54,9 @@ setuptools==81.0.0 ; python_version >= "3.11" and python_version < "3.15"
 shapely==2.1.2 ; python_version >= "3.11" and python_version < "3.15"
 six==1.17.0 ; python_version >= "3.11" and python_version < "3.15"
 sympy==1.14.0 ; python_version >= "3.11" and python_version < "3.15"
-torch==2.11.0 ; python_version >= "3.11" and python_version < "3.15"
+torch==2.12.0 ; python_version >= "3.11" and python_version < "3.15"
 tqdm==4.67.3 ; python_version >= "3.11" and python_version < "3.15"
-triton==3.6.0 ; python_version >= "3.11" and python_version < "3.15" and platform_system == "Linux"
+triton==3.7.0 ; python_version >= "3.11" and python_version < "3.15" and platform_system == "Linux"
 typing-extensions==4.15.0 ; python_version >= "3.11" and python_version < "3.15"
 tzdata==2026.1 ; python_version >= "3.11" and python_version < "3.15" and (sys_platform == "win32" or sys_platform == "emscripten")
 urllib3==2.7.0 ; python_version >= "3.11" and python_version < "3.15"
