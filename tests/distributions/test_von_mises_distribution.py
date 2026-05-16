@@ -34,6 +34,13 @@ class TestVonMisesDistribution(unittest.TestCase):
             ),
         )
 
+    def test_uniform_trigonometric_moments(self):
+        dist = VonMisesDistribution(2, 0)
+
+        npt.assert_allclose(dist.trigonometric_moment(0), array(1.0 + 0.0j))
+        npt.assert_allclose(dist.trigonometric_moment(1), array(0.0 + 0.0j))
+        npt.assert_allclose(dist.trigonometric_moment(2), array(0.0 + 0.0j))
+
     def test_plot(self):
         matplotlib.pyplot.close("all")
         matplotlib.use("Agg")
