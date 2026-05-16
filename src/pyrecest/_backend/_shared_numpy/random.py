@@ -25,5 +25,27 @@ multivariate_normal = _modify_func_default_dtype(
 )
 
 
-def choice(*args, **kwargs):
-    return _np.random.default_rng().choice(*args, **kwargs)
+def choice(a, size=None, replace=True, p=None, axis=0, shuffle=True):
+    """Draw samples using NumPy's seeded global random state.
+
+    ``numpy.random.Generator.choice`` supports sampling rows from a multidimensional
+    array, but it is independent of ``numpy.random.seed`` when a fresh generator is
+    created for every call.  The backend exposes ``random.seed``/``get_state`` from
+    ``numpy.random``, so this wrapper samples indices through the seeded legacy RNG
+    and then gathers along ``axis`` for multidimensional inputs.
+    """
+    del shuffle  # ``numpy.random.choice`` has no equivalent shuffle argument.
+
+    a_array = _np.asarray(a)
+    if a_array.ndim == 0:
+        return _np.random.choice(a, size=size, replace=replace, p=p)
+
+    axis = axis % a_array.ndim
+    if a_array.ndim == 1 and axis == 0:
+        return _np.random.choice(a_array, size=size, replace=replace, p=p)
+
+    if p is not None:
+        p = _np.asarray(p)
+
+    indices = _np.random.choice(a_array.shape[axis], size=size, replace=replace, p=p)
+    return _np.take(a_array, indices, axis=axis)
