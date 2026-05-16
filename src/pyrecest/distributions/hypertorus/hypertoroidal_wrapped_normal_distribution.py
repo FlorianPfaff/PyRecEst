@@ -102,9 +102,7 @@ class HypertoroidalWrappedNormalDistribution(AbstractHypertoroidalDistribution):
         """
         assert shift_by.shape == (self.dim,)
 
-        hd = self
-        hd.mu = mod(self.mu + shift_by, 2 * pi)
-        return hd
+        return self.set_mean(self.mu + shift_by)
 
     def sample(self, n: Union[int, int32, int64]):
         if n <= 0:
