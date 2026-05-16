@@ -3,7 +3,18 @@ import warnings
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import asarray, atleast_1d, ndim, reshape, shape, sum, zeros
+from pyrecest.backend import (
+    asarray,
+    atleast_1d,
+    concatenate,
+    empty,
+    ndim,
+    random,
+    reshape,
+    shape,
+    sum,
+    zeros,
+)
 
 from ..hypertorus.hypertoroidal_mixture import HypertoroidalMixture
 from .abstract_circular_distribution import AbstractCircularDistribution
@@ -80,3 +91,26 @@ class CircularMixture(AbstractCircularDistribution, HypertoroidalMixture):
         if scalar_input:
             return p[0]
         return p
+
+    def sample(self, n):
+        """Draw samples from the circular mixture.
+
+        The generic mixture sampler stores samples in an array of shape
+        ``(n, input_dim)``. For one-dimensional circular distributions, component
+        samplers conventionally return a flat angle vector with shape ``(n,)``.
+        Returning a flat vector here preserves that circular API and avoids
+        assigning ``(k,)`` component samples into ``(k, 1)`` slices.
+        """
+        occurrences = random.multinomial(n, self.w)
+        samples = []
+
+        for i, occ in enumerate(occurrences):
+            occ_val = occ.item() if hasattr(occ, "item") else int(occ)
+            if occ_val != 0:
+                sample_i = self.dists[i].sample(occ_val)
+                samples.append(reshape(atleast_1d(sample_i), (-1,)))
+
+        if not samples:
+            return empty((0,))
+
+        return concatenate(samples, axis=0)
