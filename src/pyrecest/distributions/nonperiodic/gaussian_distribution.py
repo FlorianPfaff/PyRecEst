@@ -1,4 +1,5 @@
 import copy
+from numbers import Integral
 
 # pylint: disable=no-name-in-module
 import pyrecest.backend
@@ -200,9 +201,16 @@ class GaussianDistribution(AbstractLinearDistribution):
         dimensions : int or iterable of int
             Zero-based state dimensions to remove from the distribution.
         """
-        if isinstance(dimensions, int):  # Make it iterable if single integer
+        if isinstance(dimensions, Integral):  # Make it iterable if single integer
             dimensions = [dimensions]
-        assert all(dim <= self.dim for dim in dimensions)
+        else:
+            dimensions = list(dimensions)
+
+        assert all(
+            isinstance(dim, Integral) and 0 <= dim < self.dim for dim in dimensions
+        ), "Dimensions must be valid zero-based integer indices"
+
+        dimensions = [int(dim) for dim in dimensions]
         remaining_dims = [i for i in range(self.dim) if i not in dimensions]
         new_mu = self.mu[remaining_dims]
         new_C = self.C[remaining_dims][
