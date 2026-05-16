@@ -180,8 +180,8 @@ class AbstractHypertoroidalDistribution(AbstractPeriodicDistribution):
             x = array(args)
             return (sqrt(self.pdf(x)) - sqrt(other.pdf(x))) ** 2
 
-        dist = 0.5 * self.integrate_fun_over_domain(hellinger_dist_fun, self.dim)
-        return dist
+        squared_dist = 0.5 * self.integrate_fun_over_domain(hellinger_dist_fun, self.dim)
+        return sqrt(squared_dist)
 
     def total_variation_distance_numerical(self, other):
         assert isinstance(other, AbstractHypertoroidalDistribution)
