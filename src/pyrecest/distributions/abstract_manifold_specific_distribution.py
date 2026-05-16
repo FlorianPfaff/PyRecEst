@@ -156,10 +156,11 @@ class AbstractManifoldSpecificDistribution(ABC):
             pdfx_new = self.pdf(x_new)
             a = pdfx_new / pdfx
             if a.item() > 1 or a.item() > random.rand(1):
-                s[i, :] = x_new.squeeze()
                 x = x_new
                 pdfx = pdfx_new
-                i += 1
+            # Record every chain step; rejected proposals keep the current state.
+            s[i, :] = x.squeeze()
+            i += 1
 
         relevant_samples = s[burn_in::skipping, :]
         return squeeze(relevant_samples)
