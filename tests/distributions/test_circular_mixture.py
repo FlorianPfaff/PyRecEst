@@ -55,6 +55,32 @@ class TestCircularMixture(unittest.TestCase):
 
         self.assertEqual(samples.shape, (5,))
 
+    def test_init_accepts_list_weights_and_keeps_parent_normalization(self):
+        with self.assertWarns(UserWarning):
+            mixture = CircularMixture([self.dist1, self.dist2], [1.0, 3.0])
+
+        npt.assert_allclose(mixture.w, array([0.25, 0.75]))
+
+    def test_init_keeps_parent_zero_weight_pruning(self):
+        with self.assertWarns(UserWarning):
+            mixture = CircularMixture([self.dist1, self.dist2], array([1.0, 0.0]))
+
+        self.assertEqual(len(mixture.dists), 1)
+        npt.assert_allclose(mixture.w, array([1.0]))
+
+        xs = array([0.0, 0.5, 1.0])
+        npt.assert_allclose(mixture.pdf(xs), self.dist1.pdf(xs))
+
+    def test_init_keeps_parent_distribution_copies(self):
+        mixture = CircularMixture([self.dist1, self.dist2], self.weights)
+
+        self.assertIsNot(mixture.dists[0], self.dist1)
+        self.assertIsNot(mixture.dists[1], self.dist2)
+
+    def test_init_rejects_column_weight_vector(self):
+        with self.assertRaises(ValueError):
+            CircularMixture([self.dist1, self.dist2], array([[0.25], [0.75]]))
+
 
 if __name__ == "__main__":
     unittest.main()
