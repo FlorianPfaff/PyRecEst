@@ -12,7 +12,6 @@ from pyrecest.backend import (
     random,
     reshape,
     shape,
-    sum,
     zeros,
 )
 
@@ -36,27 +35,29 @@ class CircularMixture(AbstractCircularDistribution, HypertoroidalMixture):
             w: The weights of the distributions. They must have the same shape as 'dists'
                 and the sum of all weights must be 1.
         """
-        HypertoroidalMixture.__init__(self, dists, w)
-        AbstractCircularDistribution.__init__(self)
         if not all(isinstance(cd, AbstractCircularDistribution) for cd in dists):
             raise TypeError(
                 "All elements of 'dists' must be of type AbstractCircularDistribution."
             )
 
-        if shape(dists) != shape(w):
+        weights = None if w is None else asarray(w)
+
+        if weights is not None and (
+            ndim(weights) != 1 or shape(weights)[0] != len(dists)
+        ):
             raise ValueError("'dists' and 'w' must have the same shape.")
 
-        if all(isinstance(cd, CircularFourierDistribution) for cd in dists):
+        HypertoroidalMixture.__init__(self, dists, weights)
+        AbstractCircularDistribution.__init__(self)
+
+        if all(isinstance(cd, CircularFourierDistribution) for cd in self.dists):
             warnings.warn(
                 "Warning: Mixtures of Fourier distributions can be built by combining the Fourier coefficients so using a mixture may not be necessary"
             )
-        elif all(isinstance(cd, CircularDiracDistribution) for cd in dists):
+        elif all(isinstance(cd, CircularDiracDistribution) for cd in self.dists):
             warnings.warn(
                 "Warning: Mixtures of WDDistributions can usually be combined into one WDDistribution."
             )
-
-        self.dists = dists
-        self.w = w / sum(w)
 
     def pdf(self, xs):
         """Evaluate the circular-mixture density.
