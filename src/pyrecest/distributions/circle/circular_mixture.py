@@ -3,7 +3,7 @@ import warnings
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import shape, sum
+from pyrecest.backend import asarray, atleast_1d, ndim, reshape, shape, sum, zeros
 
 from ..hypertorus.hypertoroidal_mixture import HypertoroidalMixture
 from .abstract_circular_distribution import AbstractCircularDistribution
@@ -46,3 +46,37 @@ class CircularMixture(AbstractCircularDistribution, HypertoroidalMixture):
 
         self.dists = dists
         self.w = w / sum(w)
+
+    def pdf(self, xs):
+        """Evaluate the circular-mixture density.
+
+        Circular distributions in this package commonly accept a one-dimensional
+        array of angles with shape ``(n,)``. The generic mixture implementation
+        expects the last axis to encode the manifold dimension, which rejects
+        such arrays for one-dimensional circular distributions and can broadcast
+        incorrectly for ``(n, 1)`` column vectors.
+        """
+        xs = asarray(xs)
+        xs_ndim = ndim(xs)
+
+        if xs_ndim == 0:
+            xs_eval = xs
+            scalar_input = True
+        elif xs_ndim == 1:
+            xs_eval = xs
+            scalar_input = False
+        elif xs_ndim == 2 and shape(xs)[-1] == 1:
+            xs_eval = reshape(xs, (-1,))
+            scalar_input = False
+        else:
+            raise AssertionError("Dimension mismatch")
+
+        p = zeros(shape(atleast_1d(xs_eval)))
+
+        for i, dist in enumerate(self.dists):
+            component_pdf = reshape(atleast_1d(dist.pdf(xs_eval)), shape(p))
+            p += self.w[i] * component_pdf
+
+        if scalar_input:
+            return p[0]
+        return p
