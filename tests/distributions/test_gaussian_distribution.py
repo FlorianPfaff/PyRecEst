@@ -1,13 +1,35 @@
 import unittest
+from unittest.mock import patch
 
 import numpy.testing as npt
 import pyrecest.backend
 import scipy
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import allclose, array, diag, linalg, linspace, matvec, to_numpy
+from pyrecest.backend import (
+    allclose,
+    array,
+    diag,
+    linalg,
+    linspace,
+    matvec,
+    to_numpy,
+    zeros,
+)
 from pyrecest.distributions import GaussianDistribution
+from pyrecest.distributions.nonperiodic.abstract_linear_distribution import (
+    AbstractLinearDistribution,
+)
 from scipy.stats import multivariate_normal
+
+
+class ConstantLinearDistribution(AbstractLinearDistribution):
+    def pdf(self, xs):
+        del xs
+        return array(1.0)
+
+    def mean(self):
+        return zeros(self.dim)
 
 
 class GaussianDistributionTest(unittest.TestCase):
@@ -133,6 +155,42 @@ class GaussianDistributionTest(unittest.TestCase):
 
         with self.assertRaises(AssertionError):
             g.marginalize_out([0, 2])
+
+    def test_default_linear_metropolis_hastings_proposal_shape(self):
+        dist = ConstantLinearDistribution(2)
+
+        samples = dist.sample_metropolis_hastings(
+            2, burn_in=0, skipping=1, start_point=zeros(2)
+        )
+
+        self.assertEqual(samples.shape, (2, 2))
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ == "jax",
+        reason="JAX default proposals are keyed and use jax.random directly.",
+    )
+    def test_default_linear_metropolis_hastings_proposal_is_zero_mean_random_walk(
+        self,
+    ):
+        dist = ConstantLinearDistribution(2)
+        calls = []
+
+        def fake_multivariate_normal(mean, cov, size=()):
+            calls.append((mean, cov, size))
+            return array([0.25, -0.5])
+
+        with patch(
+            "pyrecest.distributions.nonperiodic.abstract_linear_distribution."
+            "random.multivariate_normal",
+            fake_multivariate_normal,
+        ):
+            samples = dist.sample_metropolis_hastings(
+                2, burn_in=0, skipping=1, start_point=array([1.0, 2.0])
+            )
+
+        self.assertEqual(calls[0][2], ())
+        self.assertTrue(allclose(calls[0][0], zeros(2)))
+        npt.assert_allclose(to_numpy(samples[0]), to_numpy(array([1.25, 1.5])))
 
 
 if __name__ == "__main__":
