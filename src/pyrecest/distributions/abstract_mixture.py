@@ -14,6 +14,7 @@ from pyrecest.backend import (
     int64,
     ones,
     random,
+    reshape,
     sum,
     zeros,
 )
@@ -73,6 +74,17 @@ class AbstractMixture(AbstractDistributionType):
     def input_dim(self) -> int:
         return self.dists[0].input_dim
 
+    def _as_sample_matrix(self, samples, n_samples: int):
+        samples = asarray(samples)
+
+        if self.input_dim == 1 and samples.ndim == 0:
+            return reshape(samples, (1, 1))
+
+        if self.input_dim == 1 and samples.ndim == 1:
+            return reshape(samples, (n_samples, 1))
+
+        return pyrecest.backend.atleast_2d(samples)
+
     def sample(self, n: Union[int, int32, int64]):
         occurrences = random.multinomial(n, self.w)
         if pyrecest.backend.__backend_name__ == "jax":
@@ -84,7 +96,7 @@ class AbstractMixture(AbstractDistributionType):
                         sample_i = self.dists[i].sample(occ_val)
                     except (NotImplementedError, AssertionError, ValueError, TypeError):
                         sample_i = self.dists[i].sample_metropolis_hastings(occ_val)
-                    sample_i = pyrecest.backend.atleast_2d(sample_i)
+                    sample_i = self._as_sample_matrix(sample_i, occ_val)
                     samples.append(sample_i)
             if not samples:
                 return empty((0, self.input_dim))
@@ -95,7 +107,8 @@ class AbstractMixture(AbstractDistributionType):
         for i, occ in enumerate(occurrences):
             occ_val = occ.item() if hasattr(occ, "item") else int(occ)
             if occ_val != 0:
-                s[count : count + occ_val] = self.dists[i].sample(occ_val)  # noqa: E203
+                sample_i = self._as_sample_matrix(self.dists[i].sample(occ_val), occ_val)
+                s[count : count + occ_val] = sample_i  # noqa: E203
                 count += occ_val
 
         return s
