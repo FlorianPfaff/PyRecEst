@@ -137,10 +137,10 @@ class HypertoroidalDiracDistribution(
     def marginalize_out(self, dimensions: int | list[int]):
         from ..circle.circular_dirac_distribution import CircularDiracDistribution
 
-        try:
-            dimensions = list(dimensions)
-        except TypeError:
+        if isinstance(dimensions, int):
             dimensions = [dimensions]
+        else:
+            dimensions = list(dimensions)
 
         dimensions = [int(dim) for dim in dimensions]
         dimensions_to_remove = set(dimensions)
