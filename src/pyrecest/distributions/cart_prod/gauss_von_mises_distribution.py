@@ -233,23 +233,27 @@ class GaussVonMisesDistribution(AbstractHypercylindricalDistribution):
 
         # Column 0: origin (all zeros) - N00
         # Columns 1-2: Neta0 (+/-eta on the periodic axis)
-        d[lin_dim, 1] = -eta
-        d[lin_dim, 2] = eta
+        d[0, 1] = -eta
+        d[0, 2] = eta
         # Columns 3..n_pts-1: Nxi0 (+/-xi on each linear axis)
         for i in range(lin_dim):
-            d[i, 3 + 2 * i] = -xi
-            d[i, 3 + 2 * i + 1] = xi
+            row = i + 1
+            d[row, 3 + 2 * i] = -xi
+            d[row, 3 + 2 * i + 1] = xi
 
         w = full((n_pts,), wxi0)
         w[0] = w00
         w[1] = weta0
         w[2] = weta0
 
-        # Transform back to original parameterisation
-        lin_part = d[1:, :]  # (linD, n_pts)
-        theta_vals = self.get_theta(lin_part)
+        # Transform back to original parameterisation.  The linear coordinates in
+        # d[1:, :] are standardized coordinates at this stage, whereas get_theta
+        # expects linear coordinates in the original parameterisation.
+        standardized_lin_part = d[1:, :]  # (linD, n_pts)
+        transformed_lin_part = self.A @ standardized_lin_part + self.mu.reshape(-1, 1)
+        theta_vals = self.get_theta(transformed_lin_part)
         d[0, :] = mod(d[0, :] + theta_vals, 2.0 * pi)
-        d[1:, :] = self.A @ lin_part + self.mu.reshape(-1, 1)
+        d[1:, :] = transformed_lin_part
 
         return array(d), array(w)
 
