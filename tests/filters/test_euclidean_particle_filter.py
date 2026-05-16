@@ -21,6 +21,18 @@ class EuclideanParticleFilterTest(unittest.TestCase):
         self.forced_mean = array([1.0, 2.0, 3.0])
         self.pf.filter_state = self.prior
 
+    def test_prediction_accepts_in_place_set_mean_noise(self):
+        pf = EuclideanParticleFilter(n_particles=3, dim=3)
+        particles = array([[0.0, 0.0, 0.0], [1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
+        noise_particles = array([[0.0, 0.0, 0.0]])
+        noise = LinearDiracDistribution(noise_particles)
+        pf.filter_state = LinearDiracDistribution(particles)
+
+        pf.predict_identity(noise)
+
+        npt.assert_allclose(pf.filter_state.d, particles)
+        npt.assert_allclose(noise.d, noise_particles)
+
     def test_predict_update_cycle_3d(self):
         for _ in range(50):
             self.pf.predict_identity(GaussianDistribution(zeros(3), self.C_prior))
