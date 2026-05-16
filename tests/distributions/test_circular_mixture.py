@@ -48,6 +48,13 @@ class TestCircularMixture(unittest.TestCase):
         with self.assertRaises(AssertionError):
             self.mixture.pdf(array([[0.0, 0.5, 1.0]]))
 
+    def test_sample_returns_vector_of_angles(self):
+        mixture = CircularMixture([self.dist1], array([1.0]))
+
+        samples = mixture.sample(5)
+
+        self.assertEqual(samples.shape, (5,))
+
 
 if __name__ == "__main__":
     unittest.main()
