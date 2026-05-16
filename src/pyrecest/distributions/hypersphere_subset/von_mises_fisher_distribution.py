@@ -11,6 +11,7 @@ from pyrecest.backend import (
     all,
     arccos,
     array,
+    clip,
     cos,
     exp,
     int32,
@@ -23,7 +24,7 @@ from pyrecest.backend import (
     sinh,
     zeros,
 )
-from scipy.special import iv
+from scipy.special import iv, ive
 
 from .abstract_hyperspherical_distribution import AbstractHypersphericalDistribution
 
@@ -123,15 +124,25 @@ class VonMisesFisherDistribution(AbstractHypersphericalDistribution):
 
     def sample_deterministic(self):
         """Return deterministic sigma points matched to the mean direction."""
-        samples = zeros((self.dim + 1, self.dim * 2 + 1))
-        samples[0, 0] = 1
-        m1 = iv(self.dim / 2, self.kappa, 1) / iv(self.dim / 2 + 1, self.kappa, 1)
+        n_samples = self.dim * 2 + 1
+        samples = zeros((self.input_dim, n_samples))
+        samples[0, 0] = 1.0
+
+        mean_res_length = self.a_d(self.input_dim, self.kappa)
+        cos_alpha = clip(
+            (n_samples * mean_res_length - 1.0) / (n_samples - 1),
+            -1.0,
+            1.0,
+        )
+        alpha = arccos(cos_alpha)
         for i in range(self.dim):
-            alpha = arccos(((self.dim * 2 + 1) * m1 - 1) / (self.dim * 2))
-            samples[2 * i, 0] = cos(alpha)
-            samples[2 * i + 1, 0] = cos(alpha)
-            samples[2 * i, i + 1] = sin(alpha)
-            samples[2 * i + 1, i + 1] = -sin(alpha)
+            positive_col = 2 * i + 1
+            negative_col = positive_col + 1
+            tangent_row = i + 1
+            samples[0, positive_col] = cos(alpha)
+            samples[0, negative_col] = cos(alpha)
+            samples[tangent_row, positive_col] = sin(alpha)
+            samples[tangent_row, negative_col] = -sin(alpha)
 
         Q = self.get_rotation_matrix()
         samples = Q @ samples
@@ -226,8 +237,8 @@ class VonMisesFisherDistribution(AbstractHypersphericalDistribution):
     @staticmethod
     def a_d(d: Union[int, int32, int64], kappa):
         """Return the ratio of modified Bessel functions used by vMF moments."""
-        bessel1 = array(iv(d / 2, kappa))
-        bessel2 = array(iv(d / 2 - 1, kappa))
+        bessel1 = array(ive(d / 2, kappa))
+        bessel2 = array(ive(d / 2 - 1, kappa))
         if isnan(bessel1) or isnan(bessel2):
             print(f"Bessel functions returned NaN for d={d}, kappa={kappa}")
         return bessel1 / bessel2
