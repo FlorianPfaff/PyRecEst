@@ -120,19 +120,23 @@ class AbstractLinearDistribution(AbstractManifoldSpecificDistribution):
             if pyrecest.backend.__backend_name__ == "jax":
                 from jax import random as jax_random  # pylint: disable=import-error
 
-                def proposal(key, x):
+                def jax_proposal(key, x):
                     noise = jax_random.multivariate_normal(
                         key, zeros(self.dim), proposal_covariance, shape=()
                     )
                     return x + reshape(noise, x.shape)
 
+                proposal = jax_proposal
+
             else:
 
-                def proposal(x):
+                def numpy_proposal(x):
                     noise = random.multivariate_normal(
                         zeros(self.dim), proposal_covariance, size=()
                     )
                     return x + reshape(noise, x.shape)
+
+                proposal = numpy_proposal
 
         # pylint: disable=duplicate-code
         return AbstractManifoldSpecificDistribution.sample_metropolis_hastings(
