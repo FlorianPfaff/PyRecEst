@@ -118,6 +118,7 @@ jobs:
       }}
     permissions:
       contents: write
+      pull-requests: read
     env:
       VERSION: ${{ needs.check_if_tag_exists.outputs.tag_version }}
       DRY_RUN: ${{ needs.check_if_tag_exists.outputs.dry_run }}
@@ -167,6 +168,7 @@ jobs:
           head-ref: ${{ steps.head_ref.outputs.ref }}
           instructions: .github/release-notes-instructions.md
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
           COPILOT_TIMEOUT_MS: "900000"
           COPILOT_HEARTBEAT_MS: "30000"
