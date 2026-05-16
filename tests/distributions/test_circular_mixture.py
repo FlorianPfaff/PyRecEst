@@ -15,7 +15,9 @@ class TestCircularMixture(unittest.TestCase):
         self.mixture = CircularMixture([self.dist1, self.dist2], self.weights)
 
     def expected_pdf(self, xs):
-        return self.weights[0] * self.dist1.pdf(xs) + self.weights[1] * self.dist2.pdf(xs)
+        return self.weights[0] * self.dist1.pdf(xs) + self.weights[1] * self.dist2.pdf(
+            xs
+        )
 
     def test_pdf_accepts_vector_of_angles(self):
         xs = array([0.0, 0.5, 1.0])
