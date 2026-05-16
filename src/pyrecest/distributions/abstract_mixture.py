@@ -7,6 +7,7 @@ import pyrecest.backend
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
 from pyrecest.backend import (
+    array,
     asarray,
     empty,
     int32,
