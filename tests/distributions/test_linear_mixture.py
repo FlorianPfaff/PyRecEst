@@ -7,7 +7,9 @@ import numpy.testing as npt
 from pyrecest.backend import array, column_stack, diag, linspace, meshgrid, reshape
 from pyrecest.distributions import GaussianDistribution
 from pyrecest.distributions.nonperiodic.gaussian_mixture import GaussianMixture
-from pyrecest.distributions.nonperiodic.linear_dirac_distribution import LinearDiracDistribution
+from pyrecest.distributions.nonperiodic.linear_dirac_distribution import (
+    LinearDiracDistribution,
+)
 from pyrecest.distributions.nonperiodic.linear_mixture import LinearMixture
 
 
