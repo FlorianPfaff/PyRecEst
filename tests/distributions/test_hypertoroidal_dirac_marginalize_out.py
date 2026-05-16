@@ -1,7 +1,6 @@
 import unittest
 
 import numpy.testing as npt
-
 from pyrecest.backend import array, pi, random, sum
 from pyrecest.distributions import (
     CircularDiracDistribution,
