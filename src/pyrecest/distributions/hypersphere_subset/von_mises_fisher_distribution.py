@@ -12,6 +12,7 @@ from pyrecest.backend import (
     arccos,
     array,
     clip,
+    concatenate,
     cos,
     exp,
     int32,
@@ -19,9 +20,11 @@ from pyrecest.backend import (
     isnan,
     linalg,
     ndim,
+    ones,
     pi,
     sin,
     sinh,
+    stack,
     zeros,
 )
 from scipy.special import iv, ive
@@ -125,8 +128,6 @@ class VonMisesFisherDistribution(AbstractHypersphericalDistribution):
     def sample_deterministic(self):
         """Return deterministic sigma points matched to the mean direction."""
         n_samples = self.dim * 2 + 1
-        samples = zeros((self.input_dim, n_samples))
-        samples[0, 0] = 1.0
 
         mean_res_length = self.a_d(self.input_dim, self.kappa)
         cos_alpha = clip(
@@ -135,14 +136,23 @@ class VonMisesFisherDistribution(AbstractHypersphericalDistribution):
             1.0,
         )
         alpha = arccos(cos_alpha)
+        sin_alpha = sin(alpha)
+        cos_alpha_val = cos(alpha)
+
+        first_row = concatenate((array([1.0]), cos_alpha_val * ones(2 * self.dim)))
+        tangent_rows = []
         for i in range(self.dim):
-            positive_col = 2 * i + 1
-            negative_col = positive_col + 1
-            tangent_row = i + 1
-            samples[0, positive_col] = cos(alpha)
-            samples[0, negative_col] = cos(alpha)
-            samples[tangent_row, positive_col] = sin(alpha)
-            samples[tangent_row, negative_col] = -sin(alpha)
+            tangent_rows.append(
+                concatenate(
+                    (
+                        array([0.0]),
+                        zeros(2 * i),
+                        array([sin_alpha, -sin_alpha]),
+                        zeros(2 * (self.dim - i - 1)),
+                    )
+                )
+            )
+        samples = stack([first_row] + tangent_rows, axis=0)
 
         Q = self.get_rotation_matrix()
         samples = Q @ samples
@@ -150,8 +160,7 @@ class VonMisesFisherDistribution(AbstractHypersphericalDistribution):
 
     def get_rotation_matrix(self):
         """Return an orthogonal matrix whose first column is ``mu``."""
-        M = zeros((self.dim + 1, self.dim + 1))
-        M[:, 0] = self.mu
+        M = concatenate((self.mu[:, None], zeros((self.dim + 1, self.dim))), axis=1)
         Q, R = linalg.qr(M)
         if R[0, 0] < 0:
             Q = -Q

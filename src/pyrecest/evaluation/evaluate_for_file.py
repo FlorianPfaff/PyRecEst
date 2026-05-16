@@ -26,7 +26,7 @@ def evaluate_for_file(
     np.ndarray,
     np.ndarray,
     np.ndarray,
-    np.ndarray[np.ndarray],
+    np.ndarray,
 ]:
     data = np.load(input_file_name, allow_pickle=True).item()
 
