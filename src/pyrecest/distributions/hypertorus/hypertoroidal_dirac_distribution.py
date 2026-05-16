@@ -71,7 +71,9 @@ class HypertoroidalDiracDistribution(
         if n_particles <= 0:
             raise ValueError("n_particles must be a positive integer.")
         return HypertoroidalDiracDistribution(
-            distribution.sample(n_particles), ones(n_particles) / n_particles
+            distribution.sample(n_particles),
+            ones(n_particles) / n_particles,
+            dim=distribution.dim,
         )
 
     def plot(self, resolution=128, **kwargs):
