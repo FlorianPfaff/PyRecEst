@@ -12,9 +12,10 @@ class PolygonWithSampling(Polygon):  # pylint: disable=abstract-method
     __slots__ = Polygon.__slots__
 
     def __new__(cls, shell=None, holes=None):  # nosec
+        # pylint: disable-next=unexpected-keyword-arg,no-value-for-parameter
         polygon = super().__new__(
             cls, shell=shell, holes=holes
-        )  # nosec  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
+        )  # nosec
         polygon.__class__ = cls
         return polygon
 
