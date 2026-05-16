@@ -73,12 +73,31 @@ class HypertoroidalGridDistribution(
         enforce_pdf_nonnegative: bool = True,
         dim: int | None = None,
     ):
+        if grid_type == "custom":
+            if grid is None:
+                raise ValueError("Custom grids require grid coordinates.")
+
+            # Internally, custom hypertoroidal grids are treated as a coordinate
+            # matrix with shape (n_grid_points, dim). A flat custom grid is a
+            # natural way to specify a one-dimensional torus, but methods such
+            # as get_closest_point() and value_of_closest() index self.grid as
+            # self.grid[None, :, :]. Normalize the flat 1-D case here so the
+            # rest of the implementation can rely on a single grid convention.
+            grid_ndim = ndim(grid)
+            if grid_ndim <= 1:
+                grid = reshape(grid, (-1, 1))
+            elif grid_ndim != 2:
+                raise ValueError(
+                    "Custom grid must have shape (n_grid_points,) or "
+                    "(n_grid_points, dim)."
+                )
+
         if dim is None:
             if grid_type == "custom" and grid is not None:
                 # For custom grids, grid_values may be flat with one value per
                 # grid row, so grid_values.ndim is not a reliable manifold
                 # dimension. Infer the dimension from the grid coordinates.
-                dim = 1 if grid.ndim <= 1 else grid.shape[1]
+                dim = grid.shape[1]
             else:
                 # Cartesian-product grid values are stored as an array whose
                 # number of axes is the hypertorus dimension.
@@ -109,6 +128,8 @@ class HypertoroidalGridDistribution(
         ----------
         x : array_like, shape (dim,) or (1, dim)
         """
+        if ndim(xs) == 1:
+            xs = reshape(xs, (1, -1))
         if xs.shape[1] != self.dim:
             raise ValueError(
                 f"Expected point of dimension {self.dim}, got {xs.shape[1]}"
