@@ -2,7 +2,7 @@
 from typing import Callable
 
 import pyrecest.backend
-from pyrecest.backend import atleast_1d, zeros
+from pyrecest.backend import asarray, atleast_1d, float64, reshape, zeros
 from pyrecest.distributions import GaussianDistribution
 from pyrecest.models import AdditiveNoiseMeasurementModel, AdditiveNoiseTransitionModel
 from pyrecest.sampling.sigma_points import MerweScaledSigmaPoints
@@ -22,15 +22,19 @@ class UnscentedKalmanFilter(AbstractFilter, EuclideanFilterMixin):
         fx: Callable = lambda x, dt: x,
         hx: Callable = lambda x: x,
         points=None,
+        dim_z: int | None = None,
     ):
         if isinstance(initial_state, GaussianDistribution):
             dim_x = initial_state.dim
+            initial_mean = initial_state.mu
         elif isinstance(initial_state, tuple) and len(initial_state) == 2:
             dim_x = len(initial_state[0])
+            initial_mean = initial_state[0]
         else:
             raise ValueError(
                 "initial_state must be a GaussianDistribution or a tuple of (mean, covariance)"
             )
+        dim_z = reshape(asarray(hx(initial_mean), dtype=float64), (-1,)).shape[0] if dim_z is None else dim_z
 
         if points is None:
             # Standard settings for Gaussian approximations
@@ -38,7 +42,7 @@ class UnscentedKalmanFilter(AbstractFilter, EuclideanFilterMixin):
 
         EuclideanFilterMixin.__init__(self)
         bfukf = BayesianFiltersUKF(
-            _UKFModel(dim_x=dim_x, dim_z=dim_x, dt=dt, hx=hx, fx=fx, points=points)
+            _UKFModel(dim_x=dim_x, dim_z=dim_z, dt=dt, hx=hx, fx=fx, points=points)
         )
         AbstractFilter.__init__(self, bfukf)
 
