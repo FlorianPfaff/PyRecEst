@@ -4,9 +4,10 @@ import unittest
 import pyrecest.backend
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import allclose, arange, array, log, mod, pi
+from pyrecest.backend import allclose, arange, array, cos, log, mod, pi, sqrt
 from pyrecest.distributions import (
     CircularUniformDistribution,
+    CustomCircularDistribution,
     VonMisesDistribution,
     WrappedNormalDistribution,
 )
@@ -133,6 +134,26 @@ class AbstractCircularDistributionTest(unittest.TestCase):
                 dist.pdf(original_mode),
                 rtol=1e-12,
             )
+        )
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
+        reason="Not supported on this backend",
+    )
+    def test_hellinger_distance_numerical_returns_distance_not_squared(self):
+        """Check against a case with known nonzero Hellinger distance."""
+        uniform = CircularUniformDistribution()
+        cosine_density = CustomCircularDistribution(
+            lambda xs: (1.0 + cos(xs)) / (2.0 * pi)
+        )
+
+        # Affinity for p=1/(2*pi), q=(1+cos(x))/(2*pi):
+        # int sqrt(p*q) dx = 2*sqrt(2)/pi.
+        expected = sqrt(1.0 - 2.0 * sqrt(2.0) / pi)
+
+        self.assertTrue(allclose(cosine_density.integrate(), 1.0, atol=1e-8))
+        self.assertTrue(
+            allclose(uniform.hellinger_distance_numerical(cosine_density), expected)
         )
 
 
