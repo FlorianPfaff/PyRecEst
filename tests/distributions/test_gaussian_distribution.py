@@ -120,6 +120,20 @@ class GaussianDistributionTest(unittest.TestCase):
             )
         )
 
+    def test_marginalize_out_rejects_invalid_dimensions(self):
+        mu = array([1.0, 2.0])
+        C = array([[1.1, 0.4], [0.4, 0.9]])
+        g = GaussianDistribution(mu, C)
+
+        with self.assertRaises(AssertionError):
+            g.marginalize_out(-1)
+
+        with self.assertRaises(AssertionError):
+            g.marginalize_out(2)
+
+        with self.assertRaises(AssertionError):
+            g.marginalize_out([0, 2])
+
 
 if __name__ == "__main__":
     unittest.main()
