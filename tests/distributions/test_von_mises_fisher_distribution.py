@@ -5,7 +5,7 @@ import pyrecest.backend
 from parameterized import parameterized
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import allclose, array, linalg, sqrt
+from pyrecest.backend import allclose, array, linalg, ones, sqrt
 from pyrecest.distributions import VonMisesFisherDistribution
 from pyrecest.distributions.hypersphere_subset.hyperspherical_dirac_distribution import (
     HypersphericalDiracDistribution,
@@ -235,6 +235,35 @@ class TestVonMisesFisherDistribution(unittest.TestCase):
         vmf = VonMisesFisherDistribution.from_distribution(dirac_dist)
 
         npt.assert_allclose(dirac_dist.mean(), vmf.mean())
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ == "jax",
+        "Test not supported for this backend",
+    )
+    @parameterized.expand(
+        [
+            ("s2", array([1.0, 2.0, 3.0]), 2.0),
+            ("s3", array([1.0, 2.0, 3.0, 4.0]), 0.5),
+        ]
+    )
+    def test_sample_deterministic_matches_mean_resultant_vector(self, _, mu, kappa):
+        mu = mu / linalg.norm(mu)
+        vmf = VonMisesFisherDistribution(mu, kappa)
+
+        samples = vmf.sample_deterministic()
+
+        expected_n_samples = 2 * vmf.dim + 1
+        weights = ones(expected_n_samples) / expected_n_samples
+        self.assertEqual(samples.shape, (vmf.input_dim, expected_n_samples))
+        npt.assert_allclose(
+            linalg.norm(samples, axis=0), ones(expected_n_samples), atol=1e-12
+        )
+        npt.assert_allclose(
+            samples @ weights, vmf.mean_resultant_vector(), atol=1e-12
+        )
+
+    def test_a_d_uses_scaled_bessel_ratio_for_large_kappa(self):
+        npt.assert_allclose(VonMisesFisherDistribution.a_d(3, 1000.0), 0.999)
 
 
 if __name__ == "__main__":
