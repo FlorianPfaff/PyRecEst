@@ -168,6 +168,24 @@ class AdditiveNoiseTransitionModel:
         self.dt = dt
         self.function_args = dict(function_args or {})
 
+    @property
+    def vectorized(self):
+        """Whether the transition function accepts a batch of states."""
+        return self._function_is_vectorized
+
+    @vectorized.setter
+    def vectorized(self, value):
+        self._function_is_vectorized = bool(value)
+
+    @property
+    def function_is_vectorized(self):
+        """Alias consumed by particle-filter model adapters."""
+        return self._function_is_vectorized
+
+    @function_is_vectorized.setter
+    def function_is_vectorized(self, value):
+        self._function_is_vectorized = bool(value)
+
     def evaluate(self, state, dt=None, **kwargs):
         """Evaluate the noise-free transition, including default function args."""
         effective_dt = self.dt if dt is None else dt
