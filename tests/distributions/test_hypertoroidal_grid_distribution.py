@@ -78,6 +78,27 @@ class HypertoroidalGridDistributionTest(unittest.TestCase):
         npt.assert_allclose(hgd.get_closest_point(query), array([0.0, 0.0]))
         npt.assert_allclose(hgd.pdf(query), array([4.0]) / normalizer)
 
+    def test_custom_one_dimensional_flat_grid_is_reshaped_to_column_grid(self):
+        grid = array([0.0, pi, 2.0 * pi - 0.2])
+        # Mean is 1 / (2*pi), so the 1-D torus integral is already one.
+        grid_values = array([1.0, 2.0, 3.0]) / (4.0 * pi)
+
+        hgd = HypertoroidalGridDistribution(grid_values, grid=grid)
+
+        self.assertEqual(hgd.dim, 1)
+        npt.assert_allclose(
+            hgd.get_grid(), array([[0.0], [pi], [2.0 * pi - 0.2]])
+        )
+
+        query_points = array([[2.0 * pi - 0.3], [pi + 0.1], [0.1]])
+        expected = array([3.0, 2.0, 1.0]) / (4.0 * pi)
+
+        npt.assert_allclose(hgd.pdf(query_points), expected)
+        npt.assert_allclose(
+            hgd.get_closest_point(array([2.0 * pi - 0.3])),
+            array([2.0 * pi - 0.2]),
+        )
+
     def test_approx_vmmixture_t2(self):
         dist = HypertoroidalMixture(
             [
