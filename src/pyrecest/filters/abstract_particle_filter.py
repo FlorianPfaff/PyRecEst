@@ -1,4 +1,5 @@
 import copy
+import inspect
 from collections.abc import Callable
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
@@ -8,6 +9,26 @@ from pyrecest.distributions.abstract_manifold_specific_distribution import (
 )
 
 from .abstract_filter import AbstractFilter
+
+
+def _call_vectorized_sample_next(sample_next, particles, n_particles):
+    """Call vectorized sample_next, passing the batch size when supported."""
+    try:
+        signature = inspect.signature(sample_next)
+    except (TypeError, ValueError):
+        return sample_next(particles)
+
+    parameters = signature.parameters
+    n_parameter = parameters.get("n")
+    if n_parameter is not None:
+        if n_parameter.kind == inspect.Parameter.POSITIONAL_ONLY:
+            return sample_next(particles, n_particles)
+        return sample_next(particles, n=n_particles)
+
+    if any(param.kind == inspect.Parameter.VAR_KEYWORD for param in parameters.values()):
+        return sample_next(particles, n=n_particles)
+
+    return sample_next(particles)
 
 
 class AbstractParticleFilter(AbstractFilter):
@@ -91,11 +112,16 @@ class AbstractParticleFilter(AbstractFilter):
 
         sample_next = transition_model.sample_next
         function_is_vectorized = getattr(
-            transition_model, "function_is_vectorized", True
+            transition_model,
+            "function_is_vectorized",
+            getattr(transition_model, "vectorized", True),
         )
+        n_particles = self.filter_state.w.shape[0]
 
         if function_is_vectorized:
-            updated_particles = sample_next(self.filter_state.d)
+            updated_particles = _call_vectorized_sample_next(
+                sample_next, self.filter_state.d, n_particles
+            )
         else:
             updated_particles = [
                 sample_next(particle) for particle in self.filter_state.d
