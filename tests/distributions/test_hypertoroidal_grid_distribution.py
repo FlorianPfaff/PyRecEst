@@ -86,9 +86,7 @@ class HypertoroidalGridDistributionTest(unittest.TestCase):
         hgd = HypertoroidalGridDistribution(grid_values, grid=grid)
 
         self.assertEqual(hgd.dim, 1)
-        npt.assert_allclose(
-            hgd.get_grid(), array([[0.0], [pi], [2.0 * pi - 0.2]])
-        )
+        npt.assert_allclose(hgd.get_grid(), array([[0.0], [pi], [2.0 * pi - 0.2]]))
 
         query_points = array([[2.0 * pi - 0.3], [pi + 0.1], [0.1]])
         expected = array([3.0, 2.0, 1.0]) / (4.0 * pi)
