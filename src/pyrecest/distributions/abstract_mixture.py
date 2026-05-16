@@ -100,9 +100,16 @@ class AbstractMixture(AbstractDistributionType):
         return s
 
     def pdf(self, xs):
-        assert xs.shape[-1] == self.input_dim, "Dimension mismatch"
+        xs = asarray(xs)
 
-        p = zeros(1) if xs.ndim == 1 else zeros(xs.shape[0])
+        if self.input_dim == 1 and xs.ndim <= 1:
+            # For one-dimensional distributions, a flat array represents a batch
+            # of scalar evaluation points. This matches GaussianDistribution.pdf
+            # and avoids rejecting natural inputs such as xs.shape == (n,).
+            p = zeros(xs.shape)
+        else:
+            assert xs.shape[-1] == self.input_dim, "Dimension mismatch"
+            p = zeros(1) if xs.ndim == 1 else zeros(xs.shape[0])
 
         for i, dist in enumerate(self.dists):
             p += self.w[i] * dist.pdf(xs)
