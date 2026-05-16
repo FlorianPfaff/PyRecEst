@@ -67,6 +67,18 @@ class CircularParticleFilterTest(unittest.TestCase):
         self.assertEqual(dist2_identity.dim, 1)
         npt.assert_array_almost_equal(dist2.w, dist2_identity.w)
 
+    def test_prediction_accepts_in_place_set_mean_noise(self):
+        self.filter.filter_state = self.dist
+        noise = VonMisesDistribution(array(0.0), array(2.0))
+
+        self.filter.predict_identity(noise)
+
+        predicted = self.filter.filter_state
+        self.assertIsInstance(predicted, HypertoroidalDiracDistribution)
+        self.assertEqual(predicted.dim, 1)
+        self.assertEqual(predicted.d.shape, self.dist.d.shape)
+        npt.assert_array_almost_equal(noise.mu, array(0.0))
+
     def test_nonlinear_prediction_without_noise(self):
         # nonlinear test without noise
         self.filter.filter_state = self.dist
