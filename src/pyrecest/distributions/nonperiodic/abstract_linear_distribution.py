@@ -115,10 +115,24 @@ class AbstractLinearDistribution(AbstractManifoldSpecificDistribution):
 
         if proposal is None:
 
-            def proposal(x, supposed_mean=start_point):
-                return x + random.multivariate_normal(
-                    supposed_mean, diag(ones(self.dim)), (self.dim,)
-                )
+            proposal_covariance = diag(ones(self.dim))
+
+            if pyrecest.backend.__backend_name__ == "jax":
+                from jax import random as jax_random  # pylint: disable=import-error
+
+                def proposal(key, x):
+                    noise = jax_random.multivariate_normal(
+                        key, zeros(self.dim), proposal_covariance, shape=()
+                    )
+                    return x + reshape(noise, x.shape)
+
+            else:
+
+                def proposal(x):
+                    noise = random.multivariate_normal(
+                        zeros(self.dim), proposal_covariance, size=()
+                    )
+                    return x + reshape(noise, x.shape)
 
         # pylint: disable=duplicate-code
         return AbstractManifoldSpecificDistribution.sample_metropolis_hastings(
