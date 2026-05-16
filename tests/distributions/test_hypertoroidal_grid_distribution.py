@@ -43,6 +43,23 @@ class HypertoroidalGridDistributionTest(unittest.TestCase):
         expected = array([3.0, 4.0]) / normalizer
         npt.assert_allclose(hgd.pdf(query_points), expected)
 
+    def test_custom_grid_uses_elementwise_toroidal_distance(self):
+        grid = array(
+            [
+                [0.0, 0.0],
+                [0.0, pi],
+                [pi, 0.0],
+                [pi, pi],
+            ]
+        )
+        normalizer = ((2.0 * pi) ** 2) * 2.5
+        grid_values = array([[4.0, 1.0], [2.0, 3.0]]) / normalizer
+        hgd = HypertoroidalGridDistribution(grid_values, grid=grid)
+
+        query = array([[2.0 * pi - 0.1, 0.05]])
+        npt.assert_allclose(hgd.get_closest_point(query), array([0.0, 0.0]))
+        npt.assert_allclose(hgd.pdf(query), array([4.0]) / normalizer)
+
     def test_approx_vmmixture_t2(self):
         dist = HypertoroidalMixture(
             [
