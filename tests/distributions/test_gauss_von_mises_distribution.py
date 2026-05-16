@@ -1,7 +1,18 @@
 import unittest
 
 from pyrecest import backend
-from pyrecest.backend import all, allclose, cos, exp, linalg, mod, pi, random, squeeze, zeros
+from pyrecest.backend import (
+    all,
+    allclose,
+    cos,
+    exp,
+    linalg,
+    mod,
+    pi,
+    random,
+    squeeze,
+    zeros,
+)
 from pyrecest.distributions import GaussianDistribution
 from pyrecest.distributions.cart_prod.gauss_von_mises_distribution import (
     GaussVonMisesDistribution,
