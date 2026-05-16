@@ -89,6 +89,31 @@ class TestCircularFourierDistribution(unittest.TestCase):
         fd_real = fd.to_real_fd()
         npt.assert_array_almost_equal(dist.pdf(xs), fd_real.pdf(xs))
 
+    def test_real_complex_coefficient_round_trip(self):
+        a = array([2.0, 3.0, -5.0])
+        b = array([7.0, -11.0])
+        xs = linspace(0.0, 2.0 * pi, 64)
+
+        fd_real = CircularFourierDistribution(
+            a=a,
+            b=b,
+            n=5,
+            transformation="identity",
+            multiplied_by_n=False,
+        )
+        fd_complex = CircularFourierDistribution(
+            c=fd_real.get_c(),
+            n=5,
+            transformation="identity",
+            multiplied_by_n=False,
+        )
+
+        a_round_trip, b_round_trip = fd_complex.get_a_b()
+
+        npt.assert_allclose(a_round_trip, a)
+        npt.assert_allclose(b_round_trip, b)
+        npt.assert_allclose(fd_complex.pdf(xs), fd_real.pdf(xs))
+
     @parameterized.expand(
         [
             (True, "identity"),
