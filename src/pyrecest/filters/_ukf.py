@@ -109,8 +109,9 @@ class UnscentedKalmanFilter:
         self, sigmas_f, sigmas_h, z_pred, R, Wc
     ):
         """Compute innovation covariance *Pz* and cross-covariance *Pxz*."""
-        Pz = zeros((self._model.dim_z, self._model.dim_z))
-        Pxz = zeros((self._model.dim_x, self._model.dim_z))
+        dim_z = sigmas_h.shape[1]
+        Pz = zeros((dim_z, dim_z))
+        Pxz = zeros((self._model.dim_x, dim_z))
         for i in range(len(Wc)):  # pylint: disable=consider-using-enumerate
             dz = expand_dims(sigmas_h[i] - z_pred, -1)
             dx = expand_dims(sigmas_f[i] - self.x, -1)
@@ -132,9 +133,6 @@ class UnscentedKalmanFilter:
         """
         if hx is None:
             hx = self._model.hx
-        if R is None:
-            R = self.R
-        R = asarray(R, dtype=float64)
         z = reshape(asarray(z, dtype=float64), (-1,))
 
         if self._sigmas_f is None:
@@ -144,10 +142,37 @@ class UnscentedKalmanFilter:
         Wm = self._model.points.Wm
         Wc = self._model.points.Wc
 
-        sigmas_h = empty((sigmas_f.shape[0], self._model.dim_z))
+        sigmas_h = None
+        dim_z = None
         for i in range(sigmas_f.shape[0]):
-            sigmas_h[i] = reshape(
+            sigma_h = reshape(
                 asarray(hx(sigmas_f[i], **hx_args), dtype=float64), (-1,)
+            )
+            if sigmas_h is None:
+                dim_z = sigma_h.shape[0]
+                sigmas_h = empty((sigmas_f.shape[0], dim_z))
+            elif sigma_h.shape[0] != dim_z:
+                raise ValueError(
+                    "measurement function must return vectors with consistent "
+                    f"dimension; got {sigma_h.shape[0]} and expected {dim_z}"
+                )
+            sigmas_h[i] = sigma_h
+
+        if z.shape[0] != dim_z:
+            raise ValueError(
+                f"measurement dimension mismatch: z has dimension {z.shape[0]}, "
+                f"but hx returns dimension {dim_z}"
+            )
+
+        if R is None:
+            R = self.R if self.R.shape == (dim_z, dim_z) else eye(dim_z)
+        R = asarray(R, dtype=float64)
+        if len(R.shape) == 0 or (len(R.shape) == 1 and R.shape[0] == 1 and dim_z == 1):
+            R = reshape(R, (1, 1))
+        if R.shape != (dim_z, dim_z):
+            raise ValueError(
+                f"measurement noise covariance R has shape {R.shape}, "
+                f"expected {(dim_z, dim_z)}"
             )
 
         z_pred = einsum("i,ij->j", Wm, sigmas_h)
