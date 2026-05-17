@@ -147,9 +147,7 @@ class UnscentedKalmanFilter:
         sigmas_h = None
         dim_z = None
         for i in range(sigmas_f.shape[0]):
-            sigma_h = reshape(
-                asarray(hx(sigmas_f[i], **hx_args), dtype=float64), (-1,)
-            )
+            sigma_h = reshape(asarray(hx(sigmas_f[i], **hx_args), dtype=float64), (-1,))
             if sigmas_h is None:
                 dim_z = sigma_h.shape[0]
                 sigmas_h = empty((sigmas_f.shape[0], dim_z))
@@ -179,9 +177,7 @@ class UnscentedKalmanFilter:
                 if using_default_R
                 else "measurement noise covariance R"
             )
-            raise ValueError(
-                f"{source} has shape {R.shape}, expected {(dim_z, dim_z)}"
-            )
+            raise ValueError(f"{source} has shape {R.shape}, expected {(dim_z, dim_z)}")
 
         z_pred = einsum("i,ij->j", Wm, sigmas_h)
         Pz, Pxz = self._innovation_matrices(sigmas_f, sigmas_h, z_pred, R, Wc)

@@ -77,7 +77,9 @@ class ParticleFilterModelAdapterTest(unittest.TestCase):
         npt.assert_allclose(model_filter.filter_state.d, direct_filter.filter_state.d)
         npt.assert_allclose(model_filter.filter_state.w, direct_filter.filter_state.w)
 
-    def test_predict_model_passes_particle_count_to_vectorized_additive_transition(self):
+    def test_predict_model_passes_particle_count_to_vectorized_additive_transition(
+        self,
+    ):
         model_filter = copy.deepcopy(self.filter)
         noise_samples = array(
             [

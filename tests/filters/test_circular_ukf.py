@@ -138,11 +138,9 @@ class CircularUKFTest(unittest.TestCase):
             measurement_periodic=True,
         )
         posterior = self.filter.filter_state
-        diff = (
-            (float(posterior.mu[0] - prior.mu[0]) + float(pi))
-            % (2.0 * float(pi))
-            - float(pi)
-        )
+        diff = (float(posterior.mu[0] - prior.mu[0]) + float(pi)) % (
+            2.0 * float(pi)
+        ) - float(pi)
         self.assertAlmostEqual(diff, 0.0, places=8)
 
     def test_get_point_estimate(self):

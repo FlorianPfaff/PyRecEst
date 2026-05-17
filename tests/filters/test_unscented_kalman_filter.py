@@ -64,7 +64,9 @@ class UnscentedKalmanFilterTest(unittest.TestCase):
             return array([x[0]])
 
         with self.assertRaisesRegex(ValueError, "default measurement noise covariance"):
-            kf._filter_state.update(z=array([1.0]), hx=hx)  # pylint: disable=protected-access
+            kf._filter_state.update(
+                z=array([1.0]), hx=hx
+            )  # pylint: disable=protected-access
 
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
@@ -108,9 +110,7 @@ class UnscentedKalmanFilterTest(unittest.TestCase):
         kf.update_linear(array([1.0]), array([[1.0, 0.0]]), array([[0.5]]))
 
         npt.assert_allclose(kf.get_point_estimate(), array([2.0 / 3.0, 1.0]))
-        npt.assert_allclose(
-            kf.filter_state.covariance(), diag(array([1.0 / 3.0, 2.0]))
-        )
+        npt.assert_allclose(kf.filter_state.covariance(), diag(array([1.0 / 3.0, 2.0])))
 
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ in ("pytorch", "jax"),

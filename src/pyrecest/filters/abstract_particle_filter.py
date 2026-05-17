@@ -25,7 +25,9 @@ def _call_vectorized_sample_next(sample_next, particles, n_particles):
             return sample_next(particles, n_particles)
         return sample_next(particles, n=n_particles)
 
-    if any(param.kind == inspect.Parameter.VAR_KEYWORD for param in parameters.values()):
+    if any(
+        param.kind == inspect.Parameter.VAR_KEYWORD for param in parameters.values()
+    ):
         return sample_next(particles, n=n_particles)
 
     return sample_next(particles)
