@@ -76,7 +76,11 @@ class MEMQKFTrackerState:
             backend_copy(self.covariance),
             backend_copy(self.shape_state),
             backend_copy(self.shape_covariance),
-            None if self.measurement_matrix is None else backend_copy(self.measurement_matrix),
+            (
+                None
+                if self.measurement_matrix is None
+                else backend_copy(self.measurement_matrix)
+            ),
             (
                 None
                 if self.multiplicative_noise_cov is None

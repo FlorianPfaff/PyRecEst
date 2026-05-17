@@ -157,7 +157,9 @@ def test_axial_orientation_residual_wraps_across_pi_period():
     )
 
     expected_delta = ((0.03 - reference + np.pi / 2.0) % np.pi) - np.pi / 2.0
-    npt.assert_allclose(smoothed_states[0].shape_state[0], reference + 0.5 * expected_delta)
+    npt.assert_allclose(
+        smoothed_states[0].shape_state[0], reference + 0.5 * expected_delta
+    )
 
 
 def test_state_snapshot_round_trips_to_mem_qkf_tracker():
@@ -236,4 +238,6 @@ def test_fixed_interval_smoother_runs_full_suffix_windows():
     assert len(smoother_gains[0]) == 2
     assert len(smoother_gains[1]) == 1
     assert smoother_gains[2] == []
-    npt.assert_allclose(smoothed_states[-1].kinematic_state, filtered_states[-1].kinematic_state)
+    npt.assert_allclose(
+        smoothed_states[-1].kinematic_state, filtered_states[-1].kinematic_state
+    )
