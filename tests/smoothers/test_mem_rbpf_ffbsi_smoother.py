@@ -5,9 +5,9 @@ from pyrecest import backend
 from pyrecest.backend import array, diag, eye, random
 from pyrecest.filters.mem_rbpf_tracker import MEMRBPFTracker
 from pyrecest.smoothers import (
-    MEMRBPFForwardRecord,
     MEMRBPF_FFBSiSmoother,
     MEMRBPFFFBSiSmoother,
+    MEMRBPFForwardRecord,
     RBFFBSiSmoother,
 )
 

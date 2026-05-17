@@ -1,4 +1,4 @@
-'''Tests for the information-form distributed Kalman node.'''
+"""Tests for the information-form distributed Kalman node."""
 
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import allclose, array, eye, linalg
@@ -48,8 +48,7 @@ def _three_node_fixture():
 def _centralized_prior(means, covariances):
     information_matrix = sum(linalg.inv(covariance) for covariance in covariances)
     information_vector = sum(
-        linalg.solve(covariance, mean)
-        for mean, covariance in zip(means, covariances)
+        linalg.solve(covariance, mean) for mean, covariance in zip(means, covariances)
     )
     return GaussianDistribution(
         linalg.solve(information_matrix, information_vector),
@@ -59,7 +58,9 @@ def _centralized_prior(means, covariances):
 
 
 def test_three_nodes_prediction_matches_centralized_kalman_filter():
-    system_matrix, process_noise, explicit_input, means, covariances = _three_node_fixture()
+    system_matrix, process_noise, explicit_input, means, covariances = (
+        _three_node_fixture()
+    )
 
     central_filter = KalmanFilter(_centralized_prior(means, covariances))
     central_filter.predict_linear(system_matrix, process_noise, explicit_input)
@@ -83,7 +84,9 @@ def test_three_nodes_prediction_matches_centralized_kalman_filter():
 
 
 def test_local_updates_and_bank_fusion_match_centralized_kalman_filter():
-    _system_matrix, _process_noise, _explicit_input, means, covariances = _three_node_fixture()
+    _system_matrix, _process_noise, _explicit_input, means, covariances = (
+        _three_node_fixture()
+    )
     measurement_models = (
         (
             array([[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0]]),
@@ -133,7 +136,9 @@ def test_local_updates_and_bank_fusion_match_centralized_kalman_filter():
 
 
 def test_duplicate_contribution_is_not_double_counted():
-    system_matrix, process_noise, explicit_input, means, covariances = _three_node_fixture()
+    system_matrix, process_noise, explicit_input, means, covariances = (
+        _three_node_fixture()
+    )
     node_1 = IdkfNode.from_local_gaussian(1, (means[0], covariances[0]), covariances)
     node_2 = IdkfNode.from_local_gaussian(2, (means[1], covariances[1]), covariances)
 

@@ -143,9 +143,7 @@ class TestSE2UKF(unittest.TestCase):
         """Prediction uses the documented right-increment order x [⊕] v."""
         state_theta = pi / 4.0
         increment_theta = pi / 6.0
-        state_mu = array(
-            [cos(state_theta / 2.0), sin(state_theta / 2.0), 0.4, -0.2]
-        )
+        state_mu = array([cos(state_theta / 2.0), sin(state_theta / 2.0), 0.4, -0.2])
         increment_mu = array(
             [cos(increment_theta / 2.0), sin(increment_theta / 2.0), 0.1, 0.3]
         )

@@ -24,9 +24,9 @@ from .fixed_lag_velocity_locked_mem_qkf_smoother import (
     VelocityLockedMEMQKFTrackerState,
 )
 from .mem_rbpf_ffbsi_smoother import (
-    MEMRBPFForwardRecord,
     MEMRBPF_FFBSiSmoother,
     MEMRBPFFFBSiSmoother,
+    MEMRBPFForwardRecord,
     RBFFBSiResult,
     RBFFBSiSmoother,
 )

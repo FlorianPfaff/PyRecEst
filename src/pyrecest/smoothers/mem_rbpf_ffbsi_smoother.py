@@ -7,9 +7,8 @@ from numbers import Integral
 from typing import Any, Mapping, Sequence
 
 import numpy as np
-from scipy.special import logsumexp
-
 from pyrecest.filters.mem_rbpf_tracker import MEMRBPFTracker
+from scipy.special import logsumexp
 
 from .abstract_smoother import AbstractSmoother
 
@@ -60,7 +59,9 @@ class MEMRBPFForwardRecord:
     def from_mapping(cls, mapping: Mapping[str, Any]) -> "MEMRBPFForwardRecord":
         """Create a record from a mapping of MEM-RBPF arrays."""
         axis_mean = mapping.get("axis_mean", mapping.get("axis"))
-        axis_covariance = mapping.get("axis_covariance", mapping.get("axis_covariances"))
+        axis_covariance = mapping.get(
+            "axis_covariance", mapping.get("axis_covariances")
+        )
         if axis_mean is None or axis_covariance is None:
             raise ValueError("mapping must contain axis/axis_mean and axis_covariance")
         return cls(
@@ -74,7 +75,9 @@ class MEMRBPFForwardRecord:
             sys_noise=mapping.get("sys_noise"),
             axis_system_matrix=mapping.get("axis_system_matrix"),
             axis_sys_noise=mapping.get("axis_sys_noise"),
-            orientation_process_variance=float(mapping.get("orientation_process_variance", 0.0)),
+            orientation_process_variance=float(
+                mapping.get("orientation_process_variance", 0.0)
+            ),
         )
 
     def copy(self) -> "MEMRBPFForwardRecord":
@@ -86,10 +89,26 @@ class MEMRBPFForwardRecord:
             np.asarray(self.axis_mean, dtype=float).copy(),
             np.asarray(self.axis_covariance, dtype=float).copy(),
             np.asarray(self.weights, dtype=float).copy(),
-            None if self.system_matrix is None else np.asarray(self.system_matrix, dtype=float).copy(),
-            None if self.sys_noise is None else np.asarray(self.sys_noise, dtype=float).copy(),
-            None if self.axis_system_matrix is None else np.asarray(self.axis_system_matrix, dtype=float).copy(),
-            None if self.axis_sys_noise is None else np.asarray(self.axis_sys_noise, dtype=float).copy(),
+            (
+                None
+                if self.system_matrix is None
+                else np.asarray(self.system_matrix, dtype=float).copy()
+            ),
+            (
+                None
+                if self.sys_noise is None
+                else np.asarray(self.sys_noise, dtype=float).copy()
+            ),
+            (
+                None
+                if self.axis_system_matrix is None
+                else np.asarray(self.axis_system_matrix, dtype=float).copy()
+            ),
+            (
+                None
+                if self.axis_sys_noise is None
+                else np.asarray(self.axis_sys_noise, dtype=float).copy()
+            ),
             float(self.orientation_process_variance),
         )
 
@@ -161,8 +180,12 @@ class MEMRBPFFFBSiSmoother(AbstractSmoother):
             return MEMRBPFForwardRecord.from_mapping(record)
         if isinstance(record, tuple) and len(record) in (5, 6):
             kwargs = {} if len(record) == 5 else dict(record[5])
-            return MEMRBPFForwardRecord(record[0], record[1], record[2], record[3], record[4], **kwargs)
-        raise ValueError("record must be a MEMRBPFForwardRecord, MEMRBPFTracker, mapping, or tuple")
+            return MEMRBPFForwardRecord(
+                record[0], record[1], record[2], record[3], record[4], **kwargs
+            )
+        raise ValueError(
+            "record must be a MEMRBPFForwardRecord, MEMRBPFTracker, mapping, or tuple"
+        )
 
     @classmethod
     def _normalize_records(cls, records: Sequence) -> list[MEMRBPFForwardRecord]:
@@ -179,7 +202,9 @@ class MEMRBPFFFBSiSmoother(AbstractSmoother):
             return np.random.default_rng(int(rng))
         if isinstance(rng, np.random.Generator):
             return rng
-        raise TypeError("rng must be None, an integer seed, or a numpy.random.Generator")
+        raise TypeError(
+            "rng must be None, an integer seed, or a numpy.random.Generator"
+        )
 
     @staticmethod
     def _symmetrize(matrix):
@@ -224,18 +249,26 @@ class MEMRBPFFFBSiSmoother(AbstractSmoother):
         return arr
 
     def _rts_smooth_kinematics(self, records: list[MEMRBPFForwardRecord]):
-        xs = np.stack([np.asarray(r.kinematic_state, dtype=float).reshape(-1) for r in records])
+        xs = np.stack(
+            [np.asarray(r.kinematic_state, dtype=float).reshape(-1) for r in records]
+        )
         ps = np.stack([self._nearest_psd(r.covariance) for r in records])
         smoothed_x = xs.copy()
         smoothed_p = ps.copy()
         for time_idx in range(len(records) - 2, -1, -1):
             dim = xs[time_idx].shape[0]
-            system_matrix = self._default_matrix(records[time_idx], "system_matrix", dim, 1.0)
+            system_matrix = self._default_matrix(
+                records[time_idx], "system_matrix", dim, 1.0
+            )
             sys_noise = self._default_matrix(records[time_idx], "sys_noise", dim, 0.0)
             pred_x = system_matrix @ xs[time_idx]
-            pred_p = self._nearest_psd(system_matrix @ ps[time_idx] @ system_matrix.T + sys_noise)
+            pred_p = self._nearest_psd(
+                system_matrix @ ps[time_idx] @ system_matrix.T + sys_noise
+            )
             gain = ps[time_idx] @ system_matrix.T @ np.linalg.pinv(pred_p)
-            smoothed_x[time_idx] = xs[time_idx] + gain @ (smoothed_x[time_idx + 1] - pred_x)
+            smoothed_x[time_idx] = xs[time_idx] + gain @ (
+                smoothed_x[time_idx + 1] - pred_x
+            )
             smoothed_p[time_idx] = self._nearest_psd(
                 ps[time_idx] + gain @ (smoothed_p[time_idx + 1] - pred_p) @ gain.T
             )
@@ -247,7 +280,10 @@ class MEMRBPFFFBSiSmoother(AbstractSmoother):
         delta = np.asarray(delta, dtype=float)
         delta = (delta + 0.5 * period) % period - 0.5 * period
         shifts = np.arange(-terms, terms + 1, dtype=float) * period
-        values = -0.5 * ((delta[:, None] + shifts[None, :]) ** 2 / variance + np.log(2.0 * np.pi * variance))
+        values = -0.5 * (
+            (delta[:, None] + shifts[None, :]) ** 2 / variance
+            + np.log(2.0 * np.pi * variance)
+        )
         return logsumexp(values, axis=1)
 
     @classmethod
@@ -275,19 +311,29 @@ class MEMRBPFFFBSiSmoother(AbstractSmoother):
         return rng.multivariate_normal(mean, cls._nearest_psd(covariance))
 
     def _axis_prediction(self, record: MEMRBPFForwardRecord):
-        axis = np.asarray(record.axis_mean, dtype=float).reshape(record.n_particles, record.axis_dim)
-        cov = np.asarray(record.axis_covariance, dtype=float).reshape(record.n_particles, record.axis_dim, record.axis_dim)
-        system_matrix = self._default_matrix(record, "axis_system_matrix", record.axis_dim, 1.0)
+        axis = np.asarray(record.axis_mean, dtype=float).reshape(
+            record.n_particles, record.axis_dim
+        )
+        cov = np.asarray(record.axis_covariance, dtype=float).reshape(
+            record.n_particles, record.axis_dim, record.axis_dim
+        )
+        system_matrix = self._default_matrix(
+            record, "axis_system_matrix", record.axis_dim, 1.0
+        )
         sys_noise = self._default_matrix(record, "axis_sys_noise", record.axis_dim, 0.0)
         pred_axis = axis @ system_matrix.T
-        pred_cov = system_matrix @ cov @ system_matrix.T + sys_noise.reshape(1, record.axis_dim, record.axis_dim)
+        pred_cov = system_matrix @ cov @ system_matrix.T + sys_noise.reshape(
+            1, record.axis_dim, record.axis_dim
+        )
         pred_cov = np.stack([self._nearest_psd(curr) for curr in pred_cov])
         return axis, cov, pred_axis, pred_cov, system_matrix
 
     def _axis_backward_kernel(self, mean_t, cov_t, axis_next, system_matrix, sys_noise):
         cov_t = self._nearest_psd(cov_t)
         pred_mean = system_matrix @ mean_t
-        pred_cov = self._nearest_psd(system_matrix @ cov_t @ system_matrix.T + sys_noise)
+        pred_cov = self._nearest_psd(
+            system_matrix @ cov_t @ system_matrix.T + sys_noise
+        )
         gain = cov_t @ system_matrix.T @ np.linalg.pinv(pred_cov)
         mean = mean_t + gain @ (axis_next - pred_mean)
         cov = cov_t - gain @ pred_cov @ gain.T
@@ -299,24 +345,34 @@ class MEMRBPFFFBSiSmoother(AbstractSmoother):
         s = np.sin(angle)
         return np.array([[c, -s], [s, c]], dtype=float)
 
-    def _sample_states_from_components(self, kinematic_mean, theta_samples, axis_samples, full_axis_lengths):
+    def _sample_states_from_components(
+        self, kinematic_mean, theta_samples, axis_samples, full_axis_lengths
+    ):
         n_samples, n_steps = theta_samples.shape
         axis_scale = 2.0 if full_axis_lengths else 1.0
         state_dim = kinematic_mean.shape[1] + 3
         sample_states = np.zeros((n_samples, n_steps, state_dim), dtype=float)
-        sample_states[:, :, : kinematic_mean.shape[1]] = kinematic_mean[np.newaxis, :, :]
+        sample_states[:, :, : kinematic_mean.shape[1]] = kinematic_mean[
+            np.newaxis, :, :
+        ]
         sample_states[:, :, kinematic_mean.shape[1]] = theta_samples % (2.0 * np.pi)
-        sample_states[:, :, -2:] = axis_scale * np.maximum(np.abs(axis_samples), self.axis_floor)
+        sample_states[:, :, -2:] = axis_scale * np.maximum(
+            np.abs(axis_samples), self.axis_floor
+        )
         return sample_states
 
-    def _point_estimate_from_samples(self, kinematic_mean, theta_samples, axis_samples, full_axis_lengths):
+    def _point_estimate_from_samples(
+        self, kinematic_mean, theta_samples, axis_samples, full_axis_lengths
+    ):
         n_steps = theta_samples.shape[1]
         state_dim = kinematic_mean.shape[1] + 3
         states = np.zeros((n_steps, state_dim), dtype=float)
         states[:, : kinematic_mean.shape[1]] = kinematic_mean
         axis_scale = 2.0 if full_axis_lengths else 1.0
         for time_idx in range(n_steps):
-            semi_axes = np.maximum(np.abs(axis_samples[:, time_idx, :]), self.axis_floor)
+            semi_axes = np.maximum(
+                np.abs(axis_samples[:, time_idx, :]), self.axis_floor
+            )
             mean_extent = np.zeros((2, 2), dtype=float)
             for theta, axes in zip(theta_samples[:, time_idx], semi_axes):
                 rot = self._rotation(theta)
@@ -327,8 +383,12 @@ class MEMRBPFFFBSiSmoother(AbstractSmoother):
             order = np.argsort(vals)[::-1]
             vals = np.maximum(vals[order], 0.0)
             vecs = vecs[:, order]
-            states[time_idx, kinematic_mean.shape[1]] = np.arctan2(vecs[1, 0], vecs[0, 0]) % (2.0 * np.pi)
-            states[time_idx, -2:] = axis_scale * np.maximum(np.sqrt(vals[:2]), self.axis_floor)
+            states[time_idx, kinematic_mean.shape[1]] = np.arctan2(
+                vecs[1, 0], vecs[0, 0]
+            ) % (2.0 * np.pi)
+            states[time_idx, -2:] = axis_scale * np.maximum(
+                np.sqrt(vals[:2]), self.axis_floor
+            )
         return states
 
     def smooth(
@@ -346,48 +406,72 @@ class MEMRBPFFFBSiSmoother(AbstractSmoother):
         rng = self._prepare_rng(rng)
         n_steps = len(record_list)
         final_particles = record_list[-1].n_particles
-        n_samples = self.n_trajectories if n_trajectories is None else int(n_trajectories)
+        n_samples = (
+            self.n_trajectories if n_trajectories is None else int(n_trajectories)
+        )
         if n_samples is None:
             n_samples = final_particles
         if n_samples <= 0:
             raise ValueError("n_trajectories must be positive")
         do_sample_axis = self.sample_axis if sample_axis is None else bool(sample_axis)
-        terms = self.angle_wrap_terms if angle_wrap_terms is None else int(angle_wrap_terms)
+        terms = (
+            self.angle_wrap_terms if angle_wrap_terms is None else int(angle_wrap_terms)
+        )
 
         kinematic_mean, kinematic_covariance = self._rts_smooth_kinematics(record_list)
         theta_samples = np.zeros((n_samples, n_steps), dtype=float)
-        axis_samples = np.zeros((n_samples, n_steps, record_list[-1].axis_dim), dtype=float)
+        axis_samples = np.zeros(
+            (n_samples, n_steps, record_list[-1].axis_dim), dtype=float
+        )
         index_samples = np.zeros((n_samples, n_steps), dtype=int)
 
         final_probs = self._safe_probs(record_list[-1].weights)
-        final_indices = rng.choice(final_particles, size=n_samples, replace=True, p=final_probs)
+        final_indices = rng.choice(
+            final_particles, size=n_samples, replace=True, p=final_probs
+        )
         index_samples[:, -1] = final_indices
-        theta_samples[:, -1] = np.asarray(record_list[-1].theta, dtype=float)[final_indices]
-        final_axis = np.asarray(record_list[-1].axis_mean, dtype=float).reshape(final_particles, -1)
-        final_cov = np.asarray(record_list[-1].axis_covariance, dtype=float).reshape(final_particles, record_list[-1].axis_dim, record_list[-1].axis_dim)
+        theta_samples[:, -1] = np.asarray(record_list[-1].theta, dtype=float)[
+            final_indices
+        ]
+        final_axis = np.asarray(record_list[-1].axis_mean, dtype=float).reshape(
+            final_particles, -1
+        )
+        final_cov = np.asarray(record_list[-1].axis_covariance, dtype=float).reshape(
+            final_particles, record_list[-1].axis_dim, record_list[-1].axis_dim
+        )
         for sample_idx, particle_idx in enumerate(final_indices):
             axis_samples[sample_idx, -1] = self._draw_or_mean_gaussian(
-                rng, final_axis[particle_idx], final_cov[particle_idx], sample=do_sample_axis
+                rng,
+                final_axis[particle_idx],
+                final_cov[particle_idx],
+                sample=do_sample_axis,
             )
 
         for time_idx in range(n_steps - 2, -1, -1):
             record = record_list[time_idx]
             weights = self._safe_probs(record.weights)
             axis, cov, pred_axis, pred_cov, axis_system = self._axis_prediction(record)
-            axis_noise = self._default_matrix(record, "axis_sys_noise", record.axis_dim, 0.0)
+            axis_noise = self._default_matrix(
+                record, "axis_sys_noise", record.axis_dim, 0.0
+            )
             for sample_idx in range(n_samples):
                 log_weight = np.log(np.maximum(weights, np.finfo(float).tiny))
                 log_angle = self._wrapped_normal_logpdf_many(
-                    theta_samples[sample_idx, time_idx + 1] - np.asarray(record.theta, dtype=float),
+                    theta_samples[sample_idx, time_idx + 1]
+                    - np.asarray(record.theta, dtype=float),
                     record.orientation_process_variance,
                     2.0 * np.pi,
                     terms,
                 )
-                log_axis = self._log_mvn_many(axis_samples[sample_idx, time_idx + 1], pred_axis, pred_cov)
+                log_axis = self._log_mvn_many(
+                    axis_samples[sample_idx, time_idx + 1], pred_axis, pred_cov
+                )
                 probs = self._normalize_log_probs(log_weight + log_angle + log_axis)
                 particle_idx = int(rng.choice(record.n_particles, p=probs))
                 index_samples[sample_idx, time_idx] = particle_idx
-                theta_samples[sample_idx, time_idx] = np.asarray(record.theta, dtype=float)[particle_idx]
+                theta_samples[sample_idx, time_idx] = np.asarray(
+                    record.theta, dtype=float
+                )[particle_idx]
                 mean, cov_s = self._axis_backward_kernel(
                     axis[particle_idx],
                     cov[particle_idx],
