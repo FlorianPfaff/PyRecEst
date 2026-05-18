@@ -20,7 +20,6 @@ from scipy.special import logsumexp
 
 from .multi_bernoulli_tracker import MultiBernoulliTracker
 
-
 # Explicit name for the existing single-posterior, best-assignment tracker.
 NearestNeighborMultiBernoulliTracker = MultiBernoulliTracker
 
@@ -118,7 +117,9 @@ class MultiBernoulliMixtureTracker(MultiBernoulliTracker):
     def _normalize_hypothesis_weights(self):
         total_weight = sum(hypothesis.weight for hypothesis in self.hypotheses)
         if total_weight <= 0.0:
-            raise ValueError("At least one global hypothesis must have positive weight.")
+            raise ValueError(
+                "At least one global hypothesis must have positive weight."
+            )
         for hypothesis in self.hypotheses:
             hypothesis.weight = float(hypothesis.weight) / total_weight
 
@@ -194,9 +195,7 @@ class MultiBernoulliMixtureTracker(MultiBernoulliTracker):
         return int(argmax(self.get_cardinality_distribution()))
 
     def get_labeled_components(self, copy_components=True):
-        components = self.get_map_hypothesis(
-            copy_hypothesis=False
-        ).bernoulli_components
+        components = self.get_map_hypothesis(copy_hypothesis=False).bernoulli_components
         return {
             copy.deepcopy(component.label): (
                 copy.deepcopy(component) if copy_components else component
@@ -230,7 +229,9 @@ class MultiBernoulliMixtureTracker(MultiBernoulliTracker):
                 key=lambda component: component.existence_probability,
                 reverse=True,
             )[:number_of_targets]
-            labels = [copy.deepcopy(component.label) for component in selected_components]
+            labels = [
+                copy.deepcopy(component.label) for component in selected_components
+            ]
             point_estimates = stack(
                 [component.get_point_estimate() for component in selected_components],
                 axis=1,
@@ -319,7 +320,9 @@ class MultiBernoulliMixtureTracker(MultiBernoulliTracker):
             active_birth_components = self.birth_components
             if birth_components is not None:
                 active_birth_components = self._normalize_components(birth_components)
-            hypothesis.bernoulli_components.extend(copy.deepcopy(active_birth_components))
+            hypothesis.bernoulli_components.extend(
+                copy.deepcopy(active_birth_components)
+            )
             self._assign_missing_labels(hypothesis.bernoulli_components)
         self.prune()
         self.cap()
@@ -366,7 +369,9 @@ class MultiBernoulliMixtureTracker(MultiBernoulliTracker):
                 detection_probability,
                 component_index,
             )
-            predicted_existence = self._clip_probability(component.existence_probability)
+            predicted_existence = self._clip_probability(
+                component.existence_probability
+            )
             missed_weight = max(
                 1.0 - predicted_existence * current_detection_probability,
                 1e-300,

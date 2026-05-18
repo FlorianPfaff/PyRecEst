@@ -54,11 +54,13 @@ class MultiBernoulliMixtureTrackerTest(unittest.TestCase):
 
         measurement = array([[0.0], [0.0]])
         prior_component = tracker.hypotheses[0].bernoulli_components[0]
-        likelihood, _ = tracker._measurement_likelihood_and_distance(  # pylint: disable=protected-access
-            prior_component,
-            measurement[:, 0],
-            self.measurement_matrix,
-            eye(2),
+        likelihood, _ = (
+            tracker._measurement_likelihood_and_distance(  # pylint: disable=protected-access
+                prior_component,
+                measurement[:, 0],
+                self.measurement_matrix,
+                eye(2),
+            )
         )
         r = prior_component.existence_probability
         p_d = self.tracker_param["detection_probability"]
@@ -66,9 +68,9 @@ class MultiBernoulliMixtureTrackerTest(unittest.TestCase):
         missed_weight = 1.0 - r * p_d
         detected_weight = r * p_d * likelihood / clutter
         missed_existence = r * (1.0 - p_d) / missed_weight
-        expected_existence = (
-            missed_weight * missed_existence + detected_weight
-        ) / (missed_weight + detected_weight)
+        expected_existence = (missed_weight * missed_existence + detected_weight) / (
+            missed_weight + detected_weight
+        )
 
         tracker.update_linear(measurement, self.measurement_matrix, eye(2))
 

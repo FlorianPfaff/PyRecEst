@@ -600,9 +600,7 @@ class MEMRBPFTracker(AbstractExtendedObjectTracker):
         # Ellipse orientations theta and theta + pi encode the same extent, but
         # their rotation matrices differ by a sign. Averaging the factors first
         # can therefore collapse identical ellipses to a zero extent.
-        scaled_rotations = rotations * (self.axis**2).reshape(
-            (self.n_particles, 1, 2)
-        )
+        scaled_rotations = rotations * (self.axis**2).reshape((self.n_particles, 1, 2))
         particle_extents = einsum("pab,pcb->pac", scaled_rotations, rotations)
         extent = backend_sum(
             particle_extents * weights.reshape((self.n_particles, 1, 1)),

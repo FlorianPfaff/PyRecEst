@@ -164,7 +164,9 @@ class HypertoroidalFourierDistribution(
         if self.transformation == "sqrt":
             # For sqrt-transform, ∫ pdf = (2π)^dim * ||C||^2
             c00 = linalg.norm(reshape(self.coeff_mat, (-1,))) ** 2
-            assert abs(complex(c00).imag) <= 0.001, "Center coefficient must be real-valued."
+            assert (
+                abs(complex(c00).imag) <= 0.001
+            ), "Center coefficient must be real-valued."
             c00 = real(c00)
             factor_for_id = c00 * (2 * pi) ** self.dim
             normalization_factor = sqrt(real(factor_for_id))
@@ -172,7 +174,9 @@ class HypertoroidalFourierDistribution(
             # Center coefficient corresponds to k = 0
             center_indices = tuple(s // 2 for s in self.coeff_mat.shape)
             c00 = self.coeff_mat[center_indices]
-            assert abs(complex(c00).imag) <= 0.001, "Center coefficient must be real-valued."
+            assert (
+                abs(complex(c00).imag) <= 0.001
+            ), "Center coefficient must be real-valued."
             c00 = real(c00)
             factor_for_id = c00 * (2 * pi) ** self.dim
             normalization_factor = factor_for_id
@@ -274,9 +278,7 @@ class HypertoroidalFourierDistribution(
         is_truncating = any(n_coefficients_arr < current_shape_arr)
 
         # Truncation can void normalization for non-identity transformations
-        if force_normalization or (
-            self.transformation != "identity" and is_truncating
-        ):
+        if force_normalization or (self.transformation != "identity" and is_truncating):
             result.normalize_in_place(warn_unnorm=False)
 
         return result

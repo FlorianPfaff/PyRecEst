@@ -68,9 +68,7 @@ def _calculate_F_and_dF_cached(Z_key):
             t01 = 0.5 * (Z[0] - Z[1]) * u_comp
             b01_0 = iv(0, t01)
             b01_1 = iv(1, t01)
-            exp_factor = _np.exp(
-                Z[2] * u_squared + 0.5 * (Z[0] + Z[1]) * u_comp
-            )
+            exp_factor = _np.exp(Z[2] * u_squared + 0.5 * (Z[0] + Z[1]) * u_comp)
 
             return _np.array(
                 [

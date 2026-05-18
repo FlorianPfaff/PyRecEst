@@ -33,7 +33,9 @@ class TestAbstractHyperhemisphericalDistribution(unittest.TestCase):
 
     def test_dim_one_integration_boundaries_are_upper_last_coordinate(self):
         """S1 hyperhemisphere boundaries must select cos(phi) >= 0."""
-        boundaries = HyperhemisphericalUniformDistribution.get_full_integration_boundaries(1)
+        boundaries = (
+            HyperhemisphericalUniformDistribution.get_full_integration_boundaries(1)
+        )
 
         self.assertEqual(boundaries.shape, (1, 2))
         npt.assert_allclose(boundaries, array([[-pi / 2, pi / 2]]))

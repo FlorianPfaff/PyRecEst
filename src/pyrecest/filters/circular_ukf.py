@@ -183,9 +183,7 @@ class CircularUKF(AbstractFilter, CircularFilterMixin):
         Q_val = float(gauss_sys.C[0, 0])
         noise_mean = float(gauss_sys.mu[0])
 
-        points, sigmas = _sigma_points_1d(
-            mu0, C0, self._alpha, self._beta, self._kappa
-        )
+        points, sigmas = _sigma_points_1d(mu0, C0, self._alpha, self._beta, self._kappa)
         propagated = [
             _wrap_angle_scalar(f(_wrap_angle_scalar(sigma)) + noise_mean)
             for sigma in sigmas
@@ -299,9 +297,7 @@ class CircularUKF(AbstractFilter, CircularFilterMixin):
         else:
             R_mat = array(gauss_meas.C, dtype=float).reshape(dim_z, dim_z)
 
-        points, sigmas = _sigma_points_1d(
-            mu0, C0, self._alpha, self._beta, self._kappa
-        )
+        points, sigmas = _sigma_points_1d(mu0, C0, self._alpha, self._beta, self._kappa)
         sigmas_x = [_wrap_angle_scalar(sigma) for sigma in sigmas]
         sigmas_h = empty((len(sigmas_x), dim_z))
         for i, sigma_x in enumerate(sigmas_x):

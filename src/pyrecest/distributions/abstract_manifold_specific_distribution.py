@@ -182,9 +182,10 @@ class AbstractManifoldSpecificDistribution(ABC):
                     proposal_log_pdf(x, x_new)
                 ) - _to_scalar(proposal_log_pdf(x_new, x))
 
-            if log_acceptance_ratio >= 0.0 or _to_scalar(
-                log(random.rand(1))
-            ) < log_acceptance_ratio:
+            if (
+                log_acceptance_ratio >= 0.0
+                or _to_scalar(log(random.rand(1))) < log_acceptance_ratio
+            ):
                 x = x_new
                 log_pdfx = log_pdfx_new
             # Record every chain step; rejected proposals keep the current state.

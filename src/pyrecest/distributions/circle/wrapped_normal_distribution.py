@@ -123,18 +123,14 @@ class WrappedNormalDistribution(
 
             def cond_fun(val):
                 i, _result, last_increment = val
-                return logical_and(
-                    any(last_increment > 1e-10), i <= max_iterations
-                )
+                return logical_and(any(last_increment > 1e-10), i <= max_iterations)
 
             initial_val = (
                 1,
                 exp(x * x * tmp),
                 ones(x.shape) * float("inf"),
             )
-            _, result, _last_increment = lax.while_loop(
-                cond_fun, body_fun, initial_val
-            )
+            _, result, _last_increment = lax.while_loop(cond_fun, body_fun, initial_val)
 
             result *= nc
 

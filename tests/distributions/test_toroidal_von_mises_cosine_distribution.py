@@ -4,7 +4,6 @@ import unittest
 import matplotlib
 import numpy as np
 import numpy.testing as npt
-from scipy.special import iv
 
 # pylint: disable=no-name-in-module,no-member
 import pyrecest.backend
@@ -14,6 +13,7 @@ from pyrecest.backend import arange, array, column_stack, cos, exp, pi
 from pyrecest.distributions.hypertorus.toroidal_von_mises_cosine_distribution import (
     ToroidalVonMisesCosineDistribution,
 )
+from scipy.special import iv
 from tests.distributions.test_toroidal_von_mises_sine_distribution import (
     ToroidalBivarVMTestMixin,
 )
@@ -129,9 +129,7 @@ class ToroidalVMCosineDistributionTest(ToroidalBivarVMTestMixin, unittest.TestCa
         shift_by = array([4.0, 2.0])
         tvm2 = self.tvm.shift(shift_by)
         self.assertIsInstance(tvm2, ToroidalVonMisesCosineDistribution)
-        x_test = column_stack(
-            (arange(0.0, 2.0 * pi, 0.3), arange(0.0, 2.0 * pi, 0.3))
-        )
+        x_test = column_stack((arange(0.0, 2.0 * pi, 0.3), arange(0.0, 2.0 * pi, 0.3)))
         npt.assert_allclose(
             tvm2.pdf(x_test),
             self.tvm.pdf(x_test - shift_by),

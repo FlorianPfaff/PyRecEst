@@ -99,9 +99,7 @@ class ToroidalVonMisesCosineDistribution(AbstractToroidalBivarVMDistribution):
                 )
 
             def s(order):
-                return _iv(order, kappa0) * _iv(order, kappa1) * _iv(
-                    order, -kappa3
-                )
+                return _iv(order, kappa0) * _iv(order, kappa1) * _iv(order, -kappa3)
 
             s1_sum = _half_zero_series_sum(s1)
             s2_sum = _half_zero_series_sum(s2)

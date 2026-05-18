@@ -1,11 +1,20 @@
 import unittest
 
 import numpy.testing as npt
-
 import pyrecest.backend
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
-from pyrecest.backend import allclose, arange, array, exp, isfinite, ones_like, pi, sqrt, sum
+from pyrecest.backend import (
+    allclose,
+    arange,
+    array,
+    exp,
+    isfinite,
+    ones_like,
+    pi,
+    sqrt,
+    sum,
+)
 from pyrecest.distributions import WrappedNormalDistribution
 
 

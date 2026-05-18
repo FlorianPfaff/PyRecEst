@@ -103,8 +103,10 @@ class TestMardiaSuttonDistribution(unittest.TestCase):
         )
         cos_variance = 0.5 * (1.0 + bessel_ratio_2) - bessel_ratio_1**2
         sin_variance = 0.5 * (1.0 - bessel_ratio_2)
-        conditional_mean_variance = self.sigma**2 * self.kappa * (
-            aligned_rho_cos**2 * cos_variance + aligned_rho_sin**2 * sin_variance
+        conditional_mean_variance = (
+            self.sigma**2
+            * self.kappa
+            * (aligned_rho_cos**2 * cos_variance + aligned_rho_sin**2 * sin_variance)
         )
         expected = conditional_variance + conditional_mean_variance
 
