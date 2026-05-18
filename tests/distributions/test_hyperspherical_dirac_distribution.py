@@ -7,9 +7,22 @@ import pyrecest.backend
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import allclose, arctan2, array, linalg, mod, ones, pi, random, sqrt, sum
+from pyrecest.backend import (
+    allclose,
+    arctan2,
+    array,
+    linalg,
+    mod,
+    ones,
+    pi,
+    random,
+    sqrt,
+    sum,
+)
 from pyrecest.distributions import VonMisesFisherDistribution
-from pyrecest.distributions.circle.circular_dirac_distribution import CircularDiracDistribution
+from pyrecest.distributions.circle.circular_dirac_distribution import (
+    CircularDiracDistribution,
+)
 from pyrecest.distributions.hypersphere_subset.hyperspherical_dirac_distribution import (
     HypersphericalDiracDistribution,
 )

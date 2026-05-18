@@ -80,7 +80,9 @@ class AbstractHypersphericalDistribution(AbstractHypersphereSubsetDistribution):
             if pyrecest.backend.__backend_name__ in ("numpy", "pytorch"):
 
                 def proposal_np(_):
-                    return HypersphericalUniformDistribution(self.dim).sample(1)  # pylint: disable=possibly-used-before-assignment
+                    return HypersphericalUniformDistribution(self.dim).sample(
+                        1
+                    )  # pylint: disable=possibly-used-before-assignment
 
                 proposal = proposal_np
             else:
@@ -98,7 +100,9 @@ class AbstractHypersphericalDistribution(AbstractHypersphereSubsetDistribution):
                 proposal = proposal_jax
 
         if start_point is None:
-            start_point = HypersphericalUniformDistribution(self.dim).sample(1)  # pylint: disable=possibly-used-before-assignment
+            start_point = HypersphericalUniformDistribution(self.dim).sample(
+                1
+            )  # pylint: disable=possibly-used-before-assignment
         # Call the sample_metropolis_hastings method of AbstractDistribution
         # pylint: disable=duplicate-code
         return super().sample_metropolis_hastings(

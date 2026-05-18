@@ -130,11 +130,14 @@ def log_map_identity(rotations):
     angles = 2.0 * arctan2(vector_norm, scalar_part)
     vector_norm_col = reshape(vector_norm, tuple(vector_norm.shape) + (1,))
     safe_norm = where(vector_norm_col > 1e-12, vector_norm_col, 1.0)
-    scale = where(
-        vector_norm_col > 1e-12,
-        reshape(angles, tuple(angles.shape) + (1,)),
-        2.0 * safe_norm,
-    ) / safe_norm
+    scale = (
+        where(
+            vector_norm_col > 1e-12,
+            reshape(angles, tuple(angles.shape) + (1,)),
+            2.0 * safe_norm,
+        )
+        / safe_norm
+    )
     return vector_part * scale
 
 

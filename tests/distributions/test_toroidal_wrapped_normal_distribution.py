@@ -41,8 +41,12 @@ class TestToroidalWrappedNormalDistribution(unittest.TestCase):
 
         C4 = twn.covariance_4D()
 
-        self.assertTrue(allclose(C4[:2, 2:], array([[0.0, 0.0], [0.0, 0.0]]), atol=1e-12))
-        self.assertTrue(allclose(C4[2:, :2], array([[0.0, 0.0], [0.0, 0.0]]), atol=1e-12))
+        self.assertTrue(
+            allclose(C4[:2, 2:], array([[0.0, 0.0], [0.0, 0.0]]), atol=1e-12)
+        )
+        self.assertTrue(
+            allclose(C4[2:, :2], array([[0.0, 0.0], [0.0, 0.0]]), atol=1e-12)
+        )
 
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ in ("pytorch", "jax"),

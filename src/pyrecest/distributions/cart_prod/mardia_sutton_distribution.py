@@ -142,8 +142,10 @@ class MardiaSuttonDistribution(AbstractHypercylindricalDistribution):
         aligned_rho_sin = -self.rho1 * sin(self.mu0) + self.rho2 * cos(self.mu0)
         cos_variance = 0.5 * (1.0 + bessel_ratio_2) - bessel_ratio_1**2
         sin_variance = 0.5 * (1.0 - bessel_ratio_2)
-        conditional_mean_variance = self.sigma**2 * self.kappa * (
-            aligned_rho_cos**2 * cos_variance + aligned_rho_sin**2 * sin_variance
+        conditional_mean_variance = (
+            self.sigma**2
+            * self.kappa
+            * (aligned_rho_cos**2 * cos_variance + aligned_rho_sin**2 * sin_variance)
         )
 
         return array([[conditional_variance + conditional_mean_variance]])

@@ -12,9 +12,7 @@ from pyrecest.filters.circular_ukf import CircularUKF
 
 
 def _circular_difference(value, reference):
-    return (float(value) - float(reference) + float(pi)) % (
-        2.0 * float(pi)
-    ) - float(pi)
+    return (float(value) - float(reference) + float(pi)) % (2.0 * float(pi)) - float(pi)
 
 
 class CircularUKFTest(unittest.TestCase):
@@ -197,12 +195,7 @@ class CircularUKFTest(unittest.TestCase):
         meas_noise = GaussianDistribution(array([4.0]), array([[0.7]]))
         self.filter.filter_state = prior
 
-        z = array(
-            [
-                (float(prior.mu[0]) + float(meas_noise.mu[0]))
-                % (2.0 * float(pi))
-            ]
-        )
+        z = array([(float(prior.mu[0]) + float(meas_noise.mu[0])) % (2.0 * float(pi))])
         self.filter.update_nonlinear(
             lambda x: x, meas_noise, z, measurement_periodic=True
         )

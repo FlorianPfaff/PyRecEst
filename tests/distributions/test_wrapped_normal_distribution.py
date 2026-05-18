@@ -1,11 +1,20 @@
 import unittest
 
 import numpy.testing as npt
-
 import pyrecest.backend
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
-from pyrecest.backend import allclose, arange, array, exp, isfinite, ones_like, pi, sqrt, sum
+from pyrecest.backend import (
+    allclose,
+    arange,
+    array,
+    exp,
+    isfinite,
+    ones_like,
+    pi,
+    sqrt,
+    sum,
+)
 from pyrecest.distributions import WrappedNormalDistribution
 
 
@@ -49,9 +58,7 @@ class WrappedNormalDistributionTest(unittest.TestCase):
         density_near_right_boundary = wn.pdf(array(2.0 * pi - 0.1))
 
         self.assertTrue(
-            allclose(
-                density_near_right_boundary, density_near_left_boundary, rtol=1e-5
-            )
+            allclose(density_near_right_boundary, density_near_left_boundary, rtol=1e-5)
         )
 
     def test_pdf_with_large_sigma_is_uniform(self):

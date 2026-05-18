@@ -36,9 +36,7 @@ class WrappedNormalFilter(AbstractFilter, CircularFilterMixin):
     def update_identity(self, wn_meas, z):
         mu_w_new = mod(z - wn_meas.mu, 2.0 * pi)
         wn_meas_shifted = WrappedNormalDistribution(mu_w_new, wn_meas.sigma)
-        self.filter_state = self.filter_state.multiply_vm_approximation(
-            wn_meas_shifted
-        )
+        self.filter_state = self.filter_state.multiply_vm_approximation(wn_meas_shifted)
 
     def update_nonlinear_particle(self, likelihood, z):
         n = 100

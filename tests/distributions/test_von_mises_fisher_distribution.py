@@ -38,7 +38,9 @@ def _as_float(value) -> float:
     return float(value_np)
 
 
-class TestVonMisesFisherDistribution(unittest.TestCase):  # pylint: disable=too-many-public-methods
+class TestVonMisesFisherDistribution(
+    unittest.TestCase
+):  # pylint: disable=too-many-public-methods
     def setUp(self):
         self.mu = array([1.0, 2.0, 3.0])
         self.mu = self.mu / linalg.norm(self.mu)

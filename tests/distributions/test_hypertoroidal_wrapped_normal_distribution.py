@@ -30,7 +30,9 @@ class TestHypertoroidalWNDistribution(unittest.TestCase):
         self.assertEqual(dist.C.shape, (1, 1))
         npt.assert_allclose(dist.mu, array([0.3]))
         npt.assert_allclose(dist.C, array([[0.7]]))
-        npt.assert_allclose(dist.trigonometric_moment(1), exp(1j * array([0.3]) - 0.7 / 2))
+        npt.assert_allclose(
+            dist.trigonometric_moment(1), exp(1j * array([0.3]) - 0.7 / 2)
+        )
 
     def test_shift_returns_copy_without_mutating_original(self):
         mu = array([1.0, 2.0])

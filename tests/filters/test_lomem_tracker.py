@@ -110,7 +110,9 @@ class TestLOMEMTracker(unittest.TestCase):
             diag(array([0.1, 0.1, 0.1, 0.1, 1.0, 1.0])),
             measurement_noise_cov=eye(2),
         )
-        equivalent_covariance = tracker._equivalent_measurement_covariance(eye(2))  # pylint: disable=protected-access
+        equivalent_covariance = tracker._equivalent_measurement_covariance(
+            eye(2)
+        )  # pylint: disable=protected-access
         x_spread = (2.0 * float(equivalent_covariance[0, 0])) ** 0.5
         y_spread = (2.0 * float(equivalent_covariance[1, 1])) ** 0.5
         measurements = array(

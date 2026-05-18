@@ -5,8 +5,8 @@ from numbers import Integral
 import pyrecest.backend
 
 # pylint: disable=no-name-in-module,no-member
+from pyrecest.backend import all as backend_all
 from pyrecest.backend import (
-    all as backend_all,
     allclose,
     linalg,
     matvec,
@@ -55,9 +55,7 @@ class GaussianDistribution(AbstractLinearDistribution):
 
         if check_validity:
             assert allclose(C, transpose(C)), "C must be symmetric"
-            assert backend_all(
-                linalg.eigvalsh(C) > 0.0
-            ), "C must be positive definite"
+            assert backend_all(linalg.eigvalsh(C) > 0.0), "C must be positive definite"
 
         self.C = C
 
