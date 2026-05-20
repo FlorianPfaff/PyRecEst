@@ -11,6 +11,9 @@ on:
   pull_request:
     branches:
       - "**"
+  schedule:
+    - cron: "23 3 * * 0"
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.ref }}-${{ github.workflow }}
@@ -40,9 +43,173 @@ jobs:
         env:
           PYTHONPATH: ${{ github.workspace }}/src
 
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Install system build dependencies (when binary not available)
+        run: |
+          retry() {
+            for attempt in 1 2 3; do
+              "$@" && return 0
+              echo "Command failed on attempt ${attempt}; retrying..."
+              sleep $((attempt * 20))
+            done
+
+            "$@"
+          }
+
+          retry sudo apt-get update
+          retry sudo apt-get install -y \
+            gfortran pkg-config ninja-build \
+            libopenblas-dev liblapack-dev \
+            libfftw3-dev libhealpix-cxx-dev
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Build distributions and validate local release metadata
+        run: |
+          python -m pip install --upgrade pip build twine
+          python scripts/check_release_consistency.py --local-only
+          python -m build
+          python -m twine check dist/*
+
+      - name: Install built wheel and smoke-run public examples
+        run: |
+          python -m pip install dist/*.whl
+          python - <<'PY'
+          import pyrecest
+          print(f"Installed pyrecest {pyrecest.__version__}")
+          PY
+          python examples/basic/kalman_filter.py
+          python examples/basic/gaussian_multiplication.py
+          python scripts/run_scenario.py scenarios/linear_gaussian_cv_1d/config.toml --expected scenarios/linear_gaussian_cv_1d/expected.json
+          python benchmarks/basic_regressions.py --output benchmark-results.json
+
+      - name: Upload benchmark result artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: package-benchmark-results
+          path: benchmark-results.json
+
   test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - backend: numpy
+            python-version: "3.11"
+          - backend: numpy
+            python-version: "3.12"
+          - backend: numpy
+            python-version: "3.13"
+          - backend: numpy
+            python-version: "3.14"
+          - backend: pytorch
+            python-version: "3.11"
+          - backend: pytorch
+            python-version: "3.12"
+          - backend: pytorch
+            python-version: "3.13"
+          - backend: jax
+            python-version: "3.11"
+          - backend: jax
+            python-version: "3.12"
+          - backend: jax
+            python-version: "3.13"
+    permissions:
+      checks: write
+      pull-requests: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Install system build dependencies (when binary not available)
+        run: |
+          retry() {
+            for attempt in 1 2 3; do
+              "$@" && return 0
+              echo "Command failed on attempt ${attempt}; retrying..."
+              sleep $((attempt * 20))
+            done
+
+            "$@"
+          }
+
+          retry sudo apt-get update
+          retry sudo apt-get install -y \
+            gfortran pkg-config ninja-build \
+            libopenblas-dev liblapack-dev \
+            libfftw3-dev libhealpix-cxx-dev
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install poetry
+          poetry env use python
+          case "${{ matrix.backend }}" in
+            numpy)
+              poetry install --with dev --extras "healpy_support"
+              ;;
+            pytorch)
+              poetry install --with dev --extras "healpy_support pytorch_support"
+              ;;
+            jax)
+              poetry install --with dev --extras "healpy_support jax_support"
+              ;;
+            *)
+              echo "Unsupported backend: ${{ matrix.backend }}" >&2
+              exit 1
+              ;;
+          esac
+
+      - name: Run tests
+        run: |
+          if [ "${{ matrix.backend }}" = "jax" ]; then
+            export JAX_ENABLE_X64=True
+          fi
+          export PYRECEST_BACKEND=${{ matrix.backend }}
+          poetry run python -m pytest \
+            --rootdir . \
+            -v \
+            --strict-config \
+            --junitxml=junit_test_results_${{ matrix.backend }}.xml \
+            --cov=pyrecest \
+            --cov-report=term-missing \
+            --cov-report=xml:coverage_${{ matrix.backend }}_${{ matrix.python-version }}.xml \
+            ./tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}/src
+
+      - name: Upload test result artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.backend }}-${{ matrix.python-version }}-test-results
+          path: junit_test_results_${{ matrix.backend }}.xml
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.backend }}-${{ matrix.python-version }}-coverage
+          path: coverage_${{ matrix.backend }}_${{ matrix.python-version }}.xml
+
+  full-test:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+    strategy:
+      fail-fast: false
       matrix:
         backend: [numpy, pytorch, jax]
         python-version: ["3.11", "3.12", "3.13", "3.14"]
@@ -82,14 +249,23 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install poetry
           poetry env use python
-          poetry install --extras "healpy_support"
-          
-      - name: Install pytorch specific dependencies afterward
-        if: ${{ matrix.backend == 'pytorch' }}
-        run: |
-          poetry install --extras "healpy_support" --extras "pytorch_support"
-          
-      - name: Run tests
+          case "${{ matrix.backend }}" in
+            numpy)
+              poetry install --with dev --extras "healpy_support"
+              ;;
+            pytorch)
+              poetry install --with dev --extras "healpy_support pytorch_support"
+              ;;
+            jax)
+              poetry install --with dev --extras "healpy_support jax_support"
+              ;;
+            *)
+              echo "Unsupported backend: ${{ matrix.backend }}" >&2
+              exit 1
+              ;;
+          esac
+
+      - name: Run full backend matrix
         run: |
           if [ "${{ matrix.backend }}" = "jax" ]; then
             export JAX_ENABLE_X64=True
@@ -102,13 +278,13 @@ jobs:
       - name: Upload test result artifact
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ matrix.backend }}-${{ matrix.python-version }}-test-results
+          name: full-${{ matrix.backend }}-${{ matrix.python-version }}-test-results
           path: junit_test_results_${{ matrix.backend }}.xml
 
   publish-results:
-    needs: test
+    needs: [test, full-test]
     runs-on: ubuntu-latest
-    if: always()
+    if: always() && (needs.test.result != 'skipped' || needs.full-test.result != 'skipped')
     permissions:
       checks: write
       pull-requests: write

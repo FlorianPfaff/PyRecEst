@@ -34,29 +34,36 @@ from .hypertoroidal_sampler import CircularUniformSampler
 from .leopardi_sampler import get_partition_points_cartesian
 
 
+def _validate_grid_dim(name: str, dim: int, expected_dim: int) -> None:
+    if int(dim) != int(expected_dim):
+        raise ValueError(
+            f"{name} is only implemented for S{expected_dim} (dim={expected_dim})"
+        )
+
+
 def get_grid_hypersphere(method: str, grid_density_parameter: int, dim: int):
     if method == "healpix":
-        assert dim == 2, "HealpixSampler is only implemented for S2 (dim=2)"
+        _validate_grid_dim("HealpixSampler", dim, 2)
         samples, grid_specific_description = HealpixSampler().get_grid(
             grid_density_parameter
         )
     elif method == "driscoll_healy":
-        assert dim == 2, "DriscollHealySampler is only implemented for S2 (dim=2)"
+        _validate_grid_dim("DriscollHealySampler", dim, 2)
         samples, grid_specific_description = DriscollHealySampler().get_grid(
             grid_density_parameter
         )
     elif method in ("fibonacci", "spherical_fibonacci"):
-        assert dim == 2, "SphericalFibonacciSampler is only implemented for S2 (dim=2)"
+        _validate_grid_dim("SphericalFibonacciSampler", dim, 2)
         samples, grid_specific_description = SphericalFibonacciSampler().get_grid(
             grid_density_parameter
         )
     elif method == "healpix_hopf":
-        assert dim == 3, "HealpixHopfSampler is only implemented for S3 (dim=3)"
+        _validate_grid_dim("HealpixHopfSampler", dim, 3)
         samples, grid_specific_description = HealpixHopfSampler().get_grid(
             grid_density_parameter
         )
     elif method == "fibonacci_hopf":
-        assert dim == 3, "FibonacciHopfSampler is only implemented for S3 (dim=3)"
+        _validate_grid_dim("FibonacciHopfSampler", dim, 3)
         samples, grid_specific_description = FibonacciHopfSampler().get_grid(
             grid_density_parameter
         )
@@ -138,7 +145,8 @@ class AbstractSphericalUniformSampler(AbstractHypersphericalUniformSampler):
     def sample_stochastic(
         self, n_samples: int, dim: int = 2
     ):  # Only having dim there for interface compatibility
-        assert dim == 2
+        if dim != 2:
+            raise ValueError("AbstractSphericalUniformSampler is only implemented for S2 (dim=2)")
         return HypersphericalUniformDistribution(2).sample(n_samples)
 
 
@@ -151,9 +159,7 @@ class AbstractSphericalCoordinatesBasedSampler(AbstractSphericalUniformSampler):
         raise NotImplementedError()
 
     def get_grid(self, grid_density_parameter, dim: int = 2):
-        assert (
-            dim == 2
-        ), "AbstractSphericalCoordinatesBasedSampler is supposed to be used for the sphere, i.e. dim=2"
+        _validate_grid_dim(type(self).__name__, dim, 2)
         phi, theta, grid_specific_description = self.get_grid_spherical_coordinates(
             grid_density_parameter
         )
@@ -167,8 +173,14 @@ class SphericalCoordinatesBasedFixedResolutionSampler(
     AbstractSphericalCoordinatesBasedSampler
 ):
     def get_grid_spherical_coordinates(self, grid_density_parameter):
-        res_lon, res_lat = grid_density_parameter
-        assert grid_density_parameter.shape[0] == 2
+        try:
+            res_lon, res_lat = grid_density_parameter
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                "grid_density_parameter must contain exactly two entries"
+            ) from exc
+        res_lon = int(res_lon)
+        res_lat = int(res_lat)
         phi = linspace(0.0, 2 * pi, num=res_lon, endpoint=False)
         theta = linspace(pi / (res_lat + 1), pi, num=res_lat, endpoint=False)
         return phi, theta, {"res_lat": res_lat, "res_lon": res_lon}
@@ -178,9 +190,7 @@ class HealpixSampler(AbstractHypersphericalUniformSampler):
     def get_grid(self, grid_density_parameter, dim: int = 2):
         import healpy as hp
 
-        assert (
-            dim == 2
-        ), "HealpixSampler is supposed to be used for the sphere, i.e. dim=2"
+        _validate_grid_dim("HealpixSampler", dim, 2)
 
         n_side = grid_density_parameter
         n_areas = hp.nside2npix(n_side)
@@ -198,7 +208,10 @@ class HealpixSampler(AbstractHypersphericalUniformSampler):
 class LeopardiSampler(AbstractHypersphericalUniformSampler):
     def __init__(self, original_code_column_order=True):
         self.original_code_column_order = original_code_column_order
-        assert backend.__backend_name__ != "jax", "Backend unsupported"
+        if backend.__backend_name__ == "jax":
+            raise NotImplementedError(
+                "LeopardiSampler is not supported on the JAX backend"
+            )
 
     def get_grid(self, grid_density_parameter, dim: int):
         # Use flip due to different convention
@@ -223,7 +236,10 @@ class SymmetricLeopardiSampler(AbstractHypersphericalUniformSampler):
         self.original_code_column_order = original_code_column_order
         self.delete_half = delete_half
         self.symmetry_type = symmetry_type
-        assert backend.__backend_name__ != "jax", "Backend unsupported"
+        if backend.__backend_name__ == "jax":
+            raise NotImplementedError(
+                "SymmetricLeopardiSampler is not supported on the JAX backend"
+            )
 
     def get_grid(self, grid_density_parameter, dim: int):
         # Use [::-1] due to different convention
@@ -288,7 +304,7 @@ class SphericalFibonacciSampler(AbstractSphericalCoordinatesBasedSampler):
 
 class AbstractHopfBasedS3Sampler(AbstractHypersphericalUniformSampler):
     @staticmethod
-    def hopf_coordinates_to_quaterion_yershova(θ, ϕ, ψ):
+    def hopf_coordinates_to_quaternion_yershova(θ, ϕ, ψ):
         """
         One possible way to index the S3-sphere via the hopf fibration.
         Using the convention from
@@ -311,6 +327,13 @@ class AbstractHopfBasedS3Sampler(AbstractHypersphericalUniformSampler):
         return quaternions
 
     @staticmethod
+    def hopf_coordinates_to_quaterion_yershova(θ, ϕ, ψ):
+        """Deprecated misspelled alias for :meth:`hopf_coordinates_to_quaternion_yershova`."""
+        return AbstractHopfBasedS3Sampler.hopf_coordinates_to_quaternion_yershova(
+            θ, ϕ, ψ
+        )
+
+    @staticmethod
     def quaternion_to_hopf_yershova(q):
         θ = 2 * arccos(sqrt(q[:, 0] ** 2 + q[:, 1] ** 2))
         ϕ = arctan2(q[:, 3], q[:, 2]) - arctan2(q[:, 1], q[:, 0])
@@ -325,7 +348,7 @@ class HealpixHopfSampler(AbstractHopfBasedS3Sampler):
         Hopf coordinates are (θ, ϕ, ψ) where θ and ϕ are the angles for the sphere and ψ is the angle on the circle
         First parameter is the number of points on the sphere, second parameter is the number of points on the circle.
         """
-        assert dim == 3, "HealpixHopfSampler is only implemented for S3 (dim=3)"
+        _validate_grid_dim("HealpixHopfSampler", dim, 3)
         import healpy as hp
 
         if isinstance(grid_density_parameter, int):
@@ -341,7 +364,8 @@ class HealpixHopfSampler(AbstractHopfBasedS3Sampler):
 
             psi_points = CircularUniformSampler().get_grid(n_sample_circle)
 
-            assert len(psi_points) != 0
+            if len(psi_points) == 0:
+                raise ValueError("CircularUniformSampler returned an empty grid")
 
             nside = 2**i
             numpixels = hp.nside2npix(nside)
@@ -359,7 +383,7 @@ class HealpixHopfSampler(AbstractHopfBasedS3Sampler):
                     s3_points_list.append(temp)
 
         s3_points = vstack(s3_points_list)  # Need to stack like this and unpack
-        grid = AbstractHopfBasedS3Sampler.hopf_coordinates_to_quaterion_yershova(
+        grid = AbstractHopfBasedS3Sampler.hopf_coordinates_to_quaternion_yershova(
             s3_points[:, 0], s3_points[:, 1], s3_points[:, 2]
         )
 
@@ -376,7 +400,7 @@ class FibonacciHopfSampler(AbstractHopfBasedS3Sampler):
         Hopf coordinates are (θ, ϕ, ψ) where θ and ϕ are the angles for the sphere and ψ is the angle on the circle
         First parameter is the number of points on the sphere, second parameter is the number of points on the circle.
         """
-        assert dim == 3, "FibonacciHopfSampler is only implemented for S3 (dim=3)"
+        _validate_grid_dim("FibonacciHopfSampler", dim, 3)
         if isinstance(grid_density_parameter, int):
             grid_density_parameter = [grid_density_parameter]
 
@@ -404,7 +428,7 @@ class FibonacciHopfSampler(AbstractHopfBasedS3Sampler):
                 s3_points_list.append(s3_point)
 
         s3_points = vstack(s3_points_list)
-        grid = AbstractHopfBasedS3Sampler.hopf_coordinates_to_quaterion_yershova(
+        grid = AbstractHopfBasedS3Sampler.hopf_coordinates_to_quaternion_yershova(
             s3_points[:, 0], s3_points[:, 1], s3_points[:, 2]
         )
 

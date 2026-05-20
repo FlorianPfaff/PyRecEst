@@ -1,5 +1,10 @@
 # PyRecEst
 
+[![Tests](https://github.com/FlorianPfaff/PyRecEst/actions/workflows/tests.yml/badge.svg)](https://github.com/FlorianPfaff/PyRecEst/actions/workflows/tests.yml)
+[![PyPI version](https://img.shields.io/pypi/v/pyrecest.svg)](https://pypi.org/project/pyrecest/)
+[![Python versions](https://img.shields.io/pypi/pyversions/pyrecest.svg)](https://pypi.org/project/pyrecest/)
+[![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://florianpfaff.github.io/PyRecEst/)
+
 Recursive Bayesian Estimation for Python.
 
 PyRecEst is a Python library for recursive Bayesian estimation on Euclidean
@@ -15,6 +20,37 @@ PyRecEst provides tools for:
 - multi-target tracking (MTT) and extended object tracking (EOT);
 - evaluation of filters and trackers; and
 - sampling distributions and generating grids.
+
+## Which API Should I Start With?
+
+| Task | Start with |
+|------|------------|
+| Linear Euclidean Gaussian filtering | `KalmanFilter` and `examples/basic/kalman_filter.py` |
+| Reusable transition and measurement models | `examples/basic/kalman_filter_with_models.py` |
+| Nonlinear filtering | `examples/basic/ukf_with_models.py` or particle-filter examples |
+| Multi-target tracking with clutter or missed detections | `examples/basic/multi_target_tracking.py` |
+| Circular, spherical, or manifold-valued states | circular, hypertoroidal, and hyperspherical distribution modules |
+| Backend-portable code | `pyrecest.backend` imports plus focused tests under each backend |
+
+For more detail, see `docs/choosing-an-api.md` and `docs/backend-compatibility.md`.
+
+## Command Line And Reproducible Scenarios
+
+After installation, use the lightweight CLI to inspect an environment or run a
+reproducible scenario:
+
+```bash
+pyrecest info
+pyrecest backends
+pyrecest run-scenario scenarios/linear_gaussian_cv_1d/config.toml
+```
+
+The same scenario runner is available from a source checkout via
+`scripts/run_scenario.py`. Scenario definitions live in `scenarios/` and include
+TOML configuration plus JSON golden outputs.
+
+The `pyrecest.diagnostics` module defines common diagnostics containers for
+innovation statistics, particle-filter health, and association decisions.
 
 ## Installation
 

@@ -118,6 +118,9 @@ class SupportsLinearPredict(Protocol):
         raise NotImplementedError
 
 
+SupportsLinearPrediction = SupportsLinearPredict
+
+
 @runtime_checkable
 class SupportsLinearUpdate(Protocol):
     """Object supporting a linear measurement-update step."""
@@ -244,6 +247,7 @@ __all__ = [
     "SupportsIdentityPredict",
     "SupportsIdentityUpdate",
     "SupportsLinearPredict",
+    "SupportsLinearPrediction",
     "SupportsLinearUpdate",
     "SupportsModelPredict",
     "SupportsModelUpdate",

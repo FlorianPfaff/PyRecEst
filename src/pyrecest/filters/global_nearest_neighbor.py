@@ -2,7 +2,7 @@
 import warnings
 
 import pyrecest.backend
-from pyrecest.backend import all, any, empty, full, repeat, squeeze, stack
+from pyrecest.backend import all, any, empty, full, linalg, repeat, squeeze, stack
 from scipy.optimize import linear_sum_assignment
 from scipy.spatial.distance import cdist
 from scipy.stats import chi2
@@ -98,7 +98,10 @@ class GlobalNearestNeighbor(AbstractNearestNeighborTracker):
         n_targets = len(self.filter_bank)
         n_meas = measurements.shape[1]
 
-        assert cov_mats_meas.ndim == 2 or cov_mats_meas.shape[2] == n_meas
+        if cov_mats_meas.ndim != 2 and cov_mats_meas.shape[2] != n_meas:
+            raise ValueError(
+                "cov_mats_meas must be a matrix or contain one covariance per measurement."
+            )
         all_gaussians = [filter.filter_state for filter in self.filter_bank]
         all_means_prior = stack([gaussian.mu for gaussian in all_gaussians], axis=1)
         all_cov_mats_prior = stack([gaussian.C for gaussian in all_gaussians], axis=2)
@@ -141,7 +144,7 @@ class GlobalNearestNeighbor(AbstractNearestNeighborTracker):
                     (measurement_matrix @ all_means_prior).T,
                     measurements.T,
                     "mahalanobis",
-                    VI=curr_cov_mahalanobis,
+                    VI=linalg.inv(curr_cov_mahalanobis),
                 )
             elif all_cov_mat_meas_equal:
                 shared_cov_mats_meas = (
@@ -166,7 +169,7 @@ class GlobalNearestNeighbor(AbstractNearestNeighborTracker):
                         (measurement_matrix @ all_means_prior[:, i]).T[None],
                         measurements.T,
                         "mahalanobis",
-                        VI=all_mats_mahalanobis[:, :, i],
+                        VI=linalg.inv(all_mats_mahalanobis[:, :, i]),
                     )
             else:
                 for i in range(n_targets):
@@ -182,11 +185,14 @@ class GlobalNearestNeighbor(AbstractNearestNeighborTracker):
                                 (measurement_matrix @ all_means_prior[:, i]).T[None],
                                 measurements[:, j].T[None],
                                 "mahalanobis",
-                                VI=curr_cov_mahalanobis,
+                                VI=linalg.inv(curr_cov_mahalanobis),
                             )
                         )
         else:
             raise ValueError("Association scheme not recognized")
+
+        if self.association_param.get("square_dist", False):
+            dists = dists * dists
 
         pairwise_cost_matrix = self._validate_pairwise_cost_matrix(
             pairwise_cost_matrix, n_targets, n_meas

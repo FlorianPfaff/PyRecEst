@@ -2,6 +2,7 @@ import unittest
 
 import numpy as np
 import numpy.testing as npt
+import pyrecest.backend
 from pyrecest.backend import __backend_name__
 from pyrecest.sampling import JulierSigmaPoints, MerweScaledSigmaPoints
 
@@ -24,6 +25,17 @@ class TestSigmaPoints(unittest.TestCase):
         self.assertEqual(sigmas.shape, (5, 2))
         npt.assert_allclose(weighted_mean, mean)
         npt.assert_allclose(weighted_covariance, covariance)
+
+    def test_sigma_points_reject_jax_backend_with_not_implemented_error(self):
+        old_backend_name = pyrecest.backend.__backend_name__
+        pyrecest.backend.__backend_name__ = "jax"
+        try:
+            with self.assertRaises(NotImplementedError):
+                MerweScaledSigmaPoints(n=2, alpha=0.5, beta=2.0, kappa=0.0)
+            with self.assertRaises(NotImplementedError):
+                JulierSigmaPoints(n=2, kappa=1.0)
+        finally:
+            pyrecest.backend.__backend_name__ = old_backend_name
 
     def test_julier_sigma_points_match_moments(self):
         mean = np.array([0.5, 1.5])

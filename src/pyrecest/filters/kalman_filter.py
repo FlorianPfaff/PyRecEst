@@ -1,7 +1,11 @@
 # pylint: disable=no-name-in-module,no-member
 
-from pyrecest.backend import atleast_1d, atleast_2d, eye
+from pyrecest.backend import eye
 from pyrecest.distributions import GaussianDistribution
+from pyrecest.models.validation import (
+    validate_covariance_matrix,
+    validate_state_vector,
+)
 
 from ._linear_gaussian import (
     linear_gaussian_innovation,
@@ -65,18 +69,34 @@ class KalmanFilter(AbstractFilter, EuclideanFilterMixin):
     @staticmethod
     def _coerce_state(state):
         if isinstance(state, GaussianDistribution):
-            return GaussianDistribution(
-                atleast_1d(state.mu),
-                atleast_2d(state.C),
-                check_validity=False,
+            mean = validate_state_vector(
+                state.mu,
+                name="state.mean",
+                allow_scalar=True,
             )
+            covariance = validate_covariance_matrix(
+                state.C,
+                name="state.covariance",
+                dim=mean.shape[0],
+                allow_scalar=True,
+                check_symmetric=True,
+            )
+            return GaussianDistribution(mean, covariance, check_validity=False)
         if isinstance(state, tuple) and len(state) == 2:
             mean, covariance = state
-            return GaussianDistribution(
-                atleast_1d(mean),
-                atleast_2d(covariance),
-                check_validity=False,
+            mean = validate_state_vector(
+                mean,
+                name="state.mean",
+                allow_scalar=True,
             )
+            covariance = validate_covariance_matrix(
+                covariance,
+                name="state.covariance",
+                dim=mean.shape[0],
+                allow_scalar=True,
+                check_symmetric=True,
+            )
+            return GaussianDistribution(mean, covariance, check_validity=False)
         raise ValueError(
             "state must be a GaussianDistribution or a tuple of (mean, covariance)"
         )

@@ -12,6 +12,7 @@ from pyrecest.backend import (
     empty,
     int32,
     int64,
+    isfinite,
     ones,
     random,
     reshape,
@@ -38,14 +39,19 @@ class AbstractMixture(AbstractDistributionType):
         AbstractDistributionType.__init__(self)
         dists = copy.deepcopy(dists)  # To prevent modifying the original object
         num_distributions = len(dists)
+        if num_distributions == 0:
+            raise ValueError("Mixture must contain at least one distribution")
 
         if weights is None:
             weights = ones(num_distributions) / num_distributions
         else:
-            weights = asarray(weights)
+            weights = reshape(asarray(weights), (-1,))
 
-        if num_distributions != len(weights):
+        if num_distributions != weights.shape[0]:
             raise ValueError("Sizes of distributions and weights must be equal")
+
+        if any(not bool(isfinite(weight)) for weight in weights):
+            raise ValueError("Mixture weights must be finite")
 
         if any(bool(weight < 0) for weight in weights):
             raise ValueError("Mixture weights must be nonnegative")
@@ -58,6 +64,10 @@ class AbstractMixture(AbstractDistributionType):
         if len(non_zero_indices) == 0:
             raise ValueError("At least one mixture weight must be nonzero")
 
+        weight_sum = sum(weights)
+        if not bool(isfinite(weight_sum)) or not bool(weight_sum > 0.0):
+            raise ValueError("Mixture weights must have positive finite total mass")
+
         if len(non_zero_indices) < len(weights):
             warnings.warn(
                 "Elements with zero weights detected. Pruning elements in mixture with weight zero."
@@ -67,9 +77,9 @@ class AbstractMixture(AbstractDistributionType):
 
         self.dists = dists
 
-        if abs(sum(weights) - 1.0) > 1e-10:
+        if abs(weight_sum - 1.0) > 1e-10:
             warnings.warn("Weights of mixture do not sum to one.")
-            self.w = weights / sum(weights)
+            self.w = weights / weight_sum
         else:
             self.w = weights
 

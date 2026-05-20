@@ -166,8 +166,11 @@ class ProbabilityThresholdGate:
     def __init__(self, threshold: float, *, use_likelihood: bool = False):
         self.threshold = float(threshold)
         self.use_likelihood = bool(use_likelihood)
-        if self.threshold < 0.0:
-            raise ValueError("threshold must be nonnegative")
+        if self.use_likelihood:
+            if self.threshold <= 0.0:
+                raise ValueError("likelihood threshold must be positive")
+        elif self.threshold < 0.0:
+            raise ValueError("probability threshold must be nonnegative")
 
     def accepts(self, hypothesis: AssociationHypothesis) -> bool:
         if hypothesis.is_missed_detection:
@@ -313,10 +316,15 @@ def linear_gaussian_association_hypotheses(
     metadata_builder: Callable[..., dict[str, Any] | None] | None = None,
 ) -> list[AssociationHypothesis]:
     """Build Gaussian innovation hypotheses for tracks and measurements."""
-    measurement_vectors = _coerce_measurements(
-        measurements, measurement_axis=measurement_axis
-    )
     measurement_matrix = np.asarray(measurement_matrix, dtype=float)
+    if measurement_matrix.ndim != 2:
+        raise ValueError("measurement_matrix must be two-dimensional")
+    measurement_dim = int(measurement_matrix.shape[0])
+    measurement_vectors = _coerce_measurements(
+        measurements,
+        measurement_axis=measurement_axis,
+        measurement_dim=measurement_dim,
+    )
     covariance_stack = _coerce_measurement_covariances(
         meas_noise, len(measurement_vectors)
     )
@@ -336,7 +344,6 @@ def linear_gaussian_association_hypotheses(
             nis = float(
                 normalized_innovation_squared(innovation, innovation_covariance)
             )
-            measurement_dim = int(measurement_matrix.shape[0])
             log_likelihood = _linear_gaussian_log_likelihood(
                 innovation,
                 innovation_covariance,
@@ -507,23 +514,34 @@ def build_linear_gaussian_hypothesis_associator(
     """Create a TrackManager-compatible linear-Gaussian associator."""
 
     def associator(tracks, measurements, **kwargs):
+        effective_measurement_matrix = kwargs.get(
+            "measurement_matrix", measurement_matrix
+        )
+        effective_measurement_axis = kwargs.get(
+            "measurement_axis", measurement_axis
+        )
+        effective_measurement_dim = int(
+            np.asarray(effective_measurement_matrix, dtype=float).shape[0]
+        )
         hypotheses = linear_gaussian_association_hypotheses(
             tracks,
             measurements,
-            kwargs.get("measurement_matrix", measurement_matrix),
+            effective_measurement_matrix,
             kwargs.get("meas_noise", meas_noise),
             gates=kwargs.get("gates", gates),
-            measurement_axis=kwargs.get("measurement_axis", measurement_axis),
+            measurement_axis=effective_measurement_axis,
+        )
+        num_measurements = len(
+            _coerce_measurements(
+                measurements,
+                measurement_axis=effective_measurement_axis,
+                measurement_dim=effective_measurement_dim,
+            )
         )
         return association_result_from_hypotheses(
             hypotheses,
             num_tracks=len(tracks),
-            num_measurements=len(
-                _coerce_measurements(
-                    measurements,
-                    measurement_axis=kwargs.get("measurement_axis", measurement_axis),
-                )
-            ),
+            num_measurements=num_measurements,
             missing_cost=kwargs.get("missing_cost", missing_cost),
             unassigned_track_cost=kwargs.get(
                 "unassigned_track_cost", unassigned_track_cost
@@ -569,11 +587,16 @@ def _track_filter_state(track):
 
 
 def _coerce_measurements(
-    measurements, *, measurement_axis: MeasurementAxis = "auto"
+    measurements,
+    *,
+    measurement_axis: MeasurementAxis = "auto",
+    measurement_dim: int | None = None,
 ) -> list[np.ndarray]:
     if isinstance(measurements, np.ndarray):
         return _coerce_measurement_array(
-            measurements, measurement_axis=measurement_axis
+            measurements,
+            measurement_axis=measurement_axis,
+            measurement_dim=measurement_dim,
         )
     try:
         from pyrecest.backend import to_numpy  # pylint: disable=import-outside-toplevel
@@ -581,7 +604,9 @@ def _coerce_measurements(
         maybe_array = to_numpy(measurements)
         if isinstance(maybe_array, np.ndarray):
             return _coerce_measurement_array(
-                maybe_array, measurement_axis=measurement_axis
+                maybe_array,
+                measurement_axis=measurement_axis,
+                measurement_dim=measurement_dim,
             )
     except (ImportError, AttributeError, TypeError):
         pass
@@ -591,7 +616,10 @@ def _coerce_measurements(
 
 
 def _coerce_measurement_array(
-    array, *, measurement_axis: MeasurementAxis
+    array,
+    *,
+    measurement_axis: MeasurementAxis,
+    measurement_dim: int | None = None,
 ) -> list[np.ndarray]:
     array = np.asarray(array, dtype=float)
     if array.ndim == 1:
@@ -607,6 +635,25 @@ def _coerce_measurement_array(
     if measurement_axis != "auto":
         raise ValueError(
             "measurement_axis must be 'auto', 'columns', 'rows', or 'sequence'"
+        )
+    if measurement_dim is not None:
+        measurement_dim = int(measurement_dim)
+        columns_match = array.shape[0] == measurement_dim
+        rows_match = array.shape[1] == measurement_dim
+        if columns_match and not rows_match:
+            return [array[:, index].reshape(-1) for index in range(array.shape[1])]
+        if rows_match and not columns_match:
+            return [array[index, :].reshape(-1) for index in range(array.shape[0])]
+        if columns_match and rows_match:
+            if array.shape == (1, 1):
+                return [array[:, 0].reshape(-1)]
+            raise ValueError(
+                "Ambiguous measurement array orientation for measurement_axis='auto'. "
+                "Pass measurement_axis='columns' or measurement_axis='rows' explicitly."
+            )
+        raise ValueError(
+            "Neither axis of measurements matches the measurement dimension inferred "
+            "from measurement_matrix"
         )
     if array.shape[0] <= array.shape[1]:
         return [array[:, index].reshape(-1) for index in range(array.shape[1])]

@@ -6,7 +6,7 @@ from abc import abstractmethod
 import pyrecest.backend
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import dstack, ndim, stack
+from pyrecest.backend import ndim, stack
 from pyrecest.distributions import GaussianDistribution
 
 from .abstract_multitarget_tracker import AbstractMultitargetTracker
@@ -89,7 +89,7 @@ class AbstractNearestNeighborTracker(AbstractMultitargetTracker):
 
         if isinstance(sys_noises, GaussianDistribution):
             assert all(sys_noises.mu == 0)
-            sys_noises = dstack(sys_noises.C)
+            sys_noises = sys_noises.C
 
         curr_sys_matrix = system_matrices
         curr_sys_noise = sys_noises

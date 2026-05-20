@@ -129,11 +129,10 @@ def normalized_estimation_error_squared(
         uncertainties, errors.shape[0], errors.shape[1], "uncertainties"
     )
     values = _quadratic_forms(errors, covariances)
-    return (
-        float(values[0])
-        if _is_single_vector(estimates) and groundtruths is None
-        else values
+    single_vector_input = _is_single_vector(estimates) and (
+        groundtruths is None or _is_single_vector(groundtruths)
     )
+    return float(values[0]) if single_vector_input else values
 
 
 def average_nees(

@@ -119,6 +119,12 @@ class TestHypersphericalGridGenerationFunction(unittest.TestCase):
         with self.assertRaises(ValueError):
             get_grid_hyperhemisphere("unknown_method", 10, dim=10)
 
+    def test_get_grid_hypersphere_invalid_dim_raises_value_error(self):
+        with self.assertRaises(ValueError):
+            get_grid_hypersphere("fibonacci", 12, dim=3)
+        with self.assertRaises(ValueError):
+            FibonacciHopfSampler().get_grid([12, 4], dim=2)
+
 
 class TestHypersphericalSampler(unittest.TestCase):
     @parameterized.expand(
@@ -317,6 +323,13 @@ class TestSphericalCoordinatesBasedFixedResolutionSampler(unittest.TestCase):
         npt.assert_allclose(phi, expected_phi)
         npt.assert_allclose(theta, expected_theta)
 
+    def test_get_grid_spherical_coordinates_accepts_tuple(self):
+        sampler = SphericalCoordinatesBasedFixedResolutionSampler()
+
+        phi, theta, grid_description = sampler.get_grid_spherical_coordinates((10, 20))
+        npt.assert_equal(phi.shape[0], 10)
+        npt.assert_equal(theta.shape[0], 20)
+        self.assertEqual(grid_description, {"res_lat": 20, "res_lon": 10})
 
 class TestHopfConversion(unittest.TestCase):
     def test_conversion(self):
@@ -328,11 +341,16 @@ class TestHopfConversion(unittest.TestCase):
         # Pass the quaternions through the conversion functions
         θ, ϕ, ψ = AbstractHopfBasedS3Sampler.quaternion_to_hopf_yershova(unit_vectors)
         recovered_quaternions = (
-            AbstractHopfBasedS3Sampler.hopf_coordinates_to_quaterion_yershova(θ, ϕ, ψ)
+            AbstractHopfBasedS3Sampler.hopf_coordinates_to_quaternion_yershova(θ, ϕ, ψ)
         )
 
         # Check if the original quaternions are close to the recovered quaternions.
         npt.assert_allclose(unit_vectors, recovered_quaternions, atol=5e-6)
+
+        recovered_quaternions_via_legacy_alias = (
+            AbstractHopfBasedS3Sampler.hopf_coordinates_to_quaterion_yershova(θ, ϕ, ψ)
+        )
+        npt.assert_allclose(recovered_quaternions, recovered_quaternions_via_legacy_alias)
 
 
 class TestSymmetricLeopardiSampler(unittest.TestCase):

@@ -18,20 +18,40 @@ PYRECEST_BACKEND=jax python examples/basic/kalman_filter.py
 
 After import, the selected backend is available as
 `pyrecest.backend.__backend_name__` and through
-`pyrecest.backend.get_backend_name()`.
+`pyrecest.backend.get_backend_name()`. Convenience helpers in
+`pyrecest.backend_tools` and at package level expose `get_backend_name()`,
+`is_backend(...)`, `assert_backend(...)`, and
+`warn_if_backend_env_changed()` for backend-sensitive scripts.
 
 ## Support Summary
 
 The test workflow runs the suite for the `numpy`, `pytorch`, and `jax` backends
 across supported Python versions. Passing tests do not mean that every public
 API has identical behavior on every backend. Some modules intentionally assert
-or raise when a backend does not support the required operation.
+or raise when a backend does not support the required operation. The declared
+unsupported and partial backend capabilities live in
+`src/pyrecest/_backend/capabilities.py` and are exercised by backend contract
+tests. See the [backend support matrix](backend-support.md) for a generated,
+smoke-test-backed snapshot of selected API capabilities.
+
+Association-hypothesis helpers are currently NumPy/SciPy-oriented utilities.
+They may coerce backend arrays to NumPy arrays and should not be assumed to
+preserve PyTorch device placement, PyTorch gradients, or JAX tracing semantics
+unless a focused backend test covers the exact helper being used.
 
 | Backend | Best fit                                                                                                                  | Main limitations                                                                                                                                                          |
 |---------|---------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | NumPy   | Default backend and broadest compatibility for examples, evaluation, plotting, tracking, and SciPy-based helpers.         | No automatic differentiation through `pyrecest.backend.autodiff`. Autodiff calls raise `AutodiffNotImplementedError`.                                                     |
 | PyTorch | Tensor workflows and automatic differentiation where the required API is implemented.                                     | Some backend helpers are placeholders or bridge through NumPy/SciPy. `pyrecest.backend.signal.fftconvolve` and `pyrecest.backend.searchsorted` are not implemented.       |
 | JAX     | JAX array and autodiff workflows for APIs that avoid unsupported mutable, assignment-heavy, or SciPy-specific operations. | Several package areas explicitly skip or reject JAX, including some sampling, tracking, assignment, evaluation, point-set registration, and manifold-specific operations. |
+
+## Capability Metadata
+
+Backend limitations are tracked in `src/pyrecest/_backend/capabilities.py`. The
+metadata distinguishes unsupported facade functions from partial support, such
+as PyTorch helpers that bridge through NumPy/SciPy and may not preserve device
+placement or gradient behavior. Public API support rows are documented in
+[Backend API Matrix](backend-api-matrix.md).
 
 ## NumPy Backend
 

@@ -388,6 +388,8 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
                 raise ValueError(
                     "likelihoods must contain exactly one value per model in the IMM."
                 )
+            if not bool(pyrecest.backend.all(isfinite(likelihoods))):
+                raise ValueError("likelihoods entries must be finite.")
             if pyrecest.backend.any(likelihoods < 0.0):
                 raise ValueError("likelihoods must be nonnegative.")
             log_likelihoods = full(self.n_models, -float("inf"))
@@ -400,6 +402,8 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
                 raise ValueError(
                     "log_likelihoods must contain exactly one value per model in the IMM."
                 )
+            if pyrecest.backend.any(pyrecest.backend.isnan(log_likelihoods)):
+                raise ValueError("log_likelihoods entries must not be NaN.")
             self.latest_model_likelihoods = exp(log_likelihoods)
 
         prior_probabilities = asarray(self.mode_probabilities, dtype=float).reshape(-1)
@@ -445,6 +449,8 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
         transition_matrix = asarray(transition_matrix, dtype=float)
         if transition_matrix.shape != (n_models, n_models):
             raise ValueError("transition_matrix must have shape (n_models, n_models).")
+        if not bool(pyrecest.backend.all(isfinite(transition_matrix))):
+            raise ValueError("transition_matrix entries must be finite.")
         if pyrecest.backend.any(transition_matrix < 0.0):
             raise ValueError("transition_matrix must be elementwise nonnegative.")
 
@@ -471,6 +477,8 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
                 raise ValueError(
                     "mode_probabilities must contain exactly one value per model."
                 )
+            if not bool(pyrecest.backend.all(isfinite(mode_probabilities))):
+                raise ValueError("mode_probabilities entries must be finite.")
             if pyrecest.backend.any(mode_probabilities < 0.0):
                 raise ValueError("mode_probabilities must be elementwise nonnegative.")
             curr_sum = mode_probabilities.sum()
@@ -543,6 +551,8 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
         weights = asarray(weights, dtype=float).reshape(-1)
         if weights.shape != (len(gaussians),):
             raise ValueError("weights must have one entry per Gaussian component.")
+        if not bool(pyrecest.backend.all(isfinite(weights))):
+            raise ValueError("weights must be finite.")
         curr_sum = weights.sum()
         if curr_sum <= 0.0:
             raise ValueError("At least one mixture weight must be strictly positive.")

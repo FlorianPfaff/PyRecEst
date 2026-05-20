@@ -225,7 +225,10 @@ def matmul(x, y, out=None):
 
 
 def to_numpy(x):
-    return x.numpy()
+    """Convert a tensor to a NumPy array without preserving autograd state."""
+    if not _torch.is_tensor(x):
+        return _np.asarray(x)
+    return x.detach().cpu().numpy()
 
 
 def one_hot(labels, num_classes):

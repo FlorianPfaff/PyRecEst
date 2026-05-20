@@ -3,6 +3,7 @@
 import numpy as _np
 import scipy as _scipy
 import torch as _torch
+from torch import block_diag  # For PyRecEst
 from torch.linalg import (
     cholesky,
     det,
@@ -11,16 +12,34 @@ from torch.linalg import (
     eigvalsh,
     inv,
     matrix_power,
+    pinv,  # For PyRecEst
     qr,
     solve,
-    pinv,  # For PyRecEst
 )
 from torch.linalg import matrix_exp as expm
-from torch import block_diag  # For PyRecEst
 
 from .._backend_config import np_atol as atol
 from ..numpy import linalg as _gsnplinalg
 from ._dtype import _cast_out_to_input_dtype
+
+
+def _as_numpy_no_grad(value):
+    """Return a CPU NumPy view/copy for SciPy bridge functions."""
+    if isinstance(value, _torch.Tensor):
+        return value.detach().cpu().numpy()
+    return _np.asarray(value)
+
+
+def _torch_as_like(value, like):
+    """Convert a NumPy/SciPy result back to the input tensor's device and dtype."""
+    if isinstance(like, _torch.Tensor):
+        result = _torch.as_tensor(value, device=like.device)
+        if result.dtype.is_floating_point and like.dtype.is_floating_point:
+            return result.to(dtype=like.dtype)
+        if result.dtype.is_complex and like.dtype.is_complex:
+            return result.to(dtype=like.dtype)
+        return result
+    return _torch.from_numpy(_np.asarray(value))
 
 
 class _Logm(_torch.autograd.Function):
@@ -32,8 +51,8 @@ class _Logm(_torch.autograd.Function):
 
     @staticmethod
     def _logm(x):
-        mat_log = _gsnplinalg.logm(x.detach().cpu().numpy())
-        return _torch.from_numpy(mat_log).to(x.device)
+        mat_log = _gsnplinalg.logm(_as_numpy_no_grad(x))
+        return _torch_as_like(mat_log, x)
 
     @staticmethod
     def forward(ctx, tensor):
@@ -63,11 +82,12 @@ logm = _Logm.apply
 
 
 def sqrtm(x):
-    np_sqrtm = _np.vectorize(_scipy.linalg.sqrtm, signature="(n,m)->(n,m)")(x)
+    x_np = _as_numpy_no_grad(x)
+    np_sqrtm = _np.vectorize(_scipy.linalg.sqrtm, signature="(n,m)->(n,m)")(x_np)
     if np_sqrtm.dtype.kind == "c":
         np_sqrtm = np_sqrtm.astype(f"complex{int(np_sqrtm.dtype.name[7:]) // 2}")
 
-    return _torch.from_numpy(np_sqrtm)
+    return _torch_as_like(np_sqrtm, x)
 
 
 def svd(x, full_matrices=True, compute_uv=True):
@@ -86,7 +106,11 @@ def matrix_rank(a, hermitian=False, **_unused_kwargs):
 
 
 def quadratic_assignment(a, b, options):
-    return list(_scipy.optimize.quadratic_assignment(a, b, options=options).col_ind)
+    return list(
+        _scipy.optimize.quadratic_assignment(
+            _as_numpy_no_grad(a), _as_numpy_no_grad(b), options=options
+        ).col_ind
+    )
 
 
 def solve_sylvester(a, b, q):
@@ -110,14 +134,16 @@ def solve_sylvester(a, b, q):
         if conditions:
             tilde_q = eigvecs.transpose(-2, -1) @ q @ eigvecs
             tilde_x = tilde_q / (
-                eigvals[..., :, None] + eigvals[..., None, :] + _torch.eye(a.shape[-1])
+                eigvals[..., :, None]
+                + eigvals[..., None, :]
+                + _torch.eye(a.shape[-1], dtype=a.dtype, device=a.device)
             )
             return eigvecs @ tilde_x @ eigvecs.transpose(-2, -1)
 
     solution = _np.vectorize(
         _scipy.linalg.solve_sylvester, signature="(m,m),(n,n),(m,n)->(m,n)"
-    )(a, b, q)
-    return _torch.from_numpy(solution)
+    )(_as_numpy_no_grad(a), _as_numpy_no_grad(b), _as_numpy_no_grad(q))
+    return _torch_as_like(solution, q)
 
 
 # (TODO) (sait) _torch.linalg.cholesky_ex for even faster way
@@ -143,19 +169,20 @@ def is_single_matrix_pd(mat):
 @_cast_out_to_input_dtype
 def fractional_matrix_power(A, t):
     """Compute the fractional power of a matrix."""
-    if A.ndim == 2:
-        out = _scipy.linalg.fractional_matrix_power(A, t)
+    A_np = _as_numpy_no_grad(A)
+    if A_np.ndim == 2:
+        out = _scipy.linalg.fractional_matrix_power(A_np, t)
     else:
-        out = _np.stack([_scipy.linalg.fractional_matrix_power(A_, t) for A_ in A])
+        out = _np.stack([_scipy.linalg.fractional_matrix_power(A_, t) for A_ in A_np])
 
-    return _torch.tensor(out)
+    return _torch_as_like(out, A)
 
 
-def polar(*args, **kwargs):
+def polar(a, *args, **kwargs):
     """Polar decomposition of a matrix."""
     func = _np.vectorize(
         _scipy.linalg.polar, signature="(n,n)->(n,n),(n,n)", excluded=["side"]
     )
-    unitary, hermitian = func = func(*args, **kwargs)
+    unitary, hermitian = func(_as_numpy_no_grad(a), *args, **kwargs)
 
-    return _torch.from_numpy(unitary), _torch.from_numpy(hermitian)
+    return _torch_as_like(unitary, a), _torch_as_like(hermitian, a)

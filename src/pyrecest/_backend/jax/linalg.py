@@ -23,12 +23,18 @@ from jax.scipy.linalg import (
 )
 
 unsupported_functions = [
-    'fractional_matrix_power',
-    'is_single_matrix_pd',
-    'logm',
-    'quadratic_assignment',
-    'solve_sylvester',
+    "fractional_matrix_power",
+    "is_single_matrix_pd",
+    "logm",
+    "quadratic_assignment",
+    "solve_sylvester",
 ]
+
+
+def _raise_unsupported(*args, **kwargs):
+    raise NotImplementedError("This function is not supported in this JAX backend.")
+
+
 for func_name in unsupported_functions:
-    exec(f"{func_name} = lambda *args, **kwargs: NotImplementedError('This function is not supported in this JAX backend.')")
+    globals()[func_name] = _raise_unsupported
 

@@ -1,0 +1,39 @@
+name: Bug report
+description: Report a correctness, packaging, backend, or documentation bug.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What went wrong?
+    validations:
+      required: true
+  - type: textarea
+    id: reproducer
+    attributes:
+      label: Minimal reproducer
+      description: Include code, input data shape, backend, and expected behavior.
+      render: python
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: PyRecEst version
+      placeholder: "e.g. 2.2.2"
+  - type: dropdown
+    id: backend
+    attributes:
+      label: Backend
+      options:
+        - numpy
+        - pytorch
+        - jax
+        - not backend-specific
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Python version, OS, dependency versions, and installation method.

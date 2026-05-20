@@ -1,5 +1,9 @@
-from pyrecest._backend._dtype_utils import _np_box_binary_scalar as _box_binary_scalar
-from pyrecest._backend._dtype_utils import _np_box_unary_scalar as _box_unary_scalar
+from pyrecest._backend._dtype_utils import (  # noqa: F401
+    _np_box_binary_scalar as _box_binary_scalar,
+)
+from pyrecest._backend._dtype_utils import (  # noqa: F401
+    _np_box_unary_scalar as _box_unary_scalar,
+)
 from pyrecest._backend._dtype_utils import (
     _pre_add_default_dtype_by_casting,
     _pre_allow_complex_dtype,
@@ -9,8 +13,8 @@ from pyrecest._backend._dtype_utils import (
     _pre_set_default_dtype,
 )
 
-from .._backend_config import np_atol as atol
-from .._backend_config import np_rtol as rtol
+from .._backend_config import np_atol as atol  # noqa: F401
+from .._backend_config import np_rtol as rtol  # noqa: F401
 from ._dispatch import numpy as _np
 
 _DTYPES = {
@@ -49,7 +53,19 @@ def _dtype_as_str(dtype):
     return dtype.name
 
 
+def _normalize_numpy_dtype(dtype):
+    if dtype is None:
+        return None
+    try:
+        return _np.dtype(dtype)
+    except TypeError:
+        return _np.dtype(str(dtype).split(".")[-1])
+
+
 def cast(x, dtype):
+    dtype = _normalize_numpy_dtype(dtype)
+    if not hasattr(x, "astype"):
+        return _np.asarray(x, dtype=dtype)
     return x.astype(dtype)
 
 

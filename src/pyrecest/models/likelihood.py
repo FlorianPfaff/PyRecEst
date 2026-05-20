@@ -35,24 +35,16 @@ def _ensure_callable(value: Any, name: str) -> None:
         raise TypeError(f"{name} must be callable")
 
 
-def _accepts_sample_count(callback: Callable[..., Any]) -> bool:
-    """Return whether a sampler callback appears to accept an ``n`` argument."""
+def _sample_count_call_mode(callback: Callable[..., Any]) -> str | None:
+    """Return how a sampler callback appears to accept an ``n`` argument."""
 
     try:
-        parameters = signature(callback).parameters.values()
+        parameters = tuple(signature(callback).parameters.values())
     except (TypeError, ValueError):
-        return True
+        return "positional"
 
-    has_variadic_positional = any(
-        parameter.kind is Parameter.VAR_POSITIONAL for parameter in parameters
-    )
-    if has_variadic_positional:
-        return True
-
-    try:
-        parameters = signature(callback).parameters.values()
-    except (TypeError, ValueError):
-        return True
+    if any(parameter.kind is Parameter.VAR_POSITIONAL for parameter in parameters):
+        return "positional"
 
     positional_parameters = [
         parameter
@@ -61,9 +53,18 @@ def _accepts_sample_count(callback: Callable[..., Any]) -> bool:
         in (Parameter.POSITIONAL_ONLY, Parameter.POSITIONAL_OR_KEYWORD)
     ]
     if len(positional_parameters) >= 2:
-        return True
+        return "positional"
 
-    return any(parameter.name == "n" for parameter in parameters)
+    for parameter in parameters:
+        if parameter.name == "n":
+            if parameter.kind is Parameter.KEYWORD_ONLY:
+                return "keyword"
+            return "positional"
+
+    if any(parameter.kind is Parameter.VAR_KEYWORD for parameter in parameters):
+        return "keyword"
+
+    return None
 
 
 def _evaluate_distribution_method(
@@ -160,7 +161,7 @@ class SampleableTransitionModel:
             _ensure_callable(transition_density, "transition_density")
 
         self._sample_next = sample_next
-        self._sample_next_accepts_n = _accepts_sample_count(sample_next)
+        self._sample_next_count_call_mode = _sample_count_call_mode(sample_next)
         self._transition_density = transition_density
         self.function_is_vectorized = function_is_vectorized
         self.name = name
@@ -174,8 +175,10 @@ class SampleableTransitionModel:
     def sample_next(self, state: Any, n: int = 1) -> Any:
         """Draw ``n`` next-state samples conditioned on ``state``."""
 
-        if self._sample_next_accepts_n:
+        if self._sample_next_count_call_mode == "positional":
             return self._sample_next(state, n)
+        if self._sample_next_count_call_mode == "keyword":
+            return self._sample_next(state, n=n)
         return self._sample_next(state)
 
     def transition_density(self, state_next: Any, state_previous: Any) -> Any:

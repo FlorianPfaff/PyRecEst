@@ -10,16 +10,24 @@ methods and attributes.
 
 ## Current scope
 
-This seed package only defines common dimension protocols and broad array
-aliases:
+The package defines common dimension protocols and broad array aliases:
 
 - `SupportsDim` for objects with an intrinsic state-space dimension;
 - `SupportsInputDim` for objects with an ambient or input coordinate dimension;
 - `ArrayLike` and `BackendArray` as intentionally broad aliases for backend
   compatible values.
 
-Follow-up pull requests can add distribution, filter, model, conversion, and
-manifold-specific protocols independently.
+It also defines distribution and filter capability protocols:
+
+- `SupportsPdf` and `SupportsLogPdf` for density evaluation;
+- `SupportsSampling` for sample generation;
+- `SupportsMean`, `SupportsCovariance`, and `SupportsMeanAndCovariance` for
+  moment-style summaries;
+- `SupportsDistributionConversion` and `SupportsDistributionApproximation` for
+  representation conversion entry points;
+- `SupportsFilterState`, `SupportsPointEstimate`, `SupportsLinearPrediction`,
+  `SupportsLinearUpdate`, and `SupportsHistoryRecording` for common filter
+  capabilities.
 
 ## Design principles
 
@@ -27,24 +35,28 @@ Protocols should stay small and capability-oriented. Instead of requiring every
 distribution, model, or filter to implement one large interface, PyRecEst should
 ask only for the capability that a function actually needs.
 
-For example, a future density utility may require a `SupportsPdf` protocol while
-a sampler utility may require only `SupportsSampling`. A particle representation
-should not need to implement analytic density evaluation merely to satisfy a
-large distribution base interface.
+For example, a density utility can require `SupportsPdf` while a sampler utility
+can require only `SupportsSampling`. A particle representation should not need
+to implement analytic density evaluation merely to satisfy a large distribution
+base interface.
 
 ## Runtime checks
 
 The public protocols are runtime-checkable where practical:
 
 ```python
-from pyrecest.protocols.common import SupportsDim
+from pyrecest.protocols import SupportsDim, SupportsPdf
 
 
-class DemoObject:
+class DemoDistribution:
     dim = 2
 
+    def pdf(self, xs):
+        return 1.0
 
-assert isinstance(DemoObject(), SupportsDim)
+
+assert isinstance(DemoDistribution(), SupportsDim)
+assert isinstance(DemoDistribution(), SupportsPdf)
 ```
 
 Runtime checks confirm that the required attributes or methods are present. They
@@ -53,11 +65,14 @@ shapes, backend behavior, and semantics separately.
 
 ## Import style
 
-Use submodule imports in early protocol pull requests:
+Use package-level imports for public protocols:
 
 ```python
-from pyrecest.protocols.common import SupportsDim, SupportsInputDim
+from pyrecest.protocols import SupportsDim, SupportsPdf, SupportsSampling
 ```
 
-Package-level exports are intentionally minimal in this seed package to reduce
-merge conflicts while follow-up protocol modules are developed in parallel.
+Submodule imports remain available when a smaller namespace is preferred:
+
+```python
+from pyrecest.protocols.distributions import SupportsLogPdf
+```

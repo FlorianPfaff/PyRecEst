@@ -1,7 +1,7 @@
 """Torch based random backend."""
 
 import torch as _torch
-from torch import rand, randint
+from torch import randint
 from torch import get_rng_state as get_state  # For PyRecEst
 from torch import set_rng_state as set_state  # For PyRecEst
 from torch.distributions.multivariate_normal import (
@@ -55,21 +55,29 @@ def seed(*args, **kwargs):
     return _torch.manual_seed(*args, **kwargs)
 
 
+def rand(size=None, dtype=None):
+    if size is None:
+        size = ()
+    elif not hasattr(size, "__iter__"):
+        size = (size,)
+    return _torch.rand(size, dtype=dtype)
+
+
 def multinomial(n, pvals):
     pvals = pvals / pvals.sum()
     return _torch.multinomial(pvals, n, replacement=True).bincount(minlength=len(pvals))
 
 
 @_allow_complex_dtype
-def normal(loc=0.0, scale=1.0, size=(1,)):
-    if not hasattr(size, "__iter__"):
+def normal(loc=0.0, scale=1.0, size=None):
+    if size is None:
+        size = ()
+    elif not hasattr(size, "__iter__"):
         size = (size,)
     return _torch.normal(mean=loc, std=scale, size=size)
 
 
-def uniform(low=0.0, high=1.0, size=(1,), dtype=None):
-    if not hasattr(size, "__iter__"):
-        size = (size,)
+def uniform(low=0.0, high=1.0, size=None, dtype=None):
     if low >= high:
         raise ValueError("Upper bound must be higher than lower bound")
     return (high - low) * rand(size, dtype=dtype) + low
@@ -77,7 +85,9 @@ def uniform(low=0.0, high=1.0, size=(1,), dtype=None):
 
 @_modify_func_default_dtype(copy=False, kw_only=True)
 @_allow_complex_dtype
-def multivariate_normal(mean, cov, size=(1,)):
-    if not hasattr(size, "__iter__"):
+def multivariate_normal(mean, cov, size=None):
+    if size is None:
+        size = ()
+    elif not hasattr(size, "__iter__"):
         size = (size,)
     return _MultivariateNormal(mean, cov).sample(size)
