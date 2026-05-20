@@ -1,3 +1,5 @@
+import copy
+
 import numpy as np
 from beartype import beartype
 
@@ -41,9 +43,10 @@ def generate_measurements(groundtruth, simulation_config):
         Comprises timesteps elements, each of which is a numpy array of shape
         (n_meas_at_individual_time_step[t], n_dim).
     """
-    assert "n_meas_at_individual_time_step" not in simulation_config or np.shape(
+    if "n_meas_at_individual_time_step" in simulation_config and np.shape(
         simulation_config["n_meas_at_individual_time_step"]
-    ) == (simulation_config["n_timesteps"],)
+    ) != (simulation_config["n_timesteps"],):
+        raise ValueError("n_meas_at_individual_time_step must have shape (n_timesteps,)")
     measurements = np.empty(simulation_config["n_timesteps"], dtype=object)
 
     if simulation_config.get("mtt", False) and simulation_config.get("eot", False):
@@ -52,20 +55,22 @@ def generate_measurements(groundtruth, simulation_config):
         )
 
     if simulation_config.get("eot", False):
-        assert (
-            "target_shape" in simulation_config.keys()
-        ), "shape must be in simulation_config for EOT"
-        assert (
-            "eot_sampling_style" in simulation_config.keys()
-        ), "eot_sampling_style must be in simulation_config for EOT"
-        assert ("intensity_lambda" in simulation_config.keys()) != (
-            "n_meas_at_individual_time_step" in simulation_config.keys()
-        ), "Must either give intensity_lambda or n_meas_at_individual_time_step for EOT"
+        if "target_shape" not in simulation_config:
+            raise ValueError("target_shape must be in simulation_config for EOT")
+        if "eot_sampling_style" not in simulation_config:
+            raise ValueError("eot_sampling_style must be in simulation_config for EOT")
+        if ("intensity_lambda" in simulation_config) == (
+            "n_meas_at_individual_time_step" in simulation_config
+        ):
+            raise ValueError(
+                "Must either give intensity_lambda or n_meas_at_individual_time_step for EOT"
+            )
         shape = simulation_config["target_shape"]
         eot_sampling_style = simulation_config["eot_sampling_style"]
-        assert isinstance(
-            shape, Polygon
-        ), "Currently only StarConvexPolygon (based on shapely Polygons) are supported as target shapes."
+        if not isinstance(shape, Polygon):
+            raise TypeError(
+                "Currently only StarConvexPolygon (based on shapely Polygons) are supported as target shapes."
+            )
 
         for t in range(simulation_config["n_timesteps"]):
             curr_groundtruth = groundtruth[t]
@@ -92,9 +97,10 @@ def generate_measurements(groundtruth, simulation_config):
                 )
 
             if "n_meas_at_individual_time_step" in simulation_config:
-                assert (
-                    "intensity_lambda" not in simulation_config
-                ), "Cannot use both intensity_lambda and n_meas_at_individual_time_step."
+                if "intensity_lambda" in simulation_config:
+                    raise ValueError(
+                        "Cannot use both intensity_lambda and n_meas_at_individual_time_step."
+                    )
                 n_meas_curr = simulation_config["n_meas_at_individual_time_step"][t]
             else:
                 if eot_sampling_style == "boundary":
@@ -124,9 +130,8 @@ def generate_measurements(groundtruth, simulation_config):
             raise NotImplementedError(
                 "generate_measurements does not support MTT scenarios with the JAX backend."
             )
-        assert (
-            simulation_config["clutter_rate"] == 0
-        ), "Clutter currently not supported."
+        if simulation_config["clutter_rate"] != 0:
+            raise NotImplementedError("Clutter currently not supported.")
 
         n_observations = np.random.binomial(
             1,
@@ -148,11 +153,13 @@ def generate_measurements(groundtruth, simulation_config):
                         array(groundtruth[t, target_no, :]),
                     ) + squeeze(simulation_config["meas_noise"].sample(1))
                 else:
-                    assert (
-                        n_observations[t, target_no] == 0
-                    ), "Multiple measurements currently not supported."
+                    if n_observations[t, target_no] != 0:
+                        raise NotImplementedError(
+                            "Multiple measurements currently not supported."
+                        )
 
-            assert meas_no == n_meas_at_t, "Mismatch in number of measurements."
+            if meas_no != n_meas_at_t:
+                raise RuntimeError("Mismatch in number of measurements.")
 
     else:
         if "meas_generator" in simulation_config:
@@ -168,7 +175,7 @@ def generate_measurements(groundtruth, simulation_config):
                 measurements[t] = mod(
                     squeeze(
                         tile(
-                            groundtruth[t - 1],
+                            groundtruth[t],
                             (
                                 n_meas,
                                 1,
@@ -182,15 +189,15 @@ def generate_measurements(groundtruth, simulation_config):
             elif isinstance(
                 meas_noise, (VonMisesFisherDistribution, WatsonDistribution)
             ):
-                curr_dist = meas_noise
-                curr_dist.mu = groundtruth[t - 1]
+                curr_dist = copy.deepcopy(meas_noise)
+                curr_dist.mu = groundtruth[t]
                 measurements[t] = curr_dist.sample(n_meas)
 
             elif isinstance(meas_noise, GaussianDistribution):
                 noise_samples = meas_noise.sample(n_meas)
                 measurements[t] = squeeze(
                     tile(
-                        groundtruth[t - 1],
+                        groundtruth[t],
                         (
                             n_meas,
                             1,

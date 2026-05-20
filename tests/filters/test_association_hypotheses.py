@@ -7,6 +7,7 @@ from pyrecest.filters import (
     CostThresholdGate,
     KalmanFilter,
     NISGate,
+    ProbabilityThresholdGate,
     TopKGate,
     association_result_from_hypotheses,
     build_linear_gaussian_hypothesis_associator,
@@ -79,6 +80,44 @@ class AssociationHypothesesTest(unittest.TestCase):
             [(0, 0), (1, 1)],
         )
 
+    def test_probability_likelihood_gate_rejects_zero_threshold(self):
+        with self.assertRaises(ValueError):
+            ProbabilityThresholdGate(0.0, use_likelihood=True)
+
+        hypothesis = AssociationHypothesis(0, 0, probability=0.0)
+        self.assertTrue(ProbabilityThresholdGate(0.0).accepts(hypothesis))
+
+    def test_measurement_axis_auto_uses_measurement_dimension(self):
+        state_covariance = array(
+            [
+                [1.0, 0.0, 0.0],
+                [0.0, 1.0, 0.0],
+                [0.0, 0.0, 1.0],
+            ]
+        )
+        measurement_matrix = array(
+            [
+                [1.0, 0.0, 0.0],
+                [0.0, 1.0, 0.0],
+                [0.0, 0.0, 1.0],
+            ]
+        )
+        tracks = [KalmanFilter((array([0.0, 0.0, 0.0]), state_covariance))]
+        measurements = array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]])
+
+        hypotheses = linear_gaussian_association_hypotheses(
+            tracks, measurements, measurement_matrix, state_covariance
+        )
+
+        self.assertEqual(len(hypotheses), 2)
+        self.assertEqual(hypotheses[1].measurement_index, 1)
+        self.assertTrue(allclose(hypotheses[1].innovation, array([1.0, 1.0, 1.0])))
+
+        with self.assertRaises(ValueError):
+            linear_gaussian_association_hypotheses(
+                tracks, state_covariance, measurement_matrix, state_covariance
+            )
+
     def test_hypotheses_solve_global_nearest_neighbor_assignment(self):
         hypotheses = filter_hypotheses(self._simple_hypotheses(), NISGate(1.0))
         association = association_result_from_hypotheses(
@@ -92,6 +131,25 @@ class AssociationHypothesesTest(unittest.TestCase):
         self.assertEqual(sorted(association.matches), [(0, 0), (1, 1)])
         self.assertEqual(association.unmatched_track_indices, [])
         self.assertEqual(association.unmatched_measurement_indices, [])
+
+    def test_probability_likelihood_gate_rejects_zero_threshold(self):
+        with self.assertRaises(ValueError):
+            ProbabilityThresholdGate(0.0, use_likelihood=True)
+
+    def test_default_hypothesis_assignment_does_not_select_missing_pair(self):
+        hypotheses = [
+            AssociationHypothesis(0, 0, cost=1.0),
+        ]
+
+        association = association_result_from_hypotheses(
+            hypotheses,
+            num_tracks=2,
+            num_measurements=2,
+        )
+
+        self.assertEqual(association.matches, [(0, 0)])
+        self.assertIn(1, association.unmatched_track_indices)
+        self.assertIn(1, association.unmatched_measurement_indices)
 
     def test_linear_gaussian_hypothesis_associator_matches_expected_pairs(self):
         tracks = [

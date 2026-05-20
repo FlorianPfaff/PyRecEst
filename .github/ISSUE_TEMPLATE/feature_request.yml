@@ -1,0 +1,29 @@
+name: Feature request
+description: Suggest a new distribution, filter, tracker, backend feature, or documentation improvement.
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: What workflow would this enable?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the API, algorithm, or documentation change.
+    validations:
+      required: true
+  - type: dropdown
+    id: backend
+    attributes:
+      label: Backend impact
+      options:
+        - numpy only
+        - pytorch only
+        - jax only
+        - multiple backends
+        - no backend impact

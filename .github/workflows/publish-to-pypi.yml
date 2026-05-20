@@ -290,13 +290,19 @@ jobs:
 
           for asset in release["assets"]:
               name = asset["name"]
-              if name.endswith(".whl") or name.endswith(".tar.gz"):
+              if name.endswith(".whl") or name.endswith(".tar.gz") or name == "SHA256SUMS.txt":
                   wanted.append(asset)
 
-          if not wanted:
+          distribution_assets = [
+              asset for asset in wanted
+              if asset["name"].endswith(".whl") or asset["name"].endswith(".tar.gz")
+          ]
+          if not distribution_assets:
               raise SystemExit(
                   f"No wheel or source distribution assets found on release {release_tag}."
               )
+          if not any(asset["name"] == "SHA256SUMS.txt" for asset in wanted):
+              raise SystemExit(f"No SHA256SUMS.txt asset found on release {release_tag}.")
 
           for asset in wanted:
               req = urllib.request.Request(
@@ -315,9 +321,31 @@ jobs:
               print(f"Downloaded {target}")
           PY
 
+      - name: Verify distribution hashes
+        shell: bash
+        run: |
+          cd dist
+          python - <<'PY'
+          import hashlib
+          import pathlib
+
+          hashes = {}
+          for line in pathlib.Path("SHA256SUMS.txt").read_text(encoding="utf-8").splitlines():
+              digest, filename = line.split(maxsplit=1)
+              hashes[filename] = digest
+
+          for filename, expected_digest in hashes.items():
+              path = pathlib.Path(filename)
+              if not path.exists():
+                  raise SystemExit(f"Missing distribution file listed in SHA256SUMS.txt: {filename}")
+              actual_digest = hashlib.sha256(path.read_bytes()).hexdigest()
+              if actual_digest != expected_digest:
+                  raise SystemExit(f"Hash mismatch for {filename}: expected {expected_digest}, got {actual_digest}")
+          PY
+
       - name: Check distributions
         shell: bash
-        run: python -m twine check dist/*
+        run: python -m twine check dist/*.whl dist/*.tar.gz
 
       - name: Publish to PyPI
         if: ${{ needs.resolve.outputs.target_index == 'pypi' }}

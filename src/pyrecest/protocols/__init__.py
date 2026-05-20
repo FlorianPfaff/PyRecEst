@@ -5,17 +5,43 @@ capability protocols for user-defined PyRecEst components. Protocols are public
 contracts: they describe the methods, attributes, and conventions that later
 modules can rely on without forcing users to inherit from a specific abstract
 base class.
-
-This seed package intentionally exposes only common aliases and dimension
-protocols. Distribution-, filter-, model-, conversion-, and manifold-specific
-protocol modules can be added independently in follow-up pull requests.
 """
 
 from .common import ArrayLike, BackendArray, SupportsDim, SupportsInputDim
+from .distributions import (
+    SupportsCovariance,
+    SupportsDistributionApproximation,
+    SupportsDistributionConversion,
+    SupportsLogPdf,
+    SupportsMean,
+    SupportsMeanAndCovariance,
+    SupportsPdf,
+    SupportsSampling,
+)
+from .filters import (
+    SupportsFilterState,
+    SupportsHistoryRecording,
+    SupportsLinearPrediction,
+    SupportsLinearUpdate,
+    SupportsPointEstimate,
+)
 
 __all__ = [
     "ArrayLike",
     "BackendArray",
+    "SupportsCovariance",
     "SupportsDim",
+    "SupportsDistributionApproximation",
+    "SupportsDistributionConversion",
+    "SupportsFilterState",
+    "SupportsHistoryRecording",
     "SupportsInputDim",
+    "SupportsLinearPrediction",
+    "SupportsLinearUpdate",
+    "SupportsLogPdf",
+    "SupportsMean",
+    "SupportsMeanAndCovariance",
+    "SupportsPdf",
+    "SupportsPointEstimate",
+    "SupportsSampling",
 ]

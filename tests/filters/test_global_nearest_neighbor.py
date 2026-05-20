@@ -137,6 +137,23 @@ class GlobalNearestNeighborTest(unittest.TestCase):
         pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
         reason="Not supported on this backend",
     )
+    def test_predict_linear_accepts_gaussian_process_noise(self):
+        tracker = GlobalNearestNeighbor()
+        tracker.filter_state = [self.kfs_init[0]]
+        sys_noise = GaussianDistribution(zeros(4), 2.0 * eye(4), check_validity=False)
+        prior_covariance = tracker.filter_bank[0].filter_state.C
+
+        tracker.predict_linear(eye(4), sys_noise)
+
+        npt.assert_array_equal(
+            tracker.filter_bank[0].filter_state.C,
+            prior_covariance + 2.0 * eye(4),
+        )
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
+        reason="Not supported on this backend",
+    )
     def test_predict_linear_different_mats_and_inputs(self):
         tracker = GlobalNearestNeighbor()
         tracker.filter_state = self.kfs_init
@@ -225,6 +242,57 @@ class GlobalNearestNeighborTest(unittest.TestCase):
             self.all_different_meas_covs,
         )
         npt.assert_array_equal(measurements[:, association], perfect_meas_ordered + 0.1)
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
+        reason="Not supported on this backend",
+    )
+    def test_mahalanobis_uses_inverse_covariance(self):
+        tracker = GlobalNearestNeighbor(
+            association_param={
+                "distance_metric_pos": "Mahalanobis",
+                "square_dist": True,
+                "gating_distance_threshold": 4.0,
+            }
+        )
+        tracker.filter_state = [
+            KalmanFilter(
+                GaussianDistribution(
+                    array([0.0, 0.0]),
+                    diag(array([100.0, 1.0])),
+                )
+            )
+        ]
+
+        association = tracker.find_association(
+            array([[10.0], [0.0]]),
+            eye(2),
+            zeros((2, 2)),
+            warn_on_no_meas_for_track=False,
+        )
+
+        npt.assert_array_equal(association, array([0]))
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
+        reason="Not supported on this backend",
+    )
+    def test_square_dist_controls_gate_scale(self):
+        tracker = GlobalNearestNeighbor(
+            association_param={
+                "distance_metric_pos": "Euclidean",
+                "square_dist": True,
+                "gating_distance_threshold": 3.0,
+            }
+        )
+        tracker.filter_state = [
+            KalmanFilter(GaussianDistribution(zeros(2), eye(2)))
+        ]
+
+        association = tracker.find_association(
+            array([[2.0], [0.0]]), eye(2), eye(2), warn_on_no_meas_for_track=False
+        )
+        self.assertGreaterEqual(int(association[0]), 1)
 
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ in ("pytorch", "jax"),

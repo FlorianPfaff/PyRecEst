@@ -104,6 +104,27 @@ class TestAbstractDiracDistribution(unittest.TestCase):
 
         npt.assert_allclose(dist.w, array([2.0 / 3.0, 1.0 / 3.0]))
 
+    def test_rejects_weight_count_mismatch(self):
+        with self.assertRaisesRegex(ValueError, "Number of Diracs"):
+            LinearDiracDistribution(
+                array(
+                    [
+                        [0.0],
+                        [1.0],
+                    ]
+                ),
+                array([1.0]),
+            )
+
+    def test_reweigh_rejects_wrong_output_shape(self):
+        dist = LinearDiracDistribution(
+            array([[0.0], [1.0]]),
+            array([0.5, 0.5]),
+        )
+
+        with self.assertRaisesRegex(ValueError, "wrong output dimensions"):
+            dist.reweigh(lambda _: array([[1.0, 1.0]]))
+
     def test_reweigh_rejects_zero_posterior_weight_mass(self):
         dist = LinearDiracDistribution(
             array(

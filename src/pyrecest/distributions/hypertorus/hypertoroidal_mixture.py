@@ -21,6 +21,9 @@ class HypertoroidalMixture(AbstractMixture, AbstractHypertoroidalDistribution):
         :param dists: list of hypertoroidal distributions
         :param w: list of weights
         """
+        if len(dists) == 0:
+            raise ValueError("Mixture must contain at least one distribution")
+
         AbstractHypertoroidalDistribution.__init__(self, dim=dists[0].dim)
         AbstractMixture.__init__(self, dists, w)
         # To tell mypy the type of the variable explicitly

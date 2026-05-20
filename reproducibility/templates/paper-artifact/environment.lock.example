@@ -1,0 +1,2 @@
+# Replace with `python -m pip freeze`, `poetry export`, or a conda lock file.
+pyrecest==2.2.2

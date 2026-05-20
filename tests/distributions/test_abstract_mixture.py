@@ -35,6 +35,20 @@ class AbstractMixtureTest(unittest.TestCase):
                 array([1.2, -0.2]),
             )
 
+    def test_empty_mixture_rejected(self):
+        with self.assertRaisesRegex(ValueError, "at least one distribution"):
+            HypertoroidalMixture([], array([]))
+
+    def test_nonfinite_weights_rejected(self):
+        vmf = ToroidalWrappedNormalDistribution(array([1.0, 0.0]), eye(2))
+        shifted_vmf = vmf.shift(array([1.0, 1.0]))
+
+        with self.assertRaisesRegex(ValueError, "finite"):
+            HypertoroidalMixture(
+                [vmf, shifted_vmf],
+                array([float("nan"), 1.0]),
+            )
+
     def test_sample_metropolis_hastings_basics_only_t2(self):
         vmf = ToroidalWrappedNormalDistribution(array([1.0, 0.0]), eye(2))
         mix = HypertoroidalMixture(

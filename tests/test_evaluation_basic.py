@@ -13,10 +13,11 @@ import pyrecest.backend
 from parameterized import parameterized
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
-from pyrecest.backend import all, array, eye, sqrt, zeros
+from pyrecest.backend import all, array, eye, random, sqrt, zeros
 from pyrecest.distributions import (
     GaussianDistribution,
     HypertoroidalWrappedNormalDistribution,
+    VonMisesFisherDistribution,
 )
 from pyrecest.evaluation import (
     check_and_fix_config,
@@ -159,6 +160,46 @@ class TestEvalationBasics(TestEvalationBase):
                     self.simulation_param["initial_prior"].dim,
                 ),
             )
+
+    def test_generate_measurements_uses_current_timestep_groundtruth(self):
+        random.seed(0)
+        simulation_param = {
+            "n_timesteps": 3,
+            "n_meas_at_individual_time_step": np.ones(3, dtype=int),
+            "meas_noise": GaussianDistribution(
+                array([0.0]),
+                array([[1e-24]]),
+                check_validity=False,
+            ),
+        }
+        groundtruth = array([[1.0], [2.0], [3.0]])
+
+        measurements = generate_measurements(groundtruth, simulation_param)
+
+        observed = np.asarray(
+            [np.asarray(measurements[t]).reshape(-1)[0] for t in range(3)],
+            dtype=float,
+        )
+        np.testing.assert_allclose(observed, np.array([1.0, 2.0, 3.0]), atol=1e-10)
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ != "numpy",
+        reason="von Mises-Fisher sampling currently requires NumPy.",
+    )
+    def test_generate_measurements_does_not_mutate_directional_noise(self):
+        simulation_param = {
+            "n_timesteps": 2,
+            "n_meas_at_individual_time_step": np.ones(2, dtype=int),
+            "meas_noise": VonMisesFisherDistribution(array([1.0, 0.0, 0.0]), 5.0),
+        }
+        groundtruth = array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
+
+        generate_measurements(groundtruth, simulation_param)
+
+        np.testing.assert_allclose(
+            simulation_param["meas_noise"].mu,
+            np.array([1.0, 0.0, 0.0]),
+        )
 
     @parameterized.expand([("boundary",), ("within",)])
     def test_generate_measurements_eot(self, eot_sampling_style: str):

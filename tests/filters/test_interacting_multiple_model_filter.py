@@ -140,6 +140,38 @@ class InteractingMultipleModelFilterTest(unittest.TestCase):
             array([0.8807970779778823, 0.11920292202211755]),
         )
 
+    def test_rejects_nonfinite_transition_matrix_and_mode_probabilities(self):
+        filter_bank = [
+            MockGaussianFilter(GaussianDistribution(array([0.0]), array([[1.0]]))),
+            MockGaussianFilter(GaussianDistribution(array([1.0]), array([[1.0]]))),
+        ]
+
+        with self.assertRaisesRegex(ValueError, "transition_matrix.*finite"):
+            InteractingMultipleModelFilter(
+                filter_bank,
+                transition_matrix=array([[1.0, float("nan")], [0.0, 1.0]]),
+            )
+
+        with self.assertRaisesRegex(ValueError, "mode_probabilities.*finite"):
+            InteractingMultipleModelFilter(
+                filter_bank,
+                transition_matrix=array([[1.0, 0.0], [0.0, 1.0]]),
+                mode_probabilities=array([float("nan"), 1.0]),
+            )
+
+    def test_rejects_nonfinite_likelihoods(self):
+        filter_bank = [
+            MockGaussianFilter(GaussianDistribution(array([0.0]), array([[1.0]]))),
+            MockGaussianFilter(GaussianDistribution(array([1.0]), array([[1.0]]))),
+        ]
+        imm = InteractingMultipleModelFilter(
+            filter_bank,
+            transition_matrix=array([[1.0, 0.0], [0.0, 1.0]]),
+        )
+
+        with self.assertRaisesRegex(ValueError, "likelihoods.*finite"):
+            imm.update_mode_probabilities(likelihoods=array([float("nan"), 1.0]))
+
 
 if __name__ == "__main__":
     unittest.main()

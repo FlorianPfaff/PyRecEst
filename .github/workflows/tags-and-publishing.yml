@@ -240,6 +240,26 @@ jobs:
       - name: Build package
         run: python -m poetry build
 
+      - name: Generate distribution hashes
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib
+          import pathlib
+
+          dist_dir = pathlib.Path("dist")
+          lines = []
+          for path in sorted(dist_dir.iterdir()):
+              if path.suffix == ".whl" or path.name.endswith(".tar.gz"):
+                  digest = hashlib.sha256(path.read_bytes()).hexdigest()
+                  lines.append(f"{digest}  {path.name}")
+
+          if not lines:
+              raise SystemExit("No wheel or source distribution files found in dist/.")
+
+          (dist_dir / "SHA256SUMS.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
+          PY
+
       - name: Upload release notes artifact for dry runs
         if: ${{ env.DRY_RUN == 'true' }}
         uses: actions/upload-artifact@v7
@@ -266,7 +286,7 @@ jobs:
           commit: ${{ github.sha }}
           name: Release ${{ env.VERSION }}
           bodyFile: RELEASE_NOTES.md
-          artifacts: ./dist/${{ env.REPO_NAME }}-${{ env.VERSION }}-py3-none-any.whl,./dist/${{ env.REPO_NAME }}-${{ env.VERSION }}.tar.gz
+          artifacts: ./dist/${{ env.REPO_NAME }}-${{ env.VERSION }}-py3-none-any.whl,./dist/${{ env.REPO_NAME }}-${{ env.VERSION }}.tar.gz,./dist/SHA256SUMS.txt
           token: ${{ secrets.GITHUB_TOKEN }}
           allowUpdates: true
 

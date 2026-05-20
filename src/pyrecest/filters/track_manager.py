@@ -667,6 +667,22 @@ class TrackManager(
         ):
             raise ValueError("Unmatched measurement index is out of range")
 
+        covered_track_indices = set(unmatched_track_indices).union(
+            used_track_indices
+        )
+        missing_track_indices = set(range(num_tracks)) - covered_track_indices
+        if missing_track_indices:
+            raise ValueError(
+                "Association result does not account for every track index"
+            )
+
+        covered_measurement_indices = set(unmatched_measurement_indices).union(
+            used_measurement_indices
+        )
+        missing_measurement_indices = set(range(num_measurements)) - covered_measurement_indices
+        if missing_measurement_indices:
+            raise ValueError("Association result does not account for every measurement index")
+
         return AssociationResult(
             matches=matches,
             unmatched_track_indices=unmatched_track_indices,
@@ -767,7 +783,11 @@ def solve_global_nearest_neighbor(  # pylint: disable=too-many-locals
     for row_index, col_index in zip(row_ind, col_ind):
         if row_index < num_tracks:
             if col_index < num_measurements:
-                matches.append((int(row_index), int(col_index)))
+                if np.isfinite(matrix[row_index, col_index]):
+                    matches.append((int(row_index), int(col_index)))
+                else:
+                    unmatched_track_indices.append(int(row_index))
+                    unmatched_measurement_indices.append(int(col_index))
             else:
                 unmatched_track_indices.append(int(row_index))
         elif col_index < num_measurements:

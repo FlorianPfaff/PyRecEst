@@ -8,6 +8,7 @@ who says he was in inspired by https://github.com/wesselb/lab/blob/master/lab/ja
 import sys
 
 import jax
+import jax.numpy as _jnp
 import numpy as _np
 
 backend = sys.modules[__name__]
@@ -44,9 +45,24 @@ set_state = set_global_random_state
 
 
 def _get_state(**kwargs):
-    has_state = 'state' in kwargs
-    state = kwargs.pop('state', backend.jax_global_random_state)
+    has_state = "state" in kwargs
+    state = kwargs.pop("state", backend.jax_global_random_state)
     return state, has_state, kwargs
+
+
+def _shape_from_size(size):
+    """Convert a NumPy-style ``size`` argument to JAX's shape argument."""
+    if size is None:
+        return ()
+    if hasattr(size, "__iter__"):
+        return tuple(int(dim) for dim in size)
+    return (int(size),)
+
+
+def _looks_like_shape(value):
+    return isinstance(value, int) or (
+        isinstance(value, tuple) and all(isinstance(dim, int) for dim in value)
+    )
 
 
 def set_state_return(has_state, state, res):
@@ -59,17 +75,21 @@ def set_state_return(has_state, state, res):
 
 def _rand(state, size, *args, **kwargs):
     state, key = jax.random.split(state)
-    return state, jax.random.uniform(key, size, *args, **kwargs)
+    return state, jax.random.uniform(key, _shape_from_size(size), *args, **kwargs)
 
 
-def rand(size, *args, **kwargs):
-    size = size if hasattr(size, "__iter__") else (size,)
+def rand(size=None, *args, **kwargs):
     state, has_state, kwargs = _get_state(**kwargs)
     state, res = _rand(state, size, *args, **kwargs)
     return set_state_return(has_state, state, res)
 
 
-uniform = rand
+def uniform(low=0.0, high=1.0, size=None, *args, **kwargs):
+    state, has_state, kwargs = _get_state(**kwargs)
+    if low >= high:
+        raise ValueError("Upper bound must be higher than lower bound")
+    state, res = _rand(state, size, *args, minval=low, maxval=high, **kwargs)
+    return set_state_return(has_state, state, res)
 
 
 def _randint(state, size, *args, **kwargs):
@@ -78,55 +98,66 @@ def _randint(state, size, *args, **kwargs):
 
 
 def randint(size, *args, **kwargs):
-    size = size if hasattr(size, "__iter__") else (size,)
     state, has_state, kwargs = _get_state(**kwargs)
-    state, res = _randint(state, size, *args, **kwargs)
+    state, res = _randint(state, _shape_from_size(size), *args, **kwargs)
     return set_state_return(has_state, state, res)
 
 
-def _normal(state, size, *args, **kwargs):
+def _normal(state, loc=0.0, scale=1.0, size=None, *args, **kwargs):
     state, key = jax.random.split(state)
-    return state, jax.random.normal(key, size, *args, **kwargs)
+    samples = jax.random.normal(key, _shape_from_size(size), *args, **kwargs)
+    return state, loc + scale * samples
 
 
-def normal(size, *args, **kwargs):
-    size = size if hasattr(size, "__iter__") else (size,)
+def normal(loc=0.0, scale=1.0, size=None, *args, **kwargs):
+    """Draw samples using NumPy/PyTorch-compatible arguments.
+
+    The legacy JAX-backend call form ``normal(size)`` is still accepted when the
+    first positional argument looks like a shape and ``size`` is omitted.
+    """
+    if size is None and _looks_like_shape(loc) and scale == 1.0:
+        size = loc
+        loc = 0.0
+
+    mean = kwargs.pop("mean", None)
+    cov = kwargs.pop("cov", None)
+    if mean is not None:
+        loc = mean
+    if cov is not None:
+        scale = cov
+
     state, has_state, kwargs = _get_state(**kwargs)
-
-    # Check and remove 'mean' and 'cov' from kwargs
-    mean = kwargs.pop('mean', None)
-    cov = kwargs.pop('cov', None)
-
-    # Verify that 'mean' and 'cov' have the expected values
-    if mean is not None and mean != 0.0:
-        raise ValueError(f"Expected mean to be 0.0, but got {mean}")
-    if cov is not None and cov != 1.0:
-        raise ValueError(f"Expected cov to be 1.0, but got {cov}")
-
-    state, res = _normal(state, size, *args, **kwargs)
+    state, res = _normal(state, loc, scale, size, *args, **kwargs)
     return set_state_return(has_state, state, res)
 
 
-def _choice(state, a, n, *args, **kwargs):
+def _choice(state, a, size=None, replace=True, p=None, *args, **kwargs):
     state, key = jax.random.split(state)
-    inds = jax.random.choice(key, a.shape[0], (n,), replace=True, *args, **kwargs)
-    choices = a[inds]
-    return state, choices[0] if n == 1 else choices
+    a = _jnp.asarray(a)
+    if p is not None:
+        p = _jnp.asarray(p, dtype=_jnp.float32)
+        p = p / p.sum()
+    res = jax.random.choice(
+        key,
+        a,
+        *args,
+        shape=_shape_from_size(size),
+        replace=replace,
+        p=p,
+        **kwargs,
+    )
+    return state, res
 
 
-def choice(a, n, *args, **kwargs):
+def choice(a, size=None, replace=True, p=None, *args, **kwargs):
+    """Draw samples using a NumPy-like ``choice`` contract."""
+    if "n" in kwargs:
+        if size is not None:
+            raise TypeError("Specify only one of 'size' or legacy 'n'.")
+        size = kwargs.pop("n")
     state, has_state, kwargs = _get_state(**kwargs)
-    state, res = _choice(state, a, n, *args, **kwargs)
+    state, res = _choice(state, a, size, replace, p, *args, **kwargs)
     return set_state_return(has_state, state, res)
-
-
-def _shape_from_size(size):
-    """Convert a NumPy-style ``size`` argument to JAX's ``shape`` argument."""
-    if size is None:
-        return None
-    if hasattr(size, "__iter__"):
-        return tuple(int(dim) for dim in size)
-    return (int(size),)
 
 
 def _multivariate_normal(state, mean, cov, size=None, *args, **kwargs):
@@ -150,8 +181,6 @@ def multivariate_normal(mean, cov, size=None, *args, **kwargs):
 
 def multinomial(n, pvals):
     """Sample from a multinomial distribution using JAX."""
-    import jax.numpy as _jnp
-
     state, has_state, _ = _get_state()
     state, key = jax.random.split(state)
     backend.jax_global_random_state = state

@@ -46,6 +46,12 @@ def _as_vector(value, length: int, name: str):
     return vector
 
 
+def _validate_positive_range_squared(range_sq, name="range"):
+    if float(range_sq) <= 0.0:
+        raise ValueError(f"{name} is undefined for zero distance to the sensor")
+    return range_sq
+
+
 def range_bearing_measurement(
     state, sensor_position: Any | None = None, position_indices: Sequence[int] = (0, 1)
 ):
@@ -53,7 +59,9 @@ def range_bearing_measurement(
     position = _select(state, position_indices)
     sensor_position = _as_vector(sensor_position, 2, "sensor_position")
     relative = position - sensor_position
-    range_value = sqrt(relative[0] * relative[0] + relative[1] * relative[1])
+    range_sq = relative[0] * relative[0] + relative[1] * relative[1]
+    _validate_positive_range_squared(range_sq)
+    range_value = sqrt(range_sq)
     bearing = arctan2(relative[1], relative[0])
     return stack([range_value, bearing])
 
@@ -87,6 +95,7 @@ def range_bearing_jacobian(
     dx = position[0] - sensor_position[0]
     dy = position[1] - sensor_position[1]
     range_sq = dx * dx + dy * dy
+    _validate_positive_range_squared(range_sq, "range_bearing_jacobian")
     range_value = sqrt(range_sq)
     state_dim = int(state.shape[0])
     x_index = int(position_indices[0])
@@ -121,10 +130,12 @@ def radar_range_bearing_doppler_measurement(
     sensor_velocity = _as_vector(sensor_velocity, 2, "sensor_velocity")
     relative_position = position - sensor_position
     relative_velocity = velocity - sensor_velocity
-    range_value = sqrt(
+    range_sq = (
         relative_position[0] * relative_position[0]
         + relative_position[1] * relative_position[1]
     )
+    _validate_positive_range_squared(range_sq, "radar range")
+    range_value = sqrt(range_sq)
     bearing = arctan2(relative_position[1], relative_position[0])
     range_rate = (
         relative_position[0] * relative_velocity[0]
@@ -348,5 +359,7 @@ def camera_projection_model(
 def _range_rate(position, velocity, sensor_position, sensor_velocity):
     relative_position = position - sensor_position
     relative_velocity = velocity - sensor_velocity
-    range_value = sqrt(_sum(relative_position * relative_position))
+    range_sq = _sum(relative_position * relative_position)
+    _validate_positive_range_squared(range_sq, "range rate")
+    range_value = sqrt(range_sq)
     return _sum(relative_position * relative_velocity) / range_value

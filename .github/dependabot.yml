@@ -7,4 +7,6 @@ updates:
       interval: "daily"
     exclude-paths:
       - "requirements.txt"
+      - "requirements-min.txt"
+      - "requirements-all.txt"
       - "requirements-dev.txt"

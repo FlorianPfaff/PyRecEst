@@ -61,12 +61,27 @@ jobs:
       - name: Install project dependencies
         run: python -m poetry lock
 
-      - name: Update requirements.txt
+      - name: Update minimal requirements
+        run: python -m poetry export --only main --format requirements.txt --output requirements-min.txt --without-hashes
+
+      - name: Update default compatibility requirements
         run: python -m poetry export --format requirements.txt --output requirements.txt --extras healpy_support --extras pytorch_support --without-hashes
 
-      - name: Update requirements-dev.txt
+      - name: Update healpy requirements
+        run: python -m poetry export --format requirements.txt --output requirements-healpy.txt --extras healpy_support --without-hashes
+
+      - name: Update pytorch requirements
+        run: python -m poetry export --format requirements.txt --output requirements-pytorch.txt --extras pytorch_support --without-hashes
+
+      - name: Update jax requirements
+        run: python -m poetry export --format requirements.txt --output requirements-jax.txt --extras jax_support --without-hashes
+
+      - name: Update all-extras requirements
+        run: python -m poetry export --all-extras --format requirements.txt --output requirements-all.txt --without-hashes
+
+      - name: Update development requirements
         id: upreq
-        run: python -m poetry export --with dev --format requirements.txt --output requirements-dev.txt --without-hashes
+        run: python -m poetry export --with dev --all-extras --format requirements.txt --output requirements-dev.txt --without-hashes
 
       - name: Prepare commit
         run: sudo chown -Rc "$UID" .git/
@@ -76,7 +91,7 @@ jobs:
 
       - name: Configure Git
         run: |
-          git config --global user.email "requimrents-bot@florianpfaff.de"
+          git config --global user.email "requirements-bot@florianpfaff.de"
           git config --global user.name "requirements-bot"
 
       - name: Git commit all changes
@@ -87,7 +102,7 @@ jobs:
             echo "No changes to commit."
             echo "changes_made=false" >> "$GITHUB_ENV"
           else
-            git commit -a -m "Committing all changes"
+            git commit -a -m "Update generated requirements files"
             echo "changes_made=true" >> "$GITHUB_ENV"
           fi
 
@@ -128,7 +143,7 @@ jobs:
         if: env.changes_made == 'true' && (env.APPLY_FIXES_EVENT == 'all' || env.APPLY_FIXES_EVENT == github.event_name) && env.APPLY_FIXES_MODE == 'commit' && github.ref != 'refs/heads/main' && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository) && !contains(github.event.head_commit.message, 'skip fix')
         run: sudo chown -Rc "$UID" .git/
 
-      - name: Commit and push new requirements.txt and requirements-dev.txt
+      - name: Commit and push generated requirements files
         if: env.changes_made == 'true' && (env.APPLY_FIXES_EVENT == 'all' || env.APPLY_FIXES_EVENT == github.event_name) && env.APPLY_FIXES_MODE == 'commit' && github.ref != 'refs/heads/main' && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository) && !contains(github.event.head_commit.message, 'skip fix')
         uses: stefanzweifel/git-auto-commit-action@v7
         with:

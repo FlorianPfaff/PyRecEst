@@ -204,7 +204,7 @@ BACKEND_ATTRIBUTES = {
         "round",
         "array_equal",
         # For Riemannian score-based SDE
-        "log1p"
+        "log1p",
     ],
     "autodiff": [
         "custom_gradient",
@@ -272,6 +272,15 @@ BACKEND_ATTRIBUTES = {
         "fftconvolve",
     ],
 }
+
+
+def _deduplicated_attributes(attributes):
+    """Return ``attributes`` with duplicates removed while preserving order."""
+    return list(dict.fromkeys(attributes))
+
+
+for _module_name, _attributes in BACKEND_ATTRIBUTES.items():
+    BACKEND_ATTRIBUTES[_module_name] = _deduplicated_attributes(_attributes)
 
 
 class BackendImporter(importlib.abc.MetaPathFinder, importlib.abc.Loader):

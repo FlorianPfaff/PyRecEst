@@ -8,8 +8,21 @@ nav:
   - Getting Started: getting-started.md
   - Examples: examples.md
   - Guides:
+      - Choosing an API: choosing-an-api.md
+      - CLI: cli.md
+      - Installation Footprint: install-footprint.md
+      - Scenario Zoo: scenario-zoo.md
+      - Diagnostics: diagnostics.md
       - Shapes and Conventions: conventions.md
       - Backend Compatibility: backend-compatibility.md
+      - Backend Support Matrix: backend-support.md
+      - Backend API Matrix: backend-api-matrix.md
+      - Performance: performance.md
+      - Failure Modes: failure-modes.md
+      - API Stability: stability-policy.md
+      - Ecosystem Positioning: ecosystem.md
+      - Public Identity: public-identity.md
+      - Reproducible Experiments: reproducible-experiments.md
       - Representation Conversion: representation-conversion.md
       - Model Objects: models.md
       - Public Protocols: protocols.md
@@ -20,6 +33,7 @@ nav:
       - Overview: tutorials/index.md
       - Use a Distribution: tutorials/use-a-distribution.md
       - Write a Filter Loop: tutorials/write-a-filter-loop.md
+      - Robust Kalman Updates: tutorials/robust-kalman-update.md
       - Run a Tracker: tutorials/run-a-tracker.md
       - Evaluate a Simulation: tutorials/evaluate-a-simulation.md
   - API Overview: api-overview.md

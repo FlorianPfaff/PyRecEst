@@ -126,6 +126,24 @@ class TestSensorModelCatalog(unittest.TestCase):
             model.evaluate(state), np.array([5.0, np.arctan2(4.0, 3.0)])
         )
 
+    def test_range_based_measurements_reject_zero_range(self):
+        zero_range_state = array([0.0, 0.0, 1.0, 0.0])
+
+        with self.assertRaises(ValueError):
+            range_bearing_measurement(zero_range_state)
+
+        with self.assertRaises(ValueError):
+            range_bearing_jacobian(zero_range_state)
+
+        with self.assertRaises(ValueError):
+            radar_range_bearing_doppler_measurement(zero_range_state)
+
+        with self.assertRaises(ValueError):
+            fdoa_measurement(
+                zero_range_state,
+                array([[0.0, 0.0], [1.0, 0.0]]),
+            )
+
     def test_radar_tdoa_fdoa_and_camera_measurements(self):
         radar_state = array([3.0, 4.0, 3.0, 4.0])
         npt.assert_allclose(

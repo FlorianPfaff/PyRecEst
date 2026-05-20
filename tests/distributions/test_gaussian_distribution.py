@@ -83,21 +83,21 @@ class GaussianDistributionTest(unittest.TestCase):
         mu = array([0.0, 0.0])
         C = array([[1.0, 10.0], [0.0, 1.0]])
 
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             GaussianDistribution(mu, C)
 
     def test_rejects_nonsymmetric_high_dimensional_covariance(self):
         mu = array([0.0, 0.0, 0.0])
         C = array([[1.0, 0.0, 0.0], [10.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
 
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             GaussianDistribution(mu, C)
 
     def test_rejects_symmetric_indefinite_covariance(self):
         mu = array([0.0, 0.0])
         C = array([[1.0, 0.0], [0.0, -1.0]])
 
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             GaussianDistribution(mu, C)
 
     def test_mode(self):
@@ -116,6 +116,21 @@ class GaussianDistributionTest(unittest.TestCase):
         g_shifted = g.shift(shift_by)
 
         self.assertTrue(allclose(g_shifted.mode(), mu + shift_by, atol=1e-6))
+
+    def test_pdf_accepts_array_like_inputs(self):
+        g = GaussianDistribution(array([0.0]), array([[1.0]]))
+
+        values = g.pdf([0.0, 1.0])
+        expected = g.pdf(array([0.0, 1.0]))
+
+        npt.assert_allclose(to_numpy(values), to_numpy(expected))
+
+    def test_shift_accepts_scalar_for_one_dimensional_gaussian(self):
+        g = GaussianDistribution(array([1.0]), array([[2.0]]))
+
+        shifted = g.shift(3.0)
+
+        npt.assert_allclose(to_numpy(shifted.mu), [4.0])
 
     def test_multiply_matches_information_form(self):
         distributions = [
@@ -196,13 +211,13 @@ class GaussianDistributionTest(unittest.TestCase):
         C = array([[1.1, 0.4], [0.4, 0.9]])
         g = GaussianDistribution(mu, C)
 
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             g.marginalize_out(-1)
 
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             g.marginalize_out(2)
 
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             g.marginalize_out([0, 2])
 
     def test_default_linear_metropolis_hastings_proposal_shape(self):

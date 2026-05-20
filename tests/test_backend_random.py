@@ -21,6 +21,13 @@ class TestBackendRandom(unittest.TestCase):
         npt.assert_array_less(-1, samples)
         npt.assert_array_less(samples, 5)
 
+    def test_choice_single_sample_preserves_sample_axis(self):
+        values = pyrecest.backend.array([[0, 1], [2, 3], [4, 5]])
+
+        sample = random.choice(values, 1)
+
+        self.assertEqual(sample.shape, (1, 2))
+
 
 if __name__ == "__main__":
     unittest.main()

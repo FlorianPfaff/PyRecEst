@@ -7,10 +7,10 @@ authors:
     given-names: "Florian"
     affiliation: "Institute of Industrial Automation and Software Engineering (IAS), University of Stuttgart"
     email: "pfaff@ias.uni-stuttgart.de"
-repository-code: "https://github.com/FlorianPfaff/pyRecEst"
+repository-code: "https://github.com/FlorianPfaff/PyRecEst"
 license: "MIT"
 abstract: >
-  pyRecEst is a Python library for recursive Bayesian estimation with
+  PyRecEst is a Python library for recursive Bayesian estimation with
   backends for NumPy, PyTorch, and JAX. It provides distributions and densities
   on Euclidean spaces and manifolds, a suite of filters and trackers (including
   multi-target and extended object tracking), an evaluation framework, and
@@ -27,10 +27,10 @@ keywords:
   - JAX
 preferred-citation:
   type: software
-  title: "pyRecEst: Recursive Bayesian Estimation for Python"
+  title: "PyRecEst: Recursive Bayesian Estimation for Python"
   authors:
     - family-names: "Pfaff"
       given-names: "Florian"
   year: 2023
-  url: "https://github.com/FlorianPfaff/pyRecEst"
+  url: "https://github.com/FlorianPfaff/PyRecEst"
   license: "MIT"

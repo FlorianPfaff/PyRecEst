@@ -94,6 +94,9 @@ class TestANEES(unittest.TestCase):
             nees(estimates, covariances, groundtruths), np.array([2.0, 4.0])
         )
         self.assertEqual(anees(estimates, covariances, groundtruths), 3.0)
+        single_nees = nees(array([1.0, 1.0]), np.eye(2), array([0.0, 0.0]))
+        self.assertIsInstance(single_nees, float)
+        self.assertEqual(single_nees, 2.0)
 
         innovations = array([[1.0, 0.0], [0.0, 2.0]])
         innovation_covariances = array([np.eye(2), 2.0 * np.eye(2)])
