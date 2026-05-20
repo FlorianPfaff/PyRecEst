@@ -27,15 +27,21 @@ class GaussianDistributionRegressionTest(unittest.TestCase):
 
         product = first.multiply(second)
 
-        npt.assert_allclose(to_numpy(product.mu), np.array([0.2]), rtol=1e-12, atol=1e-12)
-        npt.assert_allclose(to_numpy(product.C), np.array([[0.8]]), rtol=1e-12, atol=1e-12)
+        npt.assert_allclose(
+            to_numpy(product.mu), np.array([0.2]), rtol=1e-12, atol=1e-12
+        )
+        npt.assert_allclose(
+            to_numpy(product.C), np.array([[0.8]]), rtol=1e-12, atol=1e-12
+        )
 
     def test_invalid_covariance_shape_raises_value_error(self):
         with self.assertRaises(ValueError):
             GaussianDistribution(array([0.0, 1.0]), array([[1.0]]))
 
     def test_invalid_marginal_dimensions_raise_value_error(self):
-        distribution = GaussianDistribution(array([0.0, 1.0]), array([[1.0, 0.0], [0.0, 1.0]]))
+        distribution = GaussianDistribution(
+            array([0.0, 1.0]), array([[1.0, 0.0], [0.0, 1.0]])
+        )
 
         with self.assertRaises(ValueError):
             distribution.marginalize_out([2])

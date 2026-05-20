@@ -36,7 +36,9 @@ def run_linear_kalman(iterations: int = 200) -> dict[str, object]:
     for step in range(iterations):
         measurement = array([float(step + 1)])
         kalman_filter.predict_linear(system_matrix, system_noise_cov)
-        kalman_filter.update_linear(measurement, measurement_matrix, measurement_noise_cov)
+        kalman_filter.update_linear(
+            measurement, measurement_matrix, measurement_noise_cov
+        )
     elapsed = perf_counter() - start
 
     return {

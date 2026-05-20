@@ -1,9 +1,7 @@
-import pytest
-
 import pyrecest.backend as backend
+import pytest
 from pyrecest._backend.capabilities import get_unsupported_functions
 from pyrecest.backend import array, linalg
-
 
 _MATRIX = array([[1.0, 0.0], [0.0, 1.0]])
 

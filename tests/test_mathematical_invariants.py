@@ -2,7 +2,6 @@ import math
 
 import numpy as np
 import numpy.testing as npt
-
 import pyrecest.backend as be
 
 
@@ -42,5 +41,9 @@ def test_weights_normalize_to_probability_vector():
 def test_circular_trigonometric_representation_is_periodic():
     angles = be.array(np.linspace(-math.pi, math.pi, 17))
     shifted = angles + 2.0 * math.pi
-    npt.assert_allclose(_to_numpy(be.sin(angles)), _to_numpy(be.sin(shifted)), atol=1e-7)
-    npt.assert_allclose(_to_numpy(be.cos(angles)), _to_numpy(be.cos(shifted)), atol=1e-7)
+    npt.assert_allclose(
+        _to_numpy(be.sin(angles)), _to_numpy(be.sin(shifted)), atol=1e-7
+    )
+    npt.assert_allclose(
+        _to_numpy(be.cos(angles)), _to_numpy(be.cos(shifted)), atol=1e-7
+    )

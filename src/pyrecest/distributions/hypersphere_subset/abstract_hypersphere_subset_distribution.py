@@ -108,9 +108,11 @@ class AbstractHypersphereSubsetDistribution(AbstractBoundedDomainDistribution):
                 result = fangles(*tensors)
                 return result.item()
 
-            mu[i] = AbstractHypersphereSubsetDistribution.integrate_fun_over_domain_part(
-                fangles_array,
-                integration_boundaries,
+            mu[i] = (
+                AbstractHypersphereSubsetDistribution.integrate_fun_over_domain_part(
+                    fangles_array,
+                    integration_boundaries,
+                )
             )
 
         return self._normalize_mean_direction(mu)

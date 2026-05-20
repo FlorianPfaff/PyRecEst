@@ -16,15 +16,39 @@ def tests_numpy(session: nox.Session) -> None:
     """Run the default NumPy test suite."""
     _poetry_install(session, "--with", "dev", "--extras", "healpy_support")
     session.env["PYRECEST_BACKEND"] = "numpy"
-    session.run("poetry", "run", "python", "-m", "pytest", "--rootdir", ".", "-v", "./tests", external=True)
+    session.run(
+        "poetry",
+        "run",
+        "python",
+        "-m",
+        "pytest",
+        "--rootdir",
+        ".",
+        "-v",
+        "./tests",
+        external=True,
+    )
 
 
 @nox.session(python=PYTHON_DEFAULT)
 def tests_pytorch(session: nox.Session) -> None:
     """Run the PyTorch backend test suite."""
-    _poetry_install(session, "--with", "dev", "--extras", "healpy_support pytorch_support")
+    _poetry_install(
+        session, "--with", "dev", "--extras", "healpy_support pytorch_support"
+    )
     session.env["PYRECEST_BACKEND"] = "pytorch"
-    session.run("poetry", "run", "python", "-m", "pytest", "--rootdir", ".", "-v", "./tests", external=True)
+    session.run(
+        "poetry",
+        "run",
+        "python",
+        "-m",
+        "pytest",
+        "--rootdir",
+        ".",
+        "-v",
+        "./tests",
+        external=True,
+    )
 
 
 @nox.session(python=PYTHON_DEFAULT)
@@ -33,7 +57,18 @@ def tests_jax(session: nox.Session) -> None:
     _poetry_install(session, "--with", "dev", "--extras", "healpy_support jax_support")
     session.env["PYRECEST_BACKEND"] = "jax"
     session.env["JAX_ENABLE_X64"] = "True"
-    session.run("poetry", "run", "python", "-m", "pytest", "--rootdir", ".", "-v", "./tests", external=True)
+    session.run(
+        "poetry",
+        "run",
+        "python",
+        "-m",
+        "pytest",
+        "--rootdir",
+        ".",
+        "-v",
+        "./tests",
+        external=True,
+    )
 
 
 @nox.session(python=PYTHON_DEFAULT)
@@ -70,4 +105,14 @@ def benchmarks(session: nox.Session) -> None:
     """Run optional benchmark tests."""
     _poetry_install(session, "--with", "dev")
     session.env["PYRECEST_BACKEND"] = "numpy"
-    session.run("poetry", "run", "python", "-m", "pytest", "-m", "benchmark", "./benchmarks", external=True)
+    session.run(
+        "poetry",
+        "run",
+        "python",
+        "-m",
+        "pytest",
+        "-m",
+        "benchmark",
+        "./benchmarks",
+        external=True,
+    )

@@ -4,6 +4,7 @@ import numpy as _np
 import scipy as _scipy
 import torch as _torch
 from torch import block_diag  # For PyRecEst
+from torch.linalg import pinv  # For PyRecEst
 from torch.linalg import (
     cholesky,
     det,
@@ -11,12 +12,13 @@ from torch.linalg import (
     eigh,
     eigvalsh,
     inv,
+)
+from torch.linalg import matrix_exp as expm
+from torch.linalg import (
     matrix_power,
-    pinv,  # For PyRecEst
     qr,
     solve,
 )
-from torch.linalg import matrix_exp as expm
 
 from .._backend_config import np_atol as atol
 from ..numpy import linalg as _gsnplinalg

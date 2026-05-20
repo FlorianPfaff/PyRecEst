@@ -1,7 +1,6 @@
 import unittest
 
 import numpy.testing as npt
-
 import pyrecest.backend as backend
 from pyrecest._backend import BACKEND_ATTRIBUTES
 from pyrecest.backend import array, random, shape, to_numpy

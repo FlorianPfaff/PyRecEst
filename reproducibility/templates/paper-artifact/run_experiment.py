@@ -14,7 +14,9 @@ def main() -> int:
     args = parser.parse_args()
 
     result = {"metrics": {}, "notes": "Replace with experiment results."}
-    args.output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    args.output.write_text(
+        json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     print(f"Wrote {args.output}")
     return 0
 

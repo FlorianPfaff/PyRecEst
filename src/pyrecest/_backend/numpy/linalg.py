@@ -12,12 +12,12 @@ from numpy.linalg import (
     matrix_power,
     matrix_rank,
     norm,
-    svd,
     pinv,
+    svd,
 )
+from scipy.linalg import block_diag  # For PyRecEst
 from scipy.linalg import (
     expm,
-    block_diag,  # For PyRecEst
 )
 
 from .._shared_numpy.linalg import (

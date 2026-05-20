@@ -517,9 +517,7 @@ def build_linear_gaussian_hypothesis_associator(
         effective_measurement_matrix = kwargs.get(
             "measurement_matrix", measurement_matrix
         )
-        effective_measurement_axis = kwargs.get(
-            "measurement_axis", measurement_axis
-        )
+        effective_measurement_axis = kwargs.get("measurement_axis", measurement_axis)
         effective_measurement_dim = int(
             np.asarray(effective_measurement_matrix, dtype=float).shape[0]
         )

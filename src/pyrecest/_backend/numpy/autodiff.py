@@ -4,8 +4,10 @@ NumPy backend does not offer automatic differentiation.
 The following functions return error messages.
 """
 
+
 class AutodiffNotImplementedError(RuntimeError):
     """Raised when autodiff is not implemented."""
+
 
 _USE_OTHER_BACKEND_MSG = (
     "Automatic differentiation is not supported with numpy backend. "

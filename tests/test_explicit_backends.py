@@ -1,5 +1,4 @@
 import pytest
-
 from pyrecest.backends import SUPPORTED_BACKENDS, get_backend
 
 

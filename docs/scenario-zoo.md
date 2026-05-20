@@ -6,12 +6,12 @@ artifacts.
 
 A scenario should contain:
 
-| File | Purpose |
-|------|---------|
-| `README.md` | Model summary and reproduction notes. |
-| `config.toml` | Model, measurement, initial-state, seed, and data configuration. |
-| `expected.json` | Golden outputs with tolerances. |
-| optional scripts/notebooks | Plots or scenario-specific analysis. |
+| File                       | Purpose                                                          |
+|----------------------------|------------------------------------------------------------------|
+| `README.md`                | Model summary and reproduction notes.                            |
+| `config.toml`              | Model, measurement, initial-state, seed, and data configuration. |
+| `expected.json`            | Golden outputs with tolerances.                                  |
+| optional scripts/notebooks | Plots or scenario-specific analysis.                             |
 
 The first scenario is `scenarios/linear_gaussian_cv_1d`, a constant-velocity
 Kalman filtering problem. Run it with:

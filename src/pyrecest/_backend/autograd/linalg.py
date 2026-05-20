@@ -23,13 +23,15 @@ from scipy.optimize import quadratic_assignment as _quadratic_assignment
 from .._shared_numpy.linalg import (
     fractional_matrix_power,
     is_single_matrix_pd,
+)
+from .._shared_numpy.linalg import logm as _logm
+from .._shared_numpy.linalg import (
     polar,
     qr,
     solve,
     solve_sylvester,
     sqrtm,
 )
-from .._shared_numpy.linalg import logm as _logm
 
 
 def _adjoint(_ans, x, fn):

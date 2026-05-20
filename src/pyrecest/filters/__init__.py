@@ -35,8 +35,8 @@ from .association_hypotheses import (
 from .axial_kalman_filter import AxialKalmanFilter
 from .bingham_filter import BinghamFilter
 from .block_particle_filter import BlockParticleFilter
-from .circular_particle_filter import CircularParticleFilter
 from .circular_fourier_filter import CircularFourierFilter
+from .circular_particle_filter import CircularParticleFilter
 from .circular_ukf import CircularUKF
 from .ekf_spline_tracker import EKFSplineTracker, EkfSplineTracker
 from .euclidean_box_particle_filter import BoxParticleFilter, EuclideanBoxParticleFilter
@@ -166,11 +166,11 @@ from .track_manager import (
 )
 from .ukf_on_manifolds import UKFOnManifolds
 from .unscented_kalman_filter import UnscentedKalmanFilter
+from .vbrm_tracker import VBRMTracker, VbrmTracker
 from .velocity_locked_mem_qkf_tracker import (
     VelocityLockedMEMQKFTracker,
     VelocityLockedMemQkfTracker,
 )
-from .vbrm_tracker import VBRMTracker, VbrmTracker
 from .von_mises_filter import VonMisesFilter
 from .von_mises_fisher_filter import VonMisesFisherFilter
 from .wrapped_normal_filter import WrappedNormalFilter

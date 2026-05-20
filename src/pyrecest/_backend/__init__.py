@@ -370,8 +370,11 @@ class BackendImporter(importlib.abc.MetaPathFinder, importlib.abc.Loader):
             module.set_default_dtype("float64")
         logging.info(f"Using {BACKEND_NAME} backend")
 
+
 TARGET = "pyrecest.backend"
-if not any(isinstance(f, BackendImporter) and getattr(f, "_path", None) == TARGET
-           for f in sys.meta_path):
+if not any(
+    isinstance(f, BackendImporter) and getattr(f, "_path", None) == TARGET
+    for f in sys.meta_path
+):
     # put it in front so it intercepts 'pyrecest.backend'
     sys.meta_path.insert(0, BackendImporter(TARGET))

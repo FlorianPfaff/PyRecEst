@@ -8,10 +8,10 @@ from beartype import beartype
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
 from pyrecest.backend import (
     all,
-    asarray,
     apply_along_axis,
     arange,
     argmax,
+    asarray,
     int32,
     int64,
     isclose,
@@ -165,6 +165,8 @@ class AbstractDiracDistribution(AbstractDistributionType):
     @classmethod
     def from_distribution(cls, distribution, n_particles):
         if not cls.is_valid_for_conversion(distribution):
-            raise ValueError("distribution is not valid for conversion to this Dirac type")
+            raise ValueError(
+                "distribution is not valid for conversion to this Dirac type"
+            )
         samples = distribution.sample(n_particles)
         return cls(samples)

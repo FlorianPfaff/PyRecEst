@@ -167,9 +167,7 @@ def _multivariate_normal(state, mean, cov, size=None, *args, **kwargs):
             raise TypeError("Specify only one of 'size' or 'shape'.")
         size = kwargs.pop("shape")
     shape = _shape_from_size(size)
-    return state, jax.random.multivariate_normal(
-        key, mean, cov, shape, *args, **kwargs
-    )
+    return state, jax.random.multivariate_normal(key, mean, cov, shape, *args, **kwargs)
 
 
 def multivariate_normal(mean, cov, size=None, *args, **kwargs):

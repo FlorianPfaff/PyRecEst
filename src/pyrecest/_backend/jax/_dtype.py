@@ -7,7 +7,7 @@ MAP_DTYPE = {
     "float32": _jnp.float32,
     "float64": _jnp.float64,
     "complex64": _jnp.complex64,
-    "complex128": _jnp.complex128
+    "complex128": _jnp.complex128,
 }
 
 
@@ -26,4 +26,3 @@ def as_dtype(value):
         JAX dtype object corresponding to the input string.
     """
     return MAP_DTYPE[value]
-

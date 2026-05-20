@@ -1,8 +1,6 @@
 import functools
 
 import torch as _torch
-from torch import complex64, complex128, float32, float64
-
 from pyrecest._backend import _backend_config as _config
 from pyrecest._backend._dtype_utils import (
     _MAP_FLOAT_TO_COMPLEX,
@@ -14,6 +12,7 @@ from pyrecest._backend._dtype_utils import (
     get_default_cdtype,
     get_default_dtype,
 )
+from torch import complex64, complex128, float32, float64
 
 from ._common import cast
 

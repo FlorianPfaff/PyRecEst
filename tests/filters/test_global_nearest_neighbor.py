@@ -285,9 +285,7 @@ class GlobalNearestNeighborTest(unittest.TestCase):
                 "gating_distance_threshold": 3.0,
             }
         )
-        tracker.filter_state = [
-            KalmanFilter(GaussianDistribution(zeros(2), eye(2)))
-        ]
+        tracker.filter_state = [KalmanFilter(GaussianDistribution(zeros(2), eye(2)))]
 
         association = tracker.find_association(
             array([[2.0], [0.0]]), eye(2), eye(2), warn_on_no_meas_for_track=False

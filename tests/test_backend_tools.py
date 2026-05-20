@@ -1,7 +1,7 @@
 import os
 
-import pytest
 import pyrecest
+import pytest
 
 
 def test_backend_tools_report_active_backend():

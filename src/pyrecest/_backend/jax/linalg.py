@@ -10,16 +10,16 @@ from jax.numpy.linalg import (  # NOQA
     matrix_power,
     matrix_rank,
     norm,
+    pinv,
+    qr,
     solve,
     svd,
-    qr,
-    pinv,
 )
+from jax.scipy.linalg import block_diag  # For PyRecEst
 from jax.scipy.linalg import (
     expm,
-    sqrtm,
     polar,
-    block_diag,  # For PyRecEst
+    sqrtm,
 )
 
 unsupported_functions = [
@@ -37,4 +37,3 @@ def _raise_unsupported(*args, **kwargs):
 
 for func_name in unsupported_functions:
     globals()[func_name] = _raise_unsupported
-

@@ -1,4 +1,8 @@
-from pyrecest.diagnostics import AssociationDiagnostics, FilterDiagnostics, ParticleDiagnostics
+from pyrecest.diagnostics import (
+    AssociationDiagnostics,
+    FilterDiagnostics,
+    ParticleDiagnostics,
+)
 
 
 def test_diagnostics_are_dict_serializable_containers():
