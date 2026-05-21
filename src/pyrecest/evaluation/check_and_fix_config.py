@@ -23,8 +23,7 @@ def _validate_measurement_counts(simulation_param):
         x > 0 for x in simulation_param["n_meas_at_individual_time_step"]
     ), "n_meas_at_individual_time_step must contain positive values"
     assert all(
-        isinstance(x, int)
-        for x in simulation_param["n_meas_at_individual_time_step"]
+        isinstance(x, int) for x in simulation_param["n_meas_at_individual_time_step"]
     ), "n_meas_at_individual_time_step must contain integer values"
 
 

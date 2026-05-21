@@ -25,5 +25,8 @@ num_samples = 8
 
     assert "particle_resampling" in available_scenario_types()
     assert first.final_estimate == second.final_estimate
-    assert first.diagnostics["metadata"]["indices"] == second.diagnostics["metadata"]["indices"]
+    assert (
+        first.diagnostics["metadata"]["indices"]
+        == second.diagnostics["metadata"]["indices"]
+    )
     assert first.metrics["effective_sample_size"] > 0.0

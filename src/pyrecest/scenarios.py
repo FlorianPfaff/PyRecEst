@@ -33,7 +33,9 @@ ScenarioRunner = Callable[[str | Path], ScenarioResult]
 _SCENARIO_RUNNERS: dict[str, ScenarioRunner] = {}
 
 
-def register_scenario_runner(scenario_type: str, runner: ScenarioRunner) -> ScenarioRunner:
+def register_scenario_runner(
+    scenario_type: str, runner: ScenarioRunner
+) -> ScenarioRunner:
     """Register ``runner`` for a TOML ``scenario.type`` value."""
     if not scenario_type:
         raise ValueError("scenario_type must be a non-empty string")
@@ -197,7 +199,9 @@ def run_particle_resampling_scenario(path: str | Path) -> ScenarioResult:
     particles = be.asarray(data["particles"], dtype=be.float64)
     raw_weights = data.get("weights")
     if raw_weights is None:
-        raw_weights = [1.0 / int(particles.shape[0]) for _ in range(int(particles.shape[0]))]
+        raw_weights = [
+            1.0 / int(particles.shape[0]) for _ in range(int(particles.shape[0]))
+        ]
     weights = be.asarray(raw_weights, dtype=be.float64)
     weights = weights / be.sum(weights)
     num_samples = int(data.get("num_samples", int(particles.shape[0])))

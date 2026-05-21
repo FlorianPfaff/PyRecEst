@@ -5,16 +5,17 @@ from math import pi
 from typing import Any
 
 import numpy as np
-from scipy.optimize import linear_sum_assignment
-
 from pyrecest.backend import arccos, asarray, dot, linalg, to_numpy
 from pyrecest.distributions import AbstractHypertoroidalDistribution
+from scipy.optimize import linear_sum_assignment
 
 DistanceFactory = Callable[[str, dict[str, Any] | None], Callable[[Any, Any], float]]
 _DISTANCE_FUNCTION_FACTORIES: dict[str, DistanceFactory] = {}
 
 
-def register_distance_function(manifold_name: str, factory: DistanceFactory) -> DistanceFactory:
+def register_distance_function(
+    manifold_name: str, factory: DistanceFactory
+) -> DistanceFactory:
     """Register a custom distance-function factory for a manifold name."""
     if not manifold_name:
         raise ValueError("manifold_name must be a non-empty string")
@@ -44,7 +45,9 @@ def _symmetry_offsets(nSymm, symmetryOffsets):
     return [2.0 * pi * index / int(nSymm) for index in range(int(nSymm))]
 
 
-def _symmetric_distance_function(manifold_name, additional_params, nSymm, symmetryOffsets):
+def _symmetric_distance_function(
+    manifold_name, additional_params, nSymm, symmetryOffsets
+):
     base_name = _without_symmetry_suffix(manifold_name)
     base_distance = get_distance_function(base_name, additional_params)
     offsets = _symmetry_offsets(nSymm, symmetryOffsets)

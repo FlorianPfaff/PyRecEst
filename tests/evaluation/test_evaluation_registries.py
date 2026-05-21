@@ -7,9 +7,13 @@ from pyrecest.evaluation.get_extract_mean import get_extract_mean, register_extr
 
 
 def test_custom_distance_function_registry():
-    register_distance_function("unit-test-manifold", lambda _name, _params: lambda x, y: 42.0)
+    register_distance_function(
+        "unit-test-manifold", lambda _name, _params: lambda x, y: 42.0
+    )
 
-    assert get_distance_function("unit-test-manifold")(array([0.0]), array([1.0])) == 42.0
+    assert (
+        get_distance_function("unit-test-manifold")(array([0.0]), array([1.0])) == 42.0
+    )
 
 
 def test_euclidean_mtt_distance_uses_assignment_with_cutoff():
@@ -19,6 +23,8 @@ def test_euclidean_mtt_distance_uses_assignment_with_cutoff():
 
 
 def test_custom_extract_mean_registry():
-    register_extract_mean("unit-test-mean", lambda _name, _mtt: lambda state: state["mean"])
+    register_extract_mean(
+        "unit-test-mean", lambda _name, _mtt: lambda state: state["mean"]
+    )
 
     assert get_extract_mean("unit-test-mean")({"mean": 3}) == 3

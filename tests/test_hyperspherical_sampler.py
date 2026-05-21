@@ -322,10 +322,18 @@ class TestSphericalCoordinatesBasedFixedResolutionSampler(unittest.TestCase):
             endpoint=False,
         )
         expected_phi = array(
-            [phi_value for phi_value in expected_phi_values for _ in expected_theta_values]
+            [
+                phi_value
+                for phi_value in expected_phi_values
+                for _ in expected_theta_values
+            ]
         )
         expected_theta = array(
-            [theta_value for _ in expected_phi_values for theta_value in expected_theta_values]
+            [
+                theta_value
+                for _ in expected_phi_values
+                for theta_value in expected_theta_values
+            ]
         )
 
         npt.assert_allclose(phi, expected_phi)

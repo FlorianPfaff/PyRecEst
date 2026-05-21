@@ -7,13 +7,13 @@ instabilities are easier to diagnose.
 
 ## Shared Exceptions
 
-| Exception | Use when |
-|-----------|----------|
-| `PyRecEstError` | A caller wants to catch PyRecEst-specific failures as a group. |
-| `BackendNotSupportedError` | An operation is unavailable for the active backend. This also subclasses `NotImplementedError`. |
-| `ShapeError` | An array, vector, matrix, particle set, or measurement set has the wrong shape. |
-| `DimensionMismatchError` | Two objects have incompatible state, measurement, or ambient dimensions. |
-| `NumericalStabilityError` | A computation cannot be completed safely because of conditioning, definiteness, normalization, or related numerical issues. |
+| Exception                  | Use when                                                                                                                    |
+|----------------------------|-----------------------------------------------------------------------------------------------------------------------------|
+| `PyRecEstError`            | A caller wants to catch PyRecEst-specific failures as a group.                                                              |
+| `BackendNotSupportedError` | An operation is unavailable for the active backend. This also subclasses `NotImplementedError`.                             |
+| `ShapeError`               | An array, vector, matrix, particle set, or measurement set has the wrong shape.                                             |
+| `DimensionMismatchError`   | Two objects have incompatible state, measurement, or ambient dimensions.                                                    |
+| `NumericalStabilityError`  | A computation cannot be completed safely because of conditioning, definiteness, normalization, or related numerical issues. |
 
 ## Message Policy
 
