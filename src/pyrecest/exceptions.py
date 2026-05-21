@@ -72,7 +72,9 @@ class ShapeError(ValueError, PyRecEstError):
 class DimensionMismatchError(ShapeError):
     """Raised when two or more objects have inconsistent dimensions."""
 
-    def __init__(self, left_name: str, left_dim: int, right_name: str, right_dim: int) -> None:
+    def __init__(
+        self, left_name: str, left_dim: int, right_name: str, right_dim: int
+    ) -> None:
         self.left_name = left_name
         self.left_dim = left_dim
         self.right_name = right_name

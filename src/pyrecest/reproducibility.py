@@ -32,7 +32,9 @@ def get_backend_random_state() -> Any:
     """Return the active backend random state when the backend exposes it."""
     random = _random_backend()
     if not hasattr(random, "get_state"):
-        raise AttributeError("The active backend random module does not expose get_state().")
+        raise AttributeError(
+            "The active backend random module does not expose get_state()."
+        )
     return random.get_state()
 
 
@@ -40,7 +42,9 @@ def set_backend_random_state(state: Any) -> None:
     """Restore the active backend random state when the backend exposes it."""
     random = _random_backend()
     if not hasattr(random, "set_state"):
-        raise AttributeError("The active backend random module does not expose set_state().")
+        raise AttributeError(
+            "The active backend random module does not expose set_state()."
+        )
     random.set_state(state)
 
 

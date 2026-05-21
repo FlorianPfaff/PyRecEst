@@ -10,12 +10,12 @@ assignment.
 
 from __future__ import annotations
 
+import warnings
 from collections import defaultdict
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, replace
 from math import log, pi
 from typing import Any, Literal
-import warnings
 
 import numpy as np
 from scipy.stats import chi2

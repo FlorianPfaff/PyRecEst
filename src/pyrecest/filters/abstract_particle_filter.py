@@ -4,10 +4,10 @@ from collections.abc import Callable
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
 from pyrecest.backend import hstack, ndim, ones_like, random, sum, vmap, vstack
+from pyrecest.diagnostics import ParticleDiagnostics
 from pyrecest.distributions.abstract_manifold_specific_distribution import (
     AbstractManifoldSpecificDistribution,
 )
-from pyrecest.diagnostics import ParticleDiagnostics
 
 from .abstract_filter import AbstractFilter
 
@@ -227,7 +227,9 @@ class AbstractParticleFilter(AbstractFilter):
                 ones_like(self.filter_state.w) / self.filter_state.w.shape[0]
             )
 
-    def update_model(self, measurement_model, measurement=None, *, return_diagnostics=False):
+    def update_model(
+        self, measurement_model, measurement=None, *, return_diagnostics=False
+    ):
         """Update using a reusable particle measurement model."""
         if not hasattr(measurement_model, "likelihood"):
             raise TypeError(
@@ -259,9 +261,13 @@ class AbstractParticleFilter(AbstractFilter):
             raise NotImplementedError()
 
         likelihood = meas_noise.set_mode(measurement).pdf
-        return self.update_nonlinear_using_likelihood(likelihood, return_diagnostics=return_diagnostics)
+        return self.update_nonlinear_using_likelihood(
+            likelihood, return_diagnostics=return_diagnostics
+        )
 
-    def update_nonlinear_using_likelihood(self, likelihood, measurement=None, *, return_diagnostics=False):
+    def update_nonlinear_using_likelihood(
+        self, likelihood, measurement=None, *, return_diagnostics=False
+    ):
         if isinstance(likelihood, AbstractManifoldSpecificDistribution):
             likelihood = likelihood.pdf
 

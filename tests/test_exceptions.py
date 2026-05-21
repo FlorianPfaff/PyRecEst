@@ -1,5 +1,4 @@
 import pytest
-
 from pyrecest.exceptions import (
     BackendNotSupportedError,
     DimensionMismatchError,
@@ -40,4 +39,6 @@ def test_dimension_mismatch_error_records_dimensions():
 
 def test_numerical_stability_error_message():
     with pytest.raises(NumericalStabilityError, match="Cholesky"):
-        raise NumericalStabilityError("Cholesky factorization", reason="matrix is not positive definite")
+        raise NumericalStabilityError(
+            "Cholesky factorization", reason="matrix is not positive definite"
+        )
