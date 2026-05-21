@@ -55,7 +55,9 @@ def run_linear_gaussian_scenario(path: str | Path) -> ScenarioResult:
     """
     config = load_scenario_config(path)
     if config.get("scenario", {}).get("type") != "linear_gaussian":
-        raise ValueError("Only scenario.type = 'linear_gaussian' is supported by this runner.")
+        raise ValueError(
+            "Only scenario.type = 'linear_gaussian' is supported by this runner."
+        )
 
     from pyrecest import backend as be
     from pyrecest.filters import KalmanFilter
@@ -87,11 +89,18 @@ def run_linear_gaussian_scenario(path: str | Path) -> ScenarioResult:
         )
         estimates.append(_to_float_list(kalman_filter.get_point_estimate()))
 
-    final_estimate = estimates[-1] if estimates else _to_float_list(kalman_filter.get_point_estimate())
+    final_estimate = (
+        estimates[-1]
+        if estimates
+        else _to_float_list(kalman_filter.get_point_estimate())
+    )
     expected = config.get("expected", {})
     metrics: dict[str, float] = {}
     if "final_estimate" in expected and final_estimate:
-        errors = [abs(a - float(b)) for a, b in zip(final_estimate, expected["final_estimate"])]
+        errors = [
+            abs(a - float(b))
+            for a, b in zip(final_estimate, expected["final_estimate"])
+        ]
         metrics["max_abs_final_estimate_error"] = max(errors) if errors else 0.0
 
     return ScenarioResult(

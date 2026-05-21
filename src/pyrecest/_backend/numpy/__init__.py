@@ -1,27 +1,41 @@
 """Numpy based computation backend."""
 
 import numpy as _np
-from numpy import (
+from numpy import (  # The ones below are for pyrecest; For Riemannian score-based SDE
     all,
     allclose,
     amax,
     amin,
+    angle,
     any,
+    apply_along_axis,
+    arctan,
     argmax,
     argmin,
+    argsort,
+    array_equal,
     asarray,
+    atleast_1d,
+    atleast_2d,
     broadcast_arrays,
     broadcast_to,
     clip,
+    column_stack,
     complex64,
     complex128,
     concatenate,
     conj,
+    count_nonzero,
+    cov,
     cross,
     cumprod,
     cumsum,
+    deg2rad,
+    diag,
     diag_indices,
     diagonal,
+    diff,
+    dstack,
     einsum,
     empty_like,
     equal,
@@ -29,30 +43,42 @@ from numpy import (
     flip,
     float32,
     float64,
+    full,
+    full_like,
     greater,
     hsplit,
     hstack,
     int32,
     int64,
     isclose,
+    isfinite,
+    isinf,
     isnan,
+    isreal,
     isscalar,
     kron,
     less,
     less_equal,
+    log1p,
     logical_and,
     logical_or,
+    max,
     maximum,
     mean,
     meshgrid,
+    min,
     minimum,
     moveaxis,
+    nonzero,
     ones_like,
     pad,
     prod,
     quantile,
+    rad2deg,
     repeat,
     reshape,
+    roll,
+    round,
     searchsorted,
     shape,
     sort,
@@ -72,38 +98,6 @@ from numpy import (
     vstack,
     where,
     zeros_like,
-    # The ones below are for pyrecest
-    diag,
-    diff,
-    apply_along_axis,
-    nonzero,
-    column_stack,
-    conj,
-    atleast_1d,
-    atleast_2d,
-    dstack,
-    full,
-    isreal,
-    triu,
-    kron,
-    angle,
-    arctan,
-    cov,
-    count_nonzero,
-    full_like,
-    isinf,
-    isfinite,
-    deg2rad,
-    rad2deg,
-    argsort,
-    max,
-    min,
-    roll,
-    dstack,
-    round,
-    array_equal,
-    # For Riemannian score-based SDE
-    log1p,
 )
 
 try:
@@ -111,7 +105,7 @@ try:
 except ImportError:
     from numpy import trapz as trapezoid
 
-from scipy.special import erf, gamma, polygamma, gammaln  # NOQA
+from scipy.special import erf, gamma, gammaln, polygamma  # NOQA
 
 from .._shared_numpy import (
     abs,
@@ -164,15 +158,12 @@ from .._shared_numpy import (
     vec_to_diag,
     vectorize,
 )
-from . import (
-    autodiff,  # NOQA
-    linalg,  # NOQA
-    random,  # NOQA
-    # For pyrecest
-    fft,  # NOQA
-    spatial,  # NOQA
-    signal,  # NOQA
-)
+from . import autodiff  # NOQA
+from . import fft  # NOQA
+from . import linalg  # NOQA
+from . import random  # NOQA
+from . import signal  # NOQA
+from . import spatial  # For pyrecest; NOQA
 from ._common import (
     _box_binary_scalar,
     _box_unary_scalar,
@@ -211,13 +202,15 @@ def has_autodiff():
     return False
 
 
-def vmap(pyfunc, randomness='error'):
-    assert randomness in ('error', 'different')
-    
+def vmap(pyfunc, randomness="error"):
+    assert randomness in ("error", "different")
+
     def vmapped_fun(*args):
         # Check if all arguments have the same first dimension
         if not all(arg.shape[0] == args[0].shape[0] for arg in args):
-            raise ValueError("All arguments must have the same size in the first dimension")
+            raise ValueError(
+                "All arguments must have the same size in the first dimension"
+            )
 
         # Prepare the output array (assuming the output of pyfunc is a scalar or numpy array)
         first_output = pyfunc(*(arg[0, ...] for arg in args))

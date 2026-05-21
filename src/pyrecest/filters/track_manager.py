@@ -667,9 +667,7 @@ class TrackManager(
         ):
             raise ValueError("Unmatched measurement index is out of range")
 
-        covered_track_indices = set(unmatched_track_indices).union(
-            used_track_indices
-        )
+        covered_track_indices = set(unmatched_track_indices).union(used_track_indices)
         missing_track_indices = set(range(num_tracks)) - covered_track_indices
         if missing_track_indices:
             raise ValueError(
@@ -679,9 +677,13 @@ class TrackManager(
         covered_measurement_indices = set(unmatched_measurement_indices).union(
             used_measurement_indices
         )
-        missing_measurement_indices = set(range(num_measurements)) - covered_measurement_indices
+        missing_measurement_indices = (
+            set(range(num_measurements)) - covered_measurement_indices
+        )
         if missing_measurement_indices:
-            raise ValueError("Association result does not account for every measurement index")
+            raise ValueError(
+                "Association result does not account for every measurement index"
+            )
 
         return AssociationResult(
             matches=matches,

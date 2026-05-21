@@ -17,11 +17,11 @@ extra.
 
 Recommended future shape:
 
-| Extra | Intended contents |
-|-------|-------------------|
-| default | Minimal Euclidean distributions, filters, models, and backend facade. |
-| `plot` | Matplotlib-dependent plotting helpers. |
-| `manifolds` | Domain-specific manifold and spherical-harmonics dependencies. |
-| `pytorch_support` | PyTorch backend. |
-| `jax_support` | JAX backend and autodiff support. |
-| `all_support` | Full feature set for development and exploration. |
+| Extra             | Intended contents                                                     |
+|-------------------|-----------------------------------------------------------------------|
+| default           | Minimal Euclidean distributions, filters, models, and backend facade. |
+| `plot`            | Matplotlib-dependent plotting helpers.                                |
+| `manifolds`       | Domain-specific manifold and spherical-harmonics dependencies.        |
+| `pytorch_support` | PyTorch backend.                                                      |
+| `jax_support`     | JAX backend and autodiff support.                                     |
+| `all_support`     | Full feature set for development and exploration.                     |

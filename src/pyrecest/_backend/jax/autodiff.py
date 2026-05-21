@@ -4,7 +4,6 @@ Based on autodiff.py by emilemathieu on
 https://github.com/oxcsml/geomstats/blob/master/geomstats/_backend/jax/autodiff.py
 """
 
-
 import jax.numpy as anp
 from autograd.extend import defvjp, primitive  # TODO: replace
 from jax import grad, jacfwd

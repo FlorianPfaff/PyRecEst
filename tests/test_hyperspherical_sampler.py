@@ -331,6 +331,7 @@ class TestSphericalCoordinatesBasedFixedResolutionSampler(unittest.TestCase):
         npt.assert_equal(theta.shape[0], 20)
         self.assertEqual(grid_description, {"res_lat": 20, "res_lon": 10})
 
+
 class TestHopfConversion(unittest.TestCase):
     def test_conversion(self):
         # Generate a sample matrix of size (n, 4) containing unit vectors.
@@ -350,7 +351,9 @@ class TestHopfConversion(unittest.TestCase):
         recovered_quaternions_via_legacy_alias = (
             AbstractHopfBasedS3Sampler.hopf_coordinates_to_quaterion_yershova(θ, ϕ, ψ)
         )
-        npt.assert_allclose(recovered_quaternions, recovered_quaternions_via_legacy_alias)
+        npt.assert_allclose(
+            recovered_quaternions, recovered_quaternions_via_legacy_alias
+        )
 
 
 class TestSymmetricLeopardiSampler(unittest.TestCase):

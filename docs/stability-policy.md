@@ -5,12 +5,12 @@ ideas by separating public APIs from experimental APIs.
 
 ## Stability Categories
 
-| Category | Meaning |
-|----------|---------|
-| Stable | Public API covered by tests and deprecation policy. |
-| Experimental | API may change without the full deprecation cycle. Prefer `pyrecest.experimental` for these objects. |
-| Deprecated | API still exists but emits `DeprecationWarning` and has a planned removal version. |
-| Backend-specific | API is stable only for the backends listed in the backend API matrix. |
+| Category         | Meaning                                                                                              |
+|------------------|------------------------------------------------------------------------------------------------------|
+| Stable           | Public API covered by tests and deprecation policy.                                                  |
+| Experimental     | API may change without the full deprecation cycle. Prefer `pyrecest.experimental` for these objects. |
+| Deprecated       | API still exists but emits `DeprecationWarning` and has a planned removal version.                   |
+| Backend-specific | API is stable only for the backends listed in the backend API matrix.                                |
 
 ## Deprecations
 

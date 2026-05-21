@@ -30,7 +30,9 @@ def assert_backend(expected: str | tuple[str, ...]) -> None:
     expected_names = (expected,) if isinstance(expected, str) else tuple(expected)
     if active not in expected_names:
         allowed = ", ".join(expected_names)
-        raise RuntimeError(f"Expected PyRecEst backend {allowed}; active backend is {active}.")
+        raise RuntimeError(
+            f"Expected PyRecEst backend {allowed}; active backend is {active}."
+        )
 
 
 def warn_if_backend_env_changed() -> None:

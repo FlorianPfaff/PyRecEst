@@ -146,7 +146,9 @@ class AbstractSphericalUniformSampler(AbstractHypersphericalUniformSampler):
         self, n_samples: int, dim: int = 2
     ):  # Only having dim there for interface compatibility
         if dim != 2:
-            raise ValueError("AbstractSphericalUniformSampler is only implemented for S2 (dim=2)")
+            raise ValueError(
+                "AbstractSphericalUniformSampler is only implemented for S2 (dim=2)"
+            )
         return HypersphericalUniformDistribution(2).sample(n_samples)
 
 

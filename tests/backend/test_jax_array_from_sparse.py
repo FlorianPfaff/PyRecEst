@@ -2,7 +2,6 @@ import pytest
 
 pytest.importorskip("jax")
 import jax.numpy as jnp  # noqa: E402
-
 from pyrecest._backend.jax import array_from_sparse  # noqa: E402
 
 

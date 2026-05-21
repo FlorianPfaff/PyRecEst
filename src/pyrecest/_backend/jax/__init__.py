@@ -2,67 +2,130 @@
 based on implementation by Emile Mathieu
 for Riemannian Score-based SDE
 """
+
 import jax.numpy as _jnp
-from jax.numpy import (
+from jax import vmap
+from jax.numpy import (  # For pyrecest; For Riemannian score-based SDE
+    abs,
     all,
     allclose,
     amax,
     amin,
+    angle,
     any,
+    apply_along_axis,
+    arange,
+    arccos,
+    arccosh,
+    arcsin,
+    arctan,
+    arctan2,
+    arctanh,
     argmax,
     argmin,
+    argsort,
+    array_equal,
     asarray,
+    atleast_1d,
+    atleast_2d,
     broadcast_arrays,
     broadcast_to,
+    ceil,
     clip,
+    column_stack,
     complex64,
     complex128,
     concatenate,
     conj,
+    copy,
+    cos,
+    cosh,
+    count_nonzero,
+    cov,
     cross,
     cumprod,
     cumsum,
+    deg2rad,
+    diag,
     diag_indices,
     diagonal,
+    diff,
+    divide,
+    dot,
+    dstack,
     einsum,
+    empty,
     empty_like,
     equal,
+    exp,
     expand_dims,
+    eye,
     flip,
     float32,
     float64,
+    floor,
+    full,
+    full_like,
     greater,
     hsplit,
     hstack,
+    imag,
     int32,
     int64,
     isclose,
+    isfinite,
+    isinf,
     isnan,
+    isreal,
     kron,
     less,
     less_equal,
+    linspace,
+    log,
+    log1p,
     logical_and,
     logical_or,
+    matmul,
+    max,
     maximum,
     mean,
     meshgrid,
+    min,
     minimum,
+    mod,
     moveaxis,
+    ndim,
+    nonzero,
+    ones,
     ones_like,
+    outer,
     pad,
+    power,
     prod,
     quantile,
+    rad2deg,
+    real,
     repeat,
     reshape,
+    roll,
+    round,
     searchsorted,
     shape,
+    sign,
+    sin,
+    sinh,
     sort,
     split,
+    sqrt,
+    squeeze,
     stack,
     std,
     sum,
     take,
+    tan,
+    tanh,
     tile,
+    trace,
     transpose,
     tril,
     tril_indices,
@@ -70,83 +133,13 @@ from jax.numpy import (
     triu_indices,
     uint8,
     unique,
+    vectorize,
     vstack,
     where,
-    zeros_like,
-    # For pyrecest
-    diag,
-    diff,
-    apply_along_axis,
-    nonzero,
-    column_stack,
-    conj,
-    atleast_1d,
-    atleast_2d,
-    dstack,
-    full,
-    isreal,
-    triu,
-    kron,
-    angle,
-    arctan,
-    cov,
-    count_nonzero,
-    full_like,
-    isinf,
-    isfinite,
-    deg2rad,
-    rad2deg,
-    argsort,
-    max,
-    min,
-    roll,
-    dstack,
-    abs,
-    arange,
-    abs,
-    angle,
-    arange,
-    arccos,
-    arccosh,
-    arcsin,
-    arctan2,
-    arctanh,
-    ceil,
-    copy,
-    cos,
-    cosh,
-    divide,
-    dot,
-    exp,
-    floor,
-    imag,
-    log,
-    matmul,
-    mod,
-    ndim,
-    outer,
-    power,
-    real,
-    sign,
-    sin,
-    sinh,
-    sqrt,
-    squeeze,
-    tan,
-    tanh,
-    trace,
-    vectorize,
-    empty,
-    eye,
     zeros,
-    linspace,
-    ones,
-    round,
-    array_equal,
-    # For Riemannian score-based SDE
-    log1p,
+    zeros_like,
 )
-from jax import vmap
+
 
 def has_autodiff():
     """If allows for automatic differentiation.
@@ -161,43 +154,40 @@ def has_autodiff():
 def isscalar(x):
     return _jnp.isscalar(x) and not isinstance(x, _jnp.ndarray)
 
-from ._dtype import (
-    set_default_dtype, as_dtype
-)
 
 from jax import device_get as to_numpy
-
-from jax.scipy.special import erf, gamma, polygamma, gammaln
-from jax.scipy.integrate import trapezoid as trapz
-from jax.scipy.integrate import trapezoid
-
-from jax.numpy import ravel as flatten
+from jax.numpy import array
 from jax.numpy import asarray as from_numpy
+from jax.numpy import ravel as flatten
+from jax.scipy.integrate import trapezoid
+from jax.scipy.integrate import trapezoid as trapz
+from jax.scipy.special import erf, gamma, gammaln, polygamma
 
 from .._backend_config import jax_atol as atol
 from .._backend_config import jax_rtol as rtol
-
-
-from . import autodiff
-from . import linalg
-from . import random
-from . import fft   # For PyRecEst
-from . import spatial  # For PyRecEst
+from . import fft  # For PyRecEst
 from . import signal  # For PyRecEst
-
-from jax.numpy import array
+from . import spatial  # For PyRecEst
+from . import autodiff, linalg, random
+from ._dtype import as_dtype, set_default_dtype
 
 
 def convert_to_wider_dtype(*args, **kwargs):
-    raise NotImplementedError("The function convert_to_wider_dtype is not supported in this JAX backend.")
+    raise NotImplementedError(
+        "The function convert_to_wider_dtype is not supported in this JAX backend."
+    )
 
 
 def get_default_dtype(*args, **kwargs):
-    raise NotImplementedError("The function get_default_dtype is not supported in this JAX backend.")
+    raise NotImplementedError(
+        "The function get_default_dtype is not supported in this JAX backend."
+    )
 
 
 def get_default_cdtype(*args, **kwargs):
-    raise NotImplementedError("The function get_default_cdtype is not supported in this JAX backend.")
+    raise NotImplementedError(
+        "The function get_default_cdtype is not supported in this JAX backend."
+    )
 
 
 def to_ndarray(x, to_ndim, axis=0):
@@ -367,6 +357,7 @@ def is_array(obj):
 
 def get_slice(array, start, end):
     return array[start:end]
+
 
 def as_dtype(array):
     """Change the data type of a given array.

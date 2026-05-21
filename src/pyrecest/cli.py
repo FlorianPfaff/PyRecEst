@@ -41,9 +41,18 @@ def _cmd_info(_args: argparse.Namespace) -> int:
 
 
 def _cmd_backends(_args: argparse.Namespace) -> int:
-    from pyrecest._backend.capabilities import BACKEND_CAPABILITIES, API_BACKEND_CAPABILITIES
+    from pyrecest._backend.capabilities import (
+        API_BACKEND_CAPABILITIES,
+        BACKEND_CAPABILITIES,
+    )
 
-    print(json.dumps({"facade": BACKEND_CAPABILITIES, "api": API_BACKEND_CAPABILITIES}, indent=2, sort_keys=True))
+    print(
+        json.dumps(
+            {"facade": BACKEND_CAPABILITIES, "api": API_BACKEND_CAPABILITIES},
+            indent=2,
+            sort_keys=True,
+        )
+    )
     return 0
 
 
@@ -55,10 +64,17 @@ def _cmd_run_scenario(args: argparse.Namespace) -> int:
 
     if args.expected is not None:
         expected = json.loads(Path(args.expected).read_text(encoding="utf-8"))
-        tolerance = args.tolerance if args.tolerance is not None else float(expected.get("tolerance", 1e-8))
+        tolerance = (
+            args.tolerance
+            if args.tolerance is not None
+            else float(expected.get("tolerance", 1e-8))
+        )
         expected_estimate = expected.get("final_estimate")
         if expected_estimate is not None:
-            errors = [abs(float(a) - float(b)) for a, b in zip(result.final_estimate, expected_estimate)]
+            errors = [
+                abs(float(a) - float(b))
+                for a, b in zip(result.final_estimate, expected_estimate)
+            ]
             if errors and max(errors) > tolerance:
                 print(
                     f"final_estimate mismatch: max_abs_error={max(errors):.6g} > tolerance={tolerance:.6g}",
@@ -69,19 +85,35 @@ def _cmd_run_scenario(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="pyrecest", description="PyRecEst command line utilities")
+    parser = argparse.ArgumentParser(
+        prog="pyrecest", description="PyRecEst command line utilities"
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    info_parser = subparsers.add_parser("info", help="Print version, backend, and dependency information as JSON.")
+    info_parser = subparsers.add_parser(
+        "info", help="Print version, backend, and dependency information as JSON."
+    )
     info_parser.set_defaults(func=_cmd_info)
 
-    backends_parser = subparsers.add_parser("backends", help="Print backend capability metadata as JSON.")
+    backends_parser = subparsers.add_parser(
+        "backends", help="Print backend capability metadata as JSON."
+    )
     backends_parser.set_defaults(func=_cmd_backends)
 
-    scenario_parser = subparsers.add_parser("run-scenario", help="Run a TOML scenario and print a JSON result.")
-    scenario_parser.add_argument("config", type=Path, help="Path to scenario config.toml")
-    scenario_parser.add_argument("--expected", type=Path, help="Optional expected-results JSON file")
-    scenario_parser.add_argument("--tolerance", type=float, help="Tolerance for expected final estimate checks; defaults to expected JSON tolerance or 1e-8")
+    scenario_parser = subparsers.add_parser(
+        "run-scenario", help="Run a TOML scenario and print a JSON result."
+    )
+    scenario_parser.add_argument(
+        "config", type=Path, help="Path to scenario config.toml"
+    )
+    scenario_parser.add_argument(
+        "--expected", type=Path, help="Optional expected-results JSON file"
+    )
+    scenario_parser.add_argument(
+        "--tolerance",
+        type=float,
+        help="Tolerance for expected final estimate checks; defaults to expected JSON tolerance or 1e-8",
+    )
     scenario_parser.set_defaults(func=_cmd_run_scenario)
 
     return parser

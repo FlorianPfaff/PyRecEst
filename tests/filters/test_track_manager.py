@@ -1,7 +1,6 @@
 import unittest
 
 import numpy as np
-
 from pyrecest.filters.track_manager import (
     AssociationResult,
     TrackManager,

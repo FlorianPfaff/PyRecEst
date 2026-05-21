@@ -23,14 +23,14 @@ PyRecEst provides tools for:
 
 ## Which API Should I Start With?
 
-| Task | Start with |
-|------|------------|
-| Linear Euclidean Gaussian filtering | `KalmanFilter` and `examples/basic/kalman_filter.py` |
-| Reusable transition and measurement models | `examples/basic/kalman_filter_with_models.py` |
-| Nonlinear filtering | `examples/basic/ukf_with_models.py` or particle-filter examples |
-| Multi-target tracking with clutter or missed detections | `examples/basic/multi_target_tracking.py` |
-| Circular, spherical, or manifold-valued states | circular, hypertoroidal, and hyperspherical distribution modules |
-| Backend-portable code | `pyrecest.backend` imports plus focused tests under each backend |
+| Task                                                    | Start with                                                       |
+|---------------------------------------------------------|------------------------------------------------------------------|
+| Linear Euclidean Gaussian filtering                     | `KalmanFilter` and `examples/basic/kalman_filter.py`             |
+| Reusable transition and measurement models              | `examples/basic/kalman_filter_with_models.py`                    |
+| Nonlinear filtering                                     | `examples/basic/ukf_with_models.py` or particle-filter examples  |
+| Multi-target tracking with clutter or missed detections | `examples/basic/multi_target_tracking.py`                        |
+| Circular, spherical, or manifold-valued states          | circular, hypertoroidal, and hyperspherical distribution modules |
+| Backend-portable code                                   | `pyrecest.backend` imports plus focused tests under each backend |
 
 For more detail, see `docs/choosing-an-api.md` and `docs/backend-compatibility.md`.
 

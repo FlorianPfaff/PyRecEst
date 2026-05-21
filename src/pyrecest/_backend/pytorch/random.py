@@ -1,8 +1,8 @@
 """Torch based random backend."""
 
 import torch as _torch
-from torch import randint
 from torch import get_rng_state as get_state  # For PyRecEst
+from torch import randint
 from torch import set_rng_state as set_state  # For PyRecEst
 from torch.distributions.multivariate_normal import (
     MultivariateNormal as _MultivariateNormal,

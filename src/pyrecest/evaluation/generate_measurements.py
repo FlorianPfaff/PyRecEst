@@ -46,7 +46,9 @@ def generate_measurements(groundtruth, simulation_config):
     if "n_meas_at_individual_time_step" in simulation_config and np.shape(
         simulation_config["n_meas_at_individual_time_step"]
     ) != (simulation_config["n_timesteps"],):
-        raise ValueError("n_meas_at_individual_time_step must have shape (n_timesteps,)")
+        raise ValueError(
+            "n_meas_at_individual_time_step must have shape (n_timesteps,)"
+        )
     measurements = np.empty(simulation_config["n_timesteps"], dtype=object)
 
     if simulation_config.get("mtt", False) and simulation_config.get("eot", False):

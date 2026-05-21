@@ -2,7 +2,6 @@ import unittest
 
 import numpy as np
 import numpy.testing as npt
-
 from pyrecest.backend import __backend_name__, array, eye, to_numpy
 from pyrecest.distributions import GaussianDistribution
 from pyrecest.filters import KalmanFilter

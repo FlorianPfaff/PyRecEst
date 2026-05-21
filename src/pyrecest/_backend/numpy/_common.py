@@ -1,5 +1,4 @@
 import numpy as _np
-
 from pyrecest._backend._dtype_utils import (
     _dyn_update_dtype,
     _modify_func_default_dtype,
