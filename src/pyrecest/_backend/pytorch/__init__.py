@@ -172,7 +172,9 @@ def std(
 def cov(input, correction=1, fweights=None, aweights=None, bias=False):
     # for pyrecest
     if not bias:
-        return _torch.cov(input, correction=correction, fweights=fweights, aweights=aweights)
+        return _torch.cov(
+            input, correction=correction, fweights=fweights, aweights=aweights
+        )
     assert fweights is None
 
     if aweights is None:
@@ -189,7 +191,9 @@ def cov(input, correction=1, fweights=None, aweights=None, bias=False):
     deviation_centered = input - means
 
     # Calculate weighted biased covariance
-    cov_matrix = _torch.einsum("ij,kj,j->ik", deviation_centered, deviation_centered, aweights)
+    cov_matrix = _torch.einsum(
+        "ij,kj,j->ik", deviation_centered, deviation_centered, aweights
+    )
 
     return cov_matrix
 
@@ -494,7 +498,12 @@ def linspace(start, stop, num=50, endpoint=True, dtype=None):
     stop = _torch.flatten(stop)
 
     if endpoint:
-        result = _torch.vstack([_torch.linspace(start=start[i], end=stop[i], steps=num, dtype=dtype) for i in range(start.shape[0])]).T
+        result = _torch.vstack(
+            [
+                _torch.linspace(start=start[i], end=stop[i], steps=num, dtype=dtype)
+                for i in range(start.shape[0])
+            ]
+        ).T
     else:
         result = _torch.vstack(
             [
@@ -884,7 +893,9 @@ def _unnest_iterable(ls):
 
 
 def pad(a, pad_width, mode="constant", constant_values=0.0):
-    return _torch.nn.functional.pad(a, _unnest_iterable(reversed(pad_width)), mode=mode, value=constant_values)
+    return _torch.nn.functional.pad(
+        a, _unnest_iterable(reversed(pad_width)), mode=mode, value=constant_values
+    )
 
 
 def is_array(x):

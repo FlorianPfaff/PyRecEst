@@ -1,5 +1,4 @@
 import pytest
-
 from pyrecest.backend import array, pi, to_numpy
 from pyrecest.evaluation.get_distance_function import (
     get_distance_function,
@@ -31,7 +30,9 @@ def test_euclidean_mtt_distance_uses_assignment_with_cutoff():
 def test_underscored_symmetric_hypersphere_distance_is_antipodal_invariant():
     distance = get_distance_function("hypersphere_symmetric")
 
-    assert _as_float(distance(array([1.0, 0.0]), array([-1.0, 0.0]))) == pytest.approx(0.0)
+    assert _as_float(distance(array([1.0, 0.0]), array([-1.0, 0.0]))) == pytest.approx(
+        0.0
+    )
 
 
 def test_se2bounded_distance_uses_angular_component_before_linear_dispatch():

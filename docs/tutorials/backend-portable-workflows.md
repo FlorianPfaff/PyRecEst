@@ -58,13 +58,13 @@ unless the API is intentionally backend-specific.
 Backend differences usually appear first as shape, dtype, or scalar-conversion
 issues. Prefer explicit one-dimensional vectors and two-dimensional matrices:
 
-| Quantity | Recommended shape |
-|----------|-------------------|
-| State mean | `(n,)` |
-| State covariance | `(n, n)` |
-| Measurement vector | `(m,)` |
-| Measurement matrix | `(m, n)` |
-| Measurement covariance | `(m, m)` |
+| Quantity               | Recommended shape |
+|------------------------|-------------------|
+| State mean             | `(n,)`            |
+| State covariance       | `(n, n)`          |
+| Measurement vector     | `(m,)`            |
+| Measurement matrix     | `(m, n)`          |
+| Measurement covariance | `(m, m)`          |
 
 For a one-dimensional measurement, use `array([z])` rather than a scalar and
 `array([[r]])` rather than `array([r])`.

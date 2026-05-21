@@ -13,25 +13,25 @@ intentionally deterministic and has a documented golden output.
 
 ## Validation Layers
 
-| Layer | Purpose | Examples |
-|-------|---------|----------|
-| API smoke tests | Confirm public entry points exist and have stable capabilities. | Protocol capability matrices, import checks, CLI smoke tests. |
-| Deterministic algebraic checks | Verify identities that should hold without randomness. | Gaussian multiplication, Kalman covariance symmetry, normalized innovation squared consistency. |
-| Numerical invariant checks | Catch invalid estimates even when exact values are not known. | Positive semidefinite covariances, nonnegative probabilities, normalized weights, unit-norm directional states. |
-| Monte Carlo checks | Verify statistical behavior across repeated randomized runs. | NEES/NIS coverage, sampling moment convergence, resampling effective sample size behavior. |
-| Scenario regression checks | Preserve known behavior for complete workflows. | Scenario zoo expected outputs, benchmark regressions, tracker association edge cases. |
+| Layer                          | Purpose                                                         | Examples                                                                                                        |
+|--------------------------------|-----------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------|
+| API smoke tests                | Confirm public entry points exist and have stable capabilities. | Protocol capability matrices, import checks, CLI smoke tests.                                                   |
+| Deterministic algebraic checks | Verify identities that should hold without randomness.          | Gaussian multiplication, Kalman covariance symmetry, normalized innovation squared consistency.                 |
+| Numerical invariant checks     | Catch invalid estimates even when exact values are not known.   | Positive semidefinite covariances, nonnegative probabilities, normalized weights, unit-norm directional states. |
+| Monte Carlo checks             | Verify statistical behavior across repeated randomized runs.    | NEES/NIS coverage, sampling moment convergence, resampling effective sample size behavior.                      |
+| Scenario regression checks     | Preserve known behavior for complete workflows.                 | Scenario zoo expected outputs, benchmark regressions, tracker association edge cases.                           |
 
 ## Core Invariants
 
-| Component | Invariant |
-|-----------|-----------|
-| Probability distributions | Densities integrate or sum to one on their manifold. |
-| Circular and toroidal distributions | Wrapping by the period preserves density. |
-| Hyperspherical distributions | Samples and support points remain unit norm. |
-| Gaussian filters | Covariances stay symmetric positive definite after updates. |
-| Particle filters | Weights remain finite, non-negative, and normalized after resampling. |
-| Representation conversion | Moment-matching routes preserve mean/covariance within tolerance. |
-| Trackers | Cardinality, association, and gating diagnostics remain internally consistent. |
+| Component                           | Invariant                                                                      |
+|-------------------------------------|--------------------------------------------------------------------------------|
+| Probability distributions           | Densities integrate or sum to one on their manifold.                           |
+| Circular and toroidal distributions | Wrapping by the period preserves density.                                      |
+| Hyperspherical distributions        | Samples and support points remain unit norm.                                   |
+| Gaussian filters                    | Covariances stay symmetric positive definite after updates.                    |
+| Particle filters                    | Weights remain finite, non-negative, and normalized after resampling.          |
+| Representation conversion           | Moment-matching routes preserve mean/covariance within tolerance.              |
+| Trackers                            | Cardinality, association, and gating diagnostics remain internally consistent. |
 
 When a change affects a Kalman-style Gaussian estimator, check at least:
 

@@ -48,7 +48,10 @@ class AbstractHyperrectangularDistribution(AbstractBoundedNonPeriodicDistributio
             raise ValueError(f"integration_boundaries must have shape ({self.dim}, 2)")
         left = integration_boundaries[:, 0]
         right = integration_boundaries[:, 1]
-        ranges = [(float(lower), float(upper)) for lower, upper in zip(to_numpy(left), to_numpy(right))]
+        ranges = [
+            (float(lower), float(upper))
+            for lower, upper in zip(to_numpy(left), to_numpy(right))
+        ]
 
         def integrand(*args):
             values = self.pdf(reshape(array(args), (1, self.dim)))

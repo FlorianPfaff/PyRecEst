@@ -2,7 +2,6 @@ import time
 import warnings
 
 import numpy as _np
-
 from pyrecest.backend import any, array, atleast_2d, empty_like, squeeze
 
 from .configure_for_filter import configure_for_filter

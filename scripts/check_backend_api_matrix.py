@@ -14,7 +14,6 @@ import sys
 from pathlib import Path
 from types import ModuleType
 
-
 BACKEND_COLUMNS = ("numpy", "pytorch", "jax")
 
 
@@ -24,10 +23,17 @@ def _repo_root() -> Path:
 
 def load_capability_module(source_path: Path | None = None) -> ModuleType:
     """Load the backend capability module without importing the package."""
-    capabilities_path = source_path or _repo_root() / "src" / "pyrecest" / "_backend" / "capabilities.py"
-    spec = importlib.util.spec_from_file_location("_pyrecest_backend_capabilities", capabilities_path)
+    capabilities_path = (
+        source_path
+        or _repo_root() / "src" / "pyrecest" / "_backend" / "capabilities.py"
+    )
+    spec = importlib.util.spec_from_file_location(
+        "_pyrecest_backend_capabilities", capabilities_path
+    )
     if spec is None or spec.loader is None:
-        raise RuntimeError(f"Cannot load backend capability metadata from {capabilities_path}")
+        raise RuntimeError(
+            f"Cannot load backend capability metadata from {capabilities_path}"
+        )
 
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -99,7 +105,9 @@ def validate_documented_matrix(
             expected = expected_row[backend_name]
             observed = documented_row[backend_name]
             if expected not in support_levels:
-                errors.append(f"metadata row `{api_name}` has invalid {backend_name} support level `{expected}`")
+                errors.append(
+                    f"metadata row `{api_name}` has invalid {backend_name} support level `{expected}`"
+                )
             if observed != expected:
                 errors.append(
                     f"docs/backend-api-matrix.md row `{api_name}` has {backend_name}={observed!r}; expected {expected!r}"

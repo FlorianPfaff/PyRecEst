@@ -172,15 +172,21 @@ from ._dtype import as_dtype, set_default_dtype
 
 
 def convert_to_wider_dtype(*args, **kwargs):
-    raise NotImplementedError("The function convert_to_wider_dtype is not supported in this JAX backend.")
+    raise NotImplementedError(
+        "The function convert_to_wider_dtype is not supported in this JAX backend."
+    )
 
 
 def get_default_dtype(*args, **kwargs):
-    raise NotImplementedError("The function get_default_dtype is not supported in this JAX backend.")
+    raise NotImplementedError(
+        "The function get_default_dtype is not supported in this JAX backend."
+    )
 
 
 def get_default_cdtype(*args, **kwargs):
-    raise NotImplementedError("The function get_default_cdtype is not supported in this JAX backend.")
+    raise NotImplementedError(
+        "The function get_default_cdtype is not supported in this JAX backend."
+    )
 
 
 def to_ndarray(x, to_ndim, axis=0):
@@ -422,7 +428,9 @@ def scatter_add(input, dim, index, src):
             row_indices = _jnp.arange(input.shape[0])
         else:
             row_shape = (input.shape[0],) + (1,) * (index.ndim - 1)
-            row_indices = _jnp.broadcast_to(_jnp.arange(input.shape[0]).reshape(row_shape), index.shape)
+            row_indices = _jnp.broadcast_to(
+                _jnp.arange(input.shape[0]).reshape(row_shape), index.shape
+            )
         return input.at[row_indices, index].add(src)
 
     raise NotImplementedError("scatter_add is implemented for dim 0 and dim 1.")
