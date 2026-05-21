@@ -17,14 +17,14 @@ in the API overview, examples, and reference pages.
 
 ## Estimator Selection
 
-| State and model assumptions                                      | Recommended starting point                   | Why                                                                                         |
-|------------------------------------------------------------------|----------------------------------------------|---------------------------------------------------------------------------------------------|
-| Linear transition and measurement models with Gaussian noise     | `KalmanFilter`                               | Closed-form, fast, and the most portable baseline across backends.                          |
-| Smooth nonlinear Euclidean models with moderate dimension        | `UnscentedKalmanFilter`                      | Avoids manual Jacobians while keeping a compact Gaussian state.                              |
-| Strong nonlinearity, multimodality, or likelihood-only measurements | particle-filter examples                   | Represents non-Gaussian states and arbitrary likelihoods at the cost of sample size.         |
-| Gridded low-dimensional densities                                | grid or Fourier filters                      | Useful when deterministic density support is more important than sample efficiency.          |
-| Manifold-valued states                                           | manifold-specific filters and distributions  | Preserves wrap-around, unit-norm, or group constraints explicitly.                           |
-| Detection sets with clutter and missed detections                | GNN, JPDAF, Multi-Bernoulli, or MHT trackers | Separates association hypotheses from per-target filtering.                                  |
+| State and model assumptions                                         | Recommended starting point                   | Why                                                                                  |
+|---------------------------------------------------------------------|----------------------------------------------|--------------------------------------------------------------------------------------|
+| Linear transition and measurement models with Gaussian noise        | `KalmanFilter`                               | Closed-form, fast, and the most portable baseline across backends.                   |
+| Smooth nonlinear Euclidean models with moderate dimension           | `UnscentedKalmanFilter`                      | Avoids manual Jacobians while keeping a compact Gaussian state.                      |
+| Strong nonlinearity, multimodality, or likelihood-only measurements | particle-filter examples                     | Represents non-Gaussian states and arbitrary likelihoods at the cost of sample size. |
+| Gridded low-dimensional densities                                   | grid or Fourier filters                      | Useful when deterministic density support is more important than sample efficiency.  |
+| Manifold-valued states                                              | manifold-specific filters and distributions  | Preserves wrap-around, unit-norm, or group constraints explicitly.                   |
+| Detection sets with clutter and missed detections                   | GNN, JPDAF, Multi-Bernoulli, or MHT trackers | Separates association hypotheses from per-target filtering.                          |
 
 ## Recommended First Examples
 
