@@ -1,5 +1,4 @@
 import numpy as np
-
 import pyrecest.backend as backend
 from pyrecest.backend import array, diag
 from pyrecest.filters import KalmanFilter

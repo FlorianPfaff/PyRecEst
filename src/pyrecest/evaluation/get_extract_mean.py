@@ -7,7 +7,9 @@ MeanExtractorFactory = Callable[[str, bool], Callable[[Any], Any]]
 _EXTRACT_MEAN_FACTORIES: dict[str, MeanExtractorFactory] = {}
 
 
-def register_extract_mean(manifold_name: str, factory: MeanExtractorFactory) -> MeanExtractorFactory:
+def register_extract_mean(
+    manifold_name: str, factory: MeanExtractorFactory
+) -> MeanExtractorFactory:
     """Register a custom mean-extraction factory for a manifold name."""
     if not manifold_name:
         raise ValueError("manifold_name must be a non-empty string")
@@ -33,7 +35,10 @@ def _extract_mtt_mean(filter_state):
     if hasattr(filter_state, "tracks"):
         return [_point_estimate_or_mean(track) for track in filter_state.tracks]
     if hasattr(filter_state, "single_target_filters"):
-        return [_point_estimate_or_mean(track) for track in filter_state.single_target_filters]
+        return [
+            _point_estimate_or_mean(track)
+            for track in filter_state.single_target_filters
+        ]
     if isinstance(filter_state, list | tuple):
         return [_point_estimate_or_mean(track) for track in filter_state]
     return _point_estimate_or_mean(filter_state)

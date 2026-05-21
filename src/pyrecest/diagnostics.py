@@ -79,7 +79,9 @@ class FilterDiagnostics(_DiagnosticsMappingMixin):
         known = {field_name for field_name in cls.__dataclass_fields__}
         values = {key: value for key, value in mapping.items() if key in known}
         metadata = dict(mapping.get("metadata", {}))
-        metadata.update({key: value for key, value in mapping.items() if key not in known})
+        metadata.update(
+            {key: value for key, value in mapping.items() if key not in known}
+        )
         values["metadata"] = metadata
         return cls(**values)
 
