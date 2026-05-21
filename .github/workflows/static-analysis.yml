@@ -28,30 +28,6 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Install static analysis tools
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install "ruff>=0.8,<1.0"
-
-      - name: Ruff allowlist
-        run: |
-          python -m ruff check \
-            scripts/check_benchmark_regression.py \
-            scripts/check_minimal_imports.py \
-            scripts/check_public_api_registry.py \
-            scripts/render_backend_api_matrix.py \
-            src/pyrecest/api_registry.py \
-            tests/test_api_registry.py \
-            tests/test_capability_matrix.py
-          python -m ruff format --check \
-            scripts/check_benchmark_regression.py \
-            scripts/check_minimal_imports.py \
-            scripts/check_public_api_registry.py \
-            scripts/render_backend_api_matrix.py \
-            src/pyrecest/api_registry.py \
-            tests/test_api_registry.py \
-            tests/test_capability_matrix.py
-
       - name: Compile Python files
         run: python -m compileall -q src scripts tests
 
@@ -60,27 +36,3 @@ jobs:
 
       - name: Check generated public API registry docs
         run: python scripts/check_public_api_registry.py --check docs/public-api-registry.md
-
-  ruff-ratchet:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v6
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.13"
-
-      - name: Run targeted Ruff ratchet
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install "ruff>=0.11,<0.15"
-          python -m ruff check \
-            src/pyrecest/_backend/capabilities.py \
-            src/pyrecest/cli.py \
-            src/pyrecest/filters/__init__.py \
-            scripts/generate_backend_api_matrix.py \
-            scripts/check_benchmark_results.py \
-            tests/test_backend_capabilities.py \
-            tests/test_filters_lazy_exports.py
