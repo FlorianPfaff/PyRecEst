@@ -48,7 +48,7 @@ jobs:
       - name: Resolve manual release tag
         id: manual_release
         if: ${{ github.event_name == 'workflow_dispatch' }}
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           RELEASE_TAG_INPUT: ${{ github.event.inputs.release_tag }}
         with:
@@ -143,7 +143,7 @@ jobs:
 
       - name: Decide whether to publish
         id: gate
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           VERSION: ${{ steps.meta.outputs.version }}
           RELEASE_TAG: ${{ steps.release.outputs.release_tag }}
