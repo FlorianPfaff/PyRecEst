@@ -9,14 +9,14 @@ should be safe to require on every pull request.
 
 Recommended required checks for protected branches are:
 
-| Check | Purpose |
-|-------|---------|
-| `Static analysis` | Runs the static baseline, compile checks, and generated-doc checks. |
-| `Test workflow / docs` | Builds documentation with `mkdocs build --strict`. |
-| `Test workflow / package` | Builds distributions, installs the wheel, and runs smoke examples. |
-| `Test workflow / test` | Runs the backend matrix for NumPy, PyTorch, and JAX. |
-| `CodeQL` | Scans the Python codebase for security issues. |
-| `Dependency review` | Fails pull requests that introduce high-severity dependency advisories. |
+| Check                     | Purpose                                                                 |
+|---------------------------|-------------------------------------------------------------------------|
+| `Static analysis`         | Runs the static baseline, compile checks, and generated-doc checks.     |
+| `Test workflow / docs`    | Builds documentation with `mkdocs build --strict`.                      |
+| `Test workflow / package` | Builds distributions, installs the wheel, and runs smoke examples.      |
+| `Test workflow / test`    | Runs the backend matrix for NumPy, PyTorch, and JAX.                    |
+| `CodeQL`                  | Scans the Python codebase for security issues.                          |
+| `Dependency review`       | Fails pull requests that introduce high-severity dependency advisories. |
 
 Scheduled jobs may run larger or slower matrices, but the required checks should
 remain small enough that contributors can iterate quickly.

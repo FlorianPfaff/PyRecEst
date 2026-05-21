@@ -13,12 +13,22 @@ BACKEND_LABELS = {"numpy": "NumPy", "pytorch": "PyTorch", "jax": "JAX"}
 
 
 def _format_table(headers: list[str], rows: list[list[str]]) -> list[str]:
-    widths = [max(len(row[index]) for row in [headers, *rows]) for index in range(len(headers))]
+    widths = [
+        max(len(row[index]) for row in [headers, *rows])
+        for index in range(len(headers))
+    ]
     lines = [
-        "| " + " | ".join(cell.ljust(widths[index]) for index, cell in enumerate(headers)) + " |",
+        "| "
+        + " | ".join(cell.ljust(widths[index]) for index, cell in enumerate(headers))
+        + " |",
         "|" + "|".join("-" * (width + 2) for width in widths) + "|",
     ]
-    lines.extend("| " + " | ".join(cell.ljust(widths[index]) for index, cell in enumerate(row)) + " |" for row in rows)
+    lines.extend(
+        "| "
+        + " | ".join(cell.ljust(widths[index]) for index, cell in enumerate(row))
+        + " |"
+        for row in rows
+    )
     return lines
 
 
@@ -117,7 +127,9 @@ def render_backend_api_matrix() -> str:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--output", type=Path, help="Write generated Markdown to this path.")
+    parser.add_argument(
+        "--output", type=Path, help="Write generated Markdown to this path."
+    )
     args = parser.parse_args(argv)
 
     rendered = render_backend_api_matrix()

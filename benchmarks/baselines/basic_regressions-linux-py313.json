@@ -4,10 +4,7 @@
       "name": "linear_kalman",
       "iterations": 200,
       "max_elapsed_seconds": 30.0,
-      "final_estimate": [
-        200.0,
-        1.0
-      ]
+      "final_estimate": [200.0, 1.0]
     }
   ]
 }

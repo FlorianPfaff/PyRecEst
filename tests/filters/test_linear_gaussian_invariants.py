@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import numpy as np
-
 from pyrecest.backend import array
 from pyrecest.distributions import GaussianDistribution
 from pyrecest.filters import KalmanFilter
@@ -72,7 +71,9 @@ def test_normalized_innovation_squared_matches_manual_solve():
 
     innovation_np = _to_numpy(innovation)
     innovation_covariance_np = _to_numpy(innovation_covariance)
-    expected = innovation_np.T @ np.linalg.solve(innovation_covariance_np, innovation_np)
+    expected = innovation_np.T @ np.linalg.solve(
+        innovation_covariance_np, innovation_np
+    )
 
     assert np.allclose(_as_float(observed), expected, atol=1e-10)
 

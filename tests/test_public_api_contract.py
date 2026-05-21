@@ -2,7 +2,6 @@ import importlib
 
 import pytest
 
-
 PUBLIC_MODULES_WITH_ALL = (
     "pyrecest",
     "pyrecest.filters",

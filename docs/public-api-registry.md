@@ -34,18 +34,18 @@ mapped to the same implementation module as their canonical form. New examples
 and documentation should use the canonical spelling.
 
 <!-- public-api-registry:start -->
-| API | Module | Category | Backend contract | Notes |
-|-----|--------|----------|------------------|-------|
-| `BackendFacade` | `pyrecest.backend` | backend-specific | `BackendFacade` | Facade names are importable across backends, with bridged or unsupported functions documented in the backend matrix. |
-| `DistributionConversion` | `pyrecest.distributions.conversion` | backend-specific | `DistributionConversion` | Euclidean Gaussian/particle routes are portable; grid, Fourier, and manifold routes are route-specific. |
-| `EuclideanParticleFilter` | `pyrecest.filters` | backend-specific | `EuclideanParticleFilter` | Particle behavior depends on sampler and resampling support in the active backend. |
-| `EvaluationUtilities` | `pyrecest.evaluation` | backend-specific | `EvaluationUtilities` | Plotting, assignment, summaries, and result helpers are only partly backend-portable. |
-| `GaussianDistribution` | `pyrecest.distributions` | stable | `GaussianDistribution` | Basic construction, moment access, and portable operations are part of the core distribution API. |
-| `KalmanFilter` | `pyrecest.filters` | stable | `KalmanFilter` | Linear Gaussian filtering is part of the portable baseline. |
-| `LinearDiracDistribution` | `pyrecest.distributions` | stable | `LinearDiracDistribution` | Core particle-style representation used by conversion and filtering workflows. |
-| `MultiBernoulliTracker` | `pyrecest.filters` | backend-specific | `MultiBernoulliTracker` | Tracking workflows rely on assignment and measurement-set utilities with NumPy-oriented paths. |
-| `PointSetRegistration` | `pyrecest.utils` | backend-specific | `PointSetRegistration` | Registration helpers may bridge through NumPy/SciPy and are not guaranteed differentiable. |
-| `SphericalHarmonicsEOTTracker` | `pyrecest.filters` | backend-specific | `SphericalHarmonicsEOTTracker` | Depends on spherical-harmonics and SciPy-adjacent functionality. |
-| `UKFOnManifolds` | `pyrecest.filters` | backend-specific | `UKFOnManifolds` | Current predict/update paths explicitly exclude JAX. |
-| `UnscentedKalmanFilter` | `pyrecest.filters` | backend-specific | `UnscentedKalmanFilter` | Portable for backend-compatible model functions; advanced paths may bridge through NumPy/SciPy. |
+| API                            | Module                              | Category         | Backend contract               | Notes                                                                                                                |
+|--------------------------------|-------------------------------------|------------------|--------------------------------|----------------------------------------------------------------------------------------------------------------------|
+| `BackendFacade`                | `pyrecest.backend`                  | backend-specific | `BackendFacade`                | Facade names are importable across backends, with bridged or unsupported functions documented in the backend matrix. |
+| `DistributionConversion`       | `pyrecest.distributions.conversion` | backend-specific | `DistributionConversion`       | Euclidean Gaussian/particle routes are portable; grid, Fourier, and manifold routes are route-specific.              |
+| `EuclideanParticleFilter`      | `pyrecest.filters`                  | backend-specific | `EuclideanParticleFilter`      | Particle behavior depends on sampler and resampling support in the active backend.                                   |
+| `EvaluationUtilities`          | `pyrecest.evaluation`               | backend-specific | `EvaluationUtilities`          | Plotting, assignment, summaries, and result helpers are only partly backend-portable.                                |
+| `GaussianDistribution`         | `pyrecest.distributions`            | stable           | `GaussianDistribution`         | Basic construction, moment access, and portable operations are part of the core distribution API.                    |
+| `KalmanFilter`                 | `pyrecest.filters`                  | stable           | `KalmanFilter`                 | Linear Gaussian filtering is part of the portable baseline.                                                          |
+| `LinearDiracDistribution`      | `pyrecest.distributions`            | stable           | `LinearDiracDistribution`      | Core particle-style representation used by conversion and filtering workflows.                                       |
+| `MultiBernoulliTracker`        | `pyrecest.filters`                  | backend-specific | `MultiBernoulliTracker`        | Tracking workflows rely on assignment and measurement-set utilities with NumPy-oriented paths.                       |
+| `PointSetRegistration`         | `pyrecest.utils`                    | backend-specific | `PointSetRegistration`         | Registration helpers may bridge through NumPy/SciPy and are not guaranteed differentiable.                           |
+| `SphericalHarmonicsEOTTracker` | `pyrecest.filters`                  | backend-specific | `SphericalHarmonicsEOTTracker` | Depends on spherical-harmonics and SciPy-adjacent functionality.                                                     |
+| `UKFOnManifolds`               | `pyrecest.filters`                  | backend-specific | `UKFOnManifolds`               | Current predict/update paths explicitly exclude JAX.                                                                 |
+| `UnscentedKalmanFilter`        | `pyrecest.filters`                  | backend-specific | `UnscentedKalmanFilter`        | Portable for backend-compatible model functions; advanced paths may bridge through NumPy/SciPy.                      |
 <!-- public-api-registry:end -->

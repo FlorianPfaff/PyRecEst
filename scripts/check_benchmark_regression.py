@@ -10,7 +10,6 @@ from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
-
 JsonObject = Mapping[str, Any]
 
 
@@ -66,14 +65,24 @@ def _check_numeric_sequence(
     rel_tol: float,
 ) -> list[str]:
     actual_values = _flatten_numbers(actual, path=f"{benchmark_name}.{field_name}")
-    expected_values = _flatten_numbers(expected, path=f"baseline.{benchmark_name}.{field_name}")
+    expected_values = _flatten_numbers(
+        expected, path=f"baseline.{benchmark_name}.{field_name}"
+    )
     if len(actual_values) != len(expected_values):
-        return [f"{benchmark_name}: {field_name} length changed from {len(expected_values)} to {len(actual_values)}"]
+        return [
+            f"{benchmark_name}: {field_name} length changed from {len(expected_values)} to {len(actual_values)}"
+        ]
 
     failures = []
-    for index, (actual_value, expected_value) in enumerate(zip(actual_values, expected_values)):
-        if not math.isclose(actual_value, expected_value, abs_tol=abs_tol, rel_tol=rel_tol):
-            failures.append(f"{benchmark_name}: {field_name}[{index}] expected {expected_value!r}, got {actual_value!r}")
+    for index, (actual_value, expected_value) in enumerate(
+        zip(actual_values, expected_values)
+    ):
+        if not math.isclose(
+            actual_value, expected_value, abs_tol=abs_tol, rel_tol=rel_tol
+        ):
+            failures.append(
+                f"{benchmark_name}: {field_name}[{index}] expected {expected_value!r}, got {actual_value!r}"
+            )
     return failures
 
 
@@ -95,13 +104,17 @@ def _check_elapsed(
     if "max_elapsed_seconds" in baseline_entry:
         max_elapsed = float(baseline_entry["max_elapsed_seconds"])
         if elapsed > max_elapsed:
-            failures.append(f"{benchmark_name}: elapsed_seconds {elapsed:.6g} exceeded absolute limit {max_elapsed:.6g}")
+            failures.append(
+                f"{benchmark_name}: elapsed_seconds {elapsed:.6g} exceeded absolute limit {max_elapsed:.6g}"
+            )
 
     if "elapsed_seconds" in baseline_entry:
         baseline_elapsed = float(baseline_entry["elapsed_seconds"])
         limit = baseline_elapsed * max_slowdown
         if elapsed > limit:
-            failures.append(f"{benchmark_name}: elapsed_seconds {elapsed:.6g} exceeded baseline {baseline_elapsed:.6g} * {max_slowdown:.6g}")
+            failures.append(
+                f"{benchmark_name}: elapsed_seconds {elapsed:.6g} exceeded baseline {baseline_elapsed:.6g} * {max_slowdown:.6g}"
+            )
     return failures
 
 
@@ -129,7 +142,9 @@ def check_benchmarks(
             expected_iterations = int(baseline_entry["iterations"])
             actual_iterations = int(actual_entry.get("iterations", -1))
             if actual_iterations != expected_iterations:
-                failures.append(f"{benchmark_name}: iterations changed from {expected_iterations} to {actual_iterations}")
+                failures.append(
+                    f"{benchmark_name}: iterations changed from {expected_iterations} to {actual_iterations}"
+                )
 
         failures.extend(
             _check_elapsed(

@@ -1,5 +1,4 @@
 import numpy as np
-
 from pyrecest.backend import array, diag, pi, to_numpy
 from pyrecest.distributions import CircularUniformDistribution, GaussianDistribution
 

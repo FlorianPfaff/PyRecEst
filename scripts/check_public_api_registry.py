@@ -12,7 +12,9 @@ from typing import Any
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 API_REGISTRY_PATH = REPOSITORY_ROOT / "src" / "pyrecest" / "api_registry.py"
-CAPABILITIES_PATH = REPOSITORY_ROOT / "src" / "pyrecest" / "_backend" / "capabilities.py"
+CAPABILITIES_PATH = (
+    REPOSITORY_ROOT / "src" / "pyrecest" / "_backend" / "capabilities.py"
+)
 
 
 def _load_module(path: Path, name: str) -> ModuleType:
@@ -63,7 +65,9 @@ def validate_registry() -> list[str]:
             errors.append(f"{api_name}: unknown backend contract {backend_contract!r}")
 
     for api_name in sorted(set(backend_capabilities) - set(registry)):
-        errors.append(f"{api_name}: backend capability row is missing from PUBLIC_API_REGISTRY")
+        errors.append(
+            f"{api_name}: backend capability row is missing from PUBLIC_API_REGISTRY"
+        )
 
     return errors
 

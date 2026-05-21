@@ -151,21 +151,27 @@ BACKEND_SUPPORT_LEVELS: Final = ("supported", "bridged", "partial", "unsupported
 REQUIRED_BACKENDS: Final = ("numpy", "pytorch", "jax")
 
 
-def get_unsupported_functions(backend_name: str, module_name: str = "") -> tuple[str, ...]:
+def get_unsupported_functions(
+    backend_name: str, module_name: str = ""
+) -> tuple[str, ...]:
     """Return unsupported facade functions for a backend module."""
     backend = BACKEND_CAPABILITIES.get(backend_name, {})
     unsupported = backend.get("unsupported", {})
     return tuple(unsupported.get(module_name, ()))
 
 
-def get_partial_capabilities(backend_name: str, module_name: str = "") -> dict[str, str]:
+def get_partial_capabilities(
+    backend_name: str, module_name: str = ""
+) -> dict[str, str]:
     """Return partial-support notes for a backend module."""
     backend = BACKEND_CAPABILITIES.get(backend_name, {})
     partial = backend.get("partial", {})
     return dict(partial.get(module_name, {}))
 
 
-def get_bridged_capabilities(backend_name: str, module_name: str = "") -> dict[str, str]:
+def get_bridged_capabilities(
+    backend_name: str, module_name: str = ""
+) -> dict[str, str]:
     """Return operations that work by crossing into another numerical stack."""
     backend = BACKEND_CAPABILITIES.get(backend_name, {})
     bridged = backend.get("bridged", {})
@@ -189,14 +195,20 @@ def validate_api_backend_capabilities() -> tuple[str, ...]:
         if not api_name:
             errors.append("Capability row has an empty API name.")
 
-        missing_backends = [backend for backend in REQUIRED_BACKENDS if backend not in row]
+        missing_backends = [
+            backend for backend in REQUIRED_BACKENDS if backend not in row
+        ]
         if missing_backends:
-            errors.append(f"{api_name}: missing backend support entries for {', '.join(missing_backends)}.")
+            errors.append(
+                f"{api_name}: missing backend support entries for {', '.join(missing_backends)}."
+            )
 
         for backend_name in REQUIRED_BACKENDS:
             support_level = row.get(backend_name)
             if support_level not in BACKEND_SUPPORT_LEVELS:
-                errors.append(f"{api_name}: unsupported support level {support_level!r} for {backend_name}.")
+                errors.append(
+                    f"{api_name}: unsupported support level {support_level!r} for {backend_name}."
+                )
 
         if not row.get("notes"):
             errors.append(f"{api_name}: missing explanatory notes.")
