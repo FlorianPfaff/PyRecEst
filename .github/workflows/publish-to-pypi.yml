@@ -247,7 +247,7 @@ jobs:
 
       - name: Prepare dist directory
         shell: bash
-        run: mkdir -p dist
+        run: mkdir -p dist release-metadata
 
       - name: Install validation tools
         shell: bash
@@ -286,6 +286,7 @@ jobs:
               release = json.load(resp)
 
           dist_dir = pathlib.Path("dist")
+          metadata_dir = pathlib.Path("release-metadata")
           wanted = []
 
           for asset in release["assets"]:
@@ -316,7 +317,8 @@ jobs:
               with urllib.request.urlopen(req) as resp:
                   data = resp.read()
 
-              target = dist_dir / asset["name"]
+              target_dir = metadata_dir if asset["name"] == "SHA256SUMS.txt" else dist_dir
+              target = target_dir / asset["name"]
               target.write_bytes(data)
               print(f"Downloaded {target}")
           PY
@@ -324,18 +326,19 @@ jobs:
       - name: Verify distribution hashes
         shell: bash
         run: |
-          cd dist
           python - <<'PY'
           import hashlib
           import pathlib
 
           hashes = {}
-          for line in pathlib.Path("SHA256SUMS.txt").read_text(encoding="utf-8").splitlines():
+          dist_dir = pathlib.Path("dist")
+          checksum_path = pathlib.Path("release-metadata/SHA256SUMS.txt")
+          for line in checksum_path.read_text(encoding="utf-8").splitlines():
               digest, filename = line.split(maxsplit=1)
               hashes[filename] = digest
 
           for filename, expected_digest in hashes.items():
-              path = pathlib.Path(filename)
+              path = dist_dir / filename
               if not path.exists():
                   raise SystemExit(f"Missing distribution file listed in SHA256SUMS.txt: {filename}")
               actual_digest = hashlib.sha256(path.read_bytes()).hexdigest()
