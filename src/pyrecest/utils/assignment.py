@@ -274,4 +274,80 @@ def murty_k_best_assignments(  # pylint: disable=too-many-locals
     return ranked_solutions
 
 
-__all__ = ["murty_k_best_assignments"]
+def min_cost_max_cardinality_assignment(cost_matrix):
+    """Compute the cheapest assignment among maximum-cardinality matchings.
+
+    Parameters
+    ----------
+    cost_matrix : array_like, shape (n_rows, n_cols)
+        Matrix containing the cost of assigning each row to each column.
+        Forbidden assignments can be encoded as ``numpy.inf``.
+
+    Returns
+    -------
+    dict
+        Assignment solution with the same keys as ``murty_k_best_assignments``:
+        ``assignment`` contains the matched column per row or ``-1``;
+        ``unassigned_rows`` and ``unassigned_cols`` list unmatched indices; and
+        ``cost`` is the sum of selected finite assignment costs, excluding the
+        artificial priority penalties used internally.
+
+    Notes
+    -----
+    This helper is useful for tracking-by-detection steps where track
+    birth/death is handled elsewhere and the association stage should first use
+    as many gated detections as possible, then minimize the association cost
+    among those maximum-cardinality solutions.
+    """
+    if pyrecest.backend.__backend_name__ == "jax":  # pylint: disable=no-member
+        raise NotImplementedError(
+            "min_cost_max_cardinality_assignment is not supported on the JAX backend."
+        )
+
+    cost_matrix = _asarray(cost_matrix, dtype=float)
+    if cost_matrix.ndim != 2:
+        raise ValueError("cost_matrix must be a two-dimensional array")
+
+    n_rows, n_cols = cost_matrix.shape
+    assignment = _full((n_rows,), -1, dtype=_int64)
+    finite_costs = cost_matrix[_isfinite(cost_matrix)]
+    if finite_costs.shape[0] == 0:
+        return {
+            "assignment": assignment,
+            "unassigned_rows": _asarray(list(range(n_rows)), dtype=_int64),
+            "unassigned_cols": _asarray(list(range(n_cols)), dtype=_int64),
+            "cost": 0.0,
+        }
+
+    cardinality_priority_cost = 2.0 * (float(_sum(_abs(finite_costs))) + 1.0)
+    solutions = murty_k_best_assignments(
+        cost_matrix,
+        k=1,
+        row_non_assignment_costs=_full(
+            (n_rows,), cardinality_priority_cost, dtype=float
+        ),
+        col_non_assignment_costs=_zeros(n_cols, dtype=float),
+    )
+    if not solutions:
+        return {
+            "assignment": assignment,
+            "unassigned_rows": _asarray(list(range(n_rows)), dtype=_int64),
+            "unassigned_cols": _asarray(list(range(n_cols)), dtype=_int64),
+            "cost": 0.0,
+        }
+
+    solution = solutions[0]
+    assignment = solution["assignment"]
+    assigned_rows = _where(assignment >= 0)[0]
+    total_cost = 0.0
+    if assigned_rows.shape[0] > 0:
+        total_cost = float(_sum(cost_matrix[assigned_rows, assignment[assigned_rows]]))
+    return {
+        "assignment": assignment,
+        "unassigned_rows": solution["unassigned_rows"],
+        "unassigned_cols": solution["unassigned_cols"],
+        "cost": total_cost,
+    }
+
+
+__all__ = ["min_cost_max_cardinality_assignment", "murty_k_best_assignments"]

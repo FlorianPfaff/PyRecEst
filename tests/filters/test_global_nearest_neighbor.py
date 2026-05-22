@@ -296,6 +296,38 @@ class GlobalNearestNeighborTest(unittest.TestCase):
         pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
         reason="Not supported on this backend",
     )
+    def test_maximize_cardinality_prefers_more_feasible_matches(self):
+        tracker = GlobalNearestNeighbor(
+            association_param={
+                "distance_metric_pos": "Euclidean",
+                "square_dist": False,
+                "gating_distance_threshold": 2.05,
+                "max_new_tracks": 2,
+                "maximize_cardinality": True,
+            }
+        )
+        tracker.filter_state = [
+            KalmanFilter(
+                GaussianDistribution(array([0.0, 0.0]), eye(2))
+            ),
+            KalmanFilter(
+                GaussianDistribution(array([0.0, -0.1]), eye(2))
+            ),
+        ]
+
+        association = tracker.find_association(
+            array([[0.0, 0.0], [1.0, 2.0]]),
+            eye(2),
+            eye(2),
+            warn_on_no_meas_for_track=False,
+        )
+
+        npt.assert_array_equal(association, array([1, 0]))
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
+        reason="Not supported on this backend",
+    )
     def test_association_with_clutter(self):
         tracker = GlobalNearestNeighbor()
         tracker.filter_state = self.kfs_init

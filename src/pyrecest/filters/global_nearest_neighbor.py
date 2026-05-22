@@ -2,7 +2,18 @@
 import warnings
 
 import pyrecest.backend
-from pyrecest.backend import all, any, empty, full, linalg, repeat, squeeze, stack
+from pyrecest.backend import (
+    all,
+    any,
+    empty,
+    full,
+    linalg,
+    repeat,
+    squeeze,
+    stack,
+    where,
+)
+from pyrecest.utils.assignment import min_cost_max_cardinality_assignment
 from scipy.optimize import linear_sum_assignment
 from scipy.spatial.distance import cdist
 from scipy.stats import chi2
@@ -19,6 +30,12 @@ class GlobalNearestNeighbor(AbstractNearestNeighborTracker):
     calcium-imaging cell tracking where association should depend on arbitrary
     pairwise cues like ROI overlap, footprint correlation, or appearance
     embeddings in addition to centroid distance.
+
+    Set ``association_param["maximize_cardinality"]`` to ``True`` when the
+    association step should keep as many gated track/measurement pairs as
+    possible before minimizing assignment cost. This matches frame-to-frame
+    object linking use cases where track birth/death is handled outside the
+    GNN update.
     """
 
     def __init__(
@@ -34,6 +51,7 @@ class GlobalNearestNeighbor(AbstractNearestNeighborTracker):
             "max_new_tracks": 10,
             "gating_distance_threshold": chi2.ppf(0.999, 2),
             "pairwise_cost_weight": 1.0,
+            "maximize_cardinality": False,
         }
         if association_param is None:
             association_param = default_association_param
@@ -199,17 +217,30 @@ class GlobalNearestNeighbor(AbstractNearestNeighborTracker):
         )
         dists = self._apply_pairwise_cost_matrix(dists, pairwise_cost_matrix)
 
-        # Pad to square and add max_new_tracks rows and columns
-        pad_to = max(n_targets, n_meas) + self.association_param["max_new_tracks"]
-        association_matrix = full(
-            (pad_to, pad_to), self.association_param["gating_distance_threshold"]
-        )
-        association_matrix[: dists.shape[0], : dists.shape[1]] = dists
+        if self.association_param.get("maximize_cardinality", False):
+            gated_dists = where(
+                dists <= self.association_param["gating_distance_threshold"],
+                dists,
+                float("inf"),
+            )
+            assignment_result = min_cost_max_cardinality_assignment(gated_dists)
+            association = assignment_result["assignment"]
+            association = where(association < 0, n_meas, association)
+        else:
+            # Pad to square and add max_new_tracks rows and columns
+            pad_to = (
+                max(n_targets, n_meas)
+                + self.association_param["max_new_tracks"]
+            )
+            association_matrix = full(
+                (pad_to, pad_to), self.association_param["gating_distance_threshold"]
+            )
+            association_matrix[: dists.shape[0], : dists.shape[1]] = dists
 
-        # Use the Hungarian algorithm to find the optimal assignment
-        _, col_ind = linear_sum_assignment(association_matrix)
+            # Use the Hungarian algorithm to find the optimal assignment
+            _, col_ind = linear_sum_assignment(association_matrix)
 
-        association = col_ind[:n_targets]
+            association = col_ind[:n_targets]
 
         if warn_on_no_meas_for_track and any(association >= n_meas):
             warnings.warn(

@@ -3,7 +3,10 @@ import unittest
 import numpy as np
 import numpy.testing as npt
 import pyrecest.backend
-from pyrecest.utils import murty_k_best_assignments
+from pyrecest.utils import (
+    min_cost_max_cardinality_assignment,
+    murty_k_best_assignments,
+)
 
 
 class MurtyAssignmentTest(unittest.TestCase):
@@ -159,6 +162,57 @@ class MurtyAssignmentTest(unittest.TestCase):
 
     def test_non_positive_k_returns_empty_list(self):
         self.assertEqual(murty_k_best_assignments(np.eye(2), k=0), [])
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ == "jax",  # pylint: disable=no-member
+        reason="Not supported on the JAX backend",
+    )
+    def test_min_cost_max_cardinality_prefers_more_matches(self):
+        cost_matrix = np.array(
+            [
+                [1.0, 2.0],
+                [1.1, np.inf],
+            ]
+        )
+
+        solution = min_cost_max_cardinality_assignment(cost_matrix)
+
+        npt.assert_array_equal(solution["assignment"], np.array([1, 0]))
+        npt.assert_array_equal(solution["unassigned_rows"], np.array([], dtype=int))
+        npt.assert_array_equal(solution["unassigned_cols"], np.array([], dtype=int))
+        self.assertAlmostEqual(solution["cost"], 3.1)
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ == "jax",  # pylint: disable=no-member
+        reason="Not supported on the JAX backend",
+    )
+    def test_min_cost_max_cardinality_reports_unassigned_entries(self):
+        solution = min_cost_max_cardinality_assignment(
+            np.array(
+                [
+                    [np.inf, np.inf],
+                    [4.0, np.inf],
+                    [np.inf, 1.0],
+                ]
+            )
+        )
+
+        npt.assert_array_equal(solution["assignment"], np.array([-1, 0, 1]))
+        npt.assert_array_equal(solution["unassigned_rows"], np.array([0]))
+        npt.assert_array_equal(solution["unassigned_cols"], np.array([], dtype=int))
+        self.assertAlmostEqual(solution["cost"], 5.0)
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ == "jax",  # pylint: disable=no-member
+        reason="Not supported on the JAX backend",
+    )
+    def test_min_cost_max_cardinality_handles_no_feasible_edges(self):
+        solution = min_cost_max_cardinality_assignment(np.full((2, 3), np.inf))
+
+        npt.assert_array_equal(solution["assignment"], np.array([-1, -1]))
+        npt.assert_array_equal(solution["unassigned_rows"], np.array([0, 1]))
+        npt.assert_array_equal(solution["unassigned_cols"], np.array([0, 1, 2]))
+        self.assertAlmostEqual(solution["cost"], 0.0)
 
 
 if __name__ == "__main__":

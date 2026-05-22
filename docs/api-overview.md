@@ -174,6 +174,7 @@ pairwise features, and point-set registration.
 Common starting points include:
 
 - `murty_k_best_assignments`;
+- `min_cost_max_cardinality_assignment`;
 - `LogisticPairwiseAssociationModel`;
 - `pairwise_mahalanobis_distances`;
 - `pairwise_covariance_shape_components`;

@@ -1,6 +1,6 @@
 """Utility helpers for :mod:`pyrecest`."""
 
-from .assignment import murty_k_best_assignments
+from .assignment import min_cost_max_cardinality_assignment, murty_k_best_assignments
 from .association_features import (
     CalibratedPairwiseAssociationModel,
     NamedPairwiseFeatureSchema,
@@ -151,6 +151,7 @@ __all__ = [
     "ThinPlateSplineTransform",
     "estimate_thin_plate_spline",
     "joint_tps_registration_assignment",
+    "min_cost_max_cardinality_assignment",
     "murty_k_best_assignments",
     "pairwise_covariance_shape_components",
     "pairwise_mahalanobis_distances",
