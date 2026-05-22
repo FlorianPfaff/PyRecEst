@@ -3,6 +3,8 @@ based on implementation by Emile Mathieu
 for Riemannian Score-based SDE
 """
 
+import builtins as _builtins
+
 import jax.numpy as _jnp
 from jax import vmap
 from jax.numpy import (  # For pyrecest; For Riemannian score-based SDE
@@ -479,7 +481,7 @@ def scatter_add(input, dim, index, src):
 def set_diag(matrix, values):
     matrix = _jnp.asarray(matrix)
     values = _jnp.asarray(values, dtype=matrix.dtype)
-    diag_len = min(matrix.shape[-2], matrix.shape[-1])
+    diag_len = _builtins.min(matrix.shape[-2], matrix.shape[-1])
     diag_indices = _jnp.arange(diag_len)
     return matrix.at[..., diag_indices, diag_indices].set(values)
 
