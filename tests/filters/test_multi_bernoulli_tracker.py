@@ -147,6 +147,40 @@ class MultiBernoulliTrackerTest(unittest.TestCase):
             places=12,
         )
 
+    def test_partial_tracker_params_use_defaults(self):
+        tracker = MultiBernoulliTracker(
+            initial_prior=[self.initial_components[0]],
+            tracker_param={"detection_probability": 0.8},
+        )
+
+        tracker.update_linear(zeros((2, 0)), self.measurement_matrix, eye(2))
+
+        self.assertAlmostEqual(
+            tracker.bernoulli_components[0].existence_probability,
+            0.4444444444444445,
+            places=12,
+        )
+
+    def test_per_measurement_clutter_intensity_is_supported(self):
+        tracker = MultiBernoulliTracker(
+            initial_prior=[self.initial_components[0]],
+            tracker_param={
+                "detection_probability": 0.9,
+                "clutter_intensity": array([1e-12]),
+            },
+        )
+
+        tracker.update_linear(
+            array([[0.0], [0.0]]),
+            self.measurement_matrix,
+            eye(2),
+        )
+
+        self.assertGreater(
+            tracker.bernoulli_components[0].existence_probability,
+            0.99,
+        )
+
     def test_unassigned_measurement_creates_birth_component(self):
         tracker = MultiBernoulliTracker(
             tracker_param={

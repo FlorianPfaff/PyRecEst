@@ -82,6 +82,19 @@ class MultiBernoulliTracker(AbstractMultitargetTracker):
     state dimension and ``m`` is the measurement dimension.
     """
 
+    DEFAULT_TRACKER_PARAM = {
+        "survival_probability": 0.99,
+        "detection_probability": 0.95,
+        "clutter_intensity": 1e-9,
+        "gating_probability": 0.999,
+        "gating_distance_threshold": None,
+        "pruning_threshold": 1e-4,
+        "maximum_number_of_components": None,
+        "birth_existence_probability": 0.8,
+        "birth_covariance": None,
+        "measurement_to_state_matrix": None,
+    }
+
     # pylint: disable=too-many-arguments,too-many-positional-arguments
     def __init__(
         self,
@@ -111,19 +124,10 @@ class MultiBernoulliTracker(AbstractMultitargetTracker):
         log_posterior_estimates : bool, optional
             If true, store posterior estimates after update.
         """
-        if tracker_param is None:
-            tracker_param = {
-                "survival_probability": 0.99,
-                "detection_probability": 0.95,
-                "clutter_intensity": 1e-9,
-                "gating_probability": 0.999,
-                "gating_distance_threshold": None,
-                "pruning_threshold": 1e-4,
-                "maximum_number_of_components": None,
-                "birth_existence_probability": 0.8,
-                "birth_covariance": None,
-                "measurement_to_state_matrix": None,
-            }
+        tracker_param = {
+            **self.DEFAULT_TRACKER_PARAM,
+            **dict(tracker_param or {}),
+        }
 
         super().__init__(
             log_prior_estimates=log_prior_estimates,
@@ -224,6 +228,19 @@ class MultiBernoulliTracker(AbstractMultitargetTracker):
         return MultiBernoulliTracker._clip_probability(probability)
 
     @staticmethod
+    def _get_clutter_intensity(clutter_intensity, measurement_index=None):
+        clutter_as_array = array(clutter_intensity)
+        if clutter_as_array.ndim == 0 or clutter_as_array.size == 1:
+            return float(clutter_as_array.reshape((-1,))[0])
+
+        if measurement_index is None:
+            raise ValueError(
+                "A measurement index is required for per-measurement clutter intensities."
+            )
+
+        return float(clutter_as_array.reshape((-1,))[measurement_index])
+
+    @staticmethod
     def _get_measurement_covariance(cov_mats_meas, measurement_index):
         if cov_mats_meas.ndim == 2:
             return cov_mats_meas
@@ -294,8 +311,6 @@ class MultiBernoulliTracker(AbstractMultitargetTracker):
         gating_distance_threshold = self._get_gating_distance_threshold(
             measurements.shape[0]
         )
-        clutter_intensity = max(float(self.tracker_param["clutter_intensity"]), 1e-12)
-
         for i, component in enumerate(self.bernoulli_components):
             predicted_existence = self._clip_probability(
                 component.existence_probability
@@ -322,6 +337,12 @@ class MultiBernoulliTracker(AbstractMultitargetTracker):
                     )
                 )
                 if mahalanobis_distance_squared <= gating_distance_threshold:
+                    clutter_intensity = max(
+                        self._get_clutter_intensity(
+                            self.tracker_param["clutter_intensity"], j
+                        ),
+                        1e-12,
+                    )
                     detection_weight = (
                         predicted_existence
                         * detection_probability
@@ -343,7 +364,7 @@ class MultiBernoulliTracker(AbstractMultitargetTracker):
         return measurement_to_state_matrix @ measurement
 
     def _create_birth_component_from_measurement(
-        self, measurement, measurement_matrix, measurement_covariance
+        self, measurement, measurement_matrix, measurement_covariance, label=None
     ):
         birth_covariance = self.tracker_param["birth_covariance"]
         if birth_covariance is None:
@@ -363,6 +384,7 @@ class MultiBernoulliTracker(AbstractMultitargetTracker):
         return BernoulliComponent(
             self.tracker_param["birth_existence_probability"],
             GaussianDistribution(state_mean, birth_covariance),
+            label=label,
         )
 
     @property
@@ -655,6 +677,10 @@ class MultiBernoulliTracker(AbstractMultitargetTracker):
             pyrecest.backend.__backend_name__ == "numpy"
         ), "Only supported for numpy backend"
 
+        measurements = array(measurements)
+        measurement_matrix = array(measurement_matrix)
+        cov_mats_meas = array(cov_mats_meas)
+
         if measurements.ndim == 1:
             measurements = measurements.reshape(-1, 1)
 
@@ -696,11 +722,14 @@ class MultiBernoulliTracker(AbstractMultitargetTracker):
             pyrecest.backend.__backend_name__ == "numpy"
         ), "Only supported for numpy backend"
 
+        measurements = array(measurements)
+        measurement_matrix = array(measurement_matrix)
+        cov_mats_meas = array(cov_mats_meas)
+
         if measurements.ndim == 1:
             measurements = measurements.reshape(-1, 1)
 
         detection_probability = self.tracker_param["detection_probability"]
-        clutter_intensity = max(float(self.tracker_param["clutter_intensity"]), 1e-12)
         num_measurements = measurements.shape[1]
         assigned_measurements = set()
 
@@ -734,6 +763,12 @@ class MultiBernoulliTracker(AbstractMultitargetTracker):
                     measurements[:, assigned_column],
                     measurement_matrix,
                     measurement_covariance,
+                )
+                clutter_intensity = max(
+                    self._get_clutter_intensity(
+                        self.tracker_param["clutter_intensity"], assigned_column
+                    ),
+                    1e-12,
                 )
                 component.existence_probability = (
                     predicted_existence * current_detection_probability * likelihood

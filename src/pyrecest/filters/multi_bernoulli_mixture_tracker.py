@@ -65,6 +65,13 @@ class MultiBernoulliMixtureTracker(MultiBernoulliTracker):
     keeps those hypotheses instead of collapsing them to the best association.
     """
 
+    DEFAULT_TRACKER_PARAM = {
+        **MultiBernoulliTracker.DEFAULT_TRACKER_PARAM,
+        "hypothesis_pruning_threshold": 1e-12,
+        "maximum_number_of_hypotheses": None,
+        "measurement_driven_births": False,
+    }
+
     def __init__(
         self,
         initial_prior=None,
@@ -335,9 +342,9 @@ class MultiBernoulliMixtureTracker(MultiBernoulliTracker):
         measurements,
         measurement_matrix,
         cov_mats_meas,
+        birth_labels_by_measurement=None,
     ):
         num_measurements = measurements.shape[1]
-        clutter_intensity = max(float(self.tracker_param["clutter_intensity"]), 1e-12)
         detection_probability = self.tracker_param["detection_probability"]
         gating_threshold = self._get_gating_distance_threshold(measurements.shape[0])
         base_log_weight = log(max(float(hypothesis.weight), 1e-300))
@@ -358,6 +365,11 @@ class MultiBernoulliMixtureTracker(MultiBernoulliTracker):
                             measurements[:, measurement_index],
                             measurement_matrix,
                             measurement_covariance,
+                            label=(
+                                None
+                                if birth_labels_by_measurement is None
+                                else birth_labels_by_measurement.get(measurement_index)
+                            ),
                         )
                         if birth_component is not None:
                             posterior_components.append(birth_component)
@@ -406,6 +418,12 @@ class MultiBernoulliMixtureTracker(MultiBernoulliTracker):
                 )
                 if mahalanobis_distance_squared > gating_threshold:
                     continue
+                clutter_intensity = max(
+                    self._get_clutter_intensity(
+                        self.tracker_param["clutter_intensity"], measurement_index
+                    ),
+                    1e-12,
+                )
                 detection_weight = (
                     predicted_existence
                     * current_detection_probability
@@ -435,8 +453,21 @@ class MultiBernoulliMixtureTracker(MultiBernoulliTracker):
         assert (
             pyrecest.backend.__backend_name__ == "numpy"
         ), "Only supported for numpy backend"
+
+        measurements = array(measurements)
+        measurement_matrix = array(measurement_matrix)
+        cov_mats_meas = array(cov_mats_meas)
+
         if measurements.ndim == 1:
             measurements = measurements.reshape(-1, 1)
+
+        birth_labels_by_measurement = None
+        if self.tracker_param.get("measurement_driven_births", False):
+            birth_labels_by_measurement = {}
+            for measurement_index in range(measurements.shape[1]):
+                birth_labels_by_measurement[measurement_index] = self._next_label
+                self._next_label += 1
+
         log_weighted_updates = []
         for hypothesis in self.hypotheses:
             log_weighted_updates.extend(
@@ -445,6 +476,7 @@ class MultiBernoulliMixtureTracker(MultiBernoulliTracker):
                     measurements,
                     measurement_matrix,
                     cov_mats_meas,
+                    birth_labels_by_measurement=birth_labels_by_measurement,
                 )
             )
         if not log_weighted_updates:

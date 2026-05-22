@@ -2,11 +2,13 @@ import unittest
 
 import numpy.testing as npt
 import pyrecest.backend
+import pyrecest.filters as filters_namespace
 
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import array, diag, eye, zeros
 from pyrecest.distributions import GaussianDistribution
 from pyrecest.filters.multi_bernoulli_mixture_tracker import (
+    MultiBernoulliMixtureHypothesis,
     MultiBernoulliMixtureTracker,
     NearestNeighborMultiBernoulliTracker,
 )
@@ -45,6 +47,20 @@ class MultiBernoulliMixtureTrackerTest(unittest.TestCase):
 
     def test_nearest_neighbor_alias_preserves_existing_tracker(self):
         self.assertIs(NearestNeighborMultiBernoulliTracker, MultiBernoulliTracker)
+
+    def test_public_filter_namespace_exports_mbm_trackers(self):
+        self.assertIs(
+            filters_namespace.MultiBernoulliMixtureHypothesis,
+            MultiBernoulliMixtureHypothesis,
+        )
+        self.assertIs(
+            filters_namespace.MultiBernoulliMixtureTracker,
+            MultiBernoulliMixtureTracker,
+        )
+        self.assertIs(
+            filters_namespace.NearestNeighborMultiBernoulliTracker,
+            MultiBernoulliTracker,
+        )
 
     def test_exact_mbm_update_keeps_missed_and_detected_hypotheses(self):
         tracker = MultiBernoulliMixtureTracker(
@@ -93,6 +109,48 @@ class MultiBernoulliMixtureTrackerTest(unittest.TestCase):
 
         self.assertEqual(len(tracker.hypotheses), 1)
         npt.assert_allclose(tracker.get_mixture_weights()[0], 1.0)
+
+    def test_measurement_driven_birth_labels_are_stable_across_hypotheses(self):
+        tracker_param = dict(self.tracker_param)
+        tracker_param.update(
+            {
+                "birth_covariance": diag(array([4.0, 25.0, 4.0, 25.0])),
+                "measurement_driven_births": True,
+                "maximum_number_of_hypotheses": None,
+                "hypothesis_pruning_threshold": 1e-12,
+            }
+        )
+        tracker = MultiBernoulliMixtureTracker(
+            initial_prior=[self.initial_component],
+            tracker_param=tracker_param,
+        )
+        existing_label = tracker.hypotheses[0].bernoulli_components[0].label
+
+        tracker.update_linear(
+            array([[0.0, 1.0], [0.0, 0.0]]),
+            self.measurement_matrix,
+            eye(2),
+        )
+
+        labels_by_birth_position = {}
+        for hypothesis in tracker.hypotheses:
+            for component in hypothesis.bernoulli_components:
+                if component.label == existing_label:
+                    continue
+                estimate = component.get_point_estimate()
+                key = (
+                    round(float(estimate[0]), 12),
+                    round(float(estimate[2]), 12),
+                )
+                labels_by_birth_position.setdefault(key, set()).add(component.label)
+
+        self.assertEqual(
+            set(labels_by_birth_position),
+            {(0.0, 0.0), (1.0, 0.0)},
+        )
+        self.assertTrue(
+            all(len(labels) == 1 for labels in labels_by_birth_position.values())
+        )
 
 
 if __name__ == "__main__":
