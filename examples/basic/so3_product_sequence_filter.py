@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import numpy as np
-
 from pyrecest.backend import array, cos, pi, sin, stack, to_numpy
 from pyrecest.filters import run_so3_product_sequence_filter
 

@@ -27,7 +27,9 @@ def _as_measurement_sequence(measurements):
     if ndim(measurements) != 3 or measurements.shape[-1] != 4:
         raise ValueError("measurements must have shape (n_steps, num_rotations, 4).")
     if measurements.shape[0] <= 0 or measurements.shape[1] <= 0:
-        raise ValueError("measurements must contain at least one time step and rotation.")
+        raise ValueError(
+            "measurements must contain at least one time step and rotation."
+        )
     flat = reshape(measurements, (-1, measurements.shape[1], 4))
     normalized = SO3ProductParticleFilter._as_particle_array(
         flat, measurements.shape[1]
@@ -131,7 +133,9 @@ def _make_filter_state(
     num_rotations = measurements.shape[1]
     if initial_particles is None:
         if initial_noise_std is None:
-            initial_noise_std = 0.25 * float(noise_std) if noise_std is not None else 1e-3
+            initial_noise_std = (
+                0.25 * float(noise_std) if noise_std is not None else 1e-3
+            )
         initial_particles = _initial_particles_from_measurement(
             measurements[0],
             mask[0],
@@ -163,7 +167,9 @@ def _make_filter_state(
     )
 
 
-def _apply_proposal_correction(filter_state, measurement, confidence, proposal_gain: float):
+def _apply_proposal_correction(
+    filter_state, measurement, confidence, proposal_gain: float
+):
     if proposal_gain <= 0.0:
         return
     particles_np = to_numpy(filter_state.particles)
@@ -203,7 +209,9 @@ def _particle_spread(filter_state, estimate) -> float:
             )
         ).reshape(-1)
         if hasattr(filter_state, "component_weights"):
-            weights = to_numpy(filter_state.component_weights(component_idx)).reshape(-1)
+            weights = to_numpy(filter_state.component_weights(component_idx)).reshape(
+                -1
+            )
         else:
             weights = to_numpy(filter_state.weights).reshape(-1)
         distances.append(float(np.sum(weights * component_distances)))
@@ -219,13 +227,17 @@ def _threshold_value(resample_threshold: float, num_particles: int) -> float:
     return threshold
 
 
-def _resample_if_needed(filter_state, ess, threshold: float, is_block_filter: bool) -> bool:
+def _resample_if_needed(
+    filter_state, ess, threshold: float, is_block_filter: bool
+) -> bool:
     if threshold <= 0.0:
         return False
     if is_block_filter:
         ess_np = to_numpy(ess).reshape(-1)
         block_indices = [
-            block_idx for block_idx, block_ess in enumerate(ess_np) if block_ess < threshold
+            block_idx
+            for block_idx, block_ess in enumerate(ess_np)
+            if block_ess < threshold
         ]
         if block_indices:
             filter_state.resample_blocks_systematic(block_indices)
@@ -346,7 +358,9 @@ def run_so3_product_sequence_filter(
     if int(num_particles) <= 0:
         raise ValueError("num_particles must be positive.")
     if noise_std is None and component_noise_std is None and max_noise_std is None:
-        raise ValueError("noise_std, component_noise_std, or max_noise_std is required.")
+        raise ValueError(
+            "noise_std, component_noise_std, or max_noise_std is required."
+        )
     if max_noise_std is not None and noise_std is None:
         raise ValueError("noise_std is required when max_noise_std is used.")
 

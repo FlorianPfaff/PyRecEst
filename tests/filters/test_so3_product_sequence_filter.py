@@ -2,10 +2,9 @@ import unittest
 
 import numpy as np
 import numpy.testing as npt
-
 from pyrecest.backend import array, cos, ones, sin, stack, to_numpy
-from pyrecest.filters import run_so3_product_sequence_filter
 from pyrecest.diagnostics import ParticleFilterResult
+from pyrecest.filters import run_so3_product_sequence_filter
 
 
 def z_quaternion(angle):
