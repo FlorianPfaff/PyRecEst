@@ -407,9 +407,9 @@ def dot(a, b):
     b = _jnp.asarray(b)
 
     if b.ndim == 1:
-        return _jnp.dot(a, b)
+        return _jnp.einsum("...i,i->...", a, b)
     if a.ndim == 1:
-        return _jnp.dot(a, b.T)
+        return _jnp.einsum("i,...i->...", a, b)
     return _jnp.einsum("...i,...i->...", a, b)
 
 
@@ -419,11 +419,11 @@ def outer(a, b):
 
     if a.ndim > 1 and b.ndim > 1:
         return _jnp.einsum("...i,...j->...ij", a, b)
-
-    result = _jnp.multiply.outer(a, b)
-    if b.ndim > 1:
-        result = _jnp.swapaxes(result, 0, -2)
-    return result
+    if a.ndim == 1 and b.ndim > 1:
+        return _jnp.einsum("i,...j->...ij", a, b)
+    if a.ndim > 1 and b.ndim == 1:
+        return _jnp.einsum("...i,j->...ij", a, b)
+    return _jnp.multiply.outer(a, b)
 
 
 # Matrix-vector multiplication
@@ -479,7 +479,7 @@ def scatter_add(input, dim, index, src):
 def set_diag(matrix, values):
     matrix = _jnp.asarray(matrix)
     values = _jnp.asarray(values, dtype=matrix.dtype)
-    diag_len = matrix.shape[-2] if matrix.shape[-2] < matrix.shape[-1] else matrix.shape[-1]
+    diag_len = min(matrix.shape[-2], matrix.shape[-1])
     diag_indices = _jnp.arange(diag_len)
     return matrix.at[..., diag_indices, diag_indices].set(values)
 

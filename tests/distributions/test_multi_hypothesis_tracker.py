@@ -6,8 +6,7 @@ import numpy.testing as npt
 import pyrecest.backend
 from pyrecest.backend import array, eye, log
 from pyrecest.distributions import GaussianDistribution
-from pyrecest.filters import KalmanFilter
-from pyrecest.filters.multi_hypothesis_tracker import MultiHypothesisTracker
+from pyrecest.filters import KalmanFilter, MultiHypothesisTracker
 
 
 @unittest.skipIf(
@@ -43,6 +42,61 @@ class MultiHypothesisTrackerTest(unittest.TestCase):
         self.assertEqual(tracker.get_number_of_global_hypotheses(), 1)
         self.assertEqual(tracker.get_point_estimate().shape, (2, 2))
         self.assertEqual(tracker.get_point_estimate(True).shape, (4,))
+
+    def test_setting_gaussian_states_wraps_them_in_kalman_filters(self):
+        tracker = MultiHypothesisTracker(
+            association_param=self.association_param,
+            log_prior_estimates=False,
+            log_posterior_estimates=False,
+        )
+        tracker.filter_state = [
+            GaussianDistribution(array([0.0, 0.0]), eye(2)),
+            GaussianDistribution(array([1.0, 0.0]), eye(2)),
+        ]
+
+        self.assertTrue(
+            all(
+                isinstance(filter_obj, KalmanFilter)
+                for filter_obj in tracker.filter_bank
+            )
+        )
+        npt.assert_allclose(
+            tracker.get_point_estimate(),
+            array([[0.0, 1.0], [0.0, 0.0]]),
+        )
+
+    def test_rejects_global_hypotheses_with_inconsistent_track_counts(self):
+        tracker = MultiHypothesisTracker(
+            log_prior_estimates=False,
+            log_posterior_estimates=False,
+        )
+
+        with self.assertRaises(ValueError):
+            tracker.set_global_hypotheses(
+                [
+                    [KalmanFilter(GaussianDistribution(array([0.0, 0.0]), eye(2)))],
+                    [
+                        KalmanFilter(GaussianDistribution(array([1.0, 0.0]), eye(2))),
+                        KalmanFilter(GaussianDistribution(array([2.0, 0.0]), eye(2))),
+                    ],
+                ]
+            )
+
+    def test_update_linear_accepts_array_like_inputs(self):
+        tracker = MultiHypothesisTracker(
+            association_param=self.association_param,
+            log_prior_estimates=False,
+            log_posterior_estimates=False,
+        )
+        tracker.filter_state = [GaussianDistribution(array([0.0, 0.0]), eye(2))]
+
+        tracker.update_linear([[0.2], [-0.2]], [[1.0, 0.0], [0.0, 1.0]], eye(2))
+
+        npt.assert_allclose(
+            tracker.get_point_estimate(),
+            array([[0.1], [-0.1]]),
+            atol=1.0e-12,
+        )
 
     def test_setting_multiple_global_hypotheses_and_weighted_estimate(self):
         tracker = MultiHypothesisTracker(

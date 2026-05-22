@@ -33,7 +33,9 @@ def choice(a, size=None, replace=True, p=None):
         p = _torch.as_tensor(p, dtype=_torch.float32, device=a.device)
         p = p / p.sum()  # Normalize probabilities
         indices = _torch.multinomial(p, num_samples=num_samples, replacement=replace)
-        if size is not None:
+        if size is None:
+            indices = indices[0]
+        else:
             indices = indices.reshape(size)
     elif replace:
         indices = _torch.randint(0, len(a), size or (), device=a.device)

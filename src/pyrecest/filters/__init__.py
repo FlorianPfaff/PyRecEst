@@ -118,6 +118,7 @@ _FILTER_EXPORTS: Final[dict[str, str]] = {
     "MeasurementRecord": ".out_of_sequence",
     "MeasurementTimeBuffer": ".out_of_sequence",
     "MultiBernoulliTracker": ".multi_bernoulli_tracker",
+    "MultiHypothesisTracker": ".multi_hypothesis_tracker",
     "MultipleExtendedObjectStepResult": ".abstract_multiple_extended_object_tracker",
     "LinPeriodicParticleFilter": ".lin_periodic_particle_filter",
     "MEMEKFStarTracker": ".mem_ekf_star_tracker",

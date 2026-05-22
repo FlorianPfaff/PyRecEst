@@ -1,10 +1,11 @@
 # pylint: disable=no-name-in-module,no-member,duplicate-code,redefined-builtin
 import warnings
+from builtins import all as builtin_all
 from copy import deepcopy
 from math import log
 
 from pyrecest.backend import (
-    all,
+    all as backend_all,
     argmax,
     array,
     asarray,
@@ -153,7 +154,9 @@ class MultiHypothesisTracker(AbstractMultitargetTracker):
         ]
 
         n_targets = len(filter_banks[0])
-        if not all(len(filter_bank) == n_targets for filter_bank in filter_banks):
+        if not builtin_all(
+            len(filter_bank) == n_targets for filter_bank in filter_banks
+        ):
             raise ValueError(
                 "All global hypotheses must have the same number of tracks"
             )
@@ -236,7 +239,7 @@ class MultiHypothesisTracker(AbstractMultitargetTracker):
             return
 
         if isinstance(sys_noises, GaussianDistribution):
-            if not all(asarray(sys_noises.mu) == 0.0):
+            if not backend_all(asarray(sys_noises.mu) == 0.0):
                 raise ValueError("System noise mean is expected to be zero")
             sys_noises = sys_noises.C
 
@@ -324,9 +327,9 @@ class MultiHypothesisTracker(AbstractMultitargetTracker):
                 updated_filter_bank = self._apply_assignment(
                     parent_filter_bank,
                     assignment,
-                    measurements,
-                    measurement_matrix,
-                    cov_mats_meas,
+                    measurements_np,
+                    measurement_matrix_np,
+                    cov_mats_meas_np,
                 )
                 new_hypotheses.append(updated_filter_bank)
                 new_log_weights.append(
@@ -581,12 +584,12 @@ class MultiHypothesisTracker(AbstractMultitargetTracker):
         if len(hypothesis) == 0:
             return []
 
-        if all(isinstance(item, EuclideanFilterMixin) for item in hypothesis):
+        if builtin_all(isinstance(item, EuclideanFilterMixin) for item in hypothesis):
             filter_bank = deepcopy(hypothesis)
         else:
             filter_bank = [KalmanFilter(filter_state) for filter_state in hypothesis]
 
-        if not all(
+        if not builtin_all(
             id(filter_bank[i]) != id(filter_bank[j])
             for i in range(len(filter_bank))
             for j in range(i + 1, len(filter_bank))

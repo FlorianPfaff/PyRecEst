@@ -183,6 +183,13 @@ def test_set_diag_preserves_leading_batch_dimensions():
     assert _to_python(result) == [[[1.0, 0.0], [0.0, 2.0]]]
 
 
+def test_set_diag_accepts_rectangular_matrices():
+    result = backend.set_diag(backend.ones((2, 3)), array([5.0, 6.0]))
+
+    assert result.shape == (2, 3)
+    assert _to_python(result) == [[5.0, 1.0, 1.0], [1.0, 6.0, 1.0]]
+
+
 def test_batched_mat_from_diag_triu_tril_preserves_leading_dimensions():
     result = backend.mat_from_diag_triu_tril(
         array([[1.0, 2.0], [5.0, 6.0]]),
@@ -217,6 +224,21 @@ def test_batched_dot_uses_last_axis_inner_product():
     assert _to_python(result) == [17.0, 53.0]
 
 
+def test_batched_dot_accepts_high_rank_right_operand():
+    first = array([1.0, 2.0])
+    second = array(
+        [
+            [[0.0, 1.0], [2.0, 3.0], [4.0, 5.0]],
+            [[6.0, 7.0], [8.0, 9.0], [10.0, 11.0]],
+        ]
+    )
+
+    result = backend.dot(first, second)
+
+    assert result.shape == (2, 3)
+    assert _to_python(result) == [[2.0, 8.0, 14.0], [20.0, 26.0, 32.0]]
+
+
 def test_batched_outer_pairs_leading_dimensions():
     first = array([[1.0, 2.0], [3.0, 4.0]])
     second = array([[5.0, 6.0], [7.0, 8.0]])
@@ -227,4 +249,30 @@ def test_batched_outer_pairs_leading_dimensions():
     assert _to_python(result) == [
         [[5.0, 6.0], [10.0, 12.0]],
         [[21.0, 24.0], [28.0, 32.0]],
+    ]
+
+
+def test_outer_accepts_high_rank_right_operand():
+    first = array([1.0, 2.0])
+    second = array(
+        [
+            [[0.0, 1.0], [2.0, 3.0], [4.0, 5.0]],
+            [[6.0, 7.0], [8.0, 9.0], [10.0, 11.0]],
+        ]
+    )
+
+    result = backend.outer(first, second)
+
+    assert result.shape == (2, 3, 2, 2)
+    assert _to_python(result) == [
+        [
+            [[0.0, 1.0], [0.0, 2.0]],
+            [[2.0, 3.0], [4.0, 6.0]],
+            [[4.0, 5.0], [8.0, 10.0]],
+        ],
+        [
+            [[6.0, 7.0], [12.0, 14.0]],
+            [[8.0, 9.0], [16.0, 18.0]],
+            [[10.0, 11.0], [20.0, 22.0]],
+        ],
     ]

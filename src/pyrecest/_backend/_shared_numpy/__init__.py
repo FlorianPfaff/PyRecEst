@@ -255,7 +255,9 @@ def set_diag(x, new_diag):
     1-D array, but modifies x instead of creating a copy.
     """
     arr_shape = x.shape
-    x[..., range(arr_shape[-2]), range(arr_shape[-1])] = new_diag
+    diag_len = min(arr_shape[-2], arr_shape[-1])
+    diag_indices = range(diag_len)
+    x[..., diag_indices, diag_indices] = new_diag
     return x
 
 
@@ -371,11 +373,11 @@ def outer(a, b):
     if a.ndim > 1 and b.ndim > 1:
         return _np.einsum("...i,...j->...ij", a, b)
 
-    out = _np.multiply.outer(a, b)
-    if b.ndim > 1:
-        out = out.swapaxes(0, -2)
-
-    return out
+    if a.ndim == 1 and b.ndim > 1:
+        return _np.einsum("i,...j->...ij", a, b)
+    if a.ndim > 1 and b.ndim == 1:
+        return _np.einsum("...i,j->...ij", a, b)
+    return _np.multiply.outer(a, b)
 
 
 def matvec(A, b):
@@ -388,10 +390,10 @@ def matvec(A, b):
 
 def dot(a, b):
     if b.ndim == 1:
-        return _np.dot(a, b)
+        return _np.einsum("...i,i->...", a, b)
 
     if a.ndim == 1:
-        return _np.dot(a, b.T)
+        return _np.einsum("i,...i->...", a, b)
 
     return _np.einsum("...i,...i->...", a, b)
 

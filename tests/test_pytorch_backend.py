@@ -82,6 +82,14 @@ class TestPytorchBackendRandom(unittest.TestCase):
         self.assertEqual(sample.shape, (2,))
         self.assertEqual(int(pytorch_backend.unique(sample).shape[0]), 2)
 
+    def test_choice_returns_scalar_for_weighted_size_none(self):
+        values = pytorch_backend.array([0, 1, 2, 3])
+        probabilities = pytorch_backend.array([0.1, 0.2, 0.3, 0.4])
+
+        sample = pytorch_backend.random.choice(values, p=probabilities)
+
+        self.assertEqual(sample.shape, ())
+
 
 @unittest.skipIf(pytorch_backend is None, "PyTorch is not installed")
 class TestPytorchBackendLinalg(unittest.TestCase):
