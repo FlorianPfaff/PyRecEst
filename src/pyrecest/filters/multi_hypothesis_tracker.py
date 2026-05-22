@@ -782,7 +782,7 @@ class MultiHypothesisTracker(AbstractMultitargetTracker):
             raise ValueError("No assignment history is available yet.")
 
         history_length = len(self._global_hypothesis_histories[0])
-        if not builtins.all(
+        if not builtin_all(
             len(history) == history_length
             for history in self._global_hypothesis_histories
         ):
