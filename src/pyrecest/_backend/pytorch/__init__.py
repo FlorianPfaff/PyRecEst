@@ -596,10 +596,12 @@ def set_diag(x, new_diag):
     This mimics tensorflow.linalg.set_diag(x, new_diag), when new_diag is a
     1-D array, but modifies x instead of creating a copy.
     """
-    arr_shape = x.shape
-    off_diag = (1 - _torch.eye(arr_shape[-1])) * x
-    diag = _torch.einsum("ij,...i->...ij", _torch.eye(new_diag.shape[-1]), new_diag)
-    return diag + off_diag
+    diag_len = min(x.shape[-2], x.shape[-1])
+    result = x.clone()
+    diag_indices = _torch.arange(diag_len, device=x.device)
+    values = _torch.as_tensor(new_diag, dtype=x.dtype, device=x.device)
+    result[..., diag_indices, diag_indices] = values
+    return result
 
 
 def prod(x, axis=None):
@@ -929,10 +931,10 @@ def dot(a, b):
         return _torch.dot(a, b)
 
     if b.ndim == 1:
-        return _torch.tensordot(a, b, dims=1)
+        return _torch.einsum("...i,i->...", a, b)
 
     if a.ndim == 1:
-        return _torch.tensordot(a, b.T, dims=1)
+        return _torch.einsum("i,...i->...", a, b)
 
     return _torch.einsum("...i,...i->...", a, b)
 
