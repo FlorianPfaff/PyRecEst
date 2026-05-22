@@ -70,6 +70,28 @@ class TestPytorchBackendCov(unittest.TestCase):
 
 
 @unittest.skipIf(pytorch_backend is None, "PyTorch is not installed")
+class TestPytorchBackendRandom(unittest.TestCase):
+    def test_choice_accepts_weighted_sampling_without_replacement(self):
+        values = pytorch_backend.array([0, 1, 2, 3])
+        probabilities = pytorch_backend.array([0.1, 0.2, 0.3, 0.4])
+
+        sample = pytorch_backend.random.choice(
+            values, size=2, replace=False, p=probabilities
+        )
+
+        self.assertEqual(sample.shape, (2,))
+        self.assertEqual(int(pytorch_backend.unique(sample).shape[0]), 2)
+
+    def test_choice_returns_scalar_for_weighted_size_none(self):
+        values = pytorch_backend.array([0, 1, 2, 3])
+        probabilities = pytorch_backend.array([0.1, 0.2, 0.3, 0.4])
+
+        sample = pytorch_backend.random.choice(values, p=probabilities)
+
+        self.assertEqual(sample.shape, ())
+
+
+@unittest.skipIf(pytorch_backend is None, "PyTorch is not installed")
 class TestPytorchBackendLinalg(unittest.TestCase):
     def test_sqrtm_complex_result_uses_matching_complex_precision(self):
         dtype_pairs = (

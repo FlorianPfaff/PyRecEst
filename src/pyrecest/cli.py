@@ -102,11 +102,17 @@ def _cmd_run_scenario(args: argparse.Namespace) -> int:
         failures: list[str] = []
         expected_estimate = expected.get("final_estimate")
         if expected_estimate is not None:
-            max_error = _max_abs_error(result.final_estimate, expected_estimate)
-            if max_error > tolerance:
+            if len(result.final_estimate) != len(expected_estimate):
                 failures.append(
-                    f"final_estimate mismatch: max_abs_error={max_error:.6g} > tolerance={tolerance:.6g}"
+                    "final_estimate length mismatch: "
+                    f"expected {len(expected_estimate)}, got {len(result.final_estimate)}"
                 )
+            else:
+                max_error = _max_abs_error(result.final_estimate, expected_estimate)
+                if max_error > tolerance:
+                    failures.append(
+                        f"final_estimate mismatch: max_abs_error={max_error:.6g} > tolerance={tolerance:.6g}"
+                    )
         if isinstance(expected.get("metrics"), dict):
             failures.extend(
                 _check_expected_mapping(

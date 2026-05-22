@@ -107,11 +107,12 @@ class ParticleDiagnostics(_DiagnosticsMappingMixin):
     ) -> "ParticleDiagnostics":
         """Build particle diagnostics from normalized or unnormalized weights."""
         values = _coerce_weight_values(weights)
-        total = sum(values)
+        nonnegative_values = [max(0.0, value) for value in values]
+        total = sum(nonnegative_values)
         if total <= 0.0:
-            normalized = [0.0 for _ in values]
+            normalized = [0.0 for _ in nonnegative_values]
         else:
-            normalized = [max(0.0, value / total) for value in values]
+            normalized = [value / total for value in nonnegative_values]
         squared_sum = sum(weight * weight for weight in normalized)
         effective_sample_size = 1.0 / squared_sum if squared_sum > 0.0 else 0.0
         entropy = -sum(weight * log(weight) for weight in normalized if weight > 0.0)
