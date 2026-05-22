@@ -228,10 +228,7 @@ class GlobalNearestNeighbor(AbstractNearestNeighborTracker):
             association = where(association < 0, n_meas, association)
         else:
             # Pad to square and add max_new_tracks rows and columns
-            pad_to = (
-                max(n_targets, n_meas)
-                + self.association_param["max_new_tracks"]
-            )
+            pad_to = max(n_targets, n_meas) + self.association_param["max_new_tracks"]
             association_matrix = full(
                 (pad_to, pad_to), self.association_param["gating_distance_threshold"]
             )

@@ -73,7 +73,9 @@ def get_extract_mean(manifold_name, mtt_scenario=False):
             return filter_state.mean_direction()
 
     elif "symm" in normalized_name:
-        raise NotImplementedError("Symmetric mean extraction needs an explicit convention")
+        raise NotImplementedError(
+            "Symmetric mean extraction needs an explicit convention"
+        )
 
     elif "se2bounded" in normalized_name:
         raise NotImplementedError("Not implemented yet")

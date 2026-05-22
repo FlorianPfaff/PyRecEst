@@ -30,7 +30,9 @@ class DVSPointProcessSCGPTracker(DVSFullSCGPTracker):
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
-        self.point_process_update_config = point_process_update_config or PointProcessUpdateConfig()
+        self.point_process_update_config = (
+            point_process_update_config or PointProcessUpdateConfig()
+        )
         self.last_event_likelihood_terms = None
         self.last_event_likelihood_gradient = None
         self.last_event_likelihood_state_update = None
@@ -58,10 +60,16 @@ class DVSPointProcessSCGPTracker(DVSFullSCGPTracker):
         weights = []
         for body_angle in body_angles:
             world_angle = float(body_angle + orientation)
-            unit_direction = np.array([np.cos(world_angle), np.sin(world_angle)], dtype=float)
+            unit_direction = np.array(
+                [np.cos(world_angle), np.sin(world_angle)], dtype=float
+            )
             body_angle_vector = array([float(body_angle)])
-            basis_row = np.asarray(self._basis_matrix(body_angle_vector)[0], dtype=float)
-            derivative_row = np.asarray(self._basis_derivative(body_angle_vector)[0], dtype=float)
+            basis_row = np.asarray(
+                self._basis_matrix(body_angle_vector)[0], dtype=float
+            )
+            derivative_row = np.asarray(
+                self._basis_derivative(body_angle_vector)[0], dtype=float
+            )
             radius = float(basis_row @ shape_state)
             radius_derivative = float(derivative_row @ shape_state)
             tangent = radius_derivative * unit_direction + radius * np.array(
@@ -134,15 +142,23 @@ class DVSPointProcessSCGPTracker(DVSFullSCGPTracker):
     ):
         """Run a MAP-style point-process likelihood update for one event batch."""
         config = point_process_update_config or self.point_process_update_config
-        measurements = np.asarray(self._normalize_measurements(measurements), dtype=float)
+        measurements = np.asarray(
+            self._normalize_measurements(measurements), dtype=float
+        )
         velocity = np.asarray(self._get_event_velocity(event_velocity), dtype=float)
         measurement_count = measurements.shape[0]
-        event_polarities = self._normalize_event_polarities(event_polarities, measurement_count)
-        event_signed_normal_flows = self._normalize_event_signed_normal_flows(event_signed_normal_flows, measurement_count)
+        event_polarities = self._normalize_event_polarities(
+            event_polarities, measurement_count
+        )
+        event_signed_normal_flows = self._normalize_event_signed_normal_flows(
+            event_signed_normal_flows, measurement_count
+        )
         if polarity_mismatch_weight is None:
             polarity_mismatch_weight = self.polarity_mismatch_weight
         else:
-            polarity_mismatch_weight = self._validate_polarity_mismatch_weight(polarity_mismatch_weight)
+            polarity_mismatch_weight = self._validate_polarity_mismatch_weight(
+                polarity_mismatch_weight
+            )
         (
             signed_flows,
             activities,
@@ -161,12 +177,18 @@ class DVSPointProcessSCGPTracker(DVSFullSCGPTracker):
             polarity_contrast_sign,
             event_signed_normal_flows=event_signed_normal_flows,
         )
-        active_measurement_indices = [index for index, is_active in enumerate(active_measurement_mask) if bool(is_active)]
+        active_measurement_indices = [
+            index
+            for index, is_active in enumerate(active_measurement_mask)
+            if bool(is_active)
+        ]
         active_index_array = np.asarray(active_measurement_indices, dtype=np.int64)
         update_measurements = measurements[active_index_array]
 
         if update_measurements.shape[0] == 0:
-            terms = self._likelihood_terms_for_current_state(update_measurements, velocity, config, batch_duration, image_area)
+            terms = self._likelihood_terms_for_current_state(
+                update_measurements, velocity, config, batch_duration, image_area
+            )
             zero_update = np.zeros_like(self._state_as_numpy())
             self._record_event_likelihood_diagnostics(
                 measurements=measurements,
@@ -178,8 +200,18 @@ class DVSPointProcessSCGPTracker(DVSFullSCGPTracker):
                 signed_flows=signed_flows,
                 activities=activities,
                 active_measurement_indices=active_measurement_indices,
-                polarity_consistencies=None if event_polarities is None or resolved_polarity_contrast_sign is None else polarity_consistencies,
-                polarity_weights=None if event_polarities is None or resolved_polarity_contrast_sign is None else polarity_weights,
+                polarity_consistencies=(
+                    None
+                    if event_polarities is None
+                    or resolved_polarity_contrast_sign is None
+                    else polarity_consistencies
+                ),
+                polarity_weights=(
+                    None
+                    if event_polarities is None
+                    or resolved_polarity_contrast_sign is None
+                    else polarity_weights
+                ),
                 resolved_polarity_contrast_sign=resolved_polarity_contrast_sign,
             )
             if self.log_posterior_estimates:
@@ -202,13 +234,19 @@ class DVSPointProcessSCGPTracker(DVSFullSCGPTracker):
             )
             covariance = np.asarray(self.covariance, dtype=float)
             state_update = config.map_step_size * (covariance @ gradient)
-            state_update = self._clip_state_update(state_update, config.max_state_update_norm)
+            state_update = self._clip_state_update(
+                state_update, config.max_state_update_norm
+            )
             if float(np.linalg.norm(state_update)) <= 1e-12:
                 break
             self._set_state_from_numpy(state + state_update)
-            self.covariance = self._symmetrize(array(config.covariance_damping * np.asarray(self.covariance)))
+            self.covariance = self._symmetrize(
+                array(config.covariance_damping * np.asarray(self.covariance))
+            )
 
-        terms = self._likelihood_terms_for_current_state(update_measurements, velocity, config, batch_duration, image_area)
+        terms = self._likelihood_terms_for_current_state(
+            update_measurements, velocity, config, batch_duration, image_area
+        )
         self._record_event_likelihood_diagnostics(
             measurements=measurements,
             velocity=velocity,
@@ -219,8 +257,16 @@ class DVSPointProcessSCGPTracker(DVSFullSCGPTracker):
             signed_flows=signed_flows,
             activities=activities,
             active_measurement_indices=active_measurement_indices,
-            polarity_consistencies=None if event_polarities is None or resolved_polarity_contrast_sign is None else polarity_consistencies,
-            polarity_weights=None if event_polarities is None or resolved_polarity_contrast_sign is None else polarity_weights,
+            polarity_consistencies=(
+                None
+                if event_polarities is None or resolved_polarity_contrast_sign is None
+                else polarity_consistencies
+            ),
+            polarity_weights=(
+                None
+                if event_polarities is None or resolved_polarity_contrast_sign is None
+                else polarity_weights
+            ),
             resolved_polarity_contrast_sign=resolved_polarity_contrast_sign,
         )
 
@@ -250,16 +296,24 @@ class DVSPointProcessSCGPTracker(DVSFullSCGPTracker):
         self.last_event_likelihood_gradient = array(gradient)
         self.last_event_likelihood_state_update = array(state_update)
         if activities is None:
-            activities = self.contour_event_activity(n=config.contour_samples, event_velocity=velocity)
+            activities = self.contour_event_activity(
+                n=config.contour_samples, event_velocity=velocity
+            )
         self.last_event_activities = array(activities)
         if active_measurement_indices is None:
             active_measurement_indices = range(measurements.shape[0])
-        self.last_active_measurement_indices = [int(index) for index in active_measurement_indices]
-        self.last_event_signed_normal_flows = None if signed_flows is None else array(signed_flows)
+        self.last_active_measurement_indices = [
+            int(index) for index in active_measurement_indices
+        ]
+        self.last_event_signed_normal_flows = (
+            None if signed_flows is None else array(signed_flows)
+        )
         self.last_event_log_likelihood = terms.log_likelihood
         self.last_quadratic_form = None
         self.last_event_polarity_consistencies = polarity_consistencies
-        self.last_event_polarity_weights = None if polarity_weights is None else array(polarity_weights)
+        self.last_event_polarity_weights = (
+            None if polarity_weights is None else array(polarity_weights)
+        )
         self.last_polarity_contrast_sign = resolved_polarity_contrast_sign
 
     def _finite_difference_log_likelihood_gradient(
@@ -276,8 +330,22 @@ class DVSPointProcessSCGPTracker(DVSFullSCGPTracker):
         for state_index in self._likelihood_state_indices(config):
             perturbation = np.zeros_like(state)
             perturbation[state_index] = eps
-            plus = self._log_likelihood_for_state(state + perturbation, measurements, velocity, config, batch_duration, image_area)
-            minus = self._log_likelihood_for_state(state - perturbation, measurements, velocity, config, batch_duration, image_area)
+            plus = self._log_likelihood_for_state(
+                state + perturbation,
+                measurements,
+                velocity,
+                config,
+                batch_duration,
+                image_area,
+            )
+            minus = self._log_likelihood_for_state(
+                state - perturbation,
+                measurements,
+                velocity,
+                config,
+                batch_duration,
+                image_area,
+            )
             gradient[state_index] = (plus - minus) / (2.0 * eps)
         return gradient
 
@@ -290,7 +358,9 @@ class DVSPointProcessSCGPTracker(DVSFullSCGPTracker):
         batch_duration,
         image_area,
     ):
-        terms = self._likelihood_terms_for_state(state, measurements, velocity, config, batch_duration, image_area)
+        terms = self._likelihood_terms_for_state(
+            state, measurements, velocity, config, batch_duration, image_area
+        )
         return terms.log_likelihood
 
     def _likelihood_terms_for_current_state(
@@ -323,7 +393,9 @@ class DVSPointProcessSCGPTracker(DVSFullSCGPTracker):
         original_state = self._state_as_numpy()
         try:
             self._set_state_from_numpy(state)
-            return self._likelihood_terms_for_current_state(measurements, velocity, config, batch_duration, image_area)
+            return self._likelihood_terms_for_current_state(
+                measurements, velocity, config, batch_duration, image_area
+            )
         finally:
             self._set_state_from_numpy(original_state)
 

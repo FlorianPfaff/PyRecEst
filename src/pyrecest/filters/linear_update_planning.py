@@ -18,9 +18,11 @@ import numpy as np
 from scipy.stats import chi2
 
 try:  # Prefer PyRecEst's backend-aware primitives when the full package exists.
+    from ._linear_gaussian import huber_covariance_scale as _huber_covariance_scale
     from ._linear_gaussian import (
-        huber_covariance_scale as _huber_covariance_scale,
         normalized_innovation_squared as _normalized_innovation_squared,
+    )
+    from ._linear_gaussian import (
         student_t_covariance_scale as _student_t_covariance_scale,
     )
 except Exception:  # pragma: no cover - only used by standalone downstream copies
@@ -63,7 +65,9 @@ class LinearUpdatePlan:
     metadata: dict[str, Any] = field(default_factory=dict)
 
 
-def chi_square_gate_threshold(probability: float | None, measurement_dim: int) -> float | None:
+def chi_square_gate_threshold(
+    probability: float | None, measurement_dim: int
+) -> float | None:
     """Return the chi-square NIS gate for a measurement probability.
 
     Parameters
@@ -86,15 +90,24 @@ def chi_square_gate_threshold(probability: float | None, measurement_dim: int) -
     return float(chi2.ppf(probability, measurement_dim))
 
 
-def normalized_innovation_squared(residual: np.ndarray, innovation_covariance: np.ndarray) -> float:
+def normalized_innovation_squared(
+    residual: np.ndarray, innovation_covariance: np.ndarray
+) -> float:
     """Return ``residual.T @ inv(innovation_covariance) @ residual`` as a float."""
 
     residual = np.asarray(residual, dtype=float).reshape(-1)
     innovation_covariance = np.asarray(innovation_covariance, dtype=float)
     if innovation_covariance.shape != (residual.size, residual.size):
-        raise ValueError("innovation_covariance must have shape (residual_dim, residual_dim)")
+        raise ValueError(
+            "innovation_covariance must have shape (residual_dim, residual_dim)"
+        )
     if _normalized_innovation_squared is not None:
-        return float(np.asarray(_normalized_innovation_squared(residual, innovation_covariance), dtype=float))
+        return float(
+            np.asarray(
+                _normalized_innovation_squared(residual, innovation_covariance),
+                dtype=float,
+            )
+        )
     return float(residual.T @ np.linalg.solve(innovation_covariance, residual))
 
 
@@ -125,11 +138,17 @@ def student_t_covariance_scale(
     return float(max(1.0, (dof + float(nis)) / (dof + measurement_dim)))
 
 
-def huber_covariance_scale(nis: float, threshold: float = DEFAULT_HUBER_THRESHOLD) -> float:
+def huber_covariance_scale(
+    nis: float, threshold: float = DEFAULT_HUBER_THRESHOLD
+) -> float:
     """Return multivariate Huber covariance inflation from NIS."""
 
     if _huber_covariance_scale is not None:
-        return float(np.asarray(_huber_covariance_scale(nis, huber_threshold=threshold), dtype=float))
+        return float(
+            np.asarray(
+                _huber_covariance_scale(nis, huber_threshold=threshold), dtype=float
+            )
+        )
     threshold = float(threshold)
     if threshold <= 0.0:
         raise ValueError("threshold must be positive")
@@ -206,15 +225,21 @@ def plan_linear_measurement_update(
     if measurement_dim <= 0:
         raise ValueError("measurement_vector must contain at least one element")
     if observation.ndim != 2 or observation.shape[0] != measurement_dim:
-        raise ValueError("observation_matrix must have shape (measurement_dim, state_dim)")
+        raise ValueError(
+            "observation_matrix must have shape (measurement_dim, state_dim)"
+        )
     if observation.shape[1] != state_mean.size:
         raise ValueError("observation_matrix and mean have incompatible shapes")
     if state_covariance.shape != (state_mean.size, state_mean.size):
         raise ValueError("covariance_matrix must have shape (state_dim, state_dim)")
     if covariance.shape != (measurement_dim, measurement_dim):
-        raise ValueError("measurement_covariance must have shape (measurement_dim, measurement_dim)")
+        raise ValueError(
+            "measurement_covariance must have shape (measurement_dim, measurement_dim)"
+        )
 
-    resolved_gate_threshold = _resolve_threshold(gate_threshold, gate_probability, measurement_dim, "gate")
+    resolved_gate_threshold = _resolve_threshold(
+        gate_threshold, gate_probability, measurement_dim, "gate"
+    )
     resolved_safety_threshold = _resolve_threshold(
         safety_gate_threshold,
         safety_gate_probability,
@@ -226,7 +251,9 @@ def plan_linear_measurement_update(
         raise ValueError("max_residual_norm must be positive or None")
 
     residual = vector - observation @ state_mean
-    nominal_innovation_covariance = observation @ state_covariance @ observation.T + covariance
+    nominal_innovation_covariance = (
+        observation @ state_covariance @ observation.T + covariance
+    )
     nominal_innovation_covariance = _symmetrized(nominal_innovation_covariance)
     nis = normalized_innovation_squared(residual, nominal_innovation_covariance)
     residual_norm = float(np.linalg.norm(residual))
@@ -237,8 +264,12 @@ def plan_linear_measurement_update(
     effective_covariance = covariance.copy()
     effective_innovation_covariance = nominal_innovation_covariance.copy()
 
-    residual_over_threshold = residual_threshold is not None and residual_norm > residual_threshold
-    safety_over_threshold = resolved_safety_threshold is not None and nis > resolved_safety_threshold
+    residual_over_threshold = (
+        residual_threshold is not None and residual_norm > residual_threshold
+    )
+    safety_over_threshold = (
+        resolved_safety_threshold is not None and nis > resolved_safety_threshold
+    )
     reject_by_residual = residual_over_threshold and (
         resolved_safety_threshold is None or safety_over_threshold
     )
@@ -249,7 +280,11 @@ def plan_linear_measurement_update(
     elif safety_over_threshold:
         accepted = False
         action = "safety_rejected"
-    elif resolved_gate_threshold is not None and nis > resolved_gate_threshold and robust_update in (None, "none"):
+    elif (
+        resolved_gate_threshold is not None
+        and nis > resolved_gate_threshold
+        and robust_update in (None, "none")
+    ):
         accepted = False
         action = "rejected"
     else:

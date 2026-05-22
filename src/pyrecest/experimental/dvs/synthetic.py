@@ -22,13 +22,17 @@ class RectangleCountSimulation:
     uniform_probabilities: dict[str, float]
 
 
-def summarize_edge_counts(edge_labels: list[str], point_counts: np.ndarray) -> dict[str, int]:
+def summarize_edge_counts(
+    edge_labels: list[str], point_counts: np.ndarray
+) -> dict[str, int]:
     """Aggregate per-contour-sample counts by edge label."""
     labels = np.array(edge_labels)
     return {edge: int(np.sum(point_counts[labels == edge])) for edge in EDGE_ORDER}
 
 
-def _edge_probabilities(edge_labels: list[str], point_weights: np.ndarray) -> dict[str, float]:
+def _edge_probabilities(
+    edge_labels: list[str], point_weights: np.ndarray
+) -> dict[str, float]:
     labels = np.array(edge_labels)
     edge_weights = np.array(
         [float(np.sum(point_weights[labels == edge])) for edge in EDGE_ORDER],
@@ -38,7 +42,10 @@ def _edge_probabilities(edge_labels: list[str], point_weights: np.ndarray) -> di
     if total_weight <= 0.0:
         edge_weights = np.ones(len(EDGE_ORDER), dtype=float)
         total_weight = float(len(EDGE_ORDER))
-    return {edge: float(weight / total_weight) for edge, weight in zip(EDGE_ORDER, edge_weights, strict=True)}
+    return {
+        edge: float(weight / total_weight)
+        for edge, weight in zip(EDGE_ORDER, edge_weights, strict=True)
+    }
 
 
 def edge_probabilities_from_activity(

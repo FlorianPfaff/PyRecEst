@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.experimental.dvs.event_likelihood import (
     ContourSample,
     EventLikelihoodConfig,
@@ -39,7 +38,12 @@ def _rectangle_contour(width: float, height: float) -> ContourSample:
 
 
 def test_contour_sample_converts_sequence_inputs_to_arrays():
-    contour = ContourSample(points=[[0, 0], [1, 0]], normals=[[0, 1], [0, 1]], weights=[1, 2], angles=[0, np.pi])
+    contour = ContourSample(
+        points=[[0, 0], [1, 0]],
+        normals=[[0, 1], [0, 1]],
+        weights=[1, 2],
+        angles=[0, np.pi],
+    )
 
     assert isinstance(contour.points, np.ndarray)
     assert isinstance(contour.normals, np.ndarray)
@@ -98,14 +102,18 @@ def test_horizontal_motion_activates_only_vertical_sides():
 def test_activity_floor_applies_without_motion():
     contour = _rectangle_contour(width=4.0, height=2.0)
 
-    activities = normal_flow_activities(contour.normals, np.zeros(2, dtype=float), activity_floor=0.05)
+    activities = normal_flow_activities(
+        contour.normals, np.zeros(2, dtype=float), activity_floor=0.05
+    )
 
     np.testing.assert_allclose(activities, np.full(4, 0.05))
 
 
 def test_active_edge_events_have_higher_intensity():
     contour = _rectangle_contour(width=4.0, height=2.0)
-    config = EventLikelihoodConfig(spatial_sigma_px=0.4, foreground_rate=10.0, background_rate=1e-3)
+    config = EventLikelihoodConfig(
+        spatial_sigma_px=0.4, foreground_rate=10.0, background_rate=1e-3
+    )
 
     intensities = contour_event_intensity(
         np.array(
@@ -151,7 +159,11 @@ def test_likelihood_prefers_correct_width_for_two_sided_support():
         dtype=float,
     )
 
-    correct = event_batch_log_likelihood(events, _rectangle_contour(width=4.0, height=2.0), np.array([1.0, 0.0]), config)
-    collapsed = event_batch_log_likelihood(events, _rectangle_contour(width=1.0, height=2.0), np.array([1.0, 0.0]), config)
+    correct = event_batch_log_likelihood(
+        events, _rectangle_contour(width=4.0, height=2.0), np.array([1.0, 0.0]), config
+    )
+    collapsed = event_batch_log_likelihood(
+        events, _rectangle_contour(width=1.0, height=2.0), np.array([1.0, 0.0]), config
+    )
 
     assert correct > collapsed

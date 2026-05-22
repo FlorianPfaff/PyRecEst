@@ -1,10 +1,12 @@
 import numpy as np
-import pytest
 
 # pylint: disable=no-name-in-module,no-member
 import pyrecest.backend
+import pytest
 from pyrecest.experimental.dvs.trackers import DVSFullSCGPTracker
-from pyrecest.experimental.dvs.vectorized_flow import tracker_signed_normal_flows_vectorized
+from pyrecest.experimental.dvs.vectorized_flow import (
+    tracker_signed_normal_flows_vectorized,
+)
 
 
 @pytest.mark.skipif(
@@ -27,5 +29,8 @@ def test_vectorized_flow_matches_scalar_tracker(velocity):
         dtype=float,
     )
     vectorized = tracker_signed_normal_flows_vectorized(tracker, measurements, velocity)
-    scalar = np.asarray([tracker.signed_normal_flow_for_measurement(m, velocity) for m in measurements], dtype=float)
+    scalar = np.asarray(
+        [tracker.signed_normal_flow_for_measurement(m, velocity) for m in measurements],
+        dtype=float,
+    )
     assert np.allclose(vectorized, scalar, atol=1e-8)

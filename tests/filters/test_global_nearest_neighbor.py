@@ -307,12 +307,8 @@ class GlobalNearestNeighborTest(unittest.TestCase):
             }
         )
         tracker.filter_state = [
-            KalmanFilter(
-                GaussianDistribution(array([0.0, 0.0]), eye(2))
-            ),
-            KalmanFilter(
-                GaussianDistribution(array([0.0, -0.1]), eye(2))
-            ),
+            KalmanFilter(GaussianDistribution(array([0.0, 0.0]), eye(2))),
+            KalmanFilter(GaussianDistribution(array([0.0, -0.1]), eye(2))),
         ]
 
         association = tracker.find_association(

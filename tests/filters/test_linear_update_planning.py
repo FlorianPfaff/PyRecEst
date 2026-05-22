@@ -1,5 +1,4 @@
 import numpy as np
-
 from pyrecest.filters.linear_update_planning import (
     chi_square_gate_threshold,
     plan_linear_measurement_update,

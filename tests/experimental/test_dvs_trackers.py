@@ -65,7 +65,9 @@ class TestDVSFullSCGPTracker(unittest.TestCase):
         self.assertGreater(tracker.last_event_activities[0], 0.99)
         self.assertLess(tracker.last_event_activities[1], 1e-6)
 
-    def test_zero_event_activity_floor_is_allowed_when_inactive_events_are_skipped(self):
+    def test_zero_event_activity_floor_is_allowed_when_inactive_events_are_skipped(
+        self,
+    ):
         tracker = self._make_tracker(inactive_activity_threshold=0.25)
 
         tracker.update(
@@ -163,7 +165,10 @@ class TestDVSFullSCGPTracker(unittest.TestCase):
 
         self.assertIsNotNone(tracker.last_event_likelihood_terms)
         self.assertEqual(tracker.last_event_likelihood_terms.event_count, 0)
-        self.assertEqual(tracker.last_event_log_likelihood, tracker.last_event_likelihood_terms.log_likelihood)
+        self.assertEqual(
+            tracker.last_event_log_likelihood,
+            tracker.last_event_likelihood_terms.log_likelihood,
+        )
         self.assertEqual(tracker.last_active_measurement_indices, [])
         self.assertEqual(np.asarray(tracker.last_event_activities).shape, (0,))
         npt.assert_allclose(
