@@ -27,6 +27,102 @@ class _WeightedParticleState(Protocol):
     w: Any
 
 
+PartitionSpec = str | Sequence[Sequence[int]] | None
+
+
+def validate_partition(
+    partition: Sequence[Sequence[int]], n_components: int
+) -> tuple[tuple[int, ...], ...]:
+    """Validate and normalize an explicit product-state partition.
+
+    The returned blocks cover every component exactly once. Empty blocks,
+    overlapping blocks, missing components, and out-of-range component indices
+    raise ``ValueError``.
+    """
+    if int(n_components) <= 0:
+        raise ValueError("n_components must be positive.")
+
+    normalized = []
+    seen = set()
+    for block_idx, raw_block in enumerate(partition):
+        block = tuple(int(component_idx) for component_idx in raw_block)
+        if not block:
+            raise ValueError(f"partition block {block_idx} is empty.")
+        for component_idx in block:
+            if component_idx < 0 or component_idx >= n_components:
+                raise ValueError(
+                    f"partition block {block_idx} contains component "
+                    f"{component_idx}, but valid components are "
+                    f"0..{n_components - 1}."
+                )
+            if component_idx in seen:
+                raise ValueError(
+                    f"component {component_idx} appears in more than one "
+                    "partition block."
+                )
+            seen.add(component_idx)
+        normalized.append(block)
+
+    missing = sorted(set(range(n_components)) - seen)
+    if missing:
+        raise ValueError(
+            "partition must cover every component exactly once; "
+            f"missing components {missing}."
+        )
+    return tuple(normalized)
+
+
+def contiguous_partition(
+    n_components: int, block_size: int = 4
+) -> tuple[tuple[int, ...], ...]:
+    """Return contiguous blocks over ``range(n_components)``."""
+    n_components = int(n_components)
+    block_size = int(block_size)
+    if n_components <= 0:
+        raise ValueError("n_components must be positive.")
+    if block_size <= 0:
+        raise ValueError("block_size must be positive.")
+    return tuple(
+        tuple(range(start, min(start + block_size, n_components)))
+        for start in range(0, n_components, block_size)
+    )
+
+
+def resolve_partition(
+    n_components: int,
+    partition: PartitionSpec = None,
+    *,
+    contiguous_block_size: int = 4,
+) -> tuple[tuple[int, ...], ...]:
+    """Resolve a named or explicit product-state partition."""
+    n_components = int(n_components)
+    if n_components <= 0:
+        raise ValueError("n_components must be positive.")
+    if partition is None:
+        return (tuple(range(n_components)),)
+
+    if isinstance(partition, str):
+        name = partition.strip().lower().replace("-", "_")
+        if name in {"", "global", "full", "none"}:
+            return (tuple(range(n_components)),)
+        if name in {
+            "component",
+            "components",
+            "singleton",
+            "singletons",
+            "factorized",
+        }:
+            return tuple((idx,) for idx in range(n_components))
+        if name in {"contiguous", "auto"}:
+            return contiguous_partition(n_components, contiguous_block_size)
+        raise ValueError(
+            "partition must be 'global', 'singleton', 'contiguous', or an "
+            "explicit sequence of component-index sequences."
+        )
+
+    return validate_partition(partition, n_components)
+
+
 class BlockParticleFilter:
     """Reusable block particle-filter base for product-state particle filters.
 
@@ -102,53 +198,7 @@ class BlockParticleFilter:
     def _validate_partition(
         partition, n_components: int
     ) -> tuple[tuple[int, ...], ...]:
-        if partition is None:
-            return (tuple(range(n_components)),)
-        if isinstance(partition, str):
-            name = partition.strip().lower().replace("-", "_")
-            if name in {"", "global", "full", "none"}:
-                return (tuple(range(n_components)),)
-            if name in {
-                "component",
-                "components",
-                "singleton",
-                "singletons",
-                "factorized",
-            }:
-                return tuple((idx,) for idx in range(n_components))
-            raise ValueError(
-                "partition must be 'global', 'singleton', or an explicit sequence "
-                "of component-index sequences."
-            )
-
-        normalized = []
-        seen = set()
-        for block_idx, raw_block in enumerate(partition):
-            block = tuple(int(component_idx) for component_idx in raw_block)
-            if not block:
-                raise ValueError(f"partition block {block_idx} is empty.")
-            for component_idx in block:
-                if component_idx < 0 or component_idx >= n_components:
-                    raise ValueError(
-                        f"partition block {block_idx} contains component "
-                        f"{component_idx}, but valid components are "
-                        f"0..{n_components - 1}."
-                    )
-                if component_idx in seen:
-                    raise ValueError(
-                        f"component {component_idx} appears in more than one "
-                        "partition block."
-                    )
-                seen.add(component_idx)
-            normalized.append(block)
-
-        missing = sorted(set(range(n_components)) - seen)
-        if missing:
-            raise ValueError(
-                "partition must cover every component exactly once; "
-                f"missing components {missing}."
-            )
-        return tuple(normalized)
+        return resolve_partition(n_components, partition)
 
     @staticmethod
     def _build_component_to_block(partition, n_components: int) -> tuple[int, ...]:

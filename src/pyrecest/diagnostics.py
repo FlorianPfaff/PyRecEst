@@ -125,6 +125,32 @@ class ParticleDiagnostics(_DiagnosticsMappingMixin):
 
 
 @dataclass(slots=True)
+class ParticleFilterResult(_DiagnosticsMappingMixin):
+    """Sequence-level particle-filter estimates and diagnostics.
+
+    This container is intentionally generic: algorithms can store estimates,
+    effective-sample-size histories, resampling decisions, spread summaries, and
+    optional block-wise ESS values without tying the diagnostics module to a
+    specific state space.
+    """
+
+    estimates: Any
+    effective_sample_size: Any
+    resampled: Any
+    particle_spread: Any | None = None
+    block_effective_sample_size: Any | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def ess_history(self) -> Any:
+        return self.effective_sample_size
+
+    @property
+    def resampling_flags(self) -> Any:
+        return self.resampled
+
+
+@dataclass(slots=True)
 class AssociationDiagnostics(_DiagnosticsMappingMixin):
     """Diagnostics for association and multi-target tracking steps."""
 
@@ -140,4 +166,5 @@ __all__ = [
     "AssociationDiagnostics",
     "FilterDiagnostics",
     "ParticleDiagnostics",
+    "ParticleFilterResult",
 ]
