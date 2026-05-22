@@ -1329,6 +1329,49 @@ class GoalConditionedReplayParticleFilter(EuclideanParticleFilter):
             return update_result
         return self
 
+    def update_position_grid_likelihood(
+        self,
+        log_likelihood,
+        bin_centers,
+        *,
+        interpolation: str = "linear",
+        lookup=None,
+        position_proposal_probability: float = 0.0,
+        position_proposal_ess_threshold: float | None = None,
+        return_log_marginal: bool = False,
+    ):
+        """Update from a position-grid log likelihood."""
+        from .replay_grid_likelihood import update_position_grid_likelihood
+
+        update_log = update_position_grid_likelihood(
+            self,
+            log_likelihood,
+            bin_centers,
+            interpolation=interpolation,
+            lookup=lookup,
+            position_proposal_probability=position_proposal_probability,
+            position_proposal_ess_threshold=position_proposal_ess_threshold,
+        )
+        if return_log_marginal:
+            return update_log
+        return self
+
+    def position_log_posterior_on_grid(
+        self,
+        bin_centers,
+        *,
+        log_zero: float = float("-inf"),
+    ):
+        """Accumulate the current position particles onto a grid."""
+        from .replay_grid_likelihood import particle_position_log_posterior
+
+        return particle_position_log_posterior(
+            self.position_particles,
+            self.filter_state.w,
+            bin_centers,
+            log_zero=log_zero,
+        )
+
     @staticmethod
     def _looks_like_measurement_distribution(value) -> bool:
         return hasattr(value, "dim") and (
