@@ -393,9 +393,49 @@ def is_bool(array):
     return _jnp.issubdtype(array.dtype, _jnp.bool_)
 
 
+def divide(a, b, ignore_div_zero=False):
+    if ignore_div_zero is False:
+        return _jnp.divide(a, b)
+
+    a_arr, b_arr = _jnp.asarray(a), _jnp.asarray(b)
+    quotient = _jnp.divide(a_arr, b_arr)
+    return _jnp.where(b_arr != 0, quotient, _jnp.zeros_like(quotient))
+
+
+def dot(a, b):
+    a = _jnp.asarray(a)
+    b = _jnp.asarray(b)
+
+    if b.ndim == 1:
+        return _jnp.dot(a, b)
+    if a.ndim == 1:
+        return _jnp.dot(a, b.T)
+    return _jnp.einsum("...i,...i->...", a, b)
+
+
+def outer(a, b):
+    a = _jnp.asarray(a)
+    b = _jnp.asarray(b)
+
+    if a.ndim > 1 and b.ndim > 1:
+        return _jnp.einsum("...i,...j->...ij", a, b)
+
+    result = _jnp.multiply.outer(a, b)
+    if b.ndim > 1:
+        result = _jnp.swapaxes(result, 0, -2)
+    return result
+
+
 # Matrix-vector multiplication
 def matvec(matrix, vector):
-    return _jnp.dot(matrix, vector)
+    matrix = _jnp.asarray(matrix)
+    vector = _jnp.asarray(vector)
+
+    if vector.ndim == 1:
+        return _jnp.matmul(matrix, vector)
+    if matrix.ndim == 2:
+        return _jnp.matmul(matrix, vector.T).T
+    return _jnp.einsum("...ij,...j->...i", matrix, vector)
 
 
 # One-hot encoding
@@ -436,9 +476,12 @@ def scatter_add(input, dim, index, src):
     raise NotImplementedError("scatter_add is implemented for dim 0 and dim 1.")
 
 
-# Set diagonal elements of a matrix
 def set_diag(matrix, values):
-    return matrix.at[_jnp.diag_indices_from(matrix)].set(values)
+    matrix = _jnp.asarray(matrix)
+    values = _jnp.asarray(values, dtype=matrix.dtype)
+    diag_len = matrix.shape[-2] if matrix.shape[-2] < matrix.shape[-1] else matrix.shape[-1]
+    diag_indices = _jnp.arange(diag_len)
+    return matrix.at[..., diag_indices, diag_indices].set(values)
 
 
 # Get lower triangle and flatten to vector
@@ -455,14 +498,25 @@ def triu_to_vec(x, k=0):
     return x[..., rows, cols]
 
 
-# Create diagonal matrix from vector
 def vec_to_diag(vector):
-    return _jnp.diag(vector)
+    vector = _jnp.asarray(vector)
+    return vector[..., :, None] * _jnp.eye(vector.shape[-1], dtype=vector.dtype)
 
 
-# Create matrix from diagonal, upper triangular, and lower triangular parts
-def mat_from_diag_triu_tril(diag, triu, tril):
-    matrix = _jnp.diag(diag)
-    matrix = matrix.at[_jnp.triu_indices_from(matrix, k=1)].set(triu)
-    matrix = matrix.at[_jnp.tril_indices_from(matrix, k=-1)].set(tril)
+def mat_from_diag_triu_tril(diag, tri_upp, tri_low):
+    diag = _jnp.asarray(diag)
+    tri_upp = _jnp.asarray(tri_upp)
+    tri_low = _jnp.asarray(tri_low)
+    dtype = _jnp.result_type(diag, tri_upp, tri_low)
+    diag = diag.astype(dtype)
+    tri_upp = tri_upp.astype(dtype)
+    tri_low = tri_low.astype(dtype)
+
+    n = diag.shape[-1]
+    i = _jnp.arange(n)
+    j, k = _jnp.triu_indices(n, k=1)
+    matrix = _jnp.zeros(diag.shape + (n,), dtype=dtype)
+    matrix = matrix.at[..., i, i].set(diag)
+    matrix = matrix.at[..., j, k].set(tri_upp)
+    matrix = matrix.at[..., k, j].set(tri_low)
     return matrix

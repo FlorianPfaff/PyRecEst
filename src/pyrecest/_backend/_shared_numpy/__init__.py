@@ -291,7 +291,7 @@ def array_from_sparse(indices, data, target_shape):
 def vec_to_diag(vec):
     """Convert vector to diagonal matrix."""
     d = vec.shape[-1]
-    return _np.squeeze(vec[..., None, :] * eye(d, dtype=vec.dtype)[None, :, :])
+    return vec[..., :, None] * eye(d, dtype=vec.dtype)
 
 
 def tril_to_vec(x, k=0):
@@ -338,8 +338,17 @@ def divide(a, b, ignore_div_zero=False):
     if ignore_div_zero is False:
         return _np.divide(a, b)
 
-    wider_dtype, _ = _get_wider_dtype([a, b])
-    return _np.divide(a, b, out=zeros(a.shape, dtype=wider_dtype), where=b != 0)
+    a_arr, b_arr = _np.asarray(a), _np.asarray(b)
+    a_arr, b_arr = _np.broadcast_arrays(a_arr, b_arr)
+    result_dtype = _np.result_type(a_arr, b_arr)
+    if result_dtype.kind in "biu":
+        result_dtype = get_default_dtype()
+    return _np.divide(
+        a_arr,
+        b_arr,
+        out=zeros(a_arr.shape, dtype=result_dtype),
+        where=b_arr != 0,
+    )
 
 
 def ravel_tril_indices(n, k=0, m=None):

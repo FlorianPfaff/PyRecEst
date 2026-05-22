@@ -150,3 +150,81 @@ def test_triangular_matrix_helpers_preserve_batch_dimensions():
 
     assert _to_python(backend.tril_to_vec(values)) == [[1, 3, 4], [5, 7, 8]]
     assert _to_python(backend.triu_to_vec(values)) == [[1, 2, 4], [5, 6, 8]]
+
+
+def test_divide_ignore_div_zero_accepts_scalars_and_integer_inputs():
+    assert _to_python(backend.divide(array([1.0, 2.0]), 0.0, ignore_div_zero=True)) == [0.0, 0.0]
+    assert _to_python(backend.divide(1.0, array([0.0, 2.0]), ignore_div_zero=True)) == [0.0, 0.5]
+
+    numerator = backend.asarray([1, 2], dtype=backend.int32)
+    denominator = backend.asarray([1, 0], dtype=backend.int32)
+
+    assert _to_python(backend.divide(numerator, denominator, ignore_div_zero=True)) == [1.0, 0.0]
+
+
+def test_vec_to_diag_preserves_leading_singleton_batch_dimension():
+    result = backend.vec_to_diag(array([[1.0, 2.0]]))
+
+    assert result.shape == (1, 2, 2)
+    assert _to_python(result) == [[[1.0, 0.0], [0.0, 2.0]]]
+
+
+def test_tril_and_triu_to_vec_skip_masked_entries():
+    values = array([[1.0, 2.0], [3.0, 4.0]])
+
+    assert _to_python(backend.tril_to_vec(values)) == [1.0, 3.0, 4.0]
+    assert _to_python(backend.triu_to_vec(values)) == [1.0, 2.0, 4.0]
+
+
+def test_set_diag_preserves_leading_batch_dimensions():
+    result = backend.set_diag(backend.zeros((1, 2, 2)), array([[1.0, 2.0]]))
+
+    assert result.shape == (1, 2, 2)
+    assert _to_python(result) == [[[1.0, 0.0], [0.0, 2.0]]]
+
+
+def test_batched_mat_from_diag_triu_tril_preserves_leading_dimensions():
+    result = backend.mat_from_diag_triu_tril(
+        array([[1.0, 2.0], [5.0, 6.0]]),
+        array([[3.0], [7.0]]),
+        array([[4.0], [8.0]]),
+    )
+
+    assert result.shape == (2, 2, 2)
+    assert _to_python(result) == [
+        [[1.0, 3.0], [4.0, 2.0]],
+        [[5.0, 7.0], [8.0, 6.0]],
+    ]
+
+
+def test_batched_matvec_pairs_leading_dimensions():
+    matrix = array([[[1.0, 0.0], [0.0, 1.0]], [[2.0, 0.0], [0.0, 3.0]]])
+    vector = array([[1.0, 2.0], [3.0, 4.0]])
+
+    result = backend.matvec(matrix, vector)
+
+    assert result.shape == (2, 2)
+    assert _to_python(result) == [[1.0, 2.0], [6.0, 12.0]]
+
+
+def test_batched_dot_uses_last_axis_inner_product():
+    first = array([[1.0, 2.0], [3.0, 4.0]])
+    second = array([[5.0, 6.0], [7.0, 8.0]])
+
+    result = backend.dot(first, second)
+
+    assert result.shape == (2,)
+    assert _to_python(result) == [17.0, 53.0]
+
+
+def test_batched_outer_pairs_leading_dimensions():
+    first = array([[1.0, 2.0], [3.0, 4.0]])
+    second = array([[5.0, 6.0], [7.0, 8.0]])
+
+    result = backend.outer(first, second)
+
+    assert result.shape == (2, 2, 2)
+    assert _to_python(result) == [
+        [[5.0, 6.0], [10.0, 12.0]],
+        [[21.0, 24.0], [28.0, 32.0]],
+    ]
