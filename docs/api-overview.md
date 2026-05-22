@@ -109,7 +109,9 @@ Common starting points include:
 - `VonMisesFilter`, `VonMisesFisherFilter`, and Fourier or grid filters for
   directional estimation;
 - `MultiBernoulliTracker`, `MultiHypothesisTracker`, `GlobalNearestNeighbor`,
-  `JPDAF`, and `TrackManager` for tracking workflows.
+  `JPDAF`, and `TrackManager` for tracking workflows. `MultiHypothesisTracker`
+  supports top-K hypothesis inspection, delayed assignment commitments, reranker
+  callbacks, score-temperature calibration, and diversity-aware pruning.
 - `FullSCGPTracker` for star-convex Gaussian-process extended-object tracking,
   including optional per-measurement covariance, reliability weights, and
   active-measurement masks.
