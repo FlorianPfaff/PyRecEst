@@ -479,7 +479,9 @@ def scatter_add(input, dim, index, src):
 def set_diag(matrix, values):
     matrix = _jnp.asarray(matrix)
     values = _jnp.asarray(values, dtype=matrix.dtype)
-    diag_len = matrix.shape[-2] if matrix.shape[-2] < matrix.shape[-1] else matrix.shape[-1]
+    diag_len = (
+        matrix.shape[-2] if matrix.shape[-2] < matrix.shape[-1] else matrix.shape[-1]
+    )
     diag_indices = _jnp.arange(diag_len)
     return matrix.at[..., diag_indices, diag_indices].set(values)
 
