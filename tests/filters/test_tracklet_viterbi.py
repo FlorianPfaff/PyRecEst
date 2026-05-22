@@ -17,7 +17,10 @@ def test_switch_cost_prefers_coherent_tracklet():
             TrackletAssociationCandidate("a1", unary_cost=2.0, track_id="A"),
         ],
     ]
-    result = solve_tracklet_viterbi(frames, config=TrackletViterbiConfig(switch_cost=10.0, missed_detection_cost=100.0))
+    result = solve_tracklet_viterbi(
+        frames,
+        config=TrackletViterbiConfig(switch_cost=10.0, missed_detection_cost=100.0),
+    )
     assert [candidate.candidate_id for candidate in result.path] == ["a0", "a1"]
 
 
@@ -34,11 +37,19 @@ def test_fixed_lag_solver_uses_prefix_memory():
     frames = [
         [TrackletAssociationCandidate("a0", unary_cost=0.0, track_id="A", time_s=0.0)],
         [
-            TrackletAssociationCandidate("b1", unary_cost=0.0, track_id="B", time_s=1.0),
-            TrackletAssociationCandidate("a1", unary_cost=2.0, track_id="A", time_s=1.0),
+            TrackletAssociationCandidate(
+                "b1", unary_cost=0.0, track_id="B", time_s=1.0
+            ),
+            TrackletAssociationCandidate(
+                "a1", unary_cost=2.0, track_id="A", time_s=1.0
+            ),
         ],
     ]
-    result = solve_fixed_lag_tracklet_viterbi(frames, lag_s=0.1, config=TrackletViterbiConfig(switch_cost=10.0, missed_detection_cost=100.0))
+    result = solve_fixed_lag_tracklet_viterbi(
+        frames,
+        lag_s=0.1,
+        config=TrackletViterbiConfig(switch_cost=10.0, missed_detection_cost=100.0),
+    )
     assert [candidate.candidate_id for candidate in result.path] == ["a0", "a1"]
 
 
@@ -48,7 +59,12 @@ def test_retention_keeps_track_representative_outside_top_k():
         TrackletAssociationCandidate("second", unary_cost=1.0, track_id="A"),
         TrackletAssociationCandidate("track-b", unary_cost=5.0, track_id="B"),
     ]
-    kept = retain_top_and_track_representatives(candidates, config=TrackletViterbiConfig(max_candidates_per_frame=1, max_candidate_pool_per_frame=3))
+    kept = retain_top_and_track_representatives(
+        candidates,
+        config=TrackletViterbiConfig(
+            max_candidates_per_frame=1, max_candidate_pool_per_frame=3
+        ),
+    )
     assert {candidate.candidate_id for candidate in kept} == {"best", "track-b"}
 
 

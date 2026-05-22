@@ -112,7 +112,9 @@ class DVSFullSCGPTracker(FullSCGPTracker):
         return event_polarities
 
     @staticmethod
-    def _normalize_event_signed_normal_flows(event_signed_normal_flows, measurement_count):
+    def _normalize_event_signed_normal_flows(
+        event_signed_normal_flows, measurement_count
+    ):
         if event_signed_normal_flows is None:
             return None
         signed_flows = array(event_signed_normal_flows)
@@ -479,7 +481,9 @@ class DVSFullSCGPTracker(FullSCGPTracker):
             active_measurement_mask=active_measurement_mask,
         )
         self.last_active_measurement_indices = [
-            index for index, is_active in enumerate(active_measurement_mask) if bool(is_active)
+            index
+            for index, is_active in enumerate(active_measurement_mask)
+            if bool(is_active)
         ]
 
 

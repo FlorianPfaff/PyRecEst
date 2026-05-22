@@ -2,7 +2,6 @@ import types
 import unittest
 
 import numpy as np
-
 from pyrecest.filters import (
     adaptive_position_proposal_probability,
     build_replay_grid_likelihood_lookup,
@@ -129,7 +128,9 @@ class TestReplayGridLikelihood(unittest.TestCase):
 
         self.assertAlmostEqual(filter_.proposal_probability, 1.0)
         self.assertTrue(np.allclose(filter_.proposal_positions, centers))
-        self.assertTrue(np.allclose(filter_.proposal_weights, grid_proposal_weights(log_likelihood)))
+        self.assertTrue(
+            np.allclose(filter_.proposal_weights, grid_proposal_weights(log_likelihood))
+        )
 
     def test_particle_position_log_posterior_accumulates_weighted_grid_masses(self):
         positions = np.asarray([[0.1, 0.0], [0.2, 0.0], [1.0, 0.0]])
@@ -177,8 +178,14 @@ class _DummyLikelihoodFilter:
     ):
         self.proposal_positions = np.asarray(position_proposal, dtype=float)
         self.proposal_probability = float(proposal_probability)
-        self.proposal_weights = None if proposal_weights is None else np.asarray(proposal_weights, dtype=float)
-        return self.update_position_likelihood(likelihood, return_log_marginal=return_log_marginal)
+        self.proposal_weights = (
+            None
+            if proposal_weights is None
+            else np.asarray(proposal_weights, dtype=float)
+        )
+        return self.update_position_likelihood(
+            likelihood, return_log_marginal=return_log_marginal
+        )
 
 
 if __name__ == "__main__":

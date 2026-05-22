@@ -60,9 +60,15 @@ class TrackletViterbiConfig:
     max_candidates_per_track_id: int = 1
 
     def __post_init__(self) -> None:
-        if self.max_candidates_per_frame is not None and self.max_candidates_per_frame < 1:
+        if (
+            self.max_candidates_per_frame is not None
+            and self.max_candidates_per_frame < 1
+        ):
             raise ValueError("max_candidates_per_frame must be positive or None")
-        if self.max_candidate_pool_per_frame is not None and self.max_candidate_pool_per_frame < 1:
+        if (
+            self.max_candidate_pool_per_frame is not None
+            and self.max_candidate_pool_per_frame < 1
+        ):
             raise ValueError("max_candidate_pool_per_frame must be positive or None")
         if self.max_candidates_per_track_id < 0:
             raise ValueError("max_candidates_per_track_id must be nonnegative")
@@ -78,7 +84,10 @@ class TrackletViterbiConfig:
                 raise ValueError(f"{name} must be nonnegative")
         if self.transition_position_std <= 0.0:
             raise ValueError("transition_position_std must be positive")
-        if self.transition_velocity_std is not None and self.transition_velocity_std <= 0.0:
+        if (
+            self.transition_velocity_std is not None
+            and self.transition_velocity_std <= 0.0
+        ):
             raise ValueError("transition_velocity_std must be positive or None")
         if self.max_speed is not None and self.max_speed <= 0.0:
             raise ValueError("max_speed must be positive or None")
@@ -148,19 +157,32 @@ def solve_tracklet_viterbi(
     """
 
     config = TrackletViterbiConfig() if config is None else config
-    nodes_by_frame = [_nodes_for_frame(frame, config, include_missed_detection) for frame in frames]
+    nodes_by_frame = [
+        _nodes_for_frame(frame, config, include_missed_detection) for frame in frames
+    ]
     if not nodes_by_frame:
         return TrackletViterbiResult([], 0.0)
     if any(not nodes for nodes in nodes_by_frame):
-        raise ValueError("each frame must contain at least one candidate or allow missed detection")
+        raise ValueError(
+            "each frame must contain at least one candidate or allow missed detection"
+        )
 
-    transition = transition_cost or (lambda previous, current, miss_streak: default_tracklet_transition_cost(previous, current, miss_streak, config))
+    transition = transition_cost or (
+        lambda previous, current, miss_streak: default_tracklet_transition_cost(
+            previous, current, miss_streak, config
+        )
+    )
     first_costs = np.array(
-        [node.unary_cost + (config.missed_detection_cost if node.is_miss else 0.0) for node in nodes_by_frame[0]],
+        [
+            node.unary_cost + (config.missed_detection_cost if node.is_miss else 0.0)
+            for node in nodes_by_frame[0]
+        ],
         dtype=float,
     )
     costs = [first_costs]
-    miss_streaks = [np.array([1 if node.is_miss else 0 for node in nodes_by_frame[0]], dtype=int)]
+    miss_streaks = [
+        np.array([1 if node.is_miss else 0 for node in nodes_by_frame[0]], dtype=int)
+    ]
     parents = [np.full(len(nodes_by_frame[0]), -1, dtype=int)]
 
     for frame_index in range(1, len(nodes_by_frame)):
@@ -186,7 +208,9 @@ def solve_tracklet_viterbi(
             )
             parent = int(np.argmin(alternatives))
             current_parents[current_index] = parent
-            current_costs[current_index] = current_node.unary_cost + alternatives[parent]
+            current_costs[current_index] = (
+                current_node.unary_cost + alternatives[parent]
+            )
             current_miss_streaks[current_index] = (
                 int(miss_streaks[-1][parent]) + 1 if current_node.is_miss else 0
             )
@@ -289,7 +313,9 @@ def retain_top_and_track_representatives(
     config = TrackletViterbiConfig() if config is None else config
     if not candidates:
         return []
-    ordered = sorted(enumerate(candidates), key=lambda item: (float(item[1].unary_cost), item[0]))
+    ordered = sorted(
+        enumerate(candidates), key=lambda item: (float(item[1].unary_cost), item[0])
+    )
     top_k = config.max_candidates_per_frame or len(ordered)
     max_pool = config.max_candidate_pool_per_frame or max(top_k, top_k + 8)
     keep: set[int] = {index for index, _ in ordered[:top_k]}
@@ -318,11 +344,15 @@ def prefix_track_support(
     previous: list[TrackletAssociationCandidate] = []
     for frame_index, frame in enumerate(frames):
         support_by_frame[frame_index] = track_support_by_id(previous)
-        previous.extend(candidate for candidate in frame if candidate.track_id is not None)
+        previous.extend(
+            candidate for candidate in frame if candidate.track_id is not None
+        )
     return support_by_frame
 
 
-def track_support_by_id(candidates: Sequence[TrackletAssociationCandidate]) -> dict[Hashable, TrackSupport]:
+def track_support_by_id(
+    candidates: Sequence[TrackletAssociationCandidate],
+) -> dict[Hashable, TrackSupport]:
     """Return support statistics for finite/non-null track ids."""
 
     grouped: dict[Hashable, list[TrackletAssociationCandidate]] = {}
@@ -331,7 +361,11 @@ def track_support_by_id(candidates: Sequence[TrackletAssociationCandidate]) -> d
             grouped.setdefault(candidate.track_id, []).append(candidate)
     support: dict[Hashable, TrackSupport] = {}
     for track_id, group in grouped.items():
-        times = [float(candidate.time_s) for candidate in group if candidate.time_s is not None]
+        times = [
+            float(candidate.time_s)
+            for candidate in group
+            if candidate.time_s is not None
+        ]
         span_s = max(times) - min(times) if len(times) >= 2 else 0.0
         count = len(group)
         if times:
@@ -339,8 +373,12 @@ def track_support_by_id(candidates: Sequence[TrackletAssociationCandidate]) -> d
         else:
             frame_span = float(count)
         continuity = float(np.clip(count / max(frame_span, 1.0), 0.0, 1.0))
-        score = float(np.log1p(count) + 0.5 * np.log1p(max(span_s, 0.0)) + 0.5 * continuity)
-        support[track_id] = TrackSupport(count=count, span_s=float(span_s), continuity=continuity, score=score)
+        score = float(
+            np.log1p(count) + 0.5 * np.log1p(max(span_s, 0.0)) + 0.5 * continuity
+        )
+        support[track_id] = TrackSupport(
+            count=count, span_s=float(span_s), continuity=continuity, score=score
+        )
     return support
 
 
@@ -420,18 +458,41 @@ def _motion_cost(
     if previous.velocity is None:
         predicted = previous_position
     else:
-        predicted = previous_position + np.asarray(previous.velocity, dtype=float).reshape(previous_position.shape) * dt_s
-    position_cost = float(np.sum(((current_position - predicted) / float(config.transition_position_std)) ** 2))
+        predicted = (
+            previous_position
+            + np.asarray(previous.velocity, dtype=float).reshape(
+                previous_position.shape
+            )
+            * dt_s
+        )
+    position_cost = float(
+        np.sum(
+            ((current_position - predicted) / float(config.transition_position_std))
+            ** 2
+        )
+    )
     speed_cost = 0.0
     displacement_velocity = (current_position - previous_position) / dt_s
     if config.max_speed is not None:
-        speed_excess = max(0.0, float(np.linalg.norm(displacement_velocity)) - float(config.max_speed))
+        speed_excess = max(
+            0.0, float(np.linalg.norm(displacement_velocity)) - float(config.max_speed)
+        )
         if speed_excess > 0.0:
             speed_cost = float(config.max_speed_penalty) * speed_excess**2
     velocity_cost = 0.0
     if config.transition_velocity_std is not None and current.velocity is not None:
-        velocity = np.asarray(current.velocity, dtype=float).reshape(displacement_velocity.shape)
-        velocity_cost = float(np.sum(((velocity - displacement_velocity) / float(config.transition_velocity_std)) ** 2))
+        velocity = np.asarray(current.velocity, dtype=float).reshape(
+            displacement_velocity.shape
+        )
+        velocity_cost = float(
+            np.sum(
+                (
+                    (velocity - displacement_velocity)
+                    / float(config.transition_velocity_std)
+                )
+                ** 2
+            )
+        )
     return position_cost + speed_cost + velocity_cost
 
 
@@ -439,8 +500,12 @@ def _candidate_time(candidate: TrackletAssociationCandidate, fallback: float) ->
     return fallback if candidate.time_s is None else float(candidate.time_s)
 
 
-def _frame_time(frame: Sequence[TrackletAssociationCandidate], frame_index: int) -> float:
-    times = [float(candidate.time_s) for candidate in frame if candidate.time_s is not None]
+def _frame_time(
+    frame: Sequence[TrackletAssociationCandidate], frame_index: int
+) -> float:
+    times = [
+        float(candidate.time_s) for candidate in frame if candidate.time_s is not None
+    ]
     return float(np.median(times)) if times else float(frame_index)
 
 

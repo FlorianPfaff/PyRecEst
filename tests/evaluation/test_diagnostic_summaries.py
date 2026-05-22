@@ -13,10 +13,38 @@ from pyrecest.evaluation.diagnostic_summaries import (
 class DiagnosticSummariesTest(unittest.TestCase):
     def setUp(self):
         self.records = [
-            {"time_s": 0.0, "track_id": "A", "source": "rf", "residual_norm": 1.0, "covariance_scale": 1.0, "error": 1.0},
-            {"time_s": 1.0, "track_id": "A", "source": "rf", "residual_norm": 4.0, "covariance_scale": 2.0, "error": 2.0},
-            {"time_s": 2.0, "track_id": "B", "source": "radar", "residual_norm": 3.0, "covariance_scale": 3.0, "error": 10.0},
-            {"time_s": 7.0, "track_id": "B", "source": "radar", "residual_norm": 2.0, "covariance_scale": 1.0, "error": 3.0},
+            {
+                "time_s": 0.0,
+                "track_id": "A",
+                "source": "rf",
+                "residual_norm": 1.0,
+                "covariance_scale": 1.0,
+                "error": 1.0,
+            },
+            {
+                "time_s": 1.0,
+                "track_id": "A",
+                "source": "rf",
+                "residual_norm": 4.0,
+                "covariance_scale": 2.0,
+                "error": 2.0,
+            },
+            {
+                "time_s": 2.0,
+                "track_id": "B",
+                "source": "radar",
+                "residual_norm": 3.0,
+                "covariance_scale": 3.0,
+                "error": 10.0,
+            },
+            {
+                "time_s": 7.0,
+                "track_id": "B",
+                "source": "radar",
+                "residual_norm": 2.0,
+                "covariance_scale": 1.0,
+                "error": 3.0,
+            },
         ]
 
     def test_top_residuals_returns_largest_first(self):

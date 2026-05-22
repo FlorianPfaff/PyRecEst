@@ -170,9 +170,7 @@ def solve_top_k_viterbi_sequence_associations(
             dtype=int,
         )
     ]
-    parents: list[np.ndarray] = [
-        np.full(len(normalized_frames[0]), -1, dtype=int)
-    ]
+    parents: list[np.ndarray] = [np.full(len(normalized_frames[0]), -1, dtype=int)]
     chosen_transition_costs: list[np.ndarray] = [
         np.zeros(len(normalized_frames[0]), dtype=float)
     ]
@@ -249,7 +247,9 @@ def _validate_frames(
             raise ValueError(f"frame {frame_pos} must contain at least one node")
         for node in nodes:
             if not isinstance(node, SequenceAssociationNode):
-                raise TypeError("all frames must contain SequenceAssociationNode objects")
+                raise TypeError(
+                    "all frames must contain SequenceAssociationNode objects"
+                )
         normalized.append(nodes)
     return tuple(normalized)
 

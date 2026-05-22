@@ -2,7 +2,6 @@ import math
 import unittest
 
 import numpy as np
-
 from pyrecest.filters import OnlineTimeOffsetEstimator
 
 

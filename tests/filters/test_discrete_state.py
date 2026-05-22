@@ -2,8 +2,6 @@ import itertools
 import unittest
 
 import numpy as np
-from scipy.sparse import csr_matrix
-
 from pyrecest.filters.discrete_state import (
     discrete_forward_backward,
     discrete_forward_backward_time_varying,
@@ -15,6 +13,7 @@ from pyrecest.filters.discrete_state import (
     sticky_mode_transition_matrix,
     uniform_probabilities,
 )
+from scipy.sparse import csr_matrix
 
 
 def _enumerate_hmm(log_likelihood, transition, initial):
@@ -26,7 +25,10 @@ def _enumerate_hmm(log_likelihood, transition, initial):
     for path in itertools.product(range(n_states), repeat=n_time):
         prob = initial[path[0]] * likelihood[0, path[0]]
         for time_index in range(1, n_time):
-            prob *= transition[path[time_index], path[time_index - 1]] * likelihood[time_index, path[time_index]]
+            prob *= (
+                transition[path[time_index], path[time_index - 1]]
+                * likelihood[time_index, path[time_index]]
+            )
         path_probabilities[path] = prob
         if prob > 0.0:
             log_total = np.logaddexp(log_total, np.log(prob))
@@ -50,7 +52,9 @@ class TestDiscreteStateUtilities(unittest.TestCase):
 
         np.testing.assert_allclose(offsets, np.array([-1000.0, 3.0]))
         np.testing.assert_allclose(scaled[0], np.array([1.0, np.exp(-1.0), 0.0]))
-        np.testing.assert_allclose(scaled[1], np.array([1.0, np.exp(-2.0), np.exp(-1.0)]))
+        np.testing.assert_allclose(
+            scaled[1], np.array([1.0, np.exp(-2.0), np.exp(-1.0)])
+        )
 
     def test_probabilities_to_log_probabilities_preserves_zero_support(self):
         logs = probabilities_to_log_probabilities(np.array([[0.2, 0.0, 0.3]]), axis=1)
@@ -76,29 +80,49 @@ class TestDiscreteStateUtilities(unittest.TestCase):
         )
         initial = np.array([0.6, 0.4])
 
-        result = discrete_forward_backward(log_likelihood, csr_matrix(transition), initial_probabilities=initial)
-        expected_log_evidence, expected_smoothed = _enumerate_hmm(log_likelihood, transition, initial)
+        result = discrete_forward_backward(
+            log_likelihood, csr_matrix(transition), initial_probabilities=initial
+        )
+        expected_log_evidence, expected_smoothed = _enumerate_hmm(
+            log_likelihood, transition, initial
+        )
 
         self.assertAlmostEqual(result.log_marginal_likelihood, expected_log_evidence)
         np.testing.assert_allclose(result.smoothed_probabilities, expected_smoothed)
-        np.testing.assert_allclose(result.filtered_probabilities.sum(axis=1), np.ones(log_likelihood.shape[0]))
-        np.testing.assert_allclose(result.smoothed_probabilities.sum(axis=1), np.ones(log_likelihood.shape[0]))
+        np.testing.assert_allclose(
+            result.filtered_probabilities.sum(axis=1), np.ones(log_likelihood.shape[0])
+        )
+        np.testing.assert_allclose(
+            result.smoothed_probabilities.sum(axis=1), np.ones(log_likelihood.shape[0])
+        )
 
     def test_time_varying_forward_backward_matches_constant_version(self):
         log_likelihood = np.log(np.array([[0.5, 0.2], [0.1, 0.8], [0.9, 0.4]]))
         transition = csr_matrix(np.array([[0.7, 0.2], [0.3, 0.8]]))
 
         constant_result = discrete_forward_backward(log_likelihood, transition)
-        time_varying_result = discrete_forward_backward_time_varying(log_likelihood, [transition, transition])
+        time_varying_result = discrete_forward_backward_time_varying(
+            log_likelihood, [transition, transition]
+        )
 
-        self.assertAlmostEqual(time_varying_result.log_marginal_likelihood, constant_result.log_marginal_likelihood)
-        np.testing.assert_allclose(time_varying_result.smoothed_probabilities, constant_result.smoothed_probabilities)
+        self.assertAlmostEqual(
+            time_varying_result.log_marginal_likelihood,
+            constant_result.log_marginal_likelihood,
+        )
+        np.testing.assert_allclose(
+            time_varying_result.smoothed_probabilities,
+            constant_result.smoothed_probabilities,
+        )
 
-    def test_sparse_gaussian_transition_matrix_is_column_stochastic_and_respects_mask(self):
+    def test_sparse_gaussian_transition_matrix_is_column_stochastic_and_respects_mask(
+        self,
+    ):
         grid = np.array([[0.0], [1.0], [2.0], [3.0]])
         valid = np.array([True, False, True, True])
 
-        transition = sparse_gaussian_transition_matrix(grid, sigma=1.0, max_step_sigma=1.5, valid_state_mask=valid)
+        transition = sparse_gaussian_transition_matrix(
+            grid, sigma=1.0, max_step_sigma=1.5, valid_state_mask=valid
+        )
         dense = transition.toarray()
 
         np.testing.assert_allclose(dense.sum(axis=0), np.ones(grid.shape[0]))
@@ -117,7 +141,9 @@ class TestDiscreteStateUtilities(unittest.TestCase):
         transition = csr_matrix(np.array([[0.75, 0.25], [0.25, 0.75]]))
         initial = np.array([0.55, 0.45])
 
-        hmm_result = discrete_forward_backward(log_likelihood, transition, initial_probabilities=initial)
+        hmm_result = discrete_forward_backward(
+            log_likelihood, transition, initial_probabilities=initial
+        )
         imm_result = imm_forward_backward(
             log_likelihood,
             [transition],
@@ -125,9 +151,16 @@ class TestDiscreteStateUtilities(unittest.TestCase):
             initial_state_probabilities=initial,
         )
 
-        self.assertAlmostEqual(imm_result.log_marginal_likelihood, hmm_result.log_marginal_likelihood)
-        np.testing.assert_allclose(imm_result.smoothed_state_probabilities, hmm_result.smoothed_probabilities)
-        np.testing.assert_allclose(imm_result.smoothed_mode_probabilities, np.ones((log_likelihood.shape[0], 1)))
+        self.assertAlmostEqual(
+            imm_result.log_marginal_likelihood, hmm_result.log_marginal_likelihood
+        )
+        np.testing.assert_allclose(
+            imm_result.smoothed_state_probabilities, hmm_result.smoothed_probabilities
+        )
+        np.testing.assert_allclose(
+            imm_result.smoothed_mode_probabilities,
+            np.ones((log_likelihood.shape[0], 1)),
+        )
 
     def test_imm_reset_transition_keeps_valid_state_support_normalized(self):
         log_likelihood = np.log(np.array([[0.5, 0.1, 0.2], [0.2, 0.7, 0.1]]))
@@ -141,9 +174,15 @@ class TestDiscreteStateUtilities(unittest.TestCase):
             valid_state_mask=valid,
         )
 
-        np.testing.assert_allclose(result.filtered_joint_probabilities.sum(axis=(1, 2)), np.ones(2))
-        np.testing.assert_allclose(result.smoothed_joint_probabilities.sum(axis=(1, 2)), np.ones(2))
-        np.testing.assert_allclose(result.smoothed_state_probabilities[:, ~valid], np.zeros((2, 1)))
+        np.testing.assert_allclose(
+            result.filtered_joint_probabilities.sum(axis=(1, 2)), np.ones(2)
+        )
+        np.testing.assert_allclose(
+            result.smoothed_joint_probabilities.sum(axis=(1, 2)), np.ones(2)
+        )
+        np.testing.assert_allclose(
+            result.smoothed_state_probabilities[:, ~valid], np.zeros((2, 1))
+        )
 
     def test_uniform_probabilities_honors_valid_mask(self):
         probs = uniform_probabilities(4, np.array([False, True, True, False]))

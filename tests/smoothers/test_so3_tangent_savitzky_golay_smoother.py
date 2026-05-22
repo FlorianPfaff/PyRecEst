@@ -29,9 +29,7 @@ class SO3TangentSavitzkyGolaySmootherTest(unittest.TestCase):
     def test_bridges_single_frame_occlusion_on_linear_z_sequence(self):
         rotations = [z_rotation(0.1 * idx) for idx in range(5)]
         mask = [True, True, False, True, True]
-        smoother = SO3TangentSavitzkyGolaySmoother(
-            window_size=5, polynomial_degree=1
-        )
+        smoother = SO3TangentSavitzkyGolaySmoother(window_size=5, polynomial_degree=1)
 
         smoothed = smoother.smooth(rotations, mask=mask)
 
@@ -56,9 +54,7 @@ class SO3TangentSavitzkyGolaySmootherTest(unittest.TestCase):
                 [True, True],
             ]
         )
-        smoother = SO3TangentSavitzkyGolaySmoother(
-            window_size=5, polynomial_degree=1
-        )
+        smoother = SO3TangentSavitzkyGolaySmoother(window_size=5, polynomial_degree=1)
 
         smoothed = smoother.smooth_product(rotations, mask=mask)
 

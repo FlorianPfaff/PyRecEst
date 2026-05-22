@@ -124,8 +124,10 @@ class SO3TangentSavitzkyGolaySmoother(AbstractSmoother):
         else:
             first_scale = math.sin(angle) / angle
             second_scale = (1.0 - math.cos(angle)) / angle_squared
-        return cls._identity_rotation() + first_scale * skew_matrix + second_scale * (
-            skew_matrix @ skew_matrix
+        return (
+            cls._identity_rotation()
+            + first_scale * skew_matrix
+            + second_scale * (skew_matrix @ skew_matrix)
         )
 
     @classmethod

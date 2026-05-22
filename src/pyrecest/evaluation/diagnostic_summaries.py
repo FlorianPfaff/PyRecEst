@@ -35,7 +35,9 @@ def build_diagnostic_summary(
         "top_n": int(top_n),
         "window_s": float(window_s),
         "top_residuals": top_residuals(records, residual_key=residual_key, top_n=top_n),
-        "track_switches": track_switch_summary(records, time_key=time_key, track_id_key=track_id_key, top_n=top_n),
+        "track_switches": track_switch_summary(
+            records, time_key=time_key, track_id_key=track_id_key, top_n=top_n
+        ),
         "covariance_inflation": covariance_inflation_summary(
             records,
             scale_key=covariance_scale_key,
@@ -111,7 +113,11 @@ def track_switch_summary(
         "first_track_id": _json_value(finite[0][0]),
         "last_track_id": _json_value(finite[-1][0]),
         "top_transitions": [
-            {"from_track_id": _json_value(src), "to_track_id": _json_value(dst), "count": int(count)}
+            {
+                "from_track_id": _json_value(src),
+                "to_track_id": _json_value(dst),
+                "count": int(count),
+            }
             for (src, dst), count in transitions.most_common(top_n)
         ],
         "events": events[:top_n],
@@ -181,16 +187,30 @@ def worst_time_windows(
 
     rows: list[dict[str, Any]] = []
     for start, group in grouped.items():
-        errors = np.array([_optional_float(record.get(error_key)) for record in group], dtype=float)
+        errors = np.array(
+            [_optional_float(record.get(error_key)) for record in group], dtype=float
+        )
         errors = errors[np.isfinite(errors)]
         if errors.size == 0:
             continue
         residuals = np.array(
-            [value for value in (_optional_float(record.get(residual_key)) for record in group) if value is not None],
+            [
+                value
+                for value in (
+                    _optional_float(record.get(residual_key)) for record in group
+                )
+                if value is not None
+            ],
             dtype=float,
         )
         scales = np.array(
-            [value for value in (_optional_float(record.get(scale_key)) for record in group) if value is not None],
+            [
+                value
+                for value in (
+                    _optional_float(record.get(scale_key)) for record in group
+                )
+                if value is not None
+            ],
             dtype=float,
         )
         rows.append(
@@ -202,9 +222,15 @@ def worst_time_windows(
                 "mae": float(np.mean(np.abs(errors))),
                 "p95": float(np.percentile(errors, 95)),
                 "max": float(np.max(errors)),
-                "mean_residual": None if residuals.size == 0 else float(np.mean(residuals)),
-                "covariance_inflation_count": int(np.sum(scales > 1.0)) if scales.size else 0,
-                "track_switch_count": track_switch_summary(group, time_key=time_key, track_id_key=track_id_key, top_n=1)["count"],
+                "mean_residual": (
+                    None if residuals.size == 0 else float(np.mean(residuals))
+                ),
+                "covariance_inflation_count": (
+                    int(np.sum(scales > 1.0)) if scales.size else 0
+                ),
+                "track_switch_count": track_switch_summary(
+                    group, time_key=time_key, track_id_key=track_id_key, top_n=1
+                )["count"],
             }
         )
     rows.sort(key=lambda item: item["rmse"], reverse=True)
@@ -227,7 +253,11 @@ def _sort_by_time(records: Sequence[Record], time_key: str) -> list[Record]:
     return sorted(
         records,
         key=lambda record: (
-            float("inf") if _optional_float(record.get(time_key)) is None else float(record.get(time_key)),
+            (
+                float("inf")
+                if _optional_float(record.get(time_key)) is None
+                else float(record.get(time_key))
+            ),
         ),
     )
 

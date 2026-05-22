@@ -80,7 +80,9 @@ def build_replay_grid_likelihood_lookup(
     grid_indices = np.full((x_values.size, y_values.size), -1, dtype=int)
     for flat_index, center in enumerate(bin_centers):
         try:
-            grid_indices[x_index[float(center[0])], y_index[float(center[1])]] = flat_index
+            grid_indices[x_index[float(center[0])], y_index[float(center[1])]] = (
+                flat_index
+            )
         except KeyError:
             return ReplayGridLikelihoodLookup(method="nearest")
 
@@ -177,7 +179,9 @@ def update_position_grid_likelihood(
             raise ValueError("all grid log-likelihoods are non-finite")
         max_log = float(np.max(finite_grid_values))
         if np.any(finite_particles):
-            max_log = max(max_log, float(np.max(particle_log_likelihood[finite_particles])))
+            max_log = max(
+                max_log, float(np.max(particle_log_likelihood[finite_particles]))
+            )
     else:
         if not np.any(finite_particles):
             raise ValueError("all particle log-likelihoods are non-finite")
@@ -232,7 +236,9 @@ def adaptive_position_proposal_probability(
     if ess_threshold is not None:
         ess_threshold = _validate_probability(ess_threshold, "ess_threshold")
 
-    weights = getattr(getattr(filter_or_weights, "filter_state", None), "w", filter_or_weights)
+    weights = getattr(
+        getattr(filter_or_weights, "filter_state", None), "w", filter_or_weights
+    )
     ess_fraction = effective_sample_size_fraction(weights)
     if base_probability <= 0.0:
         return 0.0, ess_fraction
@@ -297,7 +303,9 @@ def _coerce_bin_centers(bin_centers) -> np.ndarray:
     if bin_centers.ndim != 2:
         raise ValueError("bin_centers must have shape (n_bins, position_dim)")
     if bin_centers.shape[0] == 0 or bin_centers.shape[1] == 0:
-        raise ValueError("bin_centers must contain at least one point and one dimension")
+        raise ValueError(
+            "bin_centers must contain at least one point and one dimension"
+        )
     return bin_centers
 
 
@@ -322,7 +330,11 @@ def _linear_rectilinear_grid_values(
     values: np.ndarray,
     lookup: ReplayGridLikelihoodLookup,
 ) -> np.ndarray:
-    if lookup.x_values is None or lookup.y_values is None or lookup.grid_indices is None:
+    if (
+        lookup.x_values is None
+        or lookup.y_values is None
+        or lookup.grid_indices is None
+    ):
         return np.full(positions.shape[0], np.nan, dtype=float)
 
     x_values = lookup.x_values
@@ -384,7 +396,9 @@ def _nearest_grid_values(
     output = values[indices]
     if not np.all(np.isfinite(output)):
         finite_values = values[np.isfinite(values)]
-        replacement = float(np.min(finite_values)) if finite_values.size else float(log_zero)
+        replacement = (
+            float(np.min(finite_values)) if finite_values.size else float(log_zero)
+        )
         output = np.where(np.isfinite(output), output, replacement)
     return output
 

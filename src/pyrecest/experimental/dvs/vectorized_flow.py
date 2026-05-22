@@ -45,7 +45,10 @@ def tracker_signed_normal_flows_vectorized(
         )
     except Exception:  # pragma: no cover - backend-specific safety fallback
         return np.asarray(
-            [tracker.signed_normal_flow_for_measurement(measurement, velocity) for measurement in measurements],
+            [
+                tracker.signed_normal_flow_for_measurement(measurement, velocity)
+                for measurement in measurements
+            ],
             dtype=float,
         )
 
@@ -62,7 +65,9 @@ def _tracker_signed_normal_flows_vectorized_impl(
 
     delta = measurements - position[None, :]
     delta_norm = np.linalg.norm(delta, axis=1)
-    fallback_direction = np.asarray([np.cos(orientation), np.sin(orientation)], dtype=float)
+    fallback_direction = np.asarray(
+        [np.cos(orientation), np.sin(orientation)], dtype=float
+    )
     unit = np.divide(
         delta,
         delta_norm[:, None],
@@ -73,11 +78,15 @@ def _tracker_signed_normal_flows_vectorized_impl(
     world_angles = np.arctan2(unit[:, 1], unit[:, 0])
     body_angles = world_angles - orientation
     basis = np.asarray(tracker._basis_matrix(array(body_angles)), dtype=float)
-    basis_derivative = np.asarray(tracker._basis_derivative(array(body_angles)), dtype=float)
+    basis_derivative = np.asarray(
+        tracker._basis_derivative(array(body_angles)), dtype=float
+    )
     radii = basis @ shape_state
     radius_derivatives = basis_derivative @ shape_state
 
-    tangent = radius_derivatives[:, None] * unit + radii[:, None] * np.column_stack((-unit[:, 1], unit[:, 0]))
+    tangent = radius_derivatives[:, None] * unit + radii[:, None] * np.column_stack(
+        (-unit[:, 1], unit[:, 0])
+    )
     normals = np.column_stack((tangent[:, 1], -tangent[:, 0]))
     normal_norm = np.linalg.norm(normals, axis=1)
     normals = np.divide(

@@ -42,7 +42,9 @@ class AdaptiveProcessNoiseConfig:
 class RollingNISProcessNoiseAdapter:
     """Maintain EWMA NIS ratios and return process-noise scale factors."""
 
-    config: AdaptiveProcessNoiseConfig = field(default_factory=AdaptiveProcessNoiseConfig)
+    config: AdaptiveProcessNoiseConfig = field(
+        default_factory=AdaptiveProcessNoiseConfig
+    )
     ratios_by_source: dict[str, float] = field(default_factory=dict)
     updates_by_source: dict[str, int] = field(default_factory=dict)
 
@@ -89,7 +91,10 @@ class RollingNISProcessNoiseAdapter:
     def scale(self, source_weights: Mapping[str, float] | None = None) -> float:
         """Return the adapted process-noise multiplier."""
 
-        return float(self.config.base_scale * adaptive_scale_from_ratio(self.ratio(source_weights), self.config))
+        return float(
+            self.config.base_scale
+            * adaptive_scale_from_ratio(self.ratio(source_weights), self.config)
+        )
 
     def scaled_covariance(
         self,
@@ -98,10 +103,14 @@ class RollingNISProcessNoiseAdapter:
     ) -> np.ndarray:
         """Return ``process_noise_covariance`` multiplied by the adapted scale."""
 
-        return np.asarray(process_noise_covariance, dtype=float) * self.scale(source_weights)
+        return np.asarray(process_noise_covariance, dtype=float) * self.scale(
+            source_weights
+        )
 
 
-def adaptive_scale_from_ratio(ratio: float, config: AdaptiveProcessNoiseConfig | None = None) -> float:
+def adaptive_scale_from_ratio(
+    ratio: float, config: AdaptiveProcessNoiseConfig | None = None
+) -> float:
     """Map a normalized NIS ratio to a bounded process-noise scale."""
 
     config = AdaptiveProcessNoiseConfig() if config is None else config

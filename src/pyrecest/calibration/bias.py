@@ -49,11 +49,15 @@ class SensorBiasCorrectionModel:
         if feature_dim < 0:
             raise ValueError("feature_dim must be nonnegative")
         intercept = np.asarray(self.intercept, dtype=float).reshape(target_dim)
-        coefficients = np.asarray(self.coefficients, dtype=float).reshape(feature_dim, target_dim)
+        coefficients = np.asarray(self.coefficients, dtype=float).reshape(
+            feature_dim, target_dim
+        )
         feature_mean = np.asarray(self.feature_mean, dtype=float).reshape(feature_dim)
         feature_scale = np.asarray(self.feature_scale, dtype=float).reshape(feature_dim)
         residual_std = np.asarray(self.residual_std, dtype=float).reshape(target_dim)
-        feature_scale = np.where(np.isfinite(feature_scale) & (feature_scale > 0.0), feature_scale, 1.0)
+        feature_scale = np.where(
+            np.isfinite(feature_scale) & (feature_scale > 0.0), feature_scale, 1.0
+        )
         object.__setattr__(self, "target_dim", target_dim)
         object.__setattr__(self, "feature_dim", feature_dim)
         object.__setattr__(self, "intercept", intercept)
@@ -65,7 +69,9 @@ class SensorBiasCorrectionModel:
         object.__setattr__(self, "ridge_alpha", float(self.ridge_alpha))
         object.__setattr__(self, "metadata", dict(self.metadata))
 
-    def predict(self, features: np.ndarray | None = None, *, n_rows: int | None = None) -> np.ndarray:
+    def predict(
+        self, features: np.ndarray | None = None, *, n_rows: int | None = None
+    ) -> np.ndarray:
         """Predict residual bias for feature rows."""
 
         if self.feature_dim == 0:
@@ -79,7 +85,9 @@ class SensorBiasCorrectionModel:
         standardized = (x - self.feature_mean) / self.feature_scale
         return self.intercept.reshape(1, -1) + standardized @ self.coefficients
 
-    def apply(self, measurements: np.ndarray, features: np.ndarray | None = None) -> np.ndarray:
+    def apply(
+        self, measurements: np.ndarray, features: np.ndarray | None = None
+    ) -> np.ndarray:
         """Return measurements with predicted bias subtracted."""
 
         values = _as_2d(measurements, "measurements")
@@ -143,17 +151,30 @@ def make_bias_training_examples(
     reference_times = np.asarray(reference_times_s, dtype=float).reshape(-1)
     references = _as_2d(reference_values, "reference_values")
     if measurement_times.size != measurements.shape[0]:
-        raise ValueError("measurement_times_s length must match measurement_values rows")
+        raise ValueError(
+            "measurement_times_s length must match measurement_values rows"
+        )
     if reference_times.size != references.shape[0]:
         raise ValueError("reference_times_s length must match reference_values rows")
     if measurements.shape[1] != references.shape[1]:
-        raise ValueError("measurement_values and reference_values must have the same target dimension")
+        raise ValueError(
+            "measurement_values and reference_values must have the same target dimension"
+        )
     if reference_times.size == 0:
         return BiasTrainingExamples(
             measured=np.empty((0, measurements.shape[1])),
             reference=np.empty((0, measurements.shape[1])),
             residual=np.empty((0, measurements.shape[1])),
-            features=np.empty((0, 0 if feature_values is None else _as_2d(feature_values, "feature_values").shape[1])),
+            features=np.empty(
+                (
+                    0,
+                    (
+                        0
+                        if feature_values is None
+                        else _as_2d(feature_values, "feature_values").shape[1]
+                    ),
+                )
+            ),
             time_delta_s=np.empty(0),
         )
 
@@ -211,7 +232,9 @@ def fit_sensor_bias_correction_from_examples(
 
     feature_mean = _nanmean_or_zero(x)
     feature_scale = np.nanstd(x, axis=0) if x.shape[1] else np.empty(0, dtype=float)
-    feature_scale = np.where(np.isfinite(feature_scale) & (feature_scale > 1.0e-12), feature_scale, 1.0)
+    feature_scale = np.where(
+        np.isfinite(feature_scale) & (feature_scale > 1.0e-12), feature_scale, 1.0
+    )
     standardized = (x - feature_mean) / feature_scale if x.shape[1] else x
     design = np.column_stack([np.ones(y.shape[0]), standardized])
     regularizer = np.eye(design.shape[1]) * float(ridge_alpha)

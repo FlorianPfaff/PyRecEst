@@ -116,7 +116,9 @@ class DiscreteIMMForwardBackwardResult:
     def smoothed_state_log_probabilities(self) -> np.ndarray:
         """State smoothing marginals represented as normalized log probabilities."""
 
-        return probabilities_to_log_probabilities(self.smoothed_state_probabilities, axis=1)
+        return probabilities_to_log_probabilities(
+            self.smoothed_state_probabilities, axis=1
+        )
 
 
 def scaled_emissions(log_likelihood: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -138,7 +140,9 @@ def scaled_emissions(log_likelihood: np.ndarray) -> tuple[np.ndarray, np.ndarray
     if values.ndim != 2:
         raise ValueError("log_likelihood must have shape (n_time, n_states)")
     if values.shape[0] == 0 or values.shape[1] == 0:
-        raise ValueError("log_likelihood must contain at least one time step and one state")
+        raise ValueError(
+            "log_likelihood must contain at least one time step and one state"
+        )
     finite = np.isfinite(values)
     if not np.all(np.any(finite, axis=1)):
         raise ValueError("every emission row must contain at least one finite value")
@@ -167,7 +171,9 @@ def probabilities_to_log_probabilities(
     if normalize:
         normalizer = logsumexp(log_values, axis=axis, keepdims=True)
         if np.any(~np.isfinite(normalizer)):
-            raise ValueError("probabilities must contain positive mass along the normalization axis")
+            raise ValueError(
+                "probabilities must contain positive mass along the normalization axis"
+            )
         log_values = log_values - normalizer
 
     out = np.full(probs.shape, LOG_ZERO, dtype=float)
@@ -176,7 +182,9 @@ def probabilities_to_log_probabilities(
     return out
 
 
-def uniform_probabilities(n_states: int, valid_state_mask: np.ndarray | None = None) -> np.ndarray:
+def uniform_probabilities(
+    n_states: int, valid_state_mask: np.ndarray | None = None
+) -> np.ndarray:
     """Return a uniform probability vector over all valid states."""
 
     mask = _coerce_valid_state_mask(valid_state_mask, n_states)
@@ -188,7 +196,9 @@ def uniform_probabilities(n_states: int, valid_state_mask: np.ndarray | None = N
     return probs
 
 
-def uniform_log_probabilities(n_states: int, valid_state_mask: np.ndarray | None = None) -> np.ndarray:
+def uniform_log_probabilities(
+    n_states: int, valid_state_mask: np.ndarray | None = None
+) -> np.ndarray:
     """Return a uniform log-probability vector over all valid states."""
 
     return probabilities_to_log_probabilities(
@@ -228,7 +238,9 @@ def sparse_gaussian_transition_matrix(
     if states.ndim == 1:
         states = states[:, None]
     elif states.ndim != 2:
-        raise ValueError("state_vectors must have shape (n_states,) or (n_states, state_dim)")
+        raise ValueError(
+            "state_vectors must have shape (n_states,) or (n_states, state_dim)"
+        )
     n_states = states.shape[0]
     if n_states == 0:
         raise ValueError("state_vectors must contain at least one state")
@@ -241,7 +253,11 @@ def sparse_gaussian_transition_matrix(
         raise ValueError("max_step_sigma must be positive or np.inf")
 
     valid_mask = _coerce_valid_state_mask(valid_state_mask, n_states)
-    allowed = np.arange(n_states, dtype=int) if valid_mask is None else np.flatnonzero(valid_mask)
+    allowed = (
+        np.arange(n_states, dtype=int)
+        if valid_mask is None
+        else np.flatnonzero(valid_mask)
+    )
     radius2 = np.inf if np.isinf(max_step_sigma) else (sigma * max_step_sigma) ** 2
 
     rows: list[int] = []
@@ -322,7 +338,9 @@ def discrete_forward_backward_time_varying(
     scaled, offsets, mask = _prepare_emissions(log_likelihood, valid_state_mask)
     n_time, n_states = scaled.shape
     if len(transitions) != max(n_time - 1, 0):
-        raise ValueError("transitions must contain one matrix per adjacent time-step pair")
+        raise ValueError(
+            "transitions must contain one matrix per adjacent time-step pair"
+        )
     transition_matrices = [
         _validate_transition_matrix(transition, n_states, f"transitions[{index}]")
         for index, transition in enumerate(transitions)
@@ -365,12 +383,25 @@ def imm_forward_backward(
     if n_modes == 0:
         raise ValueError("state_transitions must contain at least one mode")
     transitions = [
-        None if transition is None else _validate_transition_matrix(transition, n_states, f"state_transitions[{index}]")
+        (
+            None
+            if transition is None
+            else _validate_transition_matrix(
+                transition, n_states, f"state_transitions[{index}]"
+            )
+        )
         for index, transition in enumerate(state_transitions)
     ]
     mode_matrix = _validate_mode_transition_matrix(mode_transition, n_modes)
-    state_prior = _normalize_probability_vector(initial_state_probabilities, n_states, "initial_state_probabilities", valid_state_mask=mask)
-    mode_prior = _normalize_probability_vector(initial_mode_probabilities, n_modes, "initial_mode_probabilities")
+    state_prior = _normalize_probability_vector(
+        initial_state_probabilities,
+        n_states,
+        "initial_state_probabilities",
+        valid_state_mask=mask,
+    )
+    mode_prior = _normalize_probability_vector(
+        initial_mode_probabilities, n_modes, "initial_mode_probabilities"
+    )
 
     filtered = np.zeros((n_time, n_modes, n_states), dtype=float)
     scales = np.zeros(n_time, dtype=float)
@@ -378,7 +409,9 @@ def imm_forward_backward(
     alpha = mode_prior[:, None] * state_prior[None, :] * scaled[0][None, :]
     scales[0] = float(alpha.sum())
     if scales[0] <= 0.0:
-        raise ValueError("first emission row has no finite likelihood mass on the prior support")
+        raise ValueError(
+            "first emission row has no finite likelihood mass on the prior support"
+        )
     alpha /= scales[0]
     filtered[0] = alpha
     log_marginal = float(np.log(scales[0]) + offsets[0])
@@ -409,7 +442,9 @@ def imm_forward_backward(
         beta_prev = np.zeros_like(beta)
         for src_idx in range(n_modes):
             for dst_idx, transition in enumerate(transitions):
-                beta_prev[src_idx] += mode_matrix[src_idx, dst_idx] * _apply_transition_backward(
+                beta_prev[src_idx] += mode_matrix[
+                    src_idx, dst_idx
+                ] * _apply_transition_backward(
                     transition,
                     scaled[time_index] * beta[dst_idx],
                     valid_state_mask=mask,
@@ -417,7 +452,9 @@ def imm_forward_backward(
         beta = beta_prev / scales[time_index]
         gamma = filtered[time_index - 1] * beta
         total = float(gamma.sum())
-        smoothed[time_index - 1] = gamma / total if total > 0.0 else filtered[time_index - 1]
+        smoothed[time_index - 1] = (
+            gamma / total if total > 0.0 else filtered[time_index - 1]
+        )
 
     return DiscreteIMMForwardBackwardResult(
         log_marginal_likelihood=log_marginal,
@@ -432,7 +469,9 @@ def imm_forward_backward(
 mode_transition_matrix = sticky_mode_transition_matrix
 
 
-def _prepare_emissions(log_likelihood: np.ndarray, valid_state_mask: np.ndarray | None) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
+def _prepare_emissions(
+    log_likelihood: np.ndarray, valid_state_mask: np.ndarray | None
+) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
     scaled, offsets = scaled_emissions(log_likelihood)
     mask = _coerce_valid_state_mask(valid_state_mask, scaled.shape[1])
     if mask is not None:
@@ -450,20 +489,32 @@ def _discrete_forward_backward_from_scaled(
     valid_state_mask: np.ndarray | None,
 ) -> DiscreteForwardBackwardResult:
     n_time, n_states = scaled.shape
-    initial = _normalize_probability_vector(initial_probabilities, n_states, "initial_probabilities", valid_state_mask=valid_state_mask)
+    initial = _normalize_probability_vector(
+        initial_probabilities,
+        n_states,
+        "initial_probabilities",
+        valid_state_mask=valid_state_mask,
+    )
     filtered = np.zeros((n_time, n_states), dtype=float)
     scales = np.zeros(n_time, dtype=float)
 
     alpha = scaled[0] * initial
     scales[0] = float(alpha.sum())
     if scales[0] <= 0.0:
-        raise ValueError("first emission row has no finite likelihood mass on the prior support")
+        raise ValueError(
+            "first emission row has no finite likelihood mass on the prior support"
+        )
     alpha /= scales[0]
     filtered[0] = alpha
     log_marginal = float(np.log(scales[0]) + offsets[0])
 
     for time_index in range(1, n_time):
-        alpha = np.asarray(transitions[time_index - 1] @ alpha, dtype=float).reshape(n_states) * scaled[time_index]
+        alpha = (
+            np.asarray(transitions[time_index - 1] @ alpha, dtype=float).reshape(
+                n_states
+            )
+            * scaled[time_index]
+        )
         scales[time_index] = float(alpha.sum())
         if scales[time_index] <= 0.0:
             raise ValueError(f"emission row {time_index} has no finite predicted mass")
@@ -475,10 +526,17 @@ def _discrete_forward_backward_from_scaled(
     beta = np.ones(n_states, dtype=float)
     smoothed[-1] = filtered[-1]
     for time_index in range(n_time - 1, 0, -1):
-        beta = np.asarray(transitions[time_index - 1].T @ (scaled[time_index] * beta), dtype=float).reshape(n_states) / scales[time_index]
+        beta = (
+            np.asarray(
+                transitions[time_index - 1].T @ (scaled[time_index] * beta), dtype=float
+            ).reshape(n_states)
+            / scales[time_index]
+        )
         gamma = filtered[time_index - 1] * beta
         total = float(gamma.sum())
-        smoothed[time_index - 1] = gamma / total if total > 0.0 else filtered[time_index - 1]
+        smoothed[time_index - 1] = (
+            gamma / total if total > 0.0 else filtered[time_index - 1]
+        )
 
     return DiscreteForwardBackwardResult(
         log_marginal_likelihood=log_marginal,
@@ -496,7 +554,9 @@ def _apply_transition(
     valid_state_mask: np.ndarray | None = None,
 ) -> np.ndarray:
     if transition is None:
-        return uniform_probabilities(weights.shape[0], valid_state_mask) * float(weights.sum())
+        return uniform_probabilities(weights.shape[0], valid_state_mask) * float(
+            weights.sum()
+        )
     return np.asarray(transition @ weights, dtype=float).reshape(weights.shape[0])
 
 
@@ -509,12 +569,18 @@ def _apply_transition_backward(
     if transition is None:
         mask = _coerce_valid_state_mask(valid_state_mask, values.shape[0])
         if mask is None:
-            return np.full(values.shape, float(values.sum()) / values.shape[0], dtype=float)
-        return np.full(values.shape, float(values[mask].sum()) / int(np.sum(mask)), dtype=float)
+            return np.full(
+                values.shape, float(values.sum()) / values.shape[0], dtype=float
+            )
+        return np.full(
+            values.shape, float(values[mask].sum()) / int(np.sum(mask)), dtype=float
+        )
     return np.asarray(transition.T @ values, dtype=float).reshape(values.shape[0])
 
 
-def _coerce_valid_state_mask(valid_state_mask: np.ndarray | None, n_states: int) -> np.ndarray | None:
+def _coerce_valid_state_mask(
+    valid_state_mask: np.ndarray | None, n_states: int
+) -> np.ndarray | None:
     if n_states <= 0:
         raise ValueError("n_states must be positive")
     if valid_state_mask is None:
@@ -551,7 +617,9 @@ def _normalize_probability_vector(
     return values / total
 
 
-def _validate_transition_matrix(transition: spmatrix | np.ndarray, n_states: int, name: str) -> csr_matrix:
+def _validate_transition_matrix(
+    transition: spmatrix | np.ndarray, n_states: int, name: str
+) -> csr_matrix:
     if issparse(transition):
         matrix = transition.tocsr().astype(float)
     else:
@@ -562,19 +630,25 @@ def _validate_transition_matrix(transition: spmatrix | np.ndarray, n_states: int
     if matrix.shape != (n_states, n_states):
         raise ValueError(f"{name} must have shape ({n_states}, {n_states})")
     if np.any(~np.isfinite(matrix.data)) or np.any(matrix.data < 0.0):
-        raise ValueError(f"{name} must contain finite non-negative transition probabilities")
+        raise ValueError(
+            f"{name} must contain finite non-negative transition probabilities"
+        )
     column_sums = np.asarray(matrix.sum(axis=0), dtype=float).reshape(n_states)
     if not np.allclose(column_sums, 1.0, rtol=1e-10, atol=1e-12):
         raise ValueError(f"{name} must be column-stochastic")
     return matrix
 
 
-def _validate_mode_transition_matrix(mode_transition: np.ndarray, n_modes: int) -> np.ndarray:
+def _validate_mode_transition_matrix(
+    mode_transition: np.ndarray, n_modes: int
+) -> np.ndarray:
     matrix = np.asarray(mode_transition, dtype=float)
     if matrix.shape != (n_modes, n_modes):
         raise ValueError(f"mode_transition must have shape ({n_modes}, {n_modes})")
     if np.any(~np.isfinite(matrix)) or np.any(matrix < 0.0):
-        raise ValueError("mode_transition must contain finite non-negative probabilities")
+        raise ValueError(
+            "mode_transition must contain finite non-negative probabilities"
+        )
     if not np.allclose(matrix.sum(axis=1), 1.0, rtol=1e-10, atol=1e-12):
         raise ValueError("mode_transition must be row-stochastic")
     return matrix

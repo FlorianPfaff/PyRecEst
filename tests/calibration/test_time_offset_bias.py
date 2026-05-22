@@ -2,7 +2,6 @@ import unittest
 
 import numpy as np
 import numpy.testing as npt
-
 from pyrecest.calibration.bias import (
     fit_sensor_bias_correction,
     make_bias_training_examples,
@@ -22,17 +21,21 @@ class TimeOffsetCalibrationTest(unittest.TestCase):
         npt.assert_allclose(grid, np.array([-0.5, -0.25, 0.0, 0.25, 0.5]))
 
     def test_apply_time_offset_shifts_times(self):
-        npt.assert_allclose(apply_time_offset(np.array([1.0, 2.0]), 0.5), np.array([1.5, 2.5]))
+        npt.assert_allclose(
+            apply_time_offset(np.array([1.0, 2.0]), 0.5), np.array([1.5, 2.5])
+        )
 
     def test_fit_time_offset_recovers_known_shift(self):
         reference_times = np.linspace(0.0, 10.0, 101)
         reference_values = np.column_stack([reference_times, reference_times**2])
         measurement_times = np.linspace(1.0, 8.0, 15)
         true_offset = 0.4
-        measurement_values = np.column_stack([
-            measurement_times + true_offset,
-            (measurement_times + true_offset) ** 2,
-        ])
+        measurement_values = np.column_stack(
+            [
+                measurement_times + true_offset,
+                (measurement_times + true_offset) ** 2,
+            ]
+        )
         offsets = make_offset_grid(-1.0, 1.0, 0.1)
 
         result = fit_time_offset(
@@ -96,7 +99,9 @@ class BiasCalibrationTest(unittest.TestCase):
         reference = times.reshape(-1, 1)
         measurements = reference + 3.0
 
-        model = fit_sensor_bias_correction(times, measurements, times, reference, min_samples=2)
+        model = fit_sensor_bias_correction(
+            times, measurements, times, reference, min_samples=2
+        )
         corrected = model.apply(measurements)
 
         self.assertEqual(model.feature_dim, 0)
