@@ -188,7 +188,9 @@ class MultiHypothesisTrackerTest(unittest.TestCase):
             log_posterior_estimates=False,
         )
         tracker.filter_state = self.kfs_init
-        tracker.update_linear(array([[9.9, 0.1], [0.2, -0.1]]), self.meas_mat, self.meas_noise)
+        tracker.update_linear(
+            array([[9.9, 0.1], [0.2, -0.1]]), self.meas_mat, self.meas_noise
+        )
 
         distribution = tracker.get_assignment_distribution(lag=0)
         self.assertAlmostEqual(sum(distribution.values()), 1.0)
@@ -214,7 +216,9 @@ class MultiHypothesisTrackerTest(unittest.TestCase):
         self.assertGreaterEqual(tracker.get_hypothesis_entropy(), 0.0)
 
     def test_hypothesis_reranker_can_lift_non_top_branch(self):
-        def prefer_identity_assignment(_filter_bank, assignment_history, _base_log_weight):
+        def prefer_identity_assignment(
+            _filter_bank, assignment_history, _base_log_weight
+        ):
             if assignment_history and assignment_history[-1] == (0, 1):
                 return 100.0
             return 0.0
@@ -229,16 +233,18 @@ class MultiHypothesisTrackerTest(unittest.TestCase):
             hypothesis_reranker=prefer_identity_assignment,
         )
         tracker.filter_state = self.kfs_init
-        tracker.update_linear(array([[9.9, 0.1], [0.2, -0.1]]), self.meas_mat, self.meas_noise)
+        tracker.update_linear(
+            array([[9.9, 0.1], [0.2, -0.1]]), self.meas_mat, self.meas_noise
+        )
 
         best_history = tracker.global_hypothesis_histories[
             tracker.get_best_hypothesis_index()
         ][-1]
         self.assertEqual(best_history, (0, 1))
         self.assertEqual(
-            tracker.get_top_hypotheses(1, include_weights=True, include_histories=True)[0][
-                "history"
-            ][-1],
+            tracker.get_top_hypotheses(1, include_weights=True, include_histories=True)[
+                0
+            ]["history"][-1],
             (0, 1),
         )
 
@@ -279,7 +285,9 @@ class MultiHypothesisTrackerTest(unittest.TestCase):
             log_posterior_estimates=False,
         )
         tracker.filter_state = self.kfs_init
-        tracker.update_linear(array([[9.9, 0.1], [0.2, -0.1]]), self.meas_mat, self.meas_noise)
+        tracker.update_linear(
+            array([[9.9, 0.1], [0.2, -0.1]]), self.meas_mat, self.meas_noise
+        )
 
         signatures = {
             tuple(history[-1:]) for history in tracker.global_hypothesis_histories

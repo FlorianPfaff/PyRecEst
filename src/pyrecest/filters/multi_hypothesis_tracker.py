@@ -4,8 +4,8 @@ from builtins import all as builtin_all
 from copy import deepcopy
 from math import log
 
+from pyrecest.backend import all as backend_all
 from pyrecest.backend import (
-    all as backend_all,
     argmax,
     array,
     asarray,
@@ -302,9 +302,7 @@ class MultiHypothesisTracker(AbstractMultitargetTracker):
                         self._global_base_log_weights[index]
                     )
                 if include_histories:
-                    record["history"] = list(
-                        self._global_hypothesis_histories[index]
-                    )
+                    record["history"] = list(self._global_hypothesis_histories[index])
                 top_hypotheses.append(record)
             else:
                 top_hypotheses.append(hypothesis)
@@ -714,8 +712,8 @@ class MultiHypothesisTracker(AbstractMultitargetTracker):
     def _normalize_base_log_weights(self):
         if len(self._global_base_log_weights) == 0:
             return
-        self._global_base_log_weights = (
-            self._global_base_log_weights - backend_max(self._global_base_log_weights)
+        self._global_base_log_weights = self._global_base_log_weights - backend_max(
+            self._global_base_log_weights
         )
 
     def _normalize_log_weights(self):
@@ -776,9 +774,10 @@ class MultiHypothesisTracker(AbstractMultitargetTracker):
     def _resolve_history_index(self, time_index=None, lag=None):
         if self.get_number_of_global_hypotheses() == 0:
             raise ValueError("Currently, there are zero global hypotheses.")
-        if not self._global_hypothesis_histories or len(
-            self._global_hypothesis_histories[0]
-        ) == 0:
+        if (
+            not self._global_hypothesis_histories
+            or len(self._global_hypothesis_histories[0]) == 0
+        ):
             raise ValueError("No assignment history is available yet.")
 
         history_length = len(self._global_hypothesis_histories[0])
@@ -786,7 +785,9 @@ class MultiHypothesisTracker(AbstractMultitargetTracker):
             len(history) == history_length
             for history in self._global_hypothesis_histories
         ):
-            raise ValueError("All hypotheses must have assignment histories of equal length")
+            raise ValueError(
+                "All hypotheses must have assignment histories of equal length"
+            )
 
         if lag is not None:
             if time_index is not None:

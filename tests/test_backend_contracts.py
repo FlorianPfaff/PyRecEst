@@ -153,13 +153,22 @@ def test_triangular_matrix_helpers_preserve_batch_dimensions():
 
 
 def test_divide_ignore_div_zero_accepts_scalars_and_integer_inputs():
-    assert _to_python(backend.divide(array([1.0, 2.0]), 0.0, ignore_div_zero=True)) == [0.0, 0.0]
-    assert _to_python(backend.divide(1.0, array([0.0, 2.0]), ignore_div_zero=True)) == [0.0, 0.5]
+    assert _to_python(backend.divide(array([1.0, 2.0]), 0.0, ignore_div_zero=True)) == [
+        0.0,
+        0.0,
+    ]
+    assert _to_python(backend.divide(1.0, array([0.0, 2.0]), ignore_div_zero=True)) == [
+        0.0,
+        0.5,
+    ]
 
     numerator = backend.asarray([1, 2], dtype=backend.int32)
     denominator = backend.asarray([1, 0], dtype=backend.int32)
 
-    assert _to_python(backend.divide(numerator, denominator, ignore_div_zero=True)) == [1.0, 0.0]
+    assert _to_python(backend.divide(numerator, denominator, ignore_div_zero=True)) == [
+        1.0,
+        0.0,
+    ]
 
 
 def test_vec_to_diag_preserves_leading_singleton_batch_dimension():
