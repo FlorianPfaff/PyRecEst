@@ -34,6 +34,7 @@ in CI so the user-facing matrix cannot silently drift from the executable metada
 | API                            | NumPy     | PyTorch     | JAX         | Notes                                                                                                                            |
 |--------------------------------|-----------|-------------|-------------|----------------------------------------------------------------------------------------------------------------------------------|
 | `BackendFacade`                | supported | partial     | partial     | Facade names are importable across backends, but some functions are bridged or explicitly unsupported.                           |
+| `DiscreteStateUtilities`       | supported | bridged     | bridged     | Finite-state HMM and IMM utilities operate on NumPy arrays and SciPy sparse matrices; non-NumPy inputs are coerced.              |
 | `DistributionConversion`       | supported | partial     | partial     | Euclidean particle/Gaussian conversions are portable; grid, Fourier, and manifold routes are route-specific.                     |
 | `EuclideanParticleFilter`      | supported | partial     | partial     | Particle operations are portable where sampling and resampling helpers preserve backend semantics.                               |
 | `EvaluationUtilities`          | supported | bridged     | bridged     | Some plotting, assignment, and summary operations remain NumPy/SciPy oriented and may not preserve device or gradient semantics. |

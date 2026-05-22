@@ -18,6 +18,12 @@ PUBLIC_API_REGISTRY: Final = {
         "backend_contract": "BackendFacade",
         "notes": "Facade names are importable across backends, with bridged or unsupported functions documented in the backend matrix.",
     },
+    "DiscreteStateUtilities": {
+        "module": "pyrecest.filters",
+        "category": "backend-specific",
+        "backend_contract": "DiscreteStateUtilities",
+        "notes": "Finite-state HMM and IMM utilities operate on NumPy arrays and SciPy sparse matrices.",
+    },
     "KalmanFilter": {
         "module": "pyrecest.filters",
         "category": "stable",

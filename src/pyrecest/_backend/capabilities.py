@@ -145,6 +145,12 @@ API_BACKEND_CAPABILITIES: Final = {
         "jax": "partial",
         "notes": "Facade names are importable across backends, but some functions are bridged or explicitly unsupported.",
     },
+    "DiscreteStateUtilities": {
+        "numpy": "supported",
+        "pytorch": "bridged",
+        "jax": "bridged",
+        "notes": "Finite-state HMM and IMM utilities operate on NumPy arrays and SciPy sparse matrices; non-NumPy inputs are coerced.",
+    },
 }
 
 BACKEND_SUPPORT_LEVELS: Final = ("supported", "bridged", "partial", "unsupported")
