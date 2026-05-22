@@ -1,5 +1,6 @@
 """Pytorch based computation backend."""
 
+import builtins as _builtins
 from collections.abc import Iterable as _Iterable
 
 import numpy as _np
@@ -596,7 +597,7 @@ def set_diag(x, new_diag):
     This mimics tensorflow.linalg.set_diag(x, new_diag), when new_diag is a
     1-D array, but modifies x instead of creating a copy.
     """
-    diag_len = min(x.shape[-2], x.shape[-1])
+    diag_len = _builtins.min(x.shape[-2], x.shape[-1])
     result = x.clone()
     diag_indices = _torch.arange(diag_len, device=x.device)
     values = _torch.as_tensor(new_diag, dtype=x.dtype, device=x.device)
