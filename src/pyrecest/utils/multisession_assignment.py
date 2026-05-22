@@ -380,9 +380,7 @@ def _validate_scalar_cost(name: str, value: float) -> None:
 def _normalize_session_index(session_idx: Any) -> int:
     session_idx = int(session_idx)
     if session_idx < 0:
-        raise ValueError(
-            f"Session indices must be non-negative, got {session_idx}."
-        )
+        raise ValueError(f"Session indices must be non-negative, got {session_idx}.")
     return session_idx
 
 
