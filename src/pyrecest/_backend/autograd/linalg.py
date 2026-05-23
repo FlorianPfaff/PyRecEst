@@ -15,9 +15,11 @@ from autograd.numpy.linalg import (
     matrix_power,
     matrix_rank,
     norm,
+    pinv,
     svd,
 )
 from autograd.scipy.linalg import expm
+from scipy.linalg import block_diag
 from scipy.optimize import quadratic_assignment as _quadratic_assignment
 
 from .._shared_numpy.linalg import (

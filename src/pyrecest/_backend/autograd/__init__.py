@@ -7,21 +7,34 @@ from autograd.numpy import (
     amax,
     amin,
     any,
+    apply_along_axis,
+    arctan,
     argmax,
     argmin,
+    argsort,
+    array_equal,
     asarray,
+    atleast_1d,
+    atleast_2d,
     broadcast_arrays,
     broadcast_to,
     clip,
+    column_stack,
     complex64,
     complex128,
     concatenate,
     conj,
+    count_nonzero,
+    cov,
     cross,
     cumprod,
     cumsum,
+    deg2rad,
+    diag,
     diag_indices,
     diagonal,
+    diff,
+    dstack,
     einsum,
     empty_like,
     equal,
@@ -29,30 +42,42 @@ from autograd.numpy import (
     flip,
     float32,
     float64,
+    full,
+    full_like,
     greater,
     hsplit,
     hstack,
     int32,
     int64,
     isclose,
+    isfinite,
+    isinf,
     isnan,
+    isreal,
     isscalar,
     kron,
     less,
     less_equal,
+    log1p,
     logical_and,
     logical_or,
+    max,
     maximum,
     mean,
     meshgrid,
+    min,
     minimum,
     moveaxis,
+    nonzero,
     ones_like,
     pad,
     prod,
     quantile,
+    rad2deg,
     repeat,
     reshape,
+    roll,
+    round,
     searchsorted,
     shape,
     sort,
@@ -79,7 +104,7 @@ try:
 except ImportError:
     from autograd.numpy import trapz as trapezoid
 
-from autograd.scipy.special import erf, gamma, polygamma  # NOQA
+from autograd.scipy.special import erf, gamma, gammaln, polygamma  # NOQA
 
 from .._shared_numpy import (
     abs,
@@ -130,8 +155,11 @@ from .._shared_numpy import (
     vectorize,
 )
 from . import autodiff  # NOQA
+from . import fft  # NOQA
 from . import linalg  # NOQA
 from . import random  # NOQA
+from . import signal  # NOQA
+from . import spatial  # NOQA
 from ._common import (
     _box_binary_scalar,
     _box_unary_scalar,
@@ -167,6 +195,31 @@ def has_autodiff():
     has_autodiff : bool
     """
     return True
+
+
+def vmap(pyfunc, randomness="error"):
+    """Vectorize ``pyfunc`` over the first axis of all positional arguments."""
+    if randomness not in ("error", "different"):
+        raise ValueError("randomness must be either 'error' or 'different'")
+
+    def vmapped_fun(*args):
+        if not all([arg.shape[0] == args[0].shape[0] for arg in args]):
+            raise ValueError(
+                "All arguments must have the same size in the first dimension"
+            )
+
+        first_output = pyfunc(*(arg[0, ...] for arg in args))
+        if _np.isscalar(first_output):
+            output_shape = (args[0].shape[0],)
+        else:
+            output_shape = (args[0].shape[0],) + first_output.shape
+
+        output = empty(output_shape)
+        for i in range(args[0].shape[0]):
+            output[i, ...] = pyfunc(*(arg[i, ...] for arg in args))
+        return output
+
+    return vmapped_fun
 
 
 def imag(x):
