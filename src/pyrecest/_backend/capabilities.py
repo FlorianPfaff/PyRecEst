@@ -56,7 +56,6 @@ BACKEND_CAPABILITIES: Final = {
             ),
             "linalg": (
                 "fractional_matrix_power",
-                "is_single_matrix_pd",
                 "logm",
                 "quadratic_assignment",
                 "solve_sylvester",
