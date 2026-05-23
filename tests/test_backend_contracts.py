@@ -87,9 +87,7 @@ def test_default_reductions_reduce_all_elements():
 
 
 def test_prod_accepts_tuple_axis():
-    values = array(
-        [[[2.0, 3.0], [4.0, 5.0]], [[6.0, 7.0], [8.0, 9.0]]]
-    )
+    values = array([[[2.0, 3.0], [4.0, 5.0]], [[6.0, 7.0], [8.0, 9.0]]])
 
     result = backend.prod(values, axis=(0, 2))
 

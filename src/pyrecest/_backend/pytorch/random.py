@@ -49,7 +49,9 @@ def _choice_indices(population_size, size, num_samples, replace, p, device):
 
         p = _torch.as_tensor(p, dtype=_torch.float32, device=device)
         if p.ndim != 1 or p.shape[0] != population_size:
-            raise ValueError("p must be 1-dimensional with one entry per population item")
+            raise ValueError(
+                "p must be 1-dimensional with one entry per population item"
+            )
 
         p_sum = p.sum()
         if not bool(_torch.isfinite(p_sum)) or bool(p_sum <= 0):
