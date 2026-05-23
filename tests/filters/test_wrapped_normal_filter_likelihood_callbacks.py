@@ -1,7 +1,6 @@
 import math
 
 import numpy as np
-
 from pyrecest.backend import array, random
 from pyrecest.distributions import WrappedNormalDistribution
 from pyrecest.filters import WrappedNormalFilter
