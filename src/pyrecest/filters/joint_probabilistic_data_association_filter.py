@@ -7,6 +7,7 @@ import warnings
 from math import log, pi
 
 import pyrecest.backend
+from pyrecest.backend import any as backend_any
 from pyrecest.backend import (
     argmax,
     asarray,
@@ -19,7 +20,6 @@ from pyrecest.backend import (
     outer,
     zeros,
 )
-from pyrecest.backend import any as backend_any
 from pyrecest.distributions import GaussianDistribution
 from scipy.special import logsumexp
 from scipy.stats import chi2

@@ -379,7 +379,11 @@ class BackendImporter(importlib.abc.MetaPathFinder, importlib.abc.Loader):
 
             for attribute_name in OPTIONAL_BACKEND_ATTRIBUTES.get(module_name, []):
                 if hasattr(submodule, attribute_name):
-                    setattr(new_submodule, attribute_name, getattr(submodule, attribute_name))
+                    setattr(
+                        new_submodule,
+                        attribute_name,
+                        getattr(submodule, attribute_name),
+                    )
 
         return new_module
 

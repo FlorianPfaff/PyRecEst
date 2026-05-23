@@ -73,7 +73,9 @@ class TestHypertoroidalWNDistribution(unittest.TestCase):
         npt.assert_allclose(scalar_pdf, matrix_pdf[:1])
 
     def test_vector_pdf_accepts_single_point_sequence(self):
-        dist = HypertoroidalWNDistribution(array([0.3, 0.4]), array([[0.7, 0.0], [0.0, 0.5]]))
+        dist = HypertoroidalWNDistribution(
+            array([0.3, 0.4]), array([[0.7, 0.0], [0.0, 0.5]])
+        )
 
         one_point_pdf = dist.pdf([0.2, 0.5])
         matrix_pdf = dist.pdf(array([[0.2, 0.5]]))
@@ -141,12 +143,15 @@ class TestHypertoroidalWNDistribution(unittest.TestCase):
         npt.assert_allclose(dist.mu, mu)
 
     def test_set_mode_wraps_to_fundamental_domain(self):
-        dist = HypertoroidalWNDistribution(array([0.3, 0.4]), array([[0.7, 0.0], [0.0, 0.5]]))
+        dist = HypertoroidalWNDistribution(
+            array([0.3, 0.4]), array([[0.7, 0.0], [0.0, 0.5]])
+        )
 
         updated = dist.set_mode(array([2.0 * pi + 0.1, -0.2]))
 
         npt.assert_allclose(updated.mu, mod(array([0.1, -0.2]), 2.0 * pi))
         npt.assert_allclose(dist.mu, array([0.3, 0.4]))
+
 
 if __name__ == "__main__":
     unittest.main()

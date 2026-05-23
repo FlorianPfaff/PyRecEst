@@ -159,7 +159,9 @@ class PartiallyWrappedNormalDistribution(AbstractHypercylindricalDistribution):
         For bounded dimensions, the mean is wrapped into [0, 2*pi) to stay on the manifold.
         """
         new_mean = array(new_mean)
-        assert new_mean.shape == (self.input_dim,), "new_mean must match distribution dim"
+        assert new_mean.shape == (
+            self.input_dim,
+        ), "new_mean must match distribution dim"
         new_dist = copy.deepcopy(self)
         wrapped_mean = where(
             arange(new_mean.shape[0]) < self.bound_dim, mod(new_mean, 2 * pi), new_mean

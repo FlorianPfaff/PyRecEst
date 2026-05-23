@@ -134,7 +134,9 @@ def time_offset_error_summary(
         raise ValueError("measurement_values must be one- or two-dimensional")
     query_times = apply_time_offset(measurement_times_s, offset_s)
     if query_times.size != measurement_values.shape[0]:
-        raise ValueError("measurement_times_s length must match measurement_values rows")
+        raise ValueError(
+            "measurement_times_s length must match measurement_values rows"
+        )
     reference_at_query, valid = interpolate_reference_values(
         reference_times_s,
         reference_values,
