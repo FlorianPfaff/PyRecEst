@@ -10,7 +10,7 @@ from typing import Any
 from pyrecest import backend
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import array, full, hstack, pad
+from pyrecest.backend import array, asarray, full, hstack, pad
 
 
 @dataclass
@@ -119,7 +119,10 @@ class HistoryRecorder:
 
     @staticmethod
     def _ensure_2d(curr_ests):
-        if curr_ests.ndim != 2 or curr_ests.shape[1] != 1:
+        curr_ests = asarray(curr_ests, dtype=float)
+        if curr_ests.ndim == 0:
+            curr_ests = curr_ests.reshape(1, 1)
+        elif curr_ests.ndim != 2 or curr_ests.shape[1] != 1:
             curr_ests = curr_ests.reshape(-1, 1)
         return curr_ests
 
