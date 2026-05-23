@@ -51,6 +51,13 @@ class CustomHypercylindricalDistributionTest(unittest.TestCase):
         chd = CustomHypercylindricalDistribution.from_distribution(self.pwn)
         npt.assert_allclose(self.pwn.pdf(self.grid_flat), chd.pdf(self.grid_flat))
 
+    def test_from_distribution_preserves_component_dimensions(self):
+        chd = CustomHypercylindricalDistribution.from_distribution(
+            self.chcd_vm_gauss_stacked
+        )
+        self.assertEqual(chd.bound_dim, self.chcd_vm_gauss_stacked.bound_dim)
+        self.assertEqual(chd.lin_dim, self.chcd_vm_gauss_stacked.lin_dim)
+
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
         reason="Not supported on this backend",

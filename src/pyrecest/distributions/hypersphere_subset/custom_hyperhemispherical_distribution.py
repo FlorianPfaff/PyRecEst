@@ -2,7 +2,7 @@ from collections.abc import Callable
 from typing import Union
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import int32, int64
+from pyrecest.backend import asarray, int32, int64
 
 from ..abstract_custom_distribution import AbstractCustomDistribution
 from .abstract_hyperhemispherical_distribution import (
@@ -34,7 +34,7 @@ class CustomHyperhemisphericalDistribution(
         :return: numpy.ndarray: pdf values at given points.
         """
         assert xs.shape[-1] == self.dim + 1
-        p = self.scale_by * self.f(xs)
+        p = asarray(self.scale_by * self.f(xs))
         assert p.ndim <= 1, "Output format of pdf is not as expected"
         return p
 
@@ -71,12 +71,11 @@ class CustomHyperhemisphericalDistribution(
             return chhd
 
         if isinstance(distribution, AbstractHypersphericalDistribution):
-            chhd_unnorm = CustomHyperhemisphericalDistribution(
+            chhd = CustomHyperhemisphericalDistribution(
                 distribution.pdf, distribution.dim
             )
-            norm_const_inv = chhd_unnorm.integrate()
-            return CustomHyperhemisphericalDistribution(
-                distribution.pdf / norm_const_inv, distribution.dim
-            )
+            norm_const_inv = chhd.integrate()
+            chhd.scale_by = 1 / norm_const_inv
+            return chhd
 
         raise ValueError("Input variable distribution is of the wrong class.")

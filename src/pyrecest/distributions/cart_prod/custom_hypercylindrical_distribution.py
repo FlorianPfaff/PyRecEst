@@ -40,7 +40,7 @@ class CustomHypercylindricalDistribution(
             The created CustomHypercylindricalDistribution
         """
         chhd = CustomHypercylindricalDistribution(
-            distribution.pdf, distribution.lin_dim, distribution.bound_dim
+            distribution.pdf, distribution.bound_dim, distribution.lin_dim
         )
         return chhd
 
