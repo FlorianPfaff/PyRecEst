@@ -53,6 +53,21 @@ def test_fixed_lag_solver_uses_prefix_memory():
     assert [candidate.candidate_id for candidate in result.path] == ["a0", "a1"]
 
 
+def test_fixed_lag_total_cost_scores_committed_path_once():
+    frames = [
+        [TrackletAssociationCandidate("a0", unary_cost=1.0, time_s=0.0)],
+        [TrackletAssociationCandidate("a1", unary_cost=2.0, time_s=1.0)],
+    ]
+    result = solve_fixed_lag_tracklet_viterbi(
+        frames,
+        lag_s=10.0,
+        config=TrackletViterbiConfig(missed_detection_cost=100.0),
+    )
+
+    assert [candidate.candidate_id for candidate in result.path] == ["a0", "a1"]
+    assert result.total_cost == 3.0
+
+
 def test_retention_keeps_track_representative_outside_top_k():
     candidates = [
         TrackletAssociationCandidate("best", unary_cost=0.0, track_id="A"),

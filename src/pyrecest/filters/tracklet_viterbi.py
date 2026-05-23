@@ -274,7 +274,12 @@ def solve_fixed_lag_tracklet_viterbi(
         )
         selected = local.path[1 if prefix_added else 0]
         path.append(selected)
-        total_cost += float(local.total_cost)
+        total_cost += _fixed_lag_committed_step_cost(
+            previous_committed,
+            selected,
+            config,
+            transition_cost,
+        )
         if selected is not None:
             previous_committed = selected
 
@@ -413,6 +418,39 @@ def _nodes_for_frame(
     if include_missed_detection:
         nodes.append(_Node(None, 0.0))
     return nodes
+
+
+def _fixed_lag_committed_step_cost(
+    previous_committed: TrackletAssociationCandidate | None,
+    selected: TrackletAssociationCandidate | None,
+    config: TrackletViterbiConfig,
+    transition_cost: TransitionCost | None,
+) -> float:
+    """Score only the newly committed fixed-lag decision.
+
+    ``solve_fixed_lag_tracklet_viterbi`` solves overlapping look-ahead windows.
+    The local window total includes uncommitted future decisions, so accumulating
+    those window totals double-counts costs. This helper mirrors the solver's
+    prefix-memory semantics while charging only the decision committed at the
+    current frame.
+    """
+
+    unary_cost = 0.0 if selected is None else float(selected.unary_cost)
+    if previous_committed is None:
+        return float(
+            unary_cost
+            + (float(config.missed_detection_cost) if selected is None else 0.0)
+        )
+
+    transition = transition_cost or (
+        lambda previous, current, miss_streak: default_tracklet_transition_cost(
+            previous,
+            current,
+            miss_streak,
+            config,
+        )
+    )
+    return float(unary_cost + transition(previous_committed, selected, 0))
 
 
 def _reconstruct_path(

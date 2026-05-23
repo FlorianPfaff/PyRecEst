@@ -319,6 +319,7 @@ def tracks_to_session_labels(
     inferred_sizes, max_session_index = _validate_track_session_sizes(
         tracks,
         session_sizes,
+        require_unique_sessions=True,
     )
 
     labels = [

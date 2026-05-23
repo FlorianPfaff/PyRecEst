@@ -148,6 +148,17 @@ class TestMultiSessionAssignment(unittest.TestCase):
         __backend_name__ == "jax",
         reason="Not supported on this backend",
     )
+    def test_tracks_to_session_labels_rejects_duplicate_sessions_in_one_track(self):
+        with self.assertRaisesRegex(
+            ValueError,
+            "Each track can only contain one detection per session",
+        ):
+            tracks_to_session_labels([[(0, 0), (0, 1)]], session_sizes=[2])
+
+    @unittest.skipIf(
+        __backend_name__ == "jax",
+        reason="Not supported on this backend",
+    )
     def test_rejects_inconsistent_session_sizes(self):
         pairwise_costs = {
             (0, 1): array([[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]),
