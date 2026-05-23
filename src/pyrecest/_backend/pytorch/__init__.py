@@ -775,9 +775,7 @@ def assignment(x, values, indices, axis=0):
         x_new[indices] = values
         return x_new
     zip_indices = (
-        _is_iterable(indices)
-        and len(indices) > 0
-        and _is_iterable(indices[0])
+        _is_iterable(indices) and len(indices) > 0 and _is_iterable(indices[0])
     )
     len_indices = _assignment_index_length(indices, zip_indices)
     if zip_indices:
@@ -832,9 +830,7 @@ def assignment_by_sum(x, values, indices, axis=0):
         x_new[indices] += values
         return x_new
     zip_indices = (
-        _is_iterable(indices)
-        and len(indices) > 0
-        and _is_iterable(indices[0])
+        _is_iterable(indices) and len(indices) > 0 and _is_iterable(indices[0])
     )
     len_indices = _assignment_index_length(indices, zip_indices)
     if zip_indices:

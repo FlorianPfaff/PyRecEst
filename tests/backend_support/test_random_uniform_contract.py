@@ -5,9 +5,7 @@ from __future__ import annotations
 import importlib.util
 
 import pytest
-
 from tests.support.backend_runner import run_backend_code
-
 
 _UNIFORM_ARRAY_BOUNDS_CHECK = """
 import pyrecest.backend as backend
