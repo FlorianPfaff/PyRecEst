@@ -10,6 +10,7 @@ import logging
 import os
 import sys
 import types
+from functools import wraps
 
 import pyrecest._backend._common as common
 
@@ -283,6 +284,17 @@ for _module_name, _attributes in BACKEND_ATTRIBUTES.items():
     BACKEND_ATTRIBUTES[_module_name] = _deduplicated_attributes(_attributes)
 
 
+def _meshgrid_with_arraylike_axes(meshgrid_func, asarray_func, atleast_1d_func):
+    """Return a NumPy-compatible meshgrid wrapper for stricter backends."""
+
+    @wraps(meshgrid_func)
+    def meshgrid(*axes, **kwargs):
+        coerced_axes = [atleast_1d_func(asarray_func(axis)) for axis in axes]
+        return meshgrid_func(*coerced_axes, **kwargs)
+
+    return meshgrid
+
+
 class BackendImporter(importlib.abc.MetaPathFinder, importlib.abc.Loader):
     """
     Meta path finder and loader for dynamically creating backend modules.
@@ -347,6 +359,16 @@ class BackendImporter(importlib.abc.MetaPathFinder, importlib.abc.Loader):
                             f"attribute '{attribute_name}'."
                         ) from None
                 else:
+                    if (
+                        module_name == ""
+                        and attribute_name == "meshgrid"
+                        and backend_name in {"jax", "pytorch"}
+                    ):
+                        attribute = _meshgrid_with_arraylike_axes(
+                            attribute,
+                            getattr(backend, "asarray"),
+                            getattr(backend, "atleast_1d"),
+                        )
                     setattr(new_submodule, attribute_name, attribute)
 
         return new_module

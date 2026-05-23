@@ -1,4 +1,5 @@
 import unittest
+import warnings
 
 import numpy.testing as npt
 
@@ -71,6 +72,27 @@ class JointProbabilisticDataAssociationFilterTest(unittest.TestCase):
             self.meas_cov,
         )
         npt.assert_array_equal(shuffled_map_association, array([1, 0]))
+
+    def test_gated_measurements_do_not_emit_no_measurement_warning(self):
+        tracker = JPDAF(self.kfs_init, association_param=self.association_param)
+        perfect_meas_ordered = (
+            self.meas_mat @ array([kf.get_point_estimate() for kf in self.kfs_init]).T
+        )
+
+        with warnings.catch_warnings(record=True) as caught_warnings:
+            warnings.simplefilter("always")
+            tracker.find_association_probabilities(
+                perfect_meas_ordered,
+                self.meas_mat,
+                self.meas_cov,
+            )
+
+        self.assertFalse(
+            any(
+                "No measurement was within the gating threshold" in str(warning.message)
+                for warning in caught_warnings
+            )
+        )
 
     def test_find_association_probabilities_without_measurements(self):
         tracker = JPDAF(self.kfs_init, association_param=self.association_param)

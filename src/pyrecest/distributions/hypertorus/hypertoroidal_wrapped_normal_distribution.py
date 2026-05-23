@@ -164,7 +164,7 @@ class HypertoroidalWrappedNormalDistribution(AbstractHypertoroidalDistribution):
         m = _as_1d_mu(m)
         assert m.shape == (self.dim,), "m must be of shape (dim,)"
         dist = copy.deepcopy(self)
-        dist.mu = m
+        dist.mu = mod(m, 2.0 * pi)
         return dist
 
     def trigonometric_moment(self, n):

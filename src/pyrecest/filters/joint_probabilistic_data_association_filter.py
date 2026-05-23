@@ -2,12 +2,12 @@
 
 """Linear-Gaussian Joint Probabilistic Data Association Filter."""
 
+import builtins
 import warnings
 from math import log, pi
 
 import pyrecest.backend
 from pyrecest.backend import (
-    any,
     argmax,
     asarray,
     exp,
@@ -19,6 +19,7 @@ from pyrecest.backend import (
     outer,
     zeros,
 )
+from pyrecest.backend import any as backend_any
 from pyrecest.distributions import GaussianDistribution
 from scipy.special import logsumexp
 from scipy.stats import chi2
@@ -94,7 +95,7 @@ class JointProbabilisticDataAssociationFilter(AbstractNearestNeighborTracker):
                     "If clutter_intensity is not scalar, it must have length n_meas."
                 )
 
-        if any(clutter_intensity <= 0.0):
+        if backend_any(clutter_intensity <= 0.0):
             raise ValueError("clutter_intensity must be strictly positive.")
 
         return clutter_intensity
@@ -244,7 +245,7 @@ class JointProbabilisticDataAssociationFilter(AbstractNearestNeighborTracker):
                         cov_posterior,
                     )
 
-        if warn_on_no_meas_for_track and any(
+        if warn_on_no_meas_for_track and builtins.any(
             len(curr_eligible_measurements) == 0
             for curr_eligible_measurements in eligible_measurements
         ):
