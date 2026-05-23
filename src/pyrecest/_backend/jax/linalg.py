@@ -44,9 +44,7 @@ def is_single_matrix_pd(mat):
         return False
 
     if mat.dtype in (_jnp.complex64, _jnp.complex128):
-        is_hermitian = _jnp.all(
-            _jnp.abs(mat - _jnp.conj(_jnp.transpose(mat))) < atol
-        )
+        is_hermitian = _jnp.all(_jnp.abs(mat - _jnp.conj(_jnp.transpose(mat))) < atol)
         eigvals = _jnp.linalg.eigvalsh(mat)
         return _jnp.logical_and(is_hermitian, _jnp.min(_jnp.real(eigvals)) > 0)
 

@@ -287,13 +287,17 @@ def _normalize_reduction_axes(axis, ndim_):
     else:
         axis = tuple(axis)
 
-    normalized_axes = tuple(one_axis + ndim_ if one_axis < 0 else one_axis for one_axis in axis)
+    normalized_axes = tuple(
+        one_axis + ndim_ if one_axis < 0 else one_axis for one_axis in axis
+    )
     if len(set(normalized_axes)) != len(normalized_axes):
         raise ValueError("duplicate value in 'axis'")
 
     for one_axis, normalized_axis in zip(axis, normalized_axes):
         if normalized_axis < 0 or normalized_axis >= ndim_:
-            raise IndexError(f"axis {one_axis} is out of bounds for array of dimension {ndim_}")
+            raise IndexError(
+                f"axis {one_axis} is out of bounds for array of dimension {ndim_}"
+            )
 
     return normalized_axes
 
@@ -311,7 +315,9 @@ def any(x, axis=None):
     x = x.bool()
     if axis is None:
         return _torch.any(x)
-    return _reduce_over_axes(x, axis, lambda values, one_axis: _torch.any(values, dim=one_axis))
+    return _reduce_over_axes(
+        x, axis, lambda values, one_axis: _torch.any(values, dim=one_axis)
+    )
 
 
 def flip(x, axis):
@@ -333,7 +339,9 @@ def all(x, axis=None):
     x = x.bool()
     if axis is None:
         return _torch.all(x)
-    return _reduce_over_axes(x, axis, lambda values, one_axis: _torch.all(values, dim=one_axis))
+    return _reduce_over_axes(
+        x, axis, lambda values, one_axis: _torch.all(values, dim=one_axis)
+    )
 
 
 def get_slice(x, indices):
