@@ -93,7 +93,7 @@ jobs:
           # https://megalinter.io/latest/configuration/#shared-variables
           # ADD YOUR CUSTOM ENV VARIABLES HERE OR DEFINE THEM IN A FILE .mega-linter.yml AT THE ROOT OF YOUR REPOSITORY
           VALIDATE_ALL_CODEBASE: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }} # Validates all source when push on main, else just the git diff with main.
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           EMAIL_REPORTER_SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
 
       # Upload MegaLinter artifacts
