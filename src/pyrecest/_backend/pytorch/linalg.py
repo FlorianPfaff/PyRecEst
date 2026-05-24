@@ -120,7 +120,9 @@ def norm(x, ord=None, axis=None, keepdims=False):
 def matrix_rank(a, tol=None, hermitian=False, *, rtol=None, atol=None, **kwargs):
     if kwargs:
         unexpected = ", ".join(sorted(kwargs))
-        raise TypeError(f"matrix_rank() got unexpected keyword argument(s): {unexpected}")
+        raise TypeError(
+            f"matrix_rank() got unexpected keyword argument(s): {unexpected}"
+        )
     if tol is not None:
         if atol is not None:
             raise TypeError("matrix_rank() got both 'tol' and 'atol'")

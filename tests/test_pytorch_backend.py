@@ -154,9 +154,7 @@ class TestPytorchBackendLinalg(unittest.TestCase):
         value = pytorch_backend.diag(pytorch_backend.array([1.0, 1e-5]))
 
         self.assertEqual(int(pytorch_backend.linalg.matrix_rank(value, tol=1e-4)), 1)
-        self.assertEqual(
-            int(pytorch_backend.linalg.matrix_rank(value, rtol=1e-4)), 1
-        )
+        self.assertEqual(int(pytorch_backend.linalg.matrix_rank(value, rtol=1e-4)), 1)
 
     def test_sqrtm_complex_result_uses_matching_complex_precision(self):
         dtype_pairs = (
