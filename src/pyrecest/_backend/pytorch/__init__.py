@@ -275,8 +275,7 @@ def quantile(
 
     if keepdims:
         result = result.reshape(
-            q_shape
-            + tuple(1 if dim in axes else x.shape[dim] for dim in range(x.ndim))
+            q_shape + tuple(1 if dim in axes else x.shape[dim] for dim in range(x.ndim))
         )
     if out is not None:
         out.copy_(result)

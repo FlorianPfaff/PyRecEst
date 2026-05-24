@@ -151,6 +151,7 @@ class TestPytorchBackendReductions(unittest.TestCase):
             )
         )
 
+
 @unittest.skipIf(pytorch_backend is None, "PyTorch is not installed")
 class TestPytorchBackendRandom(unittest.TestCase):
     def test_choice_accepts_weighted_sampling_without_replacement(self):

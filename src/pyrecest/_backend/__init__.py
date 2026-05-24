@@ -466,10 +466,10 @@ class BackendImporter(importlib.abc.MetaPathFinder, importlib.abc.Loader):
                             attribute,
                             getattr(backend, "asarray"),
                         )
-                    if (
-                        module_name == ""
-                        and attribute_name in {"assignment", "assignment_by_sum"}
-                    ):
+                    if module_name == "" and attribute_name in {
+                        "assignment",
+                        "assignment_by_sum",
+                    }:
                         attribute = _assignment_with_empty_indices_noop(
                             attribute,
                             getattr(backend, "copy"),
