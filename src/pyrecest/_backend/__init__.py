@@ -356,13 +356,17 @@ def _normalize_reduction_axes(axis, ndim):
     else:
         axes = tuple(axis)
 
-    normalized_axes = tuple(axis_index + ndim if axis_index < 0 else axis_index for axis_index in axes)
+    normalized_axes = tuple(
+        axis_index + ndim if axis_index < 0 else axis_index for axis_index in axes
+    )
     if len(set(normalized_axes)) != len(normalized_axes):
         raise ValueError("duplicate value in 'axis'")
 
     for original_axis, normalized_axis in zip(axes, normalized_axes):
         if normalized_axis < 0 or normalized_axis >= ndim:
-            raise IndexError(f"axis {original_axis} is out of bounds for array of dimension {ndim}")
+            raise IndexError(
+                f"axis {original_axis} is out of bounds for array of dimension {ndim}"
+            )
 
     return normalized_axes
 
@@ -389,7 +393,11 @@ def _reduction_with_numpy_keepdims(
                 raise TypeError("dtype is not supported for this reduction")
             a = cast_func(a, dtype=dtype)
 
-        axes = tuple(range(a.ndim)) if axis is None else _normalize_reduction_axes(axis, a.ndim)
+        axes = (
+            tuple(range(a.ndim))
+            if axis is None
+            else _normalize_reduction_axes(axis, a.ndim)
+        )
         result = a if axis is not None and not axes else reduction_func(a, axis=axis)
         if keepdims:
             result = reshape_func(result, _reduced_keepdims_shape(tuple(a.shape), axes))
@@ -482,7 +490,9 @@ def _arg_reduction_with_numpy_signature(arg_func, asarray_func, reshape_func):
             axis = dim
         if keepdim is not None:
             if keepdims is not False and keepdims != keepdim:
-                raise TypeError(f"{arg_func.__name__}() got both 'keepdims' and 'keepdim'")
+                raise TypeError(
+                    f"{arg_func.__name__}() got both 'keepdims' and 'keepdim'"
+                )
             keepdims = keepdim
 
         a = asarray_func(a)
@@ -569,7 +579,9 @@ class BackendImporter(importlib.abc.MetaPathFinder, importlib.abc.Loader):
                 try:
                     submodule = getattr(backend, module_name)
                 except AttributeError:
-                    raise RuntimeError(f"Backend '{backend_name}' exposes no '{module_name}' module") from None
+                    raise RuntimeError(
+                        f"Backend '{backend_name}' exposes no '{module_name}' module"
+                    ) from None
                 new_submodule = types.ModuleType(f"{self._path}.{module_name}")
                 new_submodule.__file__ = getattr(submodule, "__file__", None)
                 setattr(new_module, module_name, new_submodule)
@@ -585,29 +597,50 @@ class BackendImporter(importlib.abc.MetaPathFinder, importlib.abc.Loader):
                     attribute = getattr(submodule_, attribute_name)
                 except AttributeError:
                     if module_name:
-                        raise RuntimeError(f"Module '{module_name}' of backend '{backend_name}' does not define the required attribute '{attribute_name}'.") from None
+                        raise RuntimeError(
+                            f"Module '{module_name}' of backend '{backend_name}' does not define the required attribute '{attribute_name}'."
+                        ) from None
                     else:
-                        raise RuntimeError(f"Backend '{backend_name}' does not define the required attribute '{attribute_name}'.") from None
+                        raise RuntimeError(
+                            f"Backend '{backend_name}' does not define the required attribute '{attribute_name}'."
+                        ) from None
                 else:
-                    if module_name == "" and attribute_name == "mean" and backend_name == "pytorch":
+                    if (
+                        module_name == ""
+                        and attribute_name == "mean"
+                        and backend_name == "pytorch"
+                    ):
                         attribute = _mean_with_numpy_signature(
                             attribute,
                             getattr(backend, "asarray"),
                             getattr(backend, "reshape"),
                         )
-                    if module_name == "" and attribute_name in {"all", "amax", "amin", "any", "max", "min"} and backend_name == "pytorch":
+                    if (
+                        module_name == ""
+                        and attribute_name
+                        in {"all", "amax", "amin", "any", "max", "min"}
+                        and backend_name == "pytorch"
+                    ):
                         attribute = _reduction_with_numpy_keepdims(
                             attribute,
                             getattr(backend, "asarray"),
                             getattr(backend, "reshape"),
                         )
-                    if module_name == "" and attribute_name == "sum" and backend_name == "pytorch":
+                    if (
+                        module_name == ""
+                        and attribute_name == "sum"
+                        and backend_name == "pytorch"
+                    ):
                         attribute = _sum_with_numpy_signature(
                             attribute,
                             getattr(backend, "asarray"),
                             getattr(backend, "reshape"),
                         )
-                    if module_name == "" and attribute_name == "prod" and backend_name == "pytorch":
+                    if (
+                        module_name == ""
+                        and attribute_name == "prod"
+                        and backend_name == "pytorch"
+                    ):
                         attribute = _reduction_with_numpy_keepdims(
                             attribute,
                             getattr(backend, "asarray"),
@@ -642,13 +675,21 @@ class BackendImporter(importlib.abc.MetaPathFinder, importlib.abc.Loader):
                             getattr(backend, "asarray"),
                             getattr(backend, "reshape"),
                         )
-                    if module_name == "" and attribute_name == "meshgrid" and backend_name in {"jax", "pytorch"}:
+                    if (
+                        module_name == ""
+                        and attribute_name == "meshgrid"
+                        and backend_name in {"jax", "pytorch"}
+                    ):
                         attribute = _meshgrid_with_arraylike_axes(
                             attribute,
                             getattr(backend, "asarray"),
                             getattr(backend, "atleast_1d"),
                         )
-                    if module_name == "" and attribute_name == "quantile" and backend_name == "pytorch":
+                    if (
+                        module_name == ""
+                        and attribute_name == "quantile"
+                        and backend_name == "pytorch"
+                    ):
                         attribute = _quantile_with_numpy_axis(
                             attribute,
                             getattr(backend, "asarray"),
@@ -694,6 +735,9 @@ class BackendImporter(importlib.abc.MetaPathFinder, importlib.abc.Loader):
 
 
 TARGET = "pyrecest.backend"
-if not any(isinstance(f, BackendImporter) and getattr(f, "_path", None) == TARGET for f in sys.meta_path):
+if not any(
+    isinstance(f, BackendImporter) and getattr(f, "_path", None) == TARGET
+    for f in sys.meta_path
+):
     # put it in front so it intercepts 'pyrecest.backend'
     sys.meta_path.insert(0, BackendImporter(TARGET))

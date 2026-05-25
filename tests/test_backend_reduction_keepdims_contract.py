@@ -2,7 +2,6 @@ import importlib.util
 
 import pyrecest.backend as backend
 import pytest
-
 from tests.support.backend_runner import run_backend_code
 
 
@@ -16,11 +15,17 @@ def _to_python(value):
 def test_reductions_accept_keepdims_keyword():
     values = backend.array([[[0, 1], [2, 0]], [[3, 4], [0, 0]]])
 
-    assert _to_python(backend.any(values, axis=(0, 2), keepdims=True)) == [[[True], [True]]]
-    assert _to_python(backend.all(values > -1, axis=(0, 2), keepdims=True)) == [[[True], [True]]]
+    assert _to_python(backend.any(values, axis=(0, 2), keepdims=True)) == [
+        [[True], [True]]
+    ]
+    assert _to_python(backend.all(values > -1, axis=(0, 2), keepdims=True)) == [
+        [[True], [True]]
+    ]
     assert _to_python(backend.max(values, axis=(0, 2), keepdims=True)) == [[[4], [2]]]
     assert _to_python(backend.min(values, axis=(0, 2), keepdims=True)) == [[[0], [0]]]
-    assert _to_python(backend.prod(values + 1, axis=(0, 2), keepdims=True)) == [[[40], [3]]]
+    assert _to_python(backend.prod(values + 1, axis=(0, 2), keepdims=True)) == [
+        [[40], [3]]
+    ]
 
 
 @pytest.mark.backend_portable
