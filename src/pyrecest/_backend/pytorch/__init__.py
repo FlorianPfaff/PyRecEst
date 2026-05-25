@@ -1187,7 +1187,9 @@ def _torch_pad_width(pad_width, ndim_):
     try:
         pad_pairs = _np.broadcast_to(_np.asarray(pad_width), (ndim_, 2))
     except ValueError as exc:
-        raise ValueError(f"pad_width must be broadcastable to shape ({ndim_}, 2)") from exc
+        raise ValueError(
+            f"pad_width must be broadcastable to shape ({ndim_}, 2)"
+        ) from exc
 
     if _np.any(pad_pairs < 0):
         raise ValueError("index can't contain negative values")
