@@ -2,7 +2,6 @@ import importlib.util
 
 import pyrecest.backend as backend
 import pytest
-
 from tests.support.backend_runner import run_backend_code
 
 
