@@ -127,12 +127,14 @@ def interpolate_reference_values(
     reference_times = np.asarray(reference_times_s, dtype=float).reshape(-1)
     reference_values = np.asarray(reference_values, dtype=float)
     query_times = np.asarray(query_times_s, dtype=float).reshape(-1)
+    if reference_values.ndim not in (1, 2):
+        raise ValueError("reference_values must be one- or two-dimensional")
+    if reference_values.ndim == 1:
+        reference_values = reference_values.reshape(-1, 1)
     if reference_times.size != reference_values.shape[0]:
         raise ValueError("reference_times_s length must match reference_values rows")
     if reference_times.size < 2:
         raise ValueError("at least two reference times are required for interpolation")
-    if reference_values.ndim == 1:
-        reference_values = reference_values.reshape(-1, 1)
     order = np.argsort(reference_times)
     reference_times = reference_times[order]
     reference_values = reference_values[order]
