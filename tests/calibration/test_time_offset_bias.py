@@ -133,6 +133,28 @@ class TimeOffsetCalibrationTest(unittest.TestCase):
                 max_time_delta_s=-1.0,
             )
 
+    def test_interpolation_rejects_scalar_reference_values(self):
+        with self.assertRaisesRegex(
+            ValueError,
+            "reference_values must be one- or two-dimensional",
+        ):
+            interpolate_reference_values(
+                np.array([0.0, 1.0]),
+                np.array(1.0),
+                np.array([0.5]),
+            )
+
+    def test_interpolation_rejects_higher_rank_reference_values(self):
+        with self.assertRaisesRegex(
+            ValueError,
+            "reference_values must be one- or two-dimensional",
+        ):
+            interpolate_reference_values(
+                np.array([0.0, 1.0]),
+                np.zeros((2, 1, 1)),
+                np.array([0.5]),
+            )
+
     def test_time_offset_summary_rejects_mismatched_measurement_lengths(self):
         with self.assertRaisesRegex(
             ValueError,
