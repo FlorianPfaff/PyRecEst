@@ -154,7 +154,9 @@ def interpolate_reference_values(
         raise ValueError("reference_times_s length must match reference_values rows")
     finite_reference = _finite_reference_rows(reference_times, reference_values)
     if np.count_nonzero(finite_reference) < 2:
-        raise ValueError("at least two finite reference rows are required for interpolation")
+        raise ValueError(
+            "at least two finite reference rows are required for interpolation"
+        )
     reference_times = reference_times[finite_reference]
     reference_values = reference_values[finite_reference]
     order = np.argsort(reference_times)

@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.sampling.euclidean_sampler import (
     FibonacciGridSampler,
     FibonacciRejectionSampler,

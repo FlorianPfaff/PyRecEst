@@ -167,7 +167,9 @@ def make_bias_training_examples(
         if features.shape[0] != measurements.shape[0]:
             raise ValueError("feature_values rows must match measurement_values rows")
 
-    finite_reference = np.isfinite(reference_times) & np.isfinite(references).all(axis=1)
+    finite_reference = np.isfinite(reference_times) & np.isfinite(references).all(
+        axis=1
+    )
     if not finite_reference.any():
         return BiasTrainingExamples(
             measured=np.empty((0, measurements.shape[1])),
