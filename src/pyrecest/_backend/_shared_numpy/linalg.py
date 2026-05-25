@@ -84,6 +84,8 @@ def is_single_matrix_pd(mat):
             return False
         eigvals = _np.linalg.eigvalsh(mat)
         return _np.min(_np.real(eigvals)) > 0
+    if not _is_symmetric(mat):
+        return False
     try:
         _np.linalg.cholesky(mat)
         return True
