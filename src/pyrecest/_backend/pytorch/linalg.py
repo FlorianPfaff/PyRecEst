@@ -185,6 +185,8 @@ def is_single_matrix_pd(mat):
             return False
         eigvals = _torch.linalg.eigvalsh(mat)
         return _torch.min(_torch.real(eigvals)) > 0
+    if not _torch.all(_torch.abs(mat - mat.transpose(-2, -1)) < atol):
+        return False
     try:
         _torch.linalg.cholesky(mat)
         return True
