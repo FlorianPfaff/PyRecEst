@@ -7,7 +7,6 @@ import importlib.util
 import pytest
 from tests.support.backend_runner import run_backend_code
 
-
 _ARRAY_PARAMETER_CHECK = """
 import pyrecest.backend as backend
 from pyrecest.backend import random

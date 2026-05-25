@@ -38,8 +38,10 @@ def _normal_device(*values):
 
 
 def _is_array_parameter(value):
-    return _torch.is_tensor(value) or isinstance(value, (list, tuple)) or (
-        not isinstance(value, (str, bytes)) and hasattr(value, "__array__")
+    return (
+        _torch.is_tensor(value)
+        or isinstance(value, (list, tuple))
+        or (not isinstance(value, (str, bytes)) and hasattr(value, "__array__"))
     )
 
 
