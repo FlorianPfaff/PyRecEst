@@ -4,11 +4,9 @@ from __future__ import annotations
 
 import importlib.util
 
-import pytest
-
 import pyrecest.backend as backend
+import pytest
 from tests.support.backend_runner import run_backend_code
-
 
 _NONSYMMETRIC_CHOLESKY_ACCEPTED = [[1.0, 100.0], [0.0, 1.0]]
 
