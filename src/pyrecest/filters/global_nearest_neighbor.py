@@ -5,6 +5,7 @@ import pyrecest.backend
 from pyrecest.backend import (
     all,
     any,
+    asarray,
     empty,
     full,
     linalg,
@@ -72,6 +73,7 @@ class GlobalNearestNeighbor(AbstractNearestNeighborTracker):
     def _validate_pairwise_cost_matrix(pairwise_cost_matrix, n_targets, n_meas):
         if pairwise_cost_matrix is None:
             return None
+        pairwise_cost_matrix = asarray(pairwise_cost_matrix, dtype=float)
         if pairwise_cost_matrix.shape != (n_targets, n_meas):
             raise ValueError(
                 "pairwise_cost_matrix must have shape "
@@ -116,7 +118,11 @@ class GlobalNearestNeighbor(AbstractNearestNeighborTracker):
         n_targets = len(self.filter_bank)
         n_meas = measurements.shape[1]
 
-        if cov_mats_meas.ndim != 2 and cov_mats_meas.shape[2] != n_meas:
+        valid_shared_covariance = cov_mats_meas.ndim == 2
+        valid_per_measurement_covariances = (
+            cov_mats_meas.ndim == 3 and cov_mats_meas.shape[2] == n_meas
+        )
+        if not (valid_shared_covariance or valid_per_measurement_covariances):
             raise ValueError(
                 "cov_mats_meas must be a matrix or contain one covariance per measurement."
             )
