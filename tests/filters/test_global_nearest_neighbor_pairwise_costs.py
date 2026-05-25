@@ -1,5 +1,6 @@
 import unittest
 
+import numpy as np
 import numpy.testing as npt
 
 # pylint: disable=no-member,duplicate-code
@@ -88,6 +89,30 @@ class GlobalNearestNeighborPairwiseCostTest(unittest.TestCase):
         pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
         reason="Not supported on this backend",
     )
+    def test_pairwise_cost_matrix_accepts_array_like_input(self):
+        tracker = GlobalNearestNeighbor()
+        tracker.filter_state = self.kfs_init
+        all_gaussians = [kf.filter_state for kf in self.kfs_init]
+        perfect_meas_ordered = self.meas_mat @ column_stack(
+            [gaussian.mu for gaussian in all_gaussians]
+        )
+
+        association = tracker.find_association(
+            perfect_meas_ordered,
+            self.meas_mat,
+            eye(2),
+            pairwise_cost_matrix=[
+                [10.0, -10.0, 10.0],
+                [10.0, 10.0, -10.0],
+                [-10.0, 10.0, 10.0],
+            ],
+        )
+        npt.assert_array_equal(association, [1, 2, 0])
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
+        reason="Not supported on this backend",
+    )
     def test_pairwise_cost_matrix_shape_is_validated(self):
         tracker = GlobalNearestNeighbor()
         tracker.filter_state = self.kfs_init
@@ -102,6 +127,25 @@ class GlobalNearestNeighborPairwiseCostTest(unittest.TestCase):
                 self.meas_mat,
                 eye(2),
                 pairwise_cost_matrix=zeros((2, 3)),
+            )
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
+        reason="Not supported on this backend",
+    )
+    def test_invalid_measurement_covariance_shape_raises_value_error(self):
+        tracker = GlobalNearestNeighbor()
+        tracker.filter_state = self.kfs_init
+        all_gaussians = [kf.filter_state for kf in self.kfs_init]
+        perfect_meas_ordered = self.meas_mat @ column_stack(
+            [gaussian.mu for gaussian in all_gaussians]
+        )
+
+        with self.assertRaises(ValueError):
+            tracker.find_association(
+                perfect_meas_ordered,
+                self.meas_mat,
+                np.ones((2,)),
             )
 
     @unittest.skipIf(
