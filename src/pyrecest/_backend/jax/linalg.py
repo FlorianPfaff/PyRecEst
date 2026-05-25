@@ -48,8 +48,9 @@ def is_single_matrix_pd(mat):
         eigvals = _jnp.linalg.eigvalsh(mat)
         return _jnp.logical_and(is_hermitian, _jnp.min(_jnp.real(eigvals)) > 0)
 
+    is_symmetric = _jnp.all(_jnp.abs(mat - _jnp.transpose(mat)) < atol)
     factor = _jnp.linalg.cholesky(mat)
-    return _jnp.all(_jnp.isfinite(factor))
+    return _jnp.logical_and(is_symmetric, _jnp.all(_jnp.isfinite(factor)))
 
 
 for func_name in unsupported_functions:
