@@ -22,7 +22,8 @@ class TestPytorchBackendStd(unittest.TestCase):
                 pytorch_backend.array([1.632993161855452, 1.632993161855452]),
             )
         )
-        self.assertTrue(pytorch_backend.allclose(sample_std, pytorch_backend.array([2.0, 2.0]))
+        self.assertTrue(
+            pytorch_backend.allclose(sample_std, pytorch_backend.array([2.0, 2.0]))
         )
 
     def test_std_accepts_keepdims_and_dtype(self):
@@ -206,9 +207,15 @@ class TestPytorchBackendLinalg(unittest.TestCase):
         )
 
     def test_solve_sylvester_promotes_mixed_dtypes(self):
-        a = pytorch_backend.array([[2.0, 0.0], [0.0, 3.0]], dtype=pytorch_backend.float32)
-        b = pytorch_backend.array([[2.0, 0.0], [0.0, 3.0]], dtype=pytorch_backend.float32)
-        q = pytorch_backend.array([[8.0, 10.0], [10.0, 12.0]], dtype=pytorch_backend.float64)
+        a = pytorch_backend.array(
+            [[2.0, 0.0], [0.0, 3.0]], dtype=pytorch_backend.float32
+        )
+        b = pytorch_backend.array(
+            [[2.0, 0.0], [0.0, 3.0]], dtype=pytorch_backend.float32
+        )
+        q = pytorch_backend.array(
+            [[8.0, 10.0], [10.0, 12.0]], dtype=pytorch_backend.float64
+        )
 
         result = pytorch_backend.linalg.solve_sylvester(a, b, q)
 

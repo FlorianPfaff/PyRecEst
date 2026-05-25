@@ -331,9 +331,7 @@ def gate_hypotheses(
         return list(hypotheses)
 
     if isinstance(gate, TopKGate):
-        return _merge_active_gate_results(
-            hypotheses, gate.filter(active_hypotheses)
-        )
+        return _merge_active_gate_results(hypotheses, gate.filter(active_hypotheses))
     if hasattr(gate, "filter"):
         filtered = gate.filter(active_hypotheses)
         if filtered is not None:

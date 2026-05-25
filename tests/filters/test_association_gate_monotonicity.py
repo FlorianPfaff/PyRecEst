@@ -38,7 +38,10 @@ class AssociationGateMonotonicityTest(unittest.TestCase):
         )
 
         self.assertEqual(
-            [(hypothesis.track_index, hypothesis.measurement_index) for hypothesis in accepted],
+            [
+                (hypothesis.track_index, hypothesis.measurement_index)
+                for hypothesis in accepted
+            ],
             [(0, 1)],
         )
 
