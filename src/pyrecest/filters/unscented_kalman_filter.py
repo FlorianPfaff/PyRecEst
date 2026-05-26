@@ -15,7 +15,9 @@ from .manifold_mixins import EuclideanFilterMixin
 
 
 def _assert_supported_backend():
-    assert pyrecest.backend.__backend_name__ != "pytorch", "Not supported on this backend"
+    assert (
+        pyrecest.backend.__backend_name__ != "pytorch"
+    ), "Not supported on this backend"
 
 
 class UnscentedKalmanFilter(AbstractFilter, EuclideanFilterMixin):
