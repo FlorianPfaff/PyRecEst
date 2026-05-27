@@ -10,7 +10,6 @@ import numpy as np
 
 from .time_offset import nearest_time_indices
 
-
 _FEATURE_ROW_COUNT_ERROR = (
     "features rows must match requested row count; "
     "features must produce one predicted bias row per measurement"
