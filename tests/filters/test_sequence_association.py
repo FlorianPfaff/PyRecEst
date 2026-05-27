@@ -1,7 +1,6 @@
 import unittest
 
 import numpy as np
-
 from pyrecest.filters import (
     SequenceAssociationNode,
     solve_top_k_viterbi_sequence_associations,
