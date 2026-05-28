@@ -4,7 +4,10 @@ import numpy.testing as npt
 
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import array
-from pyrecest.distributions import CustomHypertoroidalDistribution, CustomToroidalDistribution
+from pyrecest.distributions import (
+    CustomHypertoroidalDistribution,
+    CustomToroidalDistribution,
+)
 
 
 class CustomHypertoroidalDistributionTest(unittest.TestCase):

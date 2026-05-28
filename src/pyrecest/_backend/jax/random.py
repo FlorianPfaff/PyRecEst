@@ -51,7 +51,9 @@ def _get_state(**kwargs):
 
 
 def _looks_like_integer_dimension(value):
-    return isinstance(value, (int, _np.integer)) and not isinstance(value, (bool, _np.bool_))
+    return isinstance(value, (int, _np.integer)) and not isinstance(
+        value, (bool, _np.bool_)
+    )
 
 
 def _size_type_error():
