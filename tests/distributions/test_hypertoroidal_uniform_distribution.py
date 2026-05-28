@@ -3,7 +3,6 @@ import subprocess
 import sys
 
 import pytest
-
 from pyrecest.backend import array, ones, pi, zeros
 from pyrecest.distributions.hypertorus.hypertoroidal_uniform_distribution import (
     HypertoroidalUniformDistribution,
