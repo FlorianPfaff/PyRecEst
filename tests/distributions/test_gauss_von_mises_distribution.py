@@ -89,9 +89,7 @@ class GaussVonMisesDistributionTest(unittest.TestCase):
 
     def test_constructor_rejects_invalid_kappa(self):
         for kappa in (True, 0.0, -1.0, float("nan"), float("inf")):
-            with self.subTest(kappa=kappa), self.assertRaisesRegex(
-                ValueError, "kappa"
-            ):
+            with self.subTest(kappa=kappa), self.assertRaisesRegex(ValueError, "kappa"):
                 GaussVonMisesDistribution(2, 1.3, 3, 0, 0.001, kappa)
 
     def test_constructor_rejects_invalid_matrix_parameters(self):
@@ -107,11 +105,25 @@ class GaussVonMisesDistributionTest(unittest.TestCase):
             ),
             (
                 "P must be symmetric",
-                (valid_mu, array([[1.0, 2.0], [0.0, 1.0]]), 3, valid_beta, valid_gamma, 0.7),
+                (
+                    valid_mu,
+                    array([[1.0, 2.0], [0.0, 1.0]]),
+                    3,
+                    valid_beta,
+                    valid_gamma,
+                    0.7,
+                ),
             ),
             (
                 "positive definite",
-                (valid_mu, array([[1.0, 2.0], [2.0, 1.0]]), 3, valid_beta, valid_gamma, 0.7),
+                (
+                    valid_mu,
+                    array([[1.0, 2.0], [2.0, 1.0]]),
+                    3,
+                    valid_beta,
+                    valid_gamma,
+                    0.7,
+                ),
             ),
             (
                 "beta",
@@ -123,7 +135,14 @@ class GaussVonMisesDistributionTest(unittest.TestCase):
             ),
             (
                 "Gamma must be symmetric",
-                (valid_mu, valid_p, 3, valid_beta, array([[0.0, 1.0], [0.0, 0.0]]), 0.7),
+                (
+                    valid_mu,
+                    valid_p,
+                    3,
+                    valid_beta,
+                    array([[0.0, 1.0], [0.0, 0.0]]),
+                    0.7,
+                ),
             ),
         ]
 
