@@ -34,7 +34,9 @@ class AbstractGridFilter(AbstractFilter):
                 self.filter_state.enforce_pdf_nonnegative,
             )
         elif self.filter_state.grid_values.shape != new_state.grid_values.shape:
-            warnings.warn("New grid has a different number of grid points.", RuntimeWarning)
+            warnings.warn(
+                "New grid has a different number of grid points.", RuntimeWarning
+            )
 
         self._filter_state = new_state
 
@@ -44,7 +46,9 @@ class AbstractGridFilter(AbstractFilter):
         if likelihood_values.shape == ():
             return ones_like(self.filter_state.grid_values) * likelihood_values
         if likelihood_values.shape != expected_shape:
-            raise ValueError(f"likelihood must return a scalar or one value per grid point with shape {expected_shape}, got {likelihood_values.shape}.")
+            raise ValueError(
+                f"likelihood must return a scalar or one value per grid point with shape {expected_shape}, got {likelihood_values.shape}."
+            )
         return likelihood_values
 
     def update_nonlinear(self, likelihood, z):
@@ -73,10 +77,14 @@ class AbstractGridFilter(AbstractFilter):
         """
         if hasattr(measurement_model, "likelihood_values"):
             likelihood = measurement_model.likelihood_values
-        elif hasattr(measurement_model, "likelihood") and callable(measurement_model.likelihood):
+        elif hasattr(measurement_model, "likelihood") and callable(
+            measurement_model.likelihood
+        ):
             likelihood = measurement_model.likelihood
         else:
-            raise TypeError("measurement_model must expose likelihood_values(z, grid) or a callable likelihood(z, grid) attribute.")
+            raise TypeError(
+                "measurement_model must expose likelihood_values(z, grid) or a callable likelihood(z, grid) attribute."
+            )
         self.update_nonlinear(likelihood, z)
 
     def predict_model(self, transition_model):
@@ -96,16 +104,22 @@ class AbstractGridFilter(AbstractFilter):
         filter does not expose ``predict_nonlinear_via_transition_density``, a
         clear ``NotImplementedError`` is raised.
         """
-        predict_via_density = getattr(self, "predict_nonlinear_via_transition_density", None)
+        predict_via_density = getattr(
+            self, "predict_nonlinear_via_transition_density", None
+        )
         if not callable(predict_via_density):
-            raise NotImplementedError(f"{type(self).__name__} does not implement predict_nonlinear_via_transition_density.")
+            raise NotImplementedError(
+                f"{type(self).__name__} does not implement predict_nonlinear_via_transition_density."
+            )
 
         if hasattr(transition_model, "transition_density_for_filter"):
             transition_density = transition_model.transition_density_for_filter(self)
         elif hasattr(transition_model, "transition_density"):
             transition_density = transition_model.transition_density
         else:
-            raise TypeError("transition_model must expose transition_density_for_filter(filter) or a transition_density attribute.")
+            raise TypeError(
+                "transition_model must expose transition_density_for_filter(filter) or a transition_density attribute."
+            )
         predict_via_density(transition_density)  # pylint: disable=not-callable
 
     def plot_filter_state(self):

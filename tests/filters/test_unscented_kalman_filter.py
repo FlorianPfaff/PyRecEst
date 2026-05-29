@@ -74,9 +74,7 @@ class UnscentedKalmanFilterTest(unittest.TestCase):
         reason="Not supported on this backend",
     )
     def test_unsupported_pytorch_backend_raises_not_implemented(self):
-        kf = UnscentedKalmanFilter(
-            GaussianDistribution(array([0.0]), array([[1.0]]))
-        )
+        kf = UnscentedKalmanFilter(GaussianDistribution(array([0.0]), array([[1.0]])))
 
         with patch.object(pyrecest.backend, "__backend_name__", "pytorch"):
             with self.assertRaisesRegex(NotImplementedError, "PyTorch backend"):

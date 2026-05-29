@@ -25,7 +25,11 @@ class WrappedExponentialDistributionTest(unittest.TestCase):
 
     def test_pdf(self):
         def pdftemp(x):
-            return sum(self.lambda_ * exp(-self.lambda_ * (x + 2.0 * pi * k)) for k in arange(-20, 21) if x + 2.0 * pi * k >= 0)
+            return sum(
+                self.lambda_ * exp(-self.lambda_ * (x + 2.0 * pi * k))
+                for k in arange(-20, 21)
+                if x + 2.0 * pi * k >= 0
+            )
 
         for x in [0.0, 1.0, 2.0, 3.0, 4.0]:
             npt.assert_allclose(self.we.pdf(array(x)), pdftemp(array(x)), rtol=5e-7)
@@ -56,7 +60,8 @@ class WrappedExponentialDistributionTest(unittest.TestCase):
         npt.assert_allclose(self.we.integrate(), 1.0, rtol=5e-7)
         npt.assert_allclose(self.we.integrate_numerically(), 1.0, rtol=5e-7)
         npt.assert_allclose(
-            self.we.integrate(array([0.0, pi])) + self.we.integrate(array([pi, 2.0 * pi])),
+            self.we.integrate(array([0.0, pi]))
+            + self.we.integrate(array([pi, 2.0 * pi])),
             1.0,
             rtol=5e-7,
         )
@@ -74,7 +79,9 @@ class WrappedExponentialDistributionTest(unittest.TestCase):
             )
 
     def test_circular_mean(self):
-        npt.assert_allclose(self.we.mean_direction(), float(arctan(1.0 / self.lambda_)), rtol=5e-7)
+        npt.assert_allclose(
+            self.we.mean_direction(), float(arctan(1.0 / self.lambda_)), rtol=5e-7
+        )
 
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ == "jax",

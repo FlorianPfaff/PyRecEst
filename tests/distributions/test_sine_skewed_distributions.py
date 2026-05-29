@@ -5,9 +5,9 @@ import numpy.testing as npt
 import pyrecest.backend
 from pyrecest.backend import array, pi
 from pyrecest.distributions.circle.sine_skewed_distributions import (
-    GSSVMDistribution,
     GeneralizedKSineSkewedVonMisesDistribution,
     GeneralizedKSineSkewedWrappedCauchyDistribution,
+    GSSVMDistribution,
     SineSkewedWrappedCauchyDistribution,
     SineSkewedWrappedNormalDistribution,
 )

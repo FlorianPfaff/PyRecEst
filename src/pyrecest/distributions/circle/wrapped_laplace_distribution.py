@@ -33,7 +33,11 @@ class WrappedLaplaceDistribution(AbstractCircularDistribution):
         self.kappa = kappa_
 
     def trigonometric_moment(self, n):
-        return 1 / (1 - 1j * n / self.lambda_ / self.kappa) / (1 + 1j * n / (self.lambda_ / self.kappa))
+        return (
+            1
+            / (1 - 1j * n / self.lambda_ / self.kappa)
+            / (1 + 1j * n / (self.lambda_ / self.kappa))
+        )
 
     def pdf(self, xs):
         xs = asarray(xs)
@@ -45,8 +49,10 @@ class WrappedLaplaceDistribution(AbstractCircularDistribution):
             * self.kappa
             / (1 + self.kappa**2)
             * (
-                exp(-self.lambda_ * self.kappa * xs) / (1 - exp(-2.0 * pi * self.lambda_ * self.kappa))
-                + exp(self.lambda_ / self.kappa * xs) / (exp(2.0 * pi * self.lambda_ / self.kappa) - 1.0)
+                exp(-self.lambda_ * self.kappa * xs)
+                / (1 - exp(-2.0 * pi * self.lambda_ * self.kappa))
+                + exp(self.lambda_ / self.kappa * xs)
+                / (exp(2.0 * pi * self.lambda_ / self.kappa) - 1.0)
             )
         )
         return p

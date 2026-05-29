@@ -75,7 +75,10 @@ class WrappedCauchyDistribution(AbstractCircularDistribution):
             angles = array(angles)
             angles_centered = mod(angles - self.mu, 2.0 * pi)
             half_angles = angles_centered / 2.0
-            return arctan2(coth(self.gamma / 2.0) * sin(half_angles), cos(half_angles)) / pi
+            return (
+                arctan2(coth(self.gamma / 2.0) * sin(half_angles), cos(half_angles))
+                / pi
+            )
 
         return mod(primitive(xs) - primitive(starting_point), 1.0)
 

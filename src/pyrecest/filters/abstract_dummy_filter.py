@@ -27,9 +27,7 @@ class AbstractDummyFilter(AbstractFilter):
         if not hasattr(dist, "dim"):
             raise ValueError("dist must expose a dim attribute.")
         if dist.dim != self.dim:
-            raise ValueError(
-                f"dist must have dimension {self.dim}, got {dist.dim}."
-            )
+            raise ValueError(f"dist must have dimension {self.dim}, got {dist.dim}.")
         # Do nothing
 
     def predict_identity(self, noise_distribution):

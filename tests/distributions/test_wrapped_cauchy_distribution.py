@@ -30,9 +30,13 @@ class WrappedCauchyDistributionTest(unittest.TestCase):
                 summation += gamma / (pi * (gamma**2 + (x - mu + 2.0 * pi * k) ** 2))
             return summation
 
-        custom_wrapped = CustomCircularDistribution(lambda xs: array([pdf_wrapped(x, self.mu, self.gamma) for x in xs]))
+        custom_wrapped = CustomCircularDistribution(
+            lambda xs: array([pdf_wrapped(x, self.mu, self.gamma) for x in xs])
+        )
 
-        npt.assert_allclose(dist.pdf(xs=self.xs), custom_wrapped.pdf(xs=self.xs), atol=0.0001)
+        npt.assert_allclose(
+            dist.pdf(xs=self.xs), custom_wrapped.pdf(xs=self.xs), atol=0.0001
+        )
 
     def test_pdf_mode_for_nonzero_mean(self):
         dist = WrappedCauchyDistribution(array(1.0), array(0.5))

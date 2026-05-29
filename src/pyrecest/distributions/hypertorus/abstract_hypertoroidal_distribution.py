@@ -69,8 +69,8 @@ class AbstractHypertoroidalDistribution(AbstractPeriodicDistribution):
 
         :raises ValueError: If the shift vector is not of the same dimension as the distribution.
         """
-        from .custom_hypertoroidal_distribution import CustomHypertoroidalDistribution
         from ._input_validation import as_shift_vector
+        from .custom_hypertoroidal_distribution import CustomHypertoroidalDistribution
 
         shift_by = as_shift_vector(shift_by, self.dim)
 
