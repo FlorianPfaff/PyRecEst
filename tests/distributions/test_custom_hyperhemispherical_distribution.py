@@ -15,9 +15,7 @@ from pyrecest.distributions import (
 
 class CustomHyperhemisphericalDistributionTest(unittest.TestCase):
     def test_pdf_accepts_list_inputs(self):
-        dist = CustomHyperhemisphericalDistribution(
-            lambda xs: ones(xs.shape[:-1]), 2
-        )
+        dist = CustomHyperhemisphericalDistribution(lambda xs: ones(xs.shape[:-1]), 2)
         points = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]
 
         npt.assert_allclose(dist.pdf(points[0]), dist.pdf(array(points[0])))

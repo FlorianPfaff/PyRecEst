@@ -37,9 +37,7 @@ class CustomHypersphericalDistributionTest(unittest.TestCase):
         )
 
     def test_pdf_accepts_list_inputs(self):
-        dist = CustomHypersphericalDistribution(
-            lambda xs: ones(xs.shape[:-1]), dim=2
-        )
+        dist = CustomHypersphericalDistribution(lambda xs: ones(xs.shape[:-1]), dim=2)
         points = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]
 
         self.assertTrue(allclose(dist.pdf(points[0]), dist.pdf(array(points[0]))))

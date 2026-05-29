@@ -306,9 +306,7 @@ class TestSE2UKF(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "4-D vector"):
             self.filter.update_identity(_make_noise(), [1.0, 0.0, 0.0])
         with self.assertRaisesRegex(ValueError, "finite"):
-            self.filter.update_identity(
-                _make_noise(), [float("nan"), 0.0, 0.0, 0.0]
-            )
+            self.filter.update_identity(_make_noise(), [float("nan"), 0.0, 0.0, 0.0])
         with self.assertRaisesRegex(ValueError, "normalised"):
             self.filter.update_identity(_make_noise(), [2.0, 0.0, 0.0, 0.0])
 
