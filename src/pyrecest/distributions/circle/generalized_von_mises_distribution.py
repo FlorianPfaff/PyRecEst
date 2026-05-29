@@ -55,7 +55,9 @@ class GvMDistribution(AbstractCircularDistribution):
     @property
     def norm_const(self):
         if self._norm_const is None:
-            self._norm_const = self.integrate_fun_over_domain(lambda *args: self.pdf_unnormalized(array(args)), self.dim)
+            self._norm_const = self.integrate_fun_over_domain(
+                lambda *args: self.pdf_unnormalized(array(args)), self.dim
+            )
         return self._norm_const
 
     def pdf_unnormalized(self, xs):
