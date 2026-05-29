@@ -100,9 +100,7 @@ class WrappedCauchyDistributionTest(unittest.TestCase):
         dist = WrappedCauchyDistribution(self.mu, self.gamma)
 
         npt.assert_allclose(dist.cdf(0.5), dist.cdf(array([0.5])), atol=1e-8)
-        npt.assert_allclose(
-            dist.cdf(array(0.5)), dist.cdf(array([0.5])), atol=1e-8
-        )
+        npt.assert_allclose(dist.cdf(array(0.5)), dist.cdf(array([0.5])), atol=1e-8)
 
 
 if __name__ == "__main__":

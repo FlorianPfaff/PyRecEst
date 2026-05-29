@@ -31,7 +31,9 @@ class CircularUKFTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "GaussianDistribution"):
             self.filter.filter_state = object()
         with self.assertRaisesRegex(ValueError, "one-dimensional"):
-            self.filter.filter_state = GaussianDistribution(array([0.0, 1.0]), array([[1.0, 0.0], [0.0, 1.0]]))
+            self.filter.filter_state = GaussianDistribution(
+                array([0.0, 1.0]), array([[1.0, 0.0], [0.0, 1.0]])
+            )
         with self.assertRaisesRegex(ValueError, "finite"):
             self.filter.filter_state = GaussianDistribution(
                 array([float("nan")]), array([[1.0]]), check_validity=False
@@ -59,7 +61,9 @@ class CircularUKFTest(unittest.TestCase):
             self.filter.predict_identity(object())
         with self.assertRaisesRegex(ValueError, "positive"):
             self.filter.predict_identity(
-                GaussianDistribution(array([0.0]), array([[-1.0]]), check_validity=False)
+                GaussianDistribution(
+                    array([0.0]), array([[-1.0]]), check_validity=False
+                )
             )
 
     @unittest.skipIf(
@@ -127,11 +131,15 @@ class CircularUKFTest(unittest.TestCase):
             self.filter.update_identity(object(), self.g.mu)
         with self.assertRaisesRegex(ValueError, "positive"):
             self.filter.update_identity(
-                GaussianDistribution(array([0.0]), array([[-1.0]]), check_validity=False),
+                GaussianDistribution(
+                    array([0.0]), array([[-1.0]]), check_validity=False
+                ),
                 self.g.mu,
             )
         with self.assertRaisesRegex(ValueError, "scalar"):
-            self.filter.update_identity(GaussianDistribution(array([0.0]), self.g.C), [1.0, 2.0])
+            self.filter.update_identity(
+                GaussianDistribution(array([0.0]), self.g.C), [1.0, 2.0]
+            )
         with self.assertRaisesRegex(ValueError, "finite"):
             self.filter.update_identity(
                 GaussianDistribution(array([0.0]), self.g.C), float("nan")
@@ -185,7 +193,9 @@ class CircularUKFTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "covariance"):
             self.filter.update_nonlinear(
                 lambda x: x,
-                GaussianDistribution(array([0.0]), array([[float("inf")]]), check_validity=False),
+                GaussianDistribution(
+                    array([0.0]), array([[float("inf")]]), check_validity=False
+                ),
                 self.g.mu,
             )
 

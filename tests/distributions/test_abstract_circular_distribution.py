@@ -53,9 +53,7 @@ class AbstractCircularDistributionTest(unittest.TestCase):
         self.assertTrue(
             allclose(dist.cdf_numerical(0.5), dist.cdf_numerical(array([0.5])))
         )
-        self.assertTrue(
-            allclose(dist.cdf_numerical(xs), dist.cdf_numerical(array(xs)))
-        )
+        self.assertTrue(allclose(dist.cdf_numerical(xs), dist.cdf_numerical(array(xs))))
 
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ == "jax",

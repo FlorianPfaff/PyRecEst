@@ -14,8 +14,8 @@ import math
 import pyrecest.backend
 
 # pylint: disable=no-name-in-module,no-member
+from pyrecest.backend import all as backend_all
 from pyrecest.backend import (
-    all as backend_all,
     array,
     asarray,
     atleast_1d,
@@ -54,7 +54,9 @@ def _as_circular_gaussian(distribution, role):
         try:
             distribution = GaussianDistribution.from_distribution(distribution)
         except Exception as exc:  # pragma: no cover - backend-specific failures
-            raise ValueError(f"{role} must be convertible to GaussianDistribution.") from exc
+            raise ValueError(
+                f"{role} must be convertible to GaussianDistribution."
+            ) from exc
 
     mu = asarray(distribution.mu)
     covariance = asarray(distribution.C)
