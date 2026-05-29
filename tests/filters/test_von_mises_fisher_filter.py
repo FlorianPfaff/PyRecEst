@@ -81,7 +81,9 @@ class VMFFilterTest(unittest.TestCase):
         npt.assert_allclose(self.vmf.mu, vmf_updated_identity.mu, rtol=5e-7)
         self.assertGreaterEqual(vmf_updated_identity.kappa, self.vmf.kappa)
 
-    def test_update_identity_accepts_array_like_measurement_without_mutating_noise(self):
+    def test_update_identity_accepts_array_like_measurement_without_mutating_noise(
+        self,
+    ):
         self.filter.filter_state = self.vmf
         noise_distribution = VonMisesFisherDistribution(array([0.0, 1.0]), 0.9)
         original_noise_mu = copy.deepcopy(noise_distribution.mu)
