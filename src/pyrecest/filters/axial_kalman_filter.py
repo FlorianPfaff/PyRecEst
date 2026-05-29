@@ -67,7 +67,9 @@ class AxialKalmanFilter(AbstractAxialFilter):
     def _as_measurement(self, z):
         measurement = asarray(z, dtype=float)
         if measurement.shape != self._filter_state.mu.shape:
-            raise ValueError("measurement must have the same shape as the filter state.")
+            raise ValueError(
+                "measurement must have the same shape as the filter state."
+            )
         if not bool(all(isfinite(measurement))):
             raise ValueError("measurement must be finite.")
         if not bool(abs(linalg.norm(measurement) - 1.0) < 1e-5):

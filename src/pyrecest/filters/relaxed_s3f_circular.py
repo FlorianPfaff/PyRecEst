@@ -18,9 +18,11 @@ from typing import Any
 
 import numpy as np
 from pyrecest.backend import abs as backend_abs
-from pyrecest.backend import angle as backend_angle
 from pyrecest.backend import (
     all,
+)
+from pyrecest.backend import angle as backend_angle
+from pyrecest.backend import (
     array,
     asarray,
     column_stack,
