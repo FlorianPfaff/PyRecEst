@@ -5,7 +5,6 @@ from __future__ import annotations
 import runpy
 from pathlib import Path
 
-
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 EXAMPLE_PATH = REPOSITORY_ROOT / "examples" / "basic" / "so3_product_sequence_filter.py"
 

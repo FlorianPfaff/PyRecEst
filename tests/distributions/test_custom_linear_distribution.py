@@ -50,9 +50,7 @@ class CustomLinearDistributionTest(unittest.TestCase):
         npt.assert_allclose(list_pdf, array_pdf)
 
     def test_pdf_accepts_multidimensional_list_inputs(self):
-        cld = CustomLinearDistribution(
-            lambda xs: xs[:, 0], 2, shift_by=[0.2, -0.1]
-        )
+        cld = CustomLinearDistribution(lambda xs: xs[:, 0], 2, shift_by=[0.2, -0.1])
 
         list_pdf = cld.pdf([[1.0, 2.0], [3.0, 4.0]])
         array_pdf = cld.pdf(array([[1.0, 2.0], [3.0, 4.0]]))

@@ -28,7 +28,10 @@ class SO3TangentGaussianDistributionTest(unittest.TestCase):
 
         invalid_cases = [
             (array([0.1, 0.2, 0.3]), "shape"),
-            (array([[0.1, 0.0, 0.0], [0.0, float("nan"), 0.0], [0.0, 0.0, 0.3]]), "finite"),
+            (
+                array([[0.1, 0.0, 0.0], [0.0, float("nan"), 0.0], [0.0, 0.0, 0.3]]),
+                "finite",
+            ),
             (array([[0.1, 0.2, 0.0], [0.0, 0.2, 0.0], [0.0, 0.0, 0.3]]), "symmetric"),
             (diag(array([0.1, 0.0, 0.3])), "positive definite"),
         ]

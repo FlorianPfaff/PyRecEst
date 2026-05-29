@@ -430,7 +430,9 @@ def run_so3_product_sequence_filter(
         )
     proposal_gain = _validate_nonnegative_finite("proposal_gain", proposal_gain)
     if component_noise_std is not None and max_noise_std is not None:
-        raise ValueError("component_noise_std and max_noise_std are mutually exclusive.")
+        raise ValueError(
+            "component_noise_std and max_noise_std are mutually exclusive."
+        )
     if noise_std is None and component_noise_std is None and max_noise_std is None:
         raise ValueError(
             "noise_std, component_noise_std, or max_noise_std is required."

@@ -58,9 +58,7 @@ class SO3DiracDistribution(HyperhemisphericalDiracDistribution):
             if rotation_matrices.shape[-2:] != (3, 3):
                 raise ValueError("Rotation matrices must have shape (..., 3, 3).")
         else:
-            raise ValueError(
-                "Rotation matrices must have shape (3, 3) or (..., 3, 3)."
-            )
+            raise ValueError("Rotation matrices must have shape (3, 3) or (..., 3, 3).")
         if not bool(all(isfinite(rotation_matrices))):
             raise ValueError("Rotation matrices must be finite.")
 

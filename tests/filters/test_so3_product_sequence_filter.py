@@ -4,7 +4,10 @@ import numpy as np
 import numpy.testing as npt
 from pyrecest.backend import array, cos, ones, sin, stack, to_numpy
 from pyrecest.diagnostics import ParticleFilterResult
-from pyrecest.filters import SO3ProductSequenceFilterRunner, run_so3_product_sequence_filter
+from pyrecest.filters import (
+    SO3ProductSequenceFilterRunner,
+    run_so3_product_sequence_filter,
+)
 
 
 def z_quaternion(angle):
@@ -151,7 +154,9 @@ class SO3ProductSequenceFilterTest(unittest.TestCase):
                 measurements, noise_std=0.1, num_particles=1.5
             )
         with self.assertRaises(ValueError):
-            run_so3_product_sequence_filter(measurements, noise_std=0.1, max_noise_std=-0.5)
+            run_so3_product_sequence_filter(
+                measurements, noise_std=0.1, max_noise_std=-0.5
+            )
         with self.assertRaises(ValueError):
             run_so3_product_sequence_filter(
                 measurements,
@@ -160,17 +165,29 @@ class SO3ProductSequenceFilterTest(unittest.TestCase):
                 max_noise_std=0.5,
             )
         with self.assertRaises(ValueError):
-            run_so3_product_sequence_filter(measurements, noise_std=0.5, max_noise_std=0.1)
+            run_so3_product_sequence_filter(
+                measurements, noise_std=0.5, max_noise_std=0.1
+            )
         with self.assertRaises(ValueError):
-            run_so3_product_sequence_filter(measurements, noise_std=0.1, initial_noise_std=-0.01)
+            run_so3_product_sequence_filter(
+                measurements, noise_std=0.1, initial_noise_std=-0.01
+            )
         with self.assertRaises(ValueError):
-            run_so3_product_sequence_filter(measurements, noise_std=0.1, proposal_gain=-0.2)
+            run_so3_product_sequence_filter(
+                measurements, noise_std=0.1, proposal_gain=-0.2
+            )
         with self.assertRaises(ValueError):
-            run_so3_product_sequence_filter(measurements, noise_std=0.1, resample_threshold=-0.5)
+            run_so3_product_sequence_filter(
+                measurements, noise_std=0.1, resample_threshold=-0.5
+            )
         with self.assertRaises(ValueError):
-            run_so3_product_sequence_filter(measurements, noise_std=0.1, confidence_exponent=0.0)
+            run_so3_product_sequence_filter(
+                measurements, noise_std=0.1, confidence_exponent=0.0
+            )
         with self.assertRaises(ValueError):
-            run_so3_product_sequence_filter(measurements, noise_std=0.1, outlier_prob=1.5)
+            run_so3_product_sequence_filter(
+                measurements, noise_std=0.1, outlier_prob=1.5
+            )
         with self.assertRaises(ValueError):
             run_so3_product_sequence_filter(
                 measurements, noise_std=0.1, transition_callback="not-callable"

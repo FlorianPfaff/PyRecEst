@@ -45,11 +45,7 @@ class SO3ProductTangentGaussianDistributionTest(unittest.TestCase):
         invalid_cases = [
             (diag(array([0.1, 0.2, 0.3])), "shape"),
             (
-                diag(
-                    array(
-                        [0.1, 0.2, 0.3, float("nan"), 0.5, 0.6]
-                    )
-                ),
+                diag(array([0.1, 0.2, 0.3, float("nan"), 0.5, 0.6])),
                 "finite",
             ),
             (
