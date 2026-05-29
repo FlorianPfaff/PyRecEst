@@ -31,7 +31,5 @@ class ToroidalWrappedNormalFilter(AbstractFilter, ToroidalFilterMixin):
 
     def predict_identity(self, twn_sys):
         if not isinstance(twn_sys, ToroidalWrappedNormalDistribution):
-            raise ValueError(
-                "twn_sys must be a ToroidalWrappedNormalDistribution."
-            )
+            raise ValueError("twn_sys must be a ToroidalWrappedNormalDistribution.")
         self.filter_state = self.filter_state.convolve(twn_sys)
