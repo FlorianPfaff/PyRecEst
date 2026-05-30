@@ -52,7 +52,9 @@ def test_uniform_and_randint_reject_incompatible_bounds_without_explicit_size():
         random.uniform(jnp.zeros((2,)), jnp.ones((3,)))
 
     with pytest.raises(ValueError):
-        random.randint(jnp.zeros((2,), dtype=jnp.int32), jnp.ones((3,), dtype=jnp.int32))
+        random.randint(
+            jnp.zeros((2,), dtype=jnp.int32), jnp.ones((3,), dtype=jnp.int32)
+        )
 
 
 def _size_aware_samplers():

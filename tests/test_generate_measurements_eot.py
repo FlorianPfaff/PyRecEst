@@ -57,7 +57,9 @@ class TestGenerateMeasurementsEot(unittest.TestCase):
         }
         groundtruth = array([[np.pi / 2.0, 0.0, 0.0]])
 
-        with patch.object(PolygonWithSampling, "sample_on_boundary", capture_shape_exterior):
+        with patch.object(
+            PolygonWithSampling, "sample_on_boundary", capture_shape_exterior
+        ):
             generate_measurements(groundtruth, simulation_param)
 
         np.testing.assert_allclose(
