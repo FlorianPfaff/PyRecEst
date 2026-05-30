@@ -227,6 +227,7 @@ def __getattr__(name: str):
     globals()[name] = value
     return value
 
+
 def __dir__():
     """List lazily exported filter symbols for interactive use."""
     return sorted(set(globals()) | set(_FILTER_EXPORTS))

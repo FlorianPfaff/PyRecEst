@@ -8,7 +8,6 @@ comparing against other random-matrix-family trackers.
 
 from .vbrm_tracker import VBRMTracker
 
-
 VBRMOTracker = VBRMTracker
 VbrmOTracker = VBRMTracker
 OrientationAwareVBRMTracker = VBRMTracker
