@@ -60,14 +60,18 @@ def test_constant_bias_predict_uses_zero_feature_row_count():
 def test_constant_bias_predict_rejects_mismatched_zero_feature_row_count():
     model = _constant_bias_model()
 
-    with pytest.raises(ValueError, match="features rows must match requested row count"):
+    with pytest.raises(
+        ValueError, match="features rows must match requested row count"
+    ):
         model.predict(np.empty((3, 0)), n_rows=2)
 
 
 def test_constant_bias_predict_rejects_nonzero_feature_columns():
     model = _constant_bias_model()
 
-    with pytest.raises(ValueError, match="features have incompatible feature dimension"):
+    with pytest.raises(
+        ValueError, match="features have incompatible feature dimension"
+    ):
         model.predict(np.ones((3, 1)))
 
 
