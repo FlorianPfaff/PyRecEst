@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import numpy as np
-
-from mem_qkf.trackers_elliptical.mem_qkf_ipls import FixedIntervalMEMIPLSSmoother, _IPLSSnapshot
+from mem_qkf.trackers_elliptical.mem_qkf_ipls import (
+    FixedIntervalMEMIPLSSmoother,
+    _IPLSSnapshot,
+)
 
 
 class ScanOnlyMEMIPLSSmoother(FixedIntervalMEMIPLSSmoother):
@@ -64,7 +66,9 @@ class ScanOnlyMEMIPLSSmoother(FixedIntervalMEMIPLSSmoother):
         self.m = snapshot.mean[:4].copy()
         self.C_m = self._regularize_covariance(snapshot.cov[:4, :4])
         self.tracker.shape_state = snapshot.mean[4:].copy()
-        self.tracker.shape_covariance = self._regularize_covariance(snapshot.cov[4:, 4:])
+        self.tracker.shape_covariance = self._regularize_covariance(
+            snapshot.cov[4:, 4:]
+        )
 
 
 ZeroLagMEMIPLSSmoother = ScanOnlyMEMIPLSSmoother
