@@ -94,7 +94,8 @@ class TestBackendRandom(unittest.TestCase):
         self.assertEqual(int(pyrecest.backend.sum(sample)), 12)
 
     @unittest.skipIf(
-        pyrecest.backend.__backend_name__ != "jax", "JAX-specific multinomial size support"
+        pyrecest.backend.__backend_name__ != "jax",
+        "JAX-specific multinomial size support",
     )
     def test_jax_multinomial_accepts_size_argument(self):
         samples = random.multinomial(5, [0.25, 0.75], size=(2, 3))
@@ -127,7 +128,8 @@ class TestBackendRandom(unittest.TestCase):
                         random_call(invalid_size)
 
     @unittest.skipIf(
-        pyrecest.backend.__backend_name__ != "jax", "JAX-specific multinomial validation"
+        pyrecest.backend.__backend_name__ != "jax",
+        "JAX-specific multinomial validation",
     )
     def test_jax_multinomial_rejects_invalid_trial_count(self):
         for invalid_n in (True, 1.5, -1):
