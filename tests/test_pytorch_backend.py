@@ -201,8 +201,12 @@ class TestPytorchBackendRandom(unittest.TestCase):
         )
 
         self.assertEqual(tuple(samples.shape), (2,))
-        self.assertTrue(pytorch_backend.all(samples >= pytorch_backend.array([0.0, 10.0])))
-        self.assertTrue(pytorch_backend.all(samples <= pytorch_backend.array([1.0, 11.0])))
+        self.assertTrue(
+            pytorch_backend.all(samples >= pytorch_backend.array([0.0, 10.0]))
+        )
+        self.assertTrue(
+            pytorch_backend.all(samples <= pytorch_backend.array([1.0, 11.0]))
+        )
         self.assertNotEqual(float(samples[0] - 0.0), float(samples[1] - 10.0))
 
     def test_uniform_rejects_incompatible_array_bounds_without_explicit_size(self):
