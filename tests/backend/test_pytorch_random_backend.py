@@ -1,6 +1,6 @@
 import pytest
 
-pytest.importorskip("torch")
+torch = pytest.importorskip("torch")
 
 from pyrecest._backend.pytorch import random  # noqa: E402
 
@@ -50,6 +50,58 @@ def test_rand_accepts_numpy_positional_dimensions():
 def test_rand_rejects_ambiguous_positional_and_size_arguments():
     with pytest.raises(TypeError, match="positional dimensions or size"):
         random.rand(2, size=(3,))
+
+
+def test_randint_accepts_numpy_broadcasted_bounds_without_explicit_size():
+    random.seed(0)
+    low = torch.tensor([0, 10])
+    high = torch.tensor([3, 13])
+
+    samples = random.randint(low, high)
+
+    assert samples.shape == (2,)
+    assert torch.all(samples >= low)
+    assert torch.all(samples < high)
+
+
+def test_randint_accepts_numpy_broadcasted_bounds_with_explicit_size():
+    random.seed(0)
+    low = torch.tensor([0, 10])
+    high = torch.tensor([3, 13])
+
+    samples = random.randint(low, high, size=(4, 2))
+
+    assert samples.shape == (4, 2)
+    assert torch.all(samples >= low)
+    assert torch.all(samples < high)
+
+
+def test_randint_accepts_array_high_only():
+    random.seed(0)
+    high = torch.tensor([3, 13])
+
+    samples = random.randint(high)
+
+    assert samples.shape == (2,)
+    assert torch.all(samples >= 0)
+    assert torch.all(samples < high)
+
+
+def test_randint_rejects_incompatible_array_bounds_and_size():
+    with pytest.raises(ValueError, match="broadcast"):
+        random.randint(torch.tensor([0, 10]), torch.tensor([3, 13]), size=(3,))
+
+
+@pytest.mark.parametrize(
+    ("low", "high"),
+    [
+        (torch.tensor([0, 10]), torch.tensor([3])),
+        (torch.tensor([0, 10]), torch.tensor([0, 13])),
+    ],
+)
+def test_randint_rejects_invalid_array_bounds(low, high):
+    with pytest.raises(ValueError):
+        random.randint(low, high)
 
 
 def test_scalar_and_empty_tuple_sizes_keep_scalar_shape():
