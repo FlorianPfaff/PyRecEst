@@ -65,11 +65,91 @@ def _randint_size(size):
     return _shape_from_size(size)
 
 
+def _is_array_parameter(value):
+    return (
+        _torch.is_tensor(value)
+        or isinstance(value, (list, tuple))
+        or (not isinstance(value, (str, bytes)) and hasattr(value, "__array__"))
+    )
+
+
+def _randint_device(*values, device=None):
+    if device is not None:
+        return device
+    for value in values:
+        if _torch.is_tensor(value):
+            return value.device
+    return None
+
+
+def _randint_array_size(size, low, high):
+    try:
+        parameter_shape = tuple(_torch.broadcast_shapes(low.shape, high.shape))
+    except RuntimeError as exc:
+        raise ValueError("low and high could not be broadcast together") from exc
+
+    if size is None:
+        return parameter_shape
+
+    sample_shape = _shape_from_size(size)
+    try:
+        broadcast_shape = tuple(_torch.broadcast_shapes(sample_shape, parameter_shape))
+    except RuntimeError as exc:
+        raise ValueError("size, low, and high could not be broadcast together") from exc
+    if broadcast_shape != sample_shape:
+        raise ValueError("size, low, and high could not be broadcast together")
+    return sample_shape
+
+
+def _randint_array(low, high, size, *args, **kwargs):
+    if args:
+        raise TypeError(
+            "array-valued randint bounds do not support additional positional arguments"
+        )
+
+    dtype = kwargs.pop("dtype", None)
+    if dtype is None:
+        dtype = _torch.int64
+    device = kwargs.pop("device", None)
+    generator = kwargs.pop("generator", None)
+    out = kwargs.pop("out", None)
+    if kwargs:
+        unexpected = ", ".join(sorted(kwargs))
+        raise TypeError(f"Unexpected keyword argument(s): {unexpected}")
+
+    device = _randint_device(low, high, device=device)
+    low = _torch.as_tensor(low, device=device)
+    high = _torch.as_tensor(high, device=device)
+    sample_shape = _randint_array_size(size, low, high)
+
+    try:
+        low = _torch.broadcast_to(low, sample_shape)
+        high = _torch.broadcast_to(high, sample_shape)
+    except RuntimeError as exc:
+        raise ValueError("size, low, and high could not be broadcast together") from exc
+
+    if bool(_torch.any(high <= low)):
+        raise ValueError("high must be greater than low")
+
+    span = high - low
+    unit_samples = _torch.rand(sample_shape, device=device, generator=generator)
+    result = _torch.floor(unit_samples * span).to(dtype=dtype) + low.to(dtype=dtype)
+
+    if out is not None:
+        out.copy_(result)
+        return out
+    return result
+
+
 def randint(low, high=None, size=None, *args, **kwargs):
     if high is None:
         if low is None:
             raise TypeError("randint() missing required argument 'high'")
+        if _is_array_parameter(low):
+            return _randint_array(0, low, size, *args, **kwargs)
         return _torch.randint(low, _randint_size(size), *args, **kwargs)
+    if _is_array_parameter(low) or _is_array_parameter(high):
+        return _randint_array(low, high, size, *args, **kwargs)
     return _torch.randint(low, high, _randint_size(size), *args, **kwargs)
 
 
@@ -84,14 +164,6 @@ def _normal_device(*values):
         if _torch.is_tensor(value):
             return value.device
     return None
-
-
-def _is_array_parameter(value):
-    return (
-        _torch.is_tensor(value)
-        or isinstance(value, (list, tuple))
-        or (not isinstance(value, (str, bytes)) and hasattr(value, "__array__"))
-    )
 
 
 def _normal_array_parameters(loc, scale):
