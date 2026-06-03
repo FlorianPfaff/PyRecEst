@@ -1,7 +1,6 @@
 import math
 
 import numpy as np
-
 from pyrecest.filters.sparse_second_order_grid import sparse_second_order_grid_evidence
 
 
@@ -49,7 +48,9 @@ def test_sparse_second_order_grid_matches_dense_tiny_hmm_and_evidence_only():
             for dst in range(3):
                 prev.append(src)
                 curr.append(dst)
-                values.append(prior[src] * scaled[0, src] * initial[dst, src] * scaled[1, dst])
+                values.append(
+                    prior[src] * scaled[0, src] * initial[dst, src] * scaled[1, dst]
+                )
             counts.append(3)
         return np.asarray(prev), np.asarray(curr), np.asarray(values), counts
 
@@ -72,7 +73,9 @@ def test_sparse_second_order_grid_matches_dense_tiny_hmm_and_evidence_only():
 
     assert abs(result.log_marginal_likelihood - expected) < 1e-12
     assert result.smoothed_log_probabilities is not None
-    np.testing.assert_allclose(np.exp(result.smoothed_log_probabilities).sum(axis=1), 1.0)
+    np.testing.assert_allclose(
+        np.exp(result.smoothed_log_probabilities).sum(axis=1), 1.0
+    )
     np.testing.assert_allclose(np.exp(result.terminal_log_probabilities).sum(), 1.0)
     assert result.diagnostics["transition_row_cache_hits"] > 0
     assert result.diagnostics["transition_row_cache_misses"] > 0
@@ -85,8 +88,13 @@ def test_sparse_second_order_grid_matches_dense_tiny_hmm_and_evidence_only():
         return_smoothed=False,
     )
     assert evidence_only.smoothed_log_probabilities is None
-    assert evidence_only.diagnostics["backward_transition_rows"] == "skipped_evidence_only"
-    assert abs(evidence_only.log_marginal_likelihood - result.log_marginal_likelihood) < 1e-12
+    assert (
+        evidence_only.diagnostics["backward_transition_rows"] == "skipped_evidence_only"
+    )
+    assert (
+        abs(evidence_only.log_marginal_likelihood - result.log_marginal_likelihood)
+        < 1e-12
+    )
     np.testing.assert_allclose(
         np.exp(evidence_only.terminal_log_probabilities).sum(),
         1.0,

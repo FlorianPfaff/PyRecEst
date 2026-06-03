@@ -18,8 +18,12 @@ import numpy as np
 from .discrete_state import probabilities_to_log_probabilities, scaled_emissions
 
 SparseTransitionRows = list[tuple[np.ndarray, np.ndarray]]
-SparsePairInitializer = Callable[[np.ndarray], tuple[np.ndarray, np.ndarray, np.ndarray, list[int] | np.ndarray]]
-SparsePairTransitionRowBuilder = Callable[[int, int, int], tuple[np.ndarray, np.ndarray]]
+SparsePairInitializer = Callable[
+    [np.ndarray], tuple[np.ndarray, np.ndarray, np.ndarray, list[int] | np.ndarray]
+]
+SparsePairTransitionRowBuilder = Callable[
+    [int, int, int], tuple[np.ndarray, np.ndarray]
+]
 SparsePairTransitionCacheKeyBuilder = Callable[[int, int, int], Hashable | None]
 
 
@@ -95,15 +99,24 @@ def sparse_second_order_grid_evidence(
     scaled, offsets = scaled_emissions(log_likelihood)
     n_time, n_states = scaled.shape
     if n_time < 2:
-        raise ValueError("sparse second-order evidence requires at least two time steps")
+        raise ValueError(
+            "sparse second-order evidence requires at least two time steps"
+        )
 
     prev, curr, alpha, initial_edge_counts = initial_pair_initializer(scaled)
     prev = np.asarray(prev, dtype=int)
     curr = np.asarray(curr, dtype=int)
     alpha = np.asarray(alpha, dtype=float)
     if prev.shape != curr.shape or prev.shape != alpha.shape:
-        raise ValueError("initial pair arrays must have matching one-dimensional shapes")
-    if np.any(prev < 0) or np.any(prev >= n_states) or np.any(curr < 0) or np.any(curr >= n_states):
+        raise ValueError(
+            "initial pair arrays must have matching one-dimensional shapes"
+        )
+    if (
+        np.any(prev < 0)
+        or np.any(prev >= n_states)
+        or np.any(curr < 0)
+        or np.any(curr >= n_states)
+    ):
         raise ValueError("initial pair indices are outside the grid")
     first_scale = float(alpha.sum())
     if first_scale <= 0.0 or not np.isfinite(first_scale):
@@ -114,7 +127,9 @@ def sparse_second_order_grid_evidence(
     pair_curr: list[np.ndarray] = [curr]
     filtered: list[np.ndarray] = [alpha]
     scales: list[float] = [first_scale]
-    edge_counts: list[int] = [int(value) for value in np.asarray(initial_edge_counts, dtype=int).ravel()]
+    edge_counts: list[int] = [
+        int(value) for value in np.asarray(initial_edge_counts, dtype=int).ravel()
+    ]
     transition_rows: list[SparseTransitionRows] = []
     row_cache: dict[Hashable, tuple[np.ndarray, np.ndarray]] = {}
     cache_hits = 0
@@ -147,7 +162,9 @@ def sparse_second_order_grid_evidence(
         cache_misses += misses
         scale = float(alpha.sum())
         if scale <= 0.0 or not np.isfinite(scale):
-            raise ValueError(f"emission row {time_index} has no positive sparse-pair predicted mass")
+            raise ValueError(
+                f"emission row {time_index} has no positive sparse-pair predicted mass"
+            )
         alpha = alpha / scale
         pair_prev.append(prev)
         pair_curr.append(curr)
@@ -158,7 +175,9 @@ def sparse_second_order_grid_evidence(
             transition_rows.append(rows_for_transition)
         logp += float(np.log(scale) + offsets[time_index])
 
-    terminal = _terminal_position_log_probabilities(pair_curr[-1], filtered[-1], n_states=n_states)
+    terminal = _terminal_position_log_probabilities(
+        pair_curr[-1], filtered[-1], n_states=n_states
+    )
 
     if return_smoothed:
         betas = _backward_sparse_pair_betas(
@@ -178,7 +197,9 @@ def sparse_second_order_grid_evidence(
             n_time=n_time,
             n_states=n_states,
         )
-        terminal = probabilities_to_log_probabilities(smoothed[-1], axis=0, normalize=False)
+        terminal = probabilities_to_log_probabilities(
+            smoothed[-1], axis=0, normalize=False
+        )
         smoothed_log = probabilities_to_log_probabilities(smoothed, axis=1)
         backward_label = "forward_cached"
     else:
@@ -226,7 +247,9 @@ def _advance_sparse_pair_alpha(
     cache_key_builder: SparsePairTransitionCacheKeyBuilder | None,
     row_cache: dict[Hashable, tuple[np.ndarray, np.ndarray]],
     store_transition_rows: bool,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, list[int], SparseTransitionRows, int, int]:
+) -> tuple[
+    np.ndarray, np.ndarray, np.ndarray, list[int], SparseTransitionRows, int, int
+]:
     prev_parts: list[np.ndarray] = []
     curr_parts: list[np.ndarray] = []
     value_parts: list[np.ndarray] = []
@@ -238,21 +261,35 @@ def _advance_sparse_pair_alpha(
     for src_prev, src_curr, source_mass in zip(prev, curr, alpha, strict=True):
         if source_mass <= 0.0:
             if store_transition_rows:
-                transition_rows.append((np.empty(0, dtype=int), np.empty(0, dtype=float)))
+                transition_rows.append(
+                    (np.empty(0, dtype=int), np.empty(0, dtype=float))
+                )
             continue
 
-        cache_key = None if cache_key_builder is None else cache_key_builder(int(src_prev), int(src_curr), int(transition_index))
+        cache_key = (
+            None
+            if cache_key_builder is None
+            else cache_key_builder(int(src_prev), int(src_curr), int(transition_index))
+        )
         cached = None if cache_key is None else row_cache.get(cache_key)
         if cached is None:
-            dst, weights = transition_row_builder(int(src_prev), int(src_curr), int(transition_index))
+            dst, weights = transition_row_builder(
+                int(src_prev), int(src_curr), int(transition_index)
+            )
             dst = np.asarray(dst, dtype=int)
             weights = np.asarray(weights, dtype=float)
             if dst.ndim != 1 or weights.shape != dst.shape:
-                raise ValueError("transition rows must return one-dimensional dst and weights arrays with matching shapes")
+                raise ValueError(
+                    "transition rows must return one-dimensional dst and weights arrays with matching shapes"
+                )
             if np.any(dst < 0) or np.any(dst >= n_states):
-                raise ValueError("transition row contains destination indices outside the grid")
+                raise ValueError(
+                    "transition row contains destination indices outside the grid"
+                )
             if np.any(~np.isfinite(weights)) or np.any(weights < 0.0):
-                raise ValueError("transition row weights must be finite and nonnegative")
+                raise ValueError(
+                    "transition row weights must be finite and nonnegative"
+                )
             total = float(weights.sum())
             if total <= 0.0:
                 raise ValueError("transition row must contain positive mass")
@@ -276,8 +313,18 @@ def _advance_sparse_pair_alpha(
         curr_parts.append(dst[keep])
         value_parts.append(values[keep])
 
-    next_prev, next_curr, next_alpha = _coalesce_pairs(prev_parts, curr_parts, value_parts, n_states)
-    return next_prev, next_curr, next_alpha, edge_counts, transition_rows, cache_hits, cache_misses
+    next_prev, next_curr, next_alpha = _coalesce_pairs(
+        prev_parts, curr_parts, value_parts, n_states
+    )
+    return (
+        next_prev,
+        next_curr,
+        next_alpha,
+        edge_counts,
+        transition_rows,
+        cache_hits,
+        cache_misses,
+    )
 
 
 def _backward_sparse_pair_betas(
@@ -293,10 +340,14 @@ def _backward_sparse_pair_betas(
     betas: list[np.ndarray] = [np.empty(0, dtype=float) for _ in filtered]
     betas[-1] = np.ones_like(filtered[-1], dtype=float)
     if len(transition_rows) != max(len(filtered) - 1, 0):
-        raise ValueError("transition row cache length does not match sparse pair lattice")
+        raise ValueError(
+            "transition row cache length does not match sparse pair lattice"
+        )
 
     for pair_index in range(len(filtered) - 2, -1, -1):
-        next_flat = pair_prev[pair_index + 1].astype(np.int64) * n_states + pair_curr[pair_index + 1].astype(np.int64)
+        next_flat = pair_prev[pair_index + 1].astype(np.int64) * n_states + pair_curr[
+            pair_index + 1
+        ].astype(np.int64)
         order = np.argsort(next_flat, kind="stable")
         next_flat = next_flat[order]
         next_beta = betas[pair_index + 1][order]
@@ -309,7 +360,10 @@ def _backward_sparse_pair_betas(
             dst, weights = rows_for_transition[row]
             query = int(src_curr) * n_states + dst.astype(np.int64)
             continuation = _lookup_sorted(next_flat, next_beta, query)
-            beta[row] = float(np.sum(weights * scaled[observation_index, dst] * continuation) / scales[pair_index + 1])
+            beta[row] = float(
+                np.sum(weights * scaled[observation_index, dst] * continuation)
+                / scales[pair_index + 1]
+            )
         betas[pair_index] = beta
     return betas
 
@@ -324,7 +378,9 @@ def _pair_position_marginals(
     n_states: int,
 ) -> np.ndarray:
     position = np.zeros((n_time, n_states), dtype=float)
-    for pair_index, (prev, curr, alpha, beta) in enumerate(zip(pair_prev, pair_curr, filtered, betas, strict=True)):
+    for pair_index, (prev, curr, alpha, beta) in enumerate(
+        zip(pair_prev, pair_curr, filtered, betas, strict=True)
+    ):
         posterior = np.asarray(alpha, dtype=float) * np.asarray(beta, dtype=float)
         total = float(posterior.sum())
         if total > 0.0 and np.isfinite(total):
@@ -336,12 +392,16 @@ def _pair_position_marginals(
     for time_index in range(n_time):
         total = float(position[time_index].sum())
         if total <= 0.0 or not np.isfinite(total):
-            raise ValueError(f"smoothed posterior at time {time_index} has no positive finite mass")
+            raise ValueError(
+                f"smoothed posterior at time {time_index} has no positive finite mass"
+            )
         position[time_index] /= total
     return position
 
 
-def _terminal_position_log_probabilities(curr: np.ndarray, alpha: np.ndarray, *, n_states: int) -> np.ndarray:
+def _terminal_position_log_probabilities(
+    curr: np.ndarray, alpha: np.ndarray, *, n_states: int
+) -> np.ndarray:
     position = np.zeros(int(n_states), dtype=float)
     np.add.at(position, curr, alpha)
     total = float(position.sum())
@@ -375,10 +435,16 @@ def _coalesce_pairs(
     keep_summed = summed > 0.0
     unique = unique[keep_summed]
     summed = summed[keep_summed]
-    return (unique // int(n_states)).astype(int), (unique % int(n_states)).astype(int), summed
+    return (
+        (unique // int(n_states)).astype(int),
+        (unique % int(n_states)).astype(int),
+        summed,
+    )
 
 
-def _lookup_sorted(sorted_keys: np.ndarray, values: np.ndarray, query_keys: np.ndarray) -> np.ndarray:
+def _lookup_sorted(
+    sorted_keys: np.ndarray, values: np.ndarray, query_keys: np.ndarray
+) -> np.ndarray:
     query = np.asarray(query_keys, dtype=np.int64)
     positions = np.searchsorted(sorted_keys, query)
     out = np.zeros(query.shape[0], dtype=float)
