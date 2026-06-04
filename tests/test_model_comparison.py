@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import pytest
-
 from pyrecest.evaluation.model_comparison import (
     add_evidence_margin_columns,
     cluster_bootstrap_margin_summary,
@@ -36,7 +35,11 @@ def test_paired_model_margin_decisions_summary_and_threshold_selection():
         true_model_col="true_model",
         positive_true_label="positive",
     )
-    assert decisions["margin_decision"].tolist() == ["positive", "reference", "ambiguous"]
+    assert decisions["margin_decision"].tolist() == [
+        "positive",
+        "reference",
+        "ambiguous",
+    ]
     assert decisions["positive_model_claimed"].tolist() == [True, False, False]
 
     summary = paired_model_margin_summary(decisions, true_model_col="true_model")

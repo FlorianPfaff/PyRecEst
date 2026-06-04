@@ -5,7 +5,9 @@ from pyrecest.distributions.circle.wrapped_normal_distribution import (
     WrappedNormalDistribution,
 )
 from pyrecest.distributions.conversion import ConversionError, convert_distribution
-from pyrecest.distributions.nonperiodic.gaussian_distribution import GaussianDistribution
+from pyrecest.distributions.nonperiodic.gaussian_distribution import (
+    GaussianDistribution,
+)
 
 
 class GaussianConversionContractTest(unittest.TestCase):

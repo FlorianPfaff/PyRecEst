@@ -160,13 +160,17 @@ def constant_velocity_edge_cost(
         dt = max(gap, 1.0e-9)
         left_state = left.end_state[state_slice]
         right_state = right.start_state[state_slice]
-        distance = float(np.linalg.norm(np.asarray(right_state) - np.asarray(left_state)))
+        distance = float(
+            np.linalg.norm(np.asarray(right_state) - np.asarray(left_state))
+        )
         speed = distance / dt
         if max_speed_value is not None and speed > max_speed_value:
             return float("inf")
         switch = 0.0
         if switch_metadata_key is not None:
-            if left.metadata.get(switch_metadata_key) != right.metadata.get(switch_metadata_key):
+            if left.metadata.get(switch_metadata_key) != right.metadata.get(
+                switch_metadata_key
+            ):
                 switch = float(switch_penalty)
         return float(float(gap_weight) * gap + float(speed_weight) * speed + switch)
 
@@ -184,7 +188,9 @@ def build_tracklet_adjacency(
 
     ordered = sort_tracklets(tracklets)
     max_gap_value = None if max_gap is None else float(max_gap)
-    adjacency: dict[Hashable, list[tuple[Hashable, float]]] = {item.id: [] for item in ordered}
+    adjacency: dict[Hashable, list[tuple[Hashable, float]]] = {
+        item.id: [] for item in ordered
+    }
     for left_index, left in enumerate(ordered):
         for right in ordered[left_index + 1 :]:
             gap = float(right.start_time - left.end_time)
@@ -227,7 +233,9 @@ def k_best_tracklet_paths(
 
     for tracklet in ordered:
         node_cost = _node_cost(tracklet, node_cost_fn)
-        start_cost = 0.0 if start_cost_fn is None else _finite_cost(start_cost_fn(tracklet))
+        start_cost = (
+            0.0 if start_cost_fn is None else _finite_cost(start_cost_fn(tracklet))
+        )
         candidates = [
             TrackletPath(
                 tracklet_ids=(tracklet.id,),
@@ -262,7 +270,10 @@ def k_best_tracklet_paths(
                 node_cost=path.node_cost,
                 edge_cost=path.edge_cost,
             )
-            if final_path.tracklet_ids not in all_paths or final_path.cost < all_paths[final_path.tracklet_ids].cost:
+            if (
+                final_path.tracklet_ids not in all_paths
+                or final_path.cost < all_paths[final_path.tracklet_ids].cost
+            ):
                 all_paths[final_path.tracklet_ids] = final_path
 
     return sorted(all_paths.values(), key=_path_sort_key)[: cfg.top_k]
@@ -308,6 +319,7 @@ def diverse_k_best_tracklet_paths(
     selected: list[TrackletPath] = []
     remaining = list(candidates)
     while remaining and len(selected) < cfg.top_k:
+
         def adjusted(path: TrackletPath) -> tuple[float, float, tuple[str, ...]]:
             overlap = max((path_jaccard(path, kept) for kept in selected), default=0.0)
             return (
@@ -327,7 +339,9 @@ def diverse_k_best_tracklet_paths(
                 metadata={**dict(best.metadata), "jaccard_to_previous": overlap},
             )
         )
-        remaining = [path for path in remaining if path.tracklet_ids != best.tracklet_ids]
+        remaining = [
+            path for path in remaining if path.tracklet_ids != best.tracklet_ids
+        ]
     return selected
 
 
@@ -342,7 +356,9 @@ def path_jaccard(left: TrackletPath, right: TrackletPath) -> float:
     return float(len(left_set & right_set) / len(union))
 
 
-def materialize_tracklet_path(path: TrackletPath, tracklets: Mapping[Hashable, Tracklet]) -> list[Tracklet]:
+def materialize_tracklet_path(
+    path: TrackletPath, tracklets: Mapping[Hashable, Tracklet]
+) -> list[Tracklet]:
     """Return path tracklets in path order."""
 
     return [tracklets[tracklet_id] for tracklet_id in path.tracklet_ids]
@@ -365,7 +381,9 @@ def tracklet_paths_to_dicts(
             "node_cost": float(path.node_cost),
             "edge_cost": float(path.edge_cost),
         }
-        row.update({f"metadata_{key}": value for key, value in dict(path.metadata).items()})
+        row.update(
+            {f"metadata_{key}": value for key, value in dict(path.metadata).items()}
+        )
         if tracklets is not None:
             members = materialize_tracklet_path(path, tracklets)
             start = min(member.start_time for member in members)
@@ -378,7 +396,9 @@ def tracklet_paths_to_dicts(
 def sort_tracklets(tracklets: Iterable[Tracklet]) -> list[Tracklet]:
     """Return tracklets sorted by start time, end time, and id string."""
 
-    return sorted(tracklets, key=lambda item: (item.start_time, item.end_time, str(item.id)))
+    return sorted(
+        tracklets, key=lambda item: (item.start_time, item.end_time, str(item.id))
+    )
 
 
 def _node_cost(tracklet: Tracklet, node_cost_fn: CostFn | None) -> float:
@@ -395,7 +415,11 @@ def _finite_cost(value: float) -> float:
 
 
 def _path_sort_key(path: TrackletPath) -> tuple[float, int, tuple[str, ...]]:
-    return (float(path.cost), int(path.length), tuple(str(item) for item in path.tracklet_ids))
+    return (
+        float(path.cost),
+        int(path.length),
+        tuple(str(item) for item in path.tracklet_ids),
+    )
 
 
 def _state_vector(value: Any, name: str) -> np.ndarray:

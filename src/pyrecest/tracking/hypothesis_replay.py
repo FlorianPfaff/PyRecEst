@@ -60,27 +60,49 @@ class HypothesisReplay:
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "records", tuple(self.records))
-        object.__setattr__(self, "graph_cost", _finite_float(self.graph_cost, "graph_cost"))
-        object.__setattr__(self, "track_switches", _nonnegative_int(self.track_switches, "track_switches"))
+        object.__setattr__(
+            self, "graph_cost", _finite_float(self.graph_cost, "graph_cost")
+        )
+        object.__setattr__(
+            self,
+            "track_switches",
+            _nonnegative_int(self.track_switches, "track_switches"),
+        )
         object.__setattr__(
             self,
             "missed_detection_count",
             _nonnegative_int(self.missed_detection_count, "missed_detection_count"),
         )
-        object.__setattr__(self, "rejected_count", _nonnegative_int(self.rejected_count, "rejected_count"))
-        object.__setattr__(self, "coast_count", _nonnegative_int(self.coast_count, "coast_count"))
+        object.__setattr__(
+            self,
+            "rejected_count",
+            _nonnegative_int(self.rejected_count, "rejected_count"),
+        )
+        object.__setattr__(
+            self, "coast_count", _nonnegative_int(self.coast_count, "coast_count")
+        )
         object.__setattr__(
             self,
             "unsupported_measurement_count",
-            _nonnegative_int(self.unsupported_measurement_count, "unsupported_measurement_count"),
+            _nonnegative_int(
+                self.unsupported_measurement_count, "unsupported_measurement_count"
+            ),
         )
         object.__setattr__(
             self,
             "hard_quarantine_count",
             _nonnegative_int(self.hard_quarantine_count, "hard_quarantine_count"),
         )
-        object.__setattr__(self, "tail_duration_s", _nonnegative_float(self.tail_duration_s, "tail_duration_s"))
-        object.__setattr__(self, "coverage_count", _nonnegative_int(self.coverage_count, "coverage_count"))
+        object.__setattr__(
+            self,
+            "tail_duration_s",
+            _nonnegative_float(self.tail_duration_s, "tail_duration_s"),
+        )
+        object.__setattr__(
+            self,
+            "coverage_count",
+            _nonnegative_int(self.coverage_count, "coverage_count"),
+        )
         object.__setattr__(self, "metadata", dict(self.metadata))
 
 
@@ -149,7 +171,10 @@ class HypothesisReplayScore:
             "hard_quarantine_count": self.hard_quarantine_count,
             "tail_duration_s": self.tail_duration_s,
             "coverage_count": self.coverage_count,
-            **{f"metadata_{key}": _jsonable(value) for key, value in dict(self.metadata).items()},
+            **{
+                f"metadata_{key}": _jsonable(value)
+                for key, value in dict(self.metadata).items()
+            },
         }
 
 
@@ -166,15 +191,30 @@ def score_hypothesis_replay(
         ("residual_norm_m", "residual_norm", "innovation_norm", "innovation_norm_m"),
         fallback_norm_keys=("innovation", "residual"),
     )
-    robust_sum_nis = float(np.sum(np.minimum(nis_values, float(cfg.nis_clip)))) if nis_values.size else 0.0
+    robust_sum_nis = (
+        float(np.sum(np.minimum(nis_values, float(cfg.nis_clip))))
+        if nis_values.size
+        else 0.0
+    )
     robust_sum_residual = (
-        float(np.sum(np.minimum(residual_values, float(cfg.residual_clip)))) / float(cfg.residual_normalizer)
+        float(np.sum(np.minimum(residual_values, float(cfg.residual_clip))))
+        / float(cfg.residual_normalizer)
         if residual_values.size
         else 0.0
     )
-    missed = int(replay.missed_detection_count + _count_record_actions(replay.records, {"missed_detection"}))
-    rejected = int(replay.rejected_count + _count_record_actions(replay.records, {"rejected", "residual_rejected", "safety_rejected"}))
-    coast = int(replay.coast_count + _count_record_actions(replay.records, {"coast", "predict"}))
+    missed = int(
+        replay.missed_detection_count
+        + _count_record_actions(replay.records, {"missed_detection"})
+    )
+    rejected = int(
+        replay.rejected_count
+        + _count_record_actions(
+            replay.records, {"rejected", "residual_rejected", "safety_rejected"}
+        )
+    )
+    coast = int(
+        replay.coast_count + _count_record_actions(replay.records, {"coast", "predict"})
+    )
     total = (
         cfg.graph_cost_weight * replay.graph_cost
         + cfg.nis_weight * robust_sum_nis
@@ -226,7 +266,9 @@ def rank_replayed_hypotheses(
 ) -> list[HypothesisReplayScore]:
     """Replay hypotheses with ``replay_fn`` and rank the resulting replays."""
 
-    return rank_hypothesis_replays((replay_fn(hypothesis) for hypothesis in hypotheses), config=config)
+    return rank_hypothesis_replays(
+        (replay_fn(hypothesis) for hypothesis in hypotheses), config=config
+    )
 
 
 def scores_to_dicts(scores: Iterable[HypothesisReplayScore]) -> list[dict[str, Any]]:
@@ -248,7 +290,9 @@ def _finite_record_values(
             vector = _record_value(record, fallback_norm_keys)
             if vector is not None:
                 try:
-                    value = float(np.linalg.norm(np.asarray(vector, dtype=float).reshape(-1)))
+                    value = float(
+                        np.linalg.norm(np.asarray(vector, dtype=float).reshape(-1))
+                    )
                 except (TypeError, ValueError):
                     value = None
         if value is None:

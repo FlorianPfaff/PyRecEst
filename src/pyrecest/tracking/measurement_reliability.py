@@ -33,12 +33,20 @@ class MeasurementReliabilityConfig:
         mode = str(self.mode)
         if mode not in {"off", "inflate", "hard"}:
             raise ValueError("mode must be one of 'off', 'inflate', or 'hard'")
-        threshold = None if self.threshold is None else _probability(self.threshold, "threshold")
+        threshold = (
+            None
+            if self.threshold is None
+            else _probability(self.threshold, "threshold")
+        )
         floor = _probability(self.floor, "floor")
         if floor <= 0.0:
             raise ValueError("floor must be positive")
         exponent = _positive_scalar(self.exponent, "exponent")
-        max_scale = None if self.max_scale is None else _positive_scalar(self.max_scale, "max_scale")
+        max_scale = (
+            None
+            if self.max_scale is None
+            else _positive_scalar(self.max_scale, "max_scale")
+        )
         object.__setattr__(self, "mode", mode)
         object.__setattr__(self, "threshold", threshold)
         object.__setattr__(self, "floor", floor)
@@ -59,8 +67,14 @@ class MeasurementReliabilityResult:
 
     def __post_init__(self) -> None:
         covariance = _covariance_matrix(self.covariance)
-        object.__setattr__(self, "reliability", _probability(self.reliability, "reliability"))
-        object.__setattr__(self, "covariance_scale", _positive_scalar(self.covariance_scale, "covariance_scale"))
+        object.__setattr__(
+            self, "reliability", _probability(self.reliability, "reliability")
+        )
+        object.__setattr__(
+            self,
+            "covariance_scale",
+            _positive_scalar(self.covariance_scale, "covariance_scale"),
+        )
         object.__setattr__(self, "covariance", covariance)
         object.__setattr__(self, "accepted", bool(self.accepted))
         object.__setattr__(self, "action", str(self.action))
@@ -86,8 +100,12 @@ class ReliabilityWeightedMeasurement:
         covariance = _covariance_matrix(self.covariance, dim=measurement.size)
         object.__setattr__(self, "measurement", measurement.copy())
         object.__setattr__(self, "covariance", covariance)
-        object.__setattr__(self, "reliability", _probability(self.reliability, "reliability"))
-        object.__setattr__(self, "source", None if self.source is None else str(self.source))
+        object.__setattr__(
+            self, "reliability", _probability(self.reliability, "reliability")
+        )
+        object.__setattr__(
+            self, "source", None if self.source is None else str(self.source)
+        )
         object.__setattr__(self, "metadata", dict(self.metadata))
 
     def apply_reliability(

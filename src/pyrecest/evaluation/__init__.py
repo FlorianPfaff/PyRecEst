@@ -11,10 +11,6 @@ from .get_axis_label import get_axis_label
 from .get_distance_function import get_distance_function
 from .get_extract_mean import get_extract_mean
 from .iterate_configs_and_runs import iterate_configs_and_runs
-from .perform_predict_update_cycles import perform_predict_update_cycles
-from .plot_results import plot_results
-from .simulation_database import simulation_database
-from .summarize_filter_results import summarize_filter_results
 from .model_comparison import (
     add_evidence_margin_columns,
     classify_evidence_margin,
@@ -29,6 +25,10 @@ from .model_comparison import (
     paired_model_margin_threshold_sweep,
     select_paired_model_margin_threshold,
 )
+from .perform_predict_update_cycles import perform_predict_update_cycles
+from .plot_results import plot_results
+from .simulation_database import simulation_database
+from .summarize_filter_results import summarize_filter_results
 
 __all__ = [
     "generate_groundtruth",

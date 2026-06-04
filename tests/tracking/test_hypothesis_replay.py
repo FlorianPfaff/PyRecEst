@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import numpy as np
-
 from pyrecest.tracking import (
     HypothesisReplay,
     InnovationConsistencyScoreConfig,
@@ -12,7 +11,9 @@ from pyrecest.tracking import (
 )
 
 
-def test_rank_hypothesis_replays_prefers_innovation_consistency_over_graph_cost() -> None:
+def test_rank_hypothesis_replays_prefers_innovation_consistency_over_graph_cost() -> (
+    None
+):
     bad_graph_winner = HypothesisReplay(
         hypothesis_id="graph-rank-1",
         records=[{"nis": 200.0, "residual_norm_m": 1000.0, "action": "updated"}],

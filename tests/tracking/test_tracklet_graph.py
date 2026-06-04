@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import numpy as np
-
 from pyrecest.tracking.tracklet_graph import (
     Tracklet,
     TrackletGraphConfig,
@@ -13,7 +12,16 @@ from pyrecest.tracking.tracklet_graph import (
 )
 
 
-def _tracklet(identifier: str, start: float, end: float, x0: float, x1: float, *, cost: float = 0.0, label: str = "a") -> Tracklet:
+def _tracklet(
+    identifier: str,
+    start: float,
+    end: float,
+    x0: float,
+    x1: float,
+    *,
+    cost: float = 0.0,
+    label: str = "a",
+) -> Tracklet:
     return Tracklet(
         id=identifier,
         start_time=start,
@@ -33,7 +41,9 @@ def test_k_best_tracklet_paths_prefers_feasible_low_cost_chain() -> None:
     ]
     edge_cost = constant_velocity_edge_cost(max_gap=5.0, max_speed=10.0)
 
-    paths = k_best_tracklet_paths(tracklets, edge_cost_fn=edge_cost, config=TrackletGraphConfig(top_k=3))
+    paths = k_best_tracklet_paths(
+        tracklets, edge_cost_fn=edge_cost, config=TrackletGraphConfig(top_k=3)
+    )
 
     assert paths[0].tracklet_ids == ("a", "b")
     assert ("a", "c") not in [path.tracklet_ids for path in paths]
@@ -52,7 +62,9 @@ def test_switch_penalty_and_node_cost_are_reflected() -> None:
         switch_penalty=7.0,
     )
 
-    paths = k_best_tracklet_paths(tracklets, edge_cost_fn=edge_cost, config=TrackletGraphConfig(top_k=3))
+    paths = k_best_tracklet_paths(
+        tracklets, edge_cost_fn=edge_cost, config=TrackletGraphConfig(top_k=3)
+    )
     path = next(item for item in paths if item.tracklet_ids == ("a", "b"))
 
     assert path.edge_cost >= 7.0
@@ -85,7 +97,11 @@ def test_tracklet_paths_to_dicts_includes_materialized_times() -> None:
         "b": _tracklet("b", 2.0, 3.0, 2.0, 3.0, cost=-5.0),
     }
     edge_cost = constant_velocity_edge_cost(max_gap=5.0, max_speed=10.0)
-    path = k_best_tracklet_paths(list(tracklets.values()), edge_cost_fn=edge_cost, config=TrackletGraphConfig(top_k=1))[0]
+    path = k_best_tracklet_paths(
+        list(tracklets.values()),
+        edge_cost_fn=edge_cost,
+        config=TrackletGraphConfig(top_k=1),
+    )[0]
 
     rows = tracklet_paths_to_dicts([path], tracklets=tracklets)
 
