@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import numpy as np
-
 from pyrecest.tracking import (
     diagnostic_from_record,
     diagnostics_from_records,
@@ -94,7 +93,9 @@ def test_summarize_innovation_diagnostics_by_source() -> None:
             {"source": "radar", "accepted": True, "nis": 4.0, "residual_norm_m": 3.0},
         ]
     )
-    summaries = {item.group: item for item in summarize_innovation_diagnostics(diagnostics)}
+    summaries = {
+        item.group: item for item in summarize_innovation_diagnostics(diagnostics)
+    }
 
     assert summaries["rf"].count == 2
     assert summaries["rf"].accepted_count == 1

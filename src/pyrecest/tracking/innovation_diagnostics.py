@@ -13,7 +13,6 @@ from dataclasses import asdict, dataclass, field
 from typing import Any
 
 import numpy as np
-
 from pyrecest.filters.linear_update_planning import (
     chi_square_gate_threshold,
     normalized_innovation_squared,
@@ -51,7 +50,9 @@ class InnovationDiagnostic:
         row["metadata"] = dict(self.metadata)
         row["mahalanobis_distance"] = self.mahalanobis_distance
         if include_arrays:
-            row["residual"] = None if self.residual is None else np.asarray(self.residual).tolist()
+            row["residual"] = (
+                None if self.residual is None else np.asarray(self.residual).tolist()
+            )
             row["innovation_covariance"] = (
                 None
                 if self.innovation_covariance is None
@@ -118,12 +119,19 @@ def innovation_diagnostic(
     innovation_covariance_array = np.asarray(innovation_covariance, dtype=float)
     if innovation_covariance_array.shape != (residual_array.size, residual_array.size):
         raise ValueError("innovation_covariance must match residual dimension")
-    if not np.isfinite(residual_array).all() or not np.isfinite(innovation_covariance_array).all():
+    if (
+        not np.isfinite(residual_array).all()
+        or not np.isfinite(innovation_covariance_array).all()
+    ):
         raise ValueError("innovation inputs must be finite")
     resolved_threshold = gate_threshold
     if resolved_threshold is None:
-        resolved_threshold = innovation_gate_threshold(gate_probability, residual_array.size)
-    nis = float(normalized_innovation_squared(residual_array, innovation_covariance_array))
+        resolved_threshold = innovation_gate_threshold(
+            gate_probability, residual_array.size
+        )
+    nis = float(
+        normalized_innovation_squared(residual_array, innovation_covariance_array)
+    )
     inferred_accepted = accepted
     if inferred_accepted is None and resolved_threshold is not None:
         inferred_accepted = bool(nis <= resolved_threshold)
@@ -131,7 +139,9 @@ def innovation_diagnostic(
         measurement_dim=int(residual_array.size),
         nis=nis,
         residual_norm=float(np.linalg.norm(residual_array)),
-        gate_threshold=None if resolved_threshold is None else float(resolved_threshold),
+        gate_threshold=(
+            None if resolved_threshold is None else float(resolved_threshold)
+        ),
         accepted=None if inferred_accepted is None else bool(inferred_accepted),
         action=action,
         source=source,
@@ -167,11 +177,17 @@ def linear_innovation_diagnostic(
     if state_covariance.shape != (state_mean.size, state_mean.size):
         raise ValueError("covariance must have shape (state_dim, state_dim)")
     if observation.shape != (measurement_vector.size, state_mean.size):
-        raise ValueError("measurement_matrix must have shape (measurement_dim, state_dim)")
+        raise ValueError(
+            "measurement_matrix must have shape (measurement_dim, state_dim)"
+        )
     if measurement_noise.shape != (measurement_vector.size, measurement_vector.size):
-        raise ValueError("measurement_covariance must have shape (measurement_dim, measurement_dim)")
+        raise ValueError(
+            "measurement_covariance must have shape (measurement_dim, measurement_dim)"
+        )
     residual = measurement_vector - observation @ state_mean
-    innovation_covariance = observation @ state_covariance @ observation.T + measurement_noise
+    innovation_covariance = (
+        observation @ state_covariance @ observation.T + measurement_noise
+    )
     return innovation_diagnostic(
         residual,
         innovation_covariance,
@@ -230,7 +246,9 @@ def diagnostic_from_record(
     )
 
 
-def diagnostics_from_records(records: Iterable[Mapping[str, Any]], **kwargs: Any) -> list[InnovationDiagnostic]:
+def diagnostics_from_records(
+    records: Iterable[Mapping[str, Any]], **kwargs: Any
+) -> list[InnovationDiagnostic]:
     """Create innovation diagnostics from serialized tracking records."""
 
     return [diagnostic_from_record(record, **kwargs) for record in records]
@@ -243,7 +261,9 @@ def diagnostics_to_dicts(
 ) -> list[dict[str, Any]]:
     """Convert diagnostics to JSON/CSV-friendly dictionaries."""
 
-    return [diagnostic.to_dict(include_arrays=include_arrays) for diagnostic in diagnostics]
+    return [
+        diagnostic.to_dict(include_arrays=include_arrays) for diagnostic in diagnostics
+    ]
 
 
 def summarize_innovation_diagnostics(
@@ -277,13 +297,23 @@ def summaries_to_dicts(summaries: Iterable[InnovationSummary]) -> list[dict[str,
     return [summary.to_dict() for summary in summaries]
 
 
-def _summarize_group(group: str, diagnostics: list[InnovationDiagnostic]) -> InnovationSummary:
-    accepted_values = [item.accepted for item in diagnostics if item.accepted is not None]
+def _summarize_group(
+    group: str, diagnostics: list[InnovationDiagnostic]
+) -> InnovationSummary:
+    accepted_values = [
+        item.accepted for item in diagnostics if item.accepted is not None
+    ]
     accepted_count = int(sum(bool(value) for value in accepted_values))
     rejected_count = int(sum(not bool(value) for value in accepted_values))
-    acceptance_rate = float(accepted_count / len(accepted_values)) if accepted_values else None
+    acceptance_rate = (
+        float(accepted_count / len(accepted_values)) if accepted_values else None
+    )
     nis_values = np.asarray(
-        [item.nis for item in diagnostics if item.nis is not None and np.isfinite(item.nis)],
+        [
+            item.nis
+            for item in diagnostics
+            if item.nis is not None and np.isfinite(item.nis)
+        ],
         dtype=float,
     )
     residual_values = np.asarray(
