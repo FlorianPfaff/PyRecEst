@@ -88,7 +88,9 @@ class TrackingEvent:
         object.__setattr__(self, "action", str(self.action))
         object.__setattr__(self, "measurement", measurement)
         object.__setattr__(self, "covariance", covariance)
-        object.__setattr__(self, "accepted", None if self.accepted is None else bool(self.accepted))
+        object.__setattr__(
+            self, "accepted", None if self.accepted is None else bool(self.accepted)
+        )
         object.__setattr__(self, "metadata", dict(self.metadata))
 
     @property
@@ -138,9 +140,13 @@ class TrackingRecord:
         if posterior_mean.shape != prior_mean.shape:
             raise ValueError("posterior_mean must match prior_mean shape")
         prior_cov = _square_matrix(self.prior_cov, name="prior_cov", dim=prior_mean.size)
-        posterior_cov = _square_matrix(self.posterior_cov, name="posterior_cov", dim=prior_mean.size)
+        posterior_cov = _square_matrix(
+            self.posterior_cov, name="posterior_cov", dim=prior_mean.size
+        )
         innovation = _array_or_none(self.innovation, name="innovation", ndim=1)
-        innovation_cov = _array_or_none(self.innovation_cov, name="innovation_cov", ndim=2)
+        innovation_cov = _array_or_none(
+            self.innovation_cov, name="innovation_cov", ndim=2
+        )
         if innovation is not None and innovation_cov is not None:
             if innovation_cov.shape != (innovation.size, innovation.size):
                 raise ValueError("innovation_cov must match innovation dimension")
@@ -158,7 +164,9 @@ class TrackingRecord:
         object.__setattr__(self, "innovation", innovation)
         object.__setattr__(self, "innovation_cov", innovation_cov)
         object.__setattr__(self, "nis", nis)
-        object.__setattr__(self, "accepted", None if self.accepted is None else bool(self.accepted))
+        object.__setattr__(
+            self, "accepted", None if self.accepted is None else bool(self.accepted)
+        )
         object.__setattr__(self, "measurement", measurement)
         object.__setattr__(self, "event_metadata", dict(self.event_metadata))
         object.__setattr__(self, "metadata", dict(self.metadata))
@@ -179,23 +187,23 @@ class TrackingRecord:
             "source": self.source,
             "action": self.action,
             "accepted": self.accepted,
-            "prior_mean": self.prior_mean.copy(),
-            "prior_cov": self.prior_cov.copy(),
-            "posterior_mean": self.posterior_mean.copy(),
-            "posterior_cov": self.posterior_cov.copy(),
-            "innovation": None if self.innovation is None else self.innovation.copy(),
-            "innovation_cov": None if self.innovation_cov is None else self.innovation_cov.copy(),
+            "prior_mean": _jsonable(self.prior_mean),
+            "prior_cov": _jsonable(self.prior_cov),
+            "posterior_mean": _jsonable(self.posterior_mean),
+            "posterior_cov": _jsonable(self.posterior_cov),
+            "innovation": _jsonable(self.innovation),
+            "innovation_cov": _jsonable(self.innovation_cov),
             "nis": self.nis,
-            "measurement": None if self.measurement is None else self.measurement.copy(),
-            "event_metadata": dict(self.event_metadata),
-            "metadata": dict(self.metadata),
+            "measurement": _jsonable(self.measurement),
+            "event_metadata": _jsonable(dict(self.event_metadata)),
+            "metadata": _jsonable(dict(self.metadata)),
         }
         if include_legacy_aliases:
             result.update(
                 {
                     "time_s": self.time,
-                    "state": self.posterior_mean.copy(),
-                    "covariance": self.posterior_cov.copy(),
+                    "state": _jsonable(self.posterior_mean),
+                    "covariance": _jsonable(self.posterior_cov),
                 }
             )
         return result
@@ -270,10 +278,13 @@ def records_to_dicts(
 
 
 def records_to_matrix(
-    records: Iterable[TrackingRecord], *, field: str = "posterior_mean") -> np.ndarray:
+    records: Iterable[TrackingRecord], *, field: str = "posterior_mean"
+) -> np.ndarray:
     """Stack a vector-valued field from records into a matrix."""
 
-    arrays = [np.asarray(getattr(record, field), dtype=float).reshape(-1) for record in records]
+    arrays = [
+        np.asarray(getattr(record, field), dtype=float).reshape(-1) for record in records
+    ]
     if not arrays:
         return np.empty((0, 0), dtype=float)
     return np.stack(arrays)
