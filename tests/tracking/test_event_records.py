@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 import numpy as np
 import pytest
 
@@ -59,6 +61,7 @@ def test_record_from_update_preserves_prior_posterior_and_legacy_aliases() -> No
     assert np.allclose(as_dict["state"], posterior_mean)
     assert np.allclose(as_dict["prior_mean"], prior_mean)
     assert as_dict["event_metadata"] == {"sensor": "keysight"}
+    json.dumps(as_dict)
 
 
 def test_records_to_dicts_matrix_and_action_counts() -> None:
@@ -80,5 +83,7 @@ def test_records_to_dicts_matrix_and_action_counts() -> None:
     )
 
     assert records_to_matrix([record_a, record_b]).shape == (2, 2)
-    assert len(records_to_dicts([record_a, record_b])) == 2
+    as_dicts = records_to_dicts([record_a, record_b])
+    assert len(as_dicts) == 2
+    json.dumps(as_dicts)
     assert action_counts([record_a, record_b]) == {"updated": 1, "coast": 1}
