@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.evidence import EvidenceComputationMode, resolve_evidence_computation_mode
 from pyrecest.filters import sparse_second_order_grid_evidence
 
@@ -67,7 +66,9 @@ def test_sparse_second_order_grid_accepts_evidence_only_mode_object():
 
     assert fast.smoothed_log_probabilities is None
     assert full.smoothed_log_probabilities is not None
-    assert full.log_marginal_likelihood == pytest.approx(fast.log_marginal_likelihood, abs=1e-12)
+    assert full.log_marginal_likelihood == pytest.approx(
+        fast.log_marginal_likelihood, abs=1e-12
+    )
     np.testing.assert_allclose(np.exp(fast.terminal_log_probabilities).sum(), 1.0)
     assert fast.diagnostics["evidence_computation_mode"] == "evidence_only"
     assert fast.diagnostics["evidence_only"] == 1

@@ -22,7 +22,9 @@ class SparseTransitionRowCache(Generic[KeyT]):
     hits: int = 0
     misses: int = 0
 
-    def get_or_build(self, key: KeyT, builder: SparseTransitionRowBuilder) -> SparseTransitionRow:
+    def get_or_build(
+        self, key: KeyT, builder: SparseTransitionRowBuilder
+    ) -> SparseTransitionRow:
         """Return the cached row for ``key`` or build/cache it on demand."""
 
         try:
@@ -75,7 +77,9 @@ def cached_sparse_transition_rows(
         if key is None:
             rows.append(row_builder(state))
         else:
-            rows.append(row_cache.get_or_build(key, lambda state=state: row_builder(state)))
+            rows.append(
+                row_cache.get_or_build(key, lambda state=state: row_builder(state))
+            )
     return rows, row_cache
 
 

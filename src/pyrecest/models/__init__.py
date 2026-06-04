@@ -41,15 +41,6 @@ from .linear_gaussian import (
     LinearGaussianMeasurementModel,
     LinearGaussianTransitionModel,
 )
-from .weak_measurement import (
-    MaskedLinearMeasurementModel,
-    WeakDimensionMeasurementModel,
-    block_diag_measurement_covariance,
-    diagonal_measurement_covariance,
-    masked_position_measurement_model,
-    selection_matrix,
-    weak_dimension_measurement_model,
-)
 from .motion_models import (
     constant_acceleration_model,
     constant_acceleration_transition_matrix,
@@ -101,6 +92,15 @@ from .validation import (
     validate_state_vector,
     validate_transition_matrix,
     validate_vector,
+)
+from .weak_measurement import (
+    MaskedLinearMeasurementModel,
+    WeakDimensionMeasurementModel,
+    block_diag_measurement_covariance,
+    diagonal_measurement_covariance,
+    masked_position_measurement_model,
+    selection_matrix,
+    weak_dimension_measurement_model,
 )
 
 __all__ = [

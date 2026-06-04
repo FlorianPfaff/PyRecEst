@@ -18,7 +18,9 @@ import numpy as np
 TrackingAction = Literal["predict", "update", "reject", "coast"] | str
 
 
-def _array_or_none(value: Any, *, name: str, ndim: int | None = None) -> np.ndarray | None:
+def _array_or_none(
+    value: Any, *, name: str, ndim: int | None = None
+) -> np.ndarray | None:
     if value is None:
         return None
     array = np.asarray(value, dtype=float)
@@ -139,7 +141,9 @@ class TrackingRecord:
         posterior_mean = _vector(self.posterior_mean, name="posterior_mean")
         if posterior_mean.shape != prior_mean.shape:
             raise ValueError("posterior_mean must match prior_mean shape")
-        prior_cov = _square_matrix(self.prior_cov, name="prior_cov", dim=prior_mean.size)
+        prior_cov = _square_matrix(
+            self.prior_cov, name="prior_cov", dim=prior_mean.size
+        )
         posterior_cov = _square_matrix(
             self.posterior_cov, name="posterior_cov", dim=prior_mean.size
         )
@@ -274,7 +278,10 @@ def records_to_dicts(
 ) -> list[dict[str, Any]]:
     """Convert tracking records to dictionaries."""
 
-    return [record.to_dict(include_legacy_aliases=include_legacy_aliases) for record in records]
+    return [
+        record.to_dict(include_legacy_aliases=include_legacy_aliases)
+        for record in records
+    ]
 
 
 def records_to_matrix(
@@ -283,14 +290,17 @@ def records_to_matrix(
     """Stack a vector-valued field from records into a matrix."""
 
     arrays = [
-        np.asarray(getattr(record, field), dtype=float).reshape(-1) for record in records
+        np.asarray(getattr(record, field), dtype=float).reshape(-1)
+        for record in records
     ]
     if not arrays:
         return np.empty((0, 0), dtype=float)
     return np.stack(arrays)
 
 
-def action_counts(records: Iterable[TrackingRecord | Mapping[str, Any]]) -> dict[str, int]:
+def action_counts(
+    records: Iterable[TrackingRecord | Mapping[str, Any]],
+) -> dict[str, int]:
     """Count tracking records by action label."""
 
     counter: Counter[str] = Counter()

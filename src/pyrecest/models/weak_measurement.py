@@ -52,10 +52,15 @@ def block_diag_measurement_covariance(
         trusted_map = dict(trusted_std or {})
         weak_map = dict(weak_std or {})
         if dimension_order is None:
-            order = [*trusted_map.keys(), *(key for key in weak_map if key not in trusted_map)]
+            order = [
+                *trusted_map.keys(),
+                *(key for key in weak_map if key not in trusted_map),
+            ]
         else:
             order = list(dimension_order)
-        missing = [key for key in order if key not in trusted_map and key not in weak_map]
+        missing = [
+            key for key in order if key not in trusted_map and key not in weak_map
+        ]
         if missing:
             raise KeyError(f"dimension_order contains missing std entries: {missing}")
         return diagonal_measurement_covariance(
@@ -136,12 +141,17 @@ class WeakDimensionMeasurementModel(LinearGaussianMeasurementModel):
         measurement_noise_cov: np.ndarray | None = None,
     ) -> None:
         provided_covariance_sources = sum(
-            item is not None for item in (stds, measurement_noise_cov, trusted_std, weak_std)
+            item is not None
+            for item in (stds, measurement_noise_cov, trusted_std, weak_std)
         )
         if provided_covariance_sources == 0:
-            raise ValueError("provide stds, measurement_noise_cov, or trusted/weak stds")
+            raise ValueError(
+                "provide stds, measurement_noise_cov, or trusted/weak stds"
+            )
         if measurement_noise_cov is not None and provided_covariance_sources > 1:
-            raise ValueError("measurement_noise_cov cannot be combined with std arguments")
+            raise ValueError(
+                "measurement_noise_cov cannot be combined with std arguments"
+            )
         if stds is not None and (trusted_std is not None or weak_std is not None):
             raise ValueError("stds cannot be combined with trusted_std or weak_std")
 

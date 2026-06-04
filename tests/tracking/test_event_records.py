@@ -4,7 +4,6 @@ import json
 
 import numpy as np
 import pytest
-
 from pyrecest.tracking import (
     TrackingEvent,
     action_counts,
@@ -29,7 +28,9 @@ def test_tracking_event_validates_measurement_covariance_shape() -> None:
     assert event.to_dict()["source"] == "radar"
 
     with pytest.raises(ValueError, match="covariance must match"):
-        TrackingEvent(time=0.0, source="rf", measurement=np.ones(2), covariance=np.eye(3))
+        TrackingEvent(
+            time=0.0, source="rf", measurement=np.ones(2), covariance=np.eye(3)
+        )
 
 
 def test_record_from_update_preserves_prior_posterior_and_legacy_aliases() -> None:

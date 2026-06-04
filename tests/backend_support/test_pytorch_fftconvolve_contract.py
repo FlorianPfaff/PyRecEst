@@ -28,7 +28,11 @@ def test_pytorch_fftconvolve_matches_scipy_selected_axes():
     first = backend.asarray(np.arange(12.0).reshape(2, 3, 2))
     second = backend.ones((2, 2, 2))
 
-    actual = _as_numpy(backend.signal.fftconvolve(first, second, mode="same", axes=(1, 2)))
-    expected = scipy_fftconvolve(_as_numpy(first), _as_numpy(second), mode="same", axes=(1, 2))
+    actual = _as_numpy(
+        backend.signal.fftconvolve(first, second, mode="same", axes=(1, 2))
+    )
+    expected = scipy_fftconvolve(
+        _as_numpy(first), _as_numpy(second), mode="same", axes=(1, 2)
+    )
 
     assert np.allclose(actual, expected)

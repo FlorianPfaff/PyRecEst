@@ -48,7 +48,9 @@ class EvidenceComputationMode:
         object.__setattr__(self, "metadata", dict(self.metadata))
 
     @classmethod
-    def full_smoothing(cls, *, metadata: dict[str, Any] | None = None) -> "EvidenceComputationMode":
+    def full_smoothing(
+        cls, *, metadata: dict[str, Any] | None = None
+    ) -> "EvidenceComputationMode":
         """Return a mode that computes full fixed-interval smoothing."""
 
         return cls(
@@ -59,7 +61,9 @@ class EvidenceComputationMode:
         )
 
     @classmethod
-    def evidence_only(cls, *, metadata: dict[str, Any] | None = None) -> "EvidenceComputationMode":
+    def evidence_only(
+        cls, *, metadata: dict[str, Any] | None = None
+    ) -> "EvidenceComputationMode":
         """Return a mode that skips smoothing and keeps evidence semantics."""
 
         return cls(
@@ -90,7 +94,9 @@ class EvidenceComputationMode:
             f"{prefix}_return_smoothed": int(self.return_smoothed),
             f"{prefix}_terminal_posterior": int(self.terminal_posterior),
         }
-        diagnostics.update({f"{prefix}_{key}": value for key, value in self.metadata.items()})
+        diagnostics.update(
+            {f"{prefix}_{key}": value for key, value in self.metadata.items()}
+        )
         return diagnostics
 
 
@@ -104,12 +110,20 @@ def resolve_evidence_computation_mode(
     if isinstance(mode, EvidenceComputationMode):
         return mode
     if mode is None:
-        return EvidenceComputationMode.from_return_smoothed(True if return_smoothed is None else bool(return_smoothed))
+        return EvidenceComputationMode.from_return_smoothed(
+            True if return_smoothed is None else bool(return_smoothed)
+        )
 
     key = str(mode).strip().lower().replace("-", "_")
     if key in {"full", "full_smoothing", "smoothed", "smoothing"}:
         return EvidenceComputationMode.full_smoothing()
-    if key in {"evidence", "evidence_only", "forward_only", "filter_only", "no_smoothing"}:
+    if key in {
+        "evidence",
+        "evidence_only",
+        "forward_only",
+        "filter_only",
+        "no_smoothing",
+    }:
         return EvidenceComputationMode.evidence_only()
     raise ValueError(f"unknown evidence computation mode {mode!r}")
 

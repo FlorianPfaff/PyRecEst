@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import pytest
-
 from pyrecest.diagnostics import EvidenceSupport, coerce_evidence_support
 
 
@@ -25,7 +24,9 @@ def test_evidence_support_truncated_lower_bound_is_not_headline_comparable() -> 
     assert not support.headline_comparable
 
 
-def test_evidence_support_from_mapping_preserves_unknown_fields_as_diagnostics() -> None:
+def test_evidence_support_from_mapping_preserves_unknown_fields_as_diagnostics() -> (
+    None
+):
     support = EvidenceSupport.from_mapping(
         {
             "support_type": "exact_sparse",
@@ -46,4 +47,6 @@ def test_coerce_evidence_support_rejects_unknown_support_type() -> None:
     with pytest.raises(ValueError, match="unsupported evidence support type"):
         coerce_evidence_support("candidate_magic")
 
-    assert coerce_evidence_support({"support_type": "unknown"}).support_type == "unknown"
+    assert (
+        coerce_evidence_support({"support_type": "unknown"}).support_type == "unknown"
+    )

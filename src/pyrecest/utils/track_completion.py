@@ -153,7 +153,9 @@ def enumerate_fragment_completion_paths(
     directions = ("prefix", "suffix") if direction == "both" else (direction,)
 
     for track_index, row in enumerate(matrix):
-        present_sessions = [int(index) for index, value in enumerate(row) if value is not None]
+        present_sessions = [
+            int(index) for index, value in enumerate(row) if value is not None
+        ]
         if not present_sessions:
             continue
         for completion_direction in directions:
@@ -187,7 +189,11 @@ def enumerate_fragment_completion_paths(
             if max_paths_per_fragment is not None:
                 fragment_paths = sorted(
                     fragment_paths,
-                    key=lambda path: (path.score, path.path_length, path_observations(path)),
+                    key=lambda path: (
+                        path.score,
+                        path.path_length,
+                        path_observations(path),
+                    ),
                 )[: int(max_paths_per_fragment)]
             paths.extend(fragment_paths)
     return paths
@@ -215,7 +221,10 @@ def path_sessions(path: CompletionPath[Any]) -> tuple[int, ...]:
 def path_observations(path: CompletionPath[Any]) -> tuple[int, ...]:
     """Return chronological observation ids in a completion path."""
 
-    return (path.steps[0].from_observation, *(step.to_observation for step in path.steps))
+    return (
+        path.steps[0].from_observation,
+        *(step.to_observation for step in path.steps),
+    )
 
 
 def _extend_completion_path(
@@ -245,7 +254,10 @@ def _extend_completion_path(
         direction,
         candidate_session_provider,
     ):
-        if not allow_duplicate_source and occupied.get((anchor_session, anchor_observation), 0) > 1:
+        if (
+            not allow_duplicate_source
+            and occupied.get((anchor_session, anchor_observation), 0) > 1
+        ):
             continue
         for raw_candidate in candidate_provider(
             int(anchor_session), int(anchor_observation), int(candidate_session)
@@ -310,7 +322,10 @@ def _candidate_sessions(
         adjacent = anchor_session + 1 if direction == "suffix" else anchor_session - 1
         raw = (adjacent,)
     else:
-        raw = tuple(int(value) for value in provider(anchor_session, anchor_observation, direction))
+        raw = tuple(
+            int(value)
+            for value in provider(anchor_session, anchor_observation, direction)
+        )
     sessions = []
     for value in raw:
         if value < 0 or value >= matrix.shape[1] or value == anchor_session:
@@ -358,7 +373,9 @@ def _chronological_steps(
     return tuple(steps if direction == "suffix" else reversed(steps))
 
 
-def _coerce_candidate(value: int | CompletionCandidate[PayloadT]) -> CompletionCandidate[PayloadT]:
+def _coerce_candidate(
+    value: int | CompletionCandidate[PayloadT],
+) -> CompletionCandidate[PayloadT]:
     if isinstance(value, CompletionCandidate):
         return value
     return CompletionCandidate(observation=int(value))

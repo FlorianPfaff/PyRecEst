@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-
 from pyrecest.smoothers.record_smoother import fixed_lag_smooth_records, smooth_records
 
 

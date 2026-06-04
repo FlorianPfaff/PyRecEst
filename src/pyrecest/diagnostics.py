@@ -256,7 +256,9 @@ class EvidenceSupport:
 
         known = {"support_type", "comparable", "lower_bound", "diagnostics"}
         diagnostics = dict(mapping.get("diagnostics", {}))
-        diagnostics.update({key: value for key, value in mapping.items() if key not in known})
+        diagnostics.update(
+            {key: value for key, value in mapping.items() if key not in known}
+        )
         return cls(
             support_type=mapping.get("support_type", "unknown"),
             comparable=bool(mapping.get("comparable", False)),
@@ -265,7 +267,9 @@ class EvidenceSupport:
         )
 
     @classmethod
-    def exact_full_grid(cls, diagnostics: Mapping[str, Any] | None = None) -> "EvidenceSupport":
+    def exact_full_grid(
+        cls, diagnostics: Mapping[str, Any] | None = None
+    ) -> "EvidenceSupport":
         """Evidence computed exactly over the complete declared finite grid."""
 
         return cls(
@@ -276,7 +280,9 @@ class EvidenceSupport:
         )
 
     @classmethod
-    def exact_sparse(cls, diagnostics: Mapping[str, Any] | None = None) -> "EvidenceSupport":
+    def exact_sparse(
+        cls, diagnostics: Mapping[str, Any] | None = None
+    ) -> "EvidenceSupport":
         """Evidence computed exactly over a declared sparse finite support."""
 
         return cls(
@@ -287,7 +293,9 @@ class EvidenceSupport:
         )
 
     @classmethod
-    def truncated_lower_bound(cls, diagnostics: Mapping[str, Any] | None = None) -> "EvidenceSupport":
+    def truncated_lower_bound(
+        cls, diagnostics: Mapping[str, Any] | None = None
+    ) -> "EvidenceSupport":
         """Evidence lower bound from a truncated/candidate-pruned support."""
 
         return cls(
@@ -298,7 +306,9 @@ class EvidenceSupport:
         )
 
     @classmethod
-    def approximate_particle(cls, diagnostics: Mapping[str, Any] | None = None) -> "EvidenceSupport":
+    def approximate_particle(
+        cls, diagnostics: Mapping[str, Any] | None = None
+    ) -> "EvidenceSupport":
         """Monte Carlo or particle approximation to evidence."""
 
         return cls(

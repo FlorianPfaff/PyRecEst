@@ -1,5 +1,4 @@
 import numpy as np
-
 from pyrecest.filters import SparseTransitionRowCache, cached_sparse_transition_rows
 
 
@@ -66,7 +65,11 @@ def test_sparse_second_order_grid_accepts_external_transition_cache():
         log_likelihood,
         initial_pair_initializer,
         transition_row_builder,
-        transition_cache_key_builder=lambda prev, curr, transition_index: (prev, curr, transition_index),
+        transition_cache_key_builder=lambda prev, curr, transition_index: (
+            prev,
+            curr,
+            transition_index,
+        ),
         transition_row_cache=cache,
     )
 

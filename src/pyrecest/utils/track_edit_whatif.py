@@ -11,7 +11,9 @@ import numpy as np
 
 from .track_evaluation import normalize_track_matrix
 
-TrackEditKind = Literal["add_link", "remove_link", "swap_link", "split_track", "merge_tracks"]
+TrackEditKind = Literal[
+    "add_link", "remove_link", "swap_link", "split_track", "merge_tracks"
+]
 TrackLink = tuple[int, int, int, int]
 _COUNT_KEYS = (
     "pairwise_true_positives",
@@ -207,14 +209,20 @@ def rank_track_edits_by_delta(
 def _apply_add_link(matrix: np.ndarray, edit: TrackEdit) -> TrackEditApplication:
     session_a, session_b, source, target = _require_link_fields(edit)
     output = matrix.copy()
-    source_rows = tuple(int(row) for row in np.flatnonzero(output[:, session_a] == source))
-    target_rows = tuple(int(row) for row in np.flatnonzero(output[:, session_b] == target))
+    source_rows = tuple(
+        int(row) for row in np.flatnonzero(output[:, session_a] == source)
+    )
+    target_rows = tuple(
+        int(row) for row in np.flatnonzero(output[:, session_b] == target)
+    )
     duplicate_source = any(
-        output[row_index, session_b] is not None and output[row_index, session_b] != target
+        output[row_index, session_b] is not None
+        and output[row_index, session_b] != target
         for row_index in source_rows
     )
     duplicate_target = any(
-        output[row_index, session_a] is not None and output[row_index, session_a] != source
+        output[row_index, session_a] is not None
+        and output[row_index, session_a] != source
         for row_index in target_rows
     )
     if duplicate_source or duplicate_target:
@@ -237,19 +245,35 @@ def _apply_add_link(matrix: np.ndarray, edit: TrackEdit) -> TrackEditApplication
         source_row = int(source_rows[0])
         target_row = int(target_rows[0])
         if source_row == target_row:
-            return TrackEditApplication(edit, output, True, "already_same_component", "accepted")
+            return TrackEditApplication(
+                edit, output, True, "already_same_component", "accepted"
+            )
         merged = _merge_rows_if_compatible(output[source_row], output[target_row])
         if merged is not None:
             keep = [index for index in range(output.shape[0]) if index != target_row]
             output[source_row] = merged
-            return TrackEditApplication(edit, output[np.asarray(keep, dtype=int)], True, "merge_components", "accepted")
+            return TrackEditApplication(
+                edit,
+                output[np.asarray(keep, dtype=int)],
+                True,
+                "merge_components",
+                "accepted",
+            )
     if len(source_rows) == 0 and len(target_rows) == 0:
         new_row = np.empty((1, output.shape[1]), dtype=object)
         new_row[:] = None
         new_row[0, session_a] = int(source)
         new_row[0, session_b] = int(target)
-        return TrackEditApplication(edit, np.vstack([output, new_row]), True, "add_partial_component", "accepted")
-    return TrackEditApplication(edit, output, False, "reject", "ambiguous_multiple_components")
+        return TrackEditApplication(
+            edit,
+            np.vstack([output, new_row]),
+            True,
+            "add_partial_component",
+            "accepted",
+        )
+    return TrackEditApplication(
+        edit, output, False, "reject", "ambiguous_multiple_components"
+    )
 
 
 def _apply_remove_link(matrix: np.ndarray, edit: TrackEdit) -> TrackEditApplication:
@@ -275,7 +299,9 @@ def _apply_remove_link(matrix: np.ndarray, edit: TrackEdit) -> TrackEditApplicat
     if any(value is not None for value in right):
         pieces.append(right)
     candidate = np.vstack(pieces).astype(object, copy=False) if pieces else output[:0]
-    return TrackEditApplication(edit, candidate, True, "split_component_at_edge", "accepted")
+    return TrackEditApplication(
+        edit, candidate, True, "split_component_at_edge", "accepted"
+    )
 
 
 def _apply_swap_link(matrix: np.ndarray, edit: TrackEdit) -> TrackEditApplication:
@@ -286,15 +312,20 @@ def _apply_swap_link(matrix: np.ndarray, edit: TrackEdit) -> TrackEditApplicatio
     wrong_target = _metadata_int(edit, "remove_target_observation")
     output = matrix.copy()
     if (session_a, session_b) != (wrong_session_a, wrong_session_b):
-        return TrackEditApplication(edit, output, False, "reject", "session_pair_mismatch")
+        return TrackEditApplication(
+            edit, output, False, "reject", "session_pair_mismatch"
+        )
     matching_rows = tuple(
         int(row)
         for row in np.flatnonzero(
-            (output[:, session_a] == wrong_source) & (output[:, session_b] == wrong_target)
+            (output[:, session_a] == wrong_source)
+            & (output[:, session_b] == wrong_target)
         )
     )
     if not matching_rows:
-        return TrackEditApplication(edit, output, False, "reject", "wrong_edge_not_found")
+        return TrackEditApplication(
+            edit, output, False, "reject", "wrong_edge_not_found"
+        )
     row_index = int(matching_rows[0])
     row_indices = np.arange(output.shape[0])
     duplicate_source = bool(
@@ -327,9 +358,13 @@ def _apply_split_track(matrix: np.ndarray, edit: TrackEdit) -> TrackEditApplicat
     split_session = int(edit.session_b)
     output = matrix.copy()
     if row_index < 0 or row_index >= output.shape[0]:
-        return TrackEditApplication(edit, output, False, "reject", "track_index_out_of_bounds")
+        return TrackEditApplication(
+            edit, output, False, "reject", "track_index_out_of_bounds"
+        )
     if split_session <= 0 or split_session >= output.shape[1]:
-        return TrackEditApplication(edit, output, False, "reject", "split_session_out_of_bounds")
+        return TrackEditApplication(
+            edit, output, False, "reject", "split_session_out_of_bounds"
+        )
     left = output[row_index].copy()
     right = output[row_index].copy()
     left[split_session:] = None
@@ -339,7 +374,13 @@ def _apply_split_track(matrix: np.ndarray, edit: TrackEdit) -> TrackEditApplicat
         pieces.append(left)
     if any(value is not None for value in right):
         pieces.append(right)
-    return TrackEditApplication(edit, np.vstack(pieces).astype(object, copy=False), True, "split_track", "accepted")
+    return TrackEditApplication(
+        edit,
+        np.vstack(pieces).astype(object, copy=False),
+        True,
+        "split_track",
+        "accepted",
+    )
 
 
 def _apply_merge_tracks(matrix: np.ndarray, edit: TrackEdit) -> TrackEditApplication:
@@ -351,23 +392,43 @@ def _apply_merge_tracks(matrix: np.ndarray, edit: TrackEdit) -> TrackEditApplica
     left_index = int(edit.track_index)
     right_index = int(other)
     output = matrix.copy()
-    if left_index < 0 or right_index < 0 or left_index >= output.shape[0] or right_index >= output.shape[0]:
-        return TrackEditApplication(edit, output, False, "reject", "track_index_out_of_bounds")
+    if (
+        left_index < 0
+        or right_index < 0
+        or left_index >= output.shape[0]
+        or right_index >= output.shape[0]
+    ):
+        return TrackEditApplication(
+            edit, output, False, "reject", "track_index_out_of_bounds"
+        )
     if left_index == right_index:
-        return TrackEditApplication(edit, output, True, "already_same_component", "accepted")
+        return TrackEditApplication(
+            edit, output, True, "already_same_component", "accepted"
+        )
     merged = _merge_rows_if_compatible(output[left_index], output[right_index])
     if merged is None:
         return TrackEditApplication(edit, output, False, "reject", "row_conflict")
     keep = [index for index in range(output.shape[0]) if index != right_index]
     output[left_index] = merged
-    return TrackEditApplication(edit, output[np.asarray(keep, dtype=int)], True, "merge_tracks", "accepted")
+    return TrackEditApplication(
+        edit, output[np.asarray(keep, dtype=int)], True, "merge_tracks", "accepted"
+    )
 
 
 def _require_link_fields(edit: TrackEdit) -> TrackLink:
-    fields = (edit.session_a, edit.session_b, edit.source_observation, edit.target_observation)
+    fields = (
+        edit.session_a,
+        edit.session_b,
+        edit.source_observation,
+        edit.target_observation,
+    )
     if any(value is None for value in fields):
-        raise ValueError(f"{edit.kind} edits require session_a, session_b, source_observation, and target_observation")
-    session_a, session_b, source, target = (int(value) for value in fields if value is not None)
+        raise ValueError(
+            f"{edit.kind} edits require session_a, session_b, source_observation, and target_observation"
+        )
+    session_a, session_b, source, target = (
+        int(value) for value in fields if value is not None
+    )
     if session_a < 0 or session_b < 0 or session_a >= session_b:
         raise ValueError("edit sessions must satisfy 0 <= session_a < session_b")
     return session_a, session_b, source, target
@@ -382,7 +443,11 @@ def _metadata_int(edit: TrackEdit, name: str) -> int:
 def _merge_rows_if_compatible(left: np.ndarray, right: np.ndarray) -> np.ndarray | None:
     values: list[int | None] = []
     for left_value, right_value in zip(left, right, strict=True):
-        if left_value is not None and right_value is not None and left_value != right_value:
+        if (
+            left_value is not None
+            and right_value is not None
+            and left_value != right_value
+        ):
             return None
         values.append(left_value if left_value is not None else right_value)
     return np.asarray(values, dtype=object)
@@ -403,8 +468,12 @@ def _score_track_matrices(
             prefix="pairwise",
         )
         complete = _score_multiset_identities(
-            _complete_track_counter(predicted, session_indices=complete_session_indices),
-            _complete_track_counter(reference, session_indices=complete_session_indices),
+            _complete_track_counter(
+                predicted, session_indices=complete_session_indices
+            ),
+            _complete_track_counter(
+                reference, session_indices=complete_session_indices
+            ),
             prefix="complete_track",
         )
     else:
@@ -414,28 +483,42 @@ def _score_track_matrices(
             prefix="pairwise",
         )
         complete = _score_set_identities(
-            set(_complete_track_counter(predicted, session_indices=complete_session_indices)),
-            set(_complete_track_counter(reference, session_indices=complete_session_indices)),
+            set(
+                _complete_track_counter(
+                    predicted, session_indices=complete_session_indices
+                )
+            ),
+            set(
+                _complete_track_counter(
+                    reference, session_indices=complete_session_indices
+                )
+            ),
             prefix="complete_track",
         )
     return {**pairwise, **complete}
 
 
-def _score_set_identities(predicted: set[Any], reference: set[Any], *, prefix: str) -> dict[str, float | int]:
+def _score_set_identities(
+    predicted: set[Any], reference: set[Any], *, prefix: str
+) -> dict[str, float | int]:
     true_positives = len(predicted & reference)
     false_positives = len(predicted - reference)
     false_negatives = len(reference - predicted)
     return _count_row(prefix, true_positives, false_positives, false_negatives)
 
 
-def _score_multiset_identities(predicted: Counter[Any], reference: Counter[Any], *, prefix: str) -> dict[str, float | int]:
+def _score_multiset_identities(
+    predicted: Counter[Any], reference: Counter[Any], *, prefix: str
+) -> dict[str, float | int]:
     true_positives = int(sum((predicted & reference).values()))
     false_positives = int(sum(predicted.values())) - true_positives
     false_negatives = int(sum(reference.values())) - true_positives
     return _count_row(prefix, true_positives, false_positives, false_negatives)
 
 
-def _count_row(prefix: str, true_positives: int, false_positives: int, false_negatives: int) -> dict[str, float | int]:
+def _count_row(
+    prefix: str, true_positives: int, false_positives: int, false_negatives: int
+) -> dict[str, float | int]:
     return {
         f"{prefix}_true_positives": int(true_positives),
         f"{prefix}_false_positives": int(false_positives),
@@ -455,7 +538,14 @@ def _track_link_counter(
             observation_a = row[session_a]
             observation_b = row[session_b]
             if observation_a is not None and observation_b is not None:
-                counter[(int(session_a), int(session_b), int(observation_a), int(observation_b))] += 1
+                counter[
+                    (
+                        int(session_a),
+                        int(session_b),
+                        int(observation_a),
+                        int(observation_b),
+                    )
+                ] += 1
     return counter
 
 
@@ -464,7 +554,11 @@ def _complete_track_counter(
     *,
     session_indices: Sequence[int] | None,
 ) -> Counter[tuple[int, ...]]:
-    selected = tuple(range(track_matrix.shape[1])) if session_indices is None else tuple(int(index) for index in session_indices)
+    selected = (
+        tuple(range(track_matrix.shape[1]))
+        if session_indices is None
+        else tuple(int(index) for index in session_indices)
+    )
     counter: Counter[tuple[int, ...]] = Counter()
     for row in track_matrix:
         observations: list[int] = []
@@ -484,12 +578,16 @@ def _session_pairs(
 ) -> tuple[tuple[int, int], ...]:
     if session_pairs is None:
         return tuple((index, index + 1) for index in range(max(0, matrix.shape[1] - 1)))
-    pairs = tuple((int(session_a), int(session_b)) for session_a, session_b in session_pairs)
+    pairs = tuple(
+        (int(session_a), int(session_b)) for session_a, session_b in session_pairs
+    )
     for session_a, session_b in pairs:
         if session_a < 0 or session_b <= session_a:
             raise ValueError("session pairs must satisfy 0 <= session_a < session_b")
         if session_b >= matrix.shape[1]:
-            raise IndexError(f"session pair {(session_a, session_b)} out of bounds for {matrix.shape[1]} sessions")
+            raise IndexError(
+                f"session pair {(session_a, session_b)} out of bounds for {matrix.shape[1]} sessions"
+            )
     return pairs
 
 
@@ -497,7 +595,9 @@ def _validate_compatible_shapes(predicted: np.ndarray, reference: np.ndarray) ->
     if predicted.ndim != 2 or reference.ndim != 2:
         raise ValueError("track matrices must have shape (n_tracks, n_sessions)")
     if predicted.shape[1] != reference.shape[1]:
-        raise ValueError("predicted and reference track matrices must have the same number of sessions")
+        raise ValueError(
+            "predicted and reference track matrices must have the same number of sessions"
+        )
 
 
 def _f1(tp: int, fp: int, fn: int) -> float:

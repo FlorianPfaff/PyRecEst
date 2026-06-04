@@ -13,6 +13,10 @@ from pyrecest.backend_tools import (  # noqa: F401
     is_backend,
     warn_if_backend_env_changed,
 )
+from pyrecest.evidence import (  # noqa: F401
+    EvidenceComputationMode,
+    resolve_evidence_computation_mode,
+)
 from pyrecest.exceptions import (  # noqa: F401
     BackendNotSupportedError,
     BackendSupportError,
@@ -22,10 +26,6 @@ from pyrecest.exceptions import (  # noqa: F401
     PyRecEstError,
     ShapeError,
     ValidationError,
-)
-from pyrecest.evidence import (  # noqa: F401
-    EvidenceComputationMode,
-    resolve_evidence_computation_mode,
 )
 from pyrecest.stability import (  # noqa: F401
     get_public_api_status,

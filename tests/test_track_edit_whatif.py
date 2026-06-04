@@ -45,7 +45,10 @@ def test_remove_link_splits_track_and_removes_false_positive() -> None:
 
     assert application.applied
     assert application.action == "split_component_at_edge"
-    assert application.track_matrix.tolist() == [[1, 2, None, None], [None, None, 99, 4]]
+    assert application.track_matrix.tolist() == [
+        [1, 2, None, None],
+        [None, None, 99, 4],
+    ]
     assert delta.pairwise_fp_delta == -1
     assert delta.complete_fp_delta == -1
 
@@ -110,7 +113,9 @@ def test_duplicate_sensitive_scoring_counts_duplicate_false_positive() -> None:
     )
 
     set_delta = score_track_edit_delta(predicted, reference, edit)
-    multiset_delta = score_track_edit_delta(predicted, reference, edit, count_duplicates=True)
+    multiset_delta = score_track_edit_delta(
+        predicted, reference, edit, count_duplicates=True
+    )
 
     assert set_delta.pairwise_fp_delta == 0
     assert multiset_delta.pairwise_fp_delta == -1
@@ -120,8 +125,20 @@ def test_rank_track_edits_prefers_complete_track_improvement() -> None:
     predicted = [[1, 2, None], [8, 9, 10]]
     reference = [[1, 2, 3], [8, 9, 10]]
     edits = [
-        TrackEdit(kind="remove_link", session_a=0, session_b=1, source_observation=8, target_observation=9),
-        TrackEdit(kind="add_link", session_a=1, session_b=2, source_observation=2, target_observation=3),
+        TrackEdit(
+            kind="remove_link",
+            session_a=0,
+            session_b=1,
+            source_observation=8,
+            target_observation=9,
+        ),
+        TrackEdit(
+            kind="add_link",
+            session_a=1,
+            session_b=2,
+            source_observation=2,
+            target_observation=3,
+        ),
     ]
 
     ranked = rank_track_edits_by_delta(predicted, reference, edits)

@@ -219,7 +219,9 @@ def _record_arrays(
     if np.any(np.diff(times) < -1.0e-9):
         raise ValueError("records must be sorted by nondecreasing time")
 
-    states = [np.asarray(record[state_key], dtype=float).reshape(-1) for record in records]
+    states = [
+        np.asarray(record[state_key], dtype=float).reshape(-1) for record in records
+    ]
     state_dim = states[0].size
     if state_dim == 0:
         raise ValueError("state vectors must be nonempty")
@@ -294,7 +296,9 @@ def _rts_smooth_arrays(
             transition_model=transition_model,
             process_noise_model=process_noise_model,
         )
-        gain = _smoothing_gain(filtered_covariances[idx], transition, predicted_covariance)
+        gain = _smoothing_gain(
+            filtered_covariances[idx], transition, predicted_covariance
+        )
         smoothed_states[idx] = filtered_states[idx] + gain @ (
             smoothed_states[idx + 1] - predicted_state
         )
@@ -320,7 +324,9 @@ def _predict_arrays(
         raise ValueError("smoothing records must be sorted by time")
     dt = max(0.0, dt)
     transition = _call_model(transition_model, dt, state_dim, "transition_model")
-    process_noise = _call_model(process_noise_model, dt, state_dim, "process_noise_model")
+    process_noise = _call_model(
+        process_noise_model, dt, state_dim, "process_noise_model"
+    )
     predicted_state = transition @ filtered_states[index]
     predicted_covariance = _symmetrized(
         transition @ filtered_covariances[index] @ transition.T + process_noise
@@ -328,7 +334,9 @@ def _predict_arrays(
     return transition, predicted_state, predicted_covariance
 
 
-def _call_model(model: Callable[..., np.ndarray], dt: float, state_dim: int, name: str) -> np.ndarray:
+def _call_model(
+    model: Callable[..., np.ndarray], dt: float, state_dim: int, name: str
+) -> np.ndarray:
     try:
         matrix = model(dt, state_dim)
     except TypeError as exc:

@@ -66,12 +66,12 @@ from .pairwise_covariance_features import (
     pairwise_mahalanobis_distances,
 )
 from .track_completion import (
+    CandidateProvider,
+    CandidateSessionProvider,
     CompletionCandidate,
     CompletionDirection,
     CompletionPath,
     CompletionStep,
-    CandidateProvider,
-    CandidateSessionProvider,
     enumerate_fragment_completion_paths,
     occupied_observations_by_session,
     path_observations,

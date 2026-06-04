@@ -15,7 +15,9 @@ def _normalize_axes(axes, ndim):
         if axis < 0:
             axis += ndim
         if axis < 0 or axis >= ndim:
-            raise ValueError(f"axis {axis} is out of bounds for array of dimension {ndim}")
+            raise ValueError(
+                f"axis {axis} is out of bounds for array of dimension {ndim}"
+            )
         normalized_axes.append(axis)
 
     if len(set(normalized_axes)) != len(normalized_axes):
@@ -24,7 +26,9 @@ def _normalize_axes(axes, ndim):
 
 
 def _as_tensor_pair(in1, in2):
-    device = next((value.device for value in (in1, in2) if _torch.is_tensor(value)), None)
+    device = next(
+        (value.device for value in (in1, in2) if _torch.is_tensor(value)), None
+    )
     x = in1 if _torch.is_tensor(in1) else _torch.as_tensor(in1, device=device)
     y = in2 if _torch.is_tensor(in2) else _torch.as_tensor(in2, device=x.device)
     y = y.to(device=x.device)
@@ -66,13 +70,16 @@ def fftconvolve(in1, in2, mode="full", axes=None):
         x_larger = all(x.shape[axis] >= y.shape[axis] for axis in axes)
         y_larger = all(y.shape[axis] >= x.shape[axis] for axis in axes)
         if not (x_larger or y_larger):
-            raise ValueError("For mode='valid', one input must be at least as large as the other in every selected dimension.")
+            raise ValueError(
+                "For mode='valid', one input must be at least as large as the other in every selected dimension."
+            )
 
     fft_shape = tuple(int(x.shape[axis] + y.shape[axis] - 1) for axis in axes)
     real_result = not (x.dtype.is_complex or y.dtype.is_complex)
 
     result = _torch.fft.ifftn(
-        _torch.fft.fftn(x, s=fft_shape, dim=axes) * _torch.fft.fftn(y, s=fft_shape, dim=axes),
+        _torch.fft.fftn(x, s=fft_shape, dim=axes)
+        * _torch.fft.fftn(y, s=fft_shape, dim=axes),
         s=fft_shape,
         dim=axes,
     )

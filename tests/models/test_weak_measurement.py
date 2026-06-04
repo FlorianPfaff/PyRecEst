@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import numpy as np
-
 from pyrecest.filters import KalmanFilter
 from pyrecest.models import (
     MaskedLinearMeasurementModel,
@@ -32,11 +31,15 @@ def test_selection_matrix_selects_state_components() -> None:
     matrix = selection_matrix(6, [0, 2, 5])
 
     assert matrix.shape == (3, 6)
-    assert np.allclose(matrix @ np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0]), [1.0, 3.0, 6.0])
+    assert np.allclose(
+        matrix @ np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0]), [1.0, 3.0, 6.0]
+    )
 
 
 def test_masked_linear_measurement_model_updates_only_observed_dimensions() -> None:
-    model = MaskedLinearMeasurementModel(state_dim=3, observed_dims=[0, 2], stds=[1.0, 2.0])
+    model = MaskedLinearMeasurementModel(
+        state_dim=3, observed_dims=[0, 2], stds=[1.0, 2.0]
+    )
     kf = KalmanFilter((np.zeros(3), np.eye(3) * 100.0))
 
     kf.update_model(model, np.array([10.0, 20.0]))
@@ -47,7 +50,9 @@ def test_masked_linear_measurement_model_updates_only_observed_dimensions() -> N
     assert estimate[2] > 15.0
 
 
-def test_weak_dimension_measurement_model_keeps_weak_dimension_nearly_untrusted() -> None:
+def test_weak_dimension_measurement_model_keeps_weak_dimension_nearly_untrusted() -> (
+    None
+):
     model = WeakDimensionMeasurementModel(np.eye(3), stds=[1.0, 1.0, 20000.0])
     kf = KalmanFilter((np.zeros(3), np.eye(3)))
 
