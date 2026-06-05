@@ -686,12 +686,12 @@ def linspace(start, stop, num=50, endpoint=True, dtype=None):
     if not _torch.is_tensor(stop):
         stop = _torch.as_tensor(stop, dtype=dtype, device=device)
     elif dtype is not None or (device is not None and stop.device != device):
-        stop = stop.to(
-            dtype=dtype if dtype is not None else stop.dtype, device=device
-        )
+        stop = stop.to(dtype=dtype if dtype is not None else stop.dtype, device=device)
 
     result_dtype = dtype if dtype is not None else _torch.result_type(start, stop)
-    if dtype is None and not (result_dtype.is_floating_point or result_dtype.is_complex):
+    if dtype is None and not (
+        result_dtype.is_floating_point or result_dtype.is_complex
+    ):
         result_dtype = get_default_dtype()
 
     start = start.to(dtype=result_dtype)
