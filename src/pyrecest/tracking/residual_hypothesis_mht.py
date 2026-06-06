@@ -70,7 +70,9 @@ def enumerate_residual_hypotheses(
             score = sum(candidate_scores) - float(cfg.edit_penalty) * float(size)
             hypotheses.append(
                 ResidualHypothesis(
-                    candidate_ids=tuple(str(candidate.candidate_id) for candidate in group),
+                    candidate_ids=tuple(
+                        str(candidate.candidate_id) for candidate in group
+                    ),
                     score=float(score),
                     candidate_scores=candidate_scores,
                 )
@@ -113,7 +115,9 @@ def hypothesis_to_dict(hypothesis: ResidualHypothesis) -> dict[str, Any]:
         "candidate_ids": ";".join(hypothesis.candidate_ids),
         "n_edits": int(hypothesis.n_edits),
         "score": float(hypothesis.score),
-        "candidate_scores": ";".join(f"{score:.12g}" for score in hypothesis.candidate_scores),
+        "candidate_scores": ";".join(
+            f"{score:.12g}" for score in hypothesis.candidate_scores
+        ),
     }
 
 

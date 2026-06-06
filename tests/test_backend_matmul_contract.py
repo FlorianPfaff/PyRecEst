@@ -1,6 +1,5 @@
-import pytest
-
 import pyrecest.backend as backend
+import pytest
 
 
 def _as_plain_python(value):
