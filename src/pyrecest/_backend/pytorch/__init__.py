@@ -1344,8 +1344,7 @@ def cross(a, b, axisa=-1, axisb=-1, axisc=-1, axis=None):
     b_dim = b.shape[-1]
     if a_dim not in (2, 3) or b_dim not in (2, 3):
         raise ValueError(
-            "incompatible dimensions for cross product "
-            "(dimension must be 2 or 3)"
+            "incompatible dimensions for cross product " "(dimension must be 2 or 3)"
         )
 
     leading_shape = _np.broadcast_shapes(tuple(a.shape[:-1]), tuple(b.shape[:-1]))
