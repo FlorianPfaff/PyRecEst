@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import numpy as np
-import pytest
-
 import pyrecest.backend
+import pytest
 from pyrecest.backend import array, diag, eye
 from pyrecest.filters.mem_qkf_tracker import MEMQKFTracker
 from pyrecest.filters.mem_rbpf_tracker import MEMRBPFTracker
@@ -11,14 +10,15 @@ from pyrecest.filters.vbrm_tracker import VBRMTracker
 from pyrecest.filters.velocity_aided_mem_qkf_tracker import VelocityAidedMEMQKFTracker
 from pyrecest.filters.velocity_locked_mem_qkf_tracker import VelocityLockedMEMQKFTracker
 
-
 pytestmark = pytest.mark.skipif(
     pyrecest.backend.__backend_name__ != "numpy",
     reason="Empty-measurement regression tests compare NumPy snapshots directly.",
 )
 
 
-def _assert_snapshot_unchanged(before: dict[str, np.ndarray], after: dict[str, np.ndarray]) -> None:
+def _assert_snapshot_unchanged(
+    before: dict[str, np.ndarray], after: dict[str, np.ndarray]
+) -> None:
     assert before.keys() == after.keys()
     for key in before:
         np.testing.assert_allclose(after[key], before[key], err_msg=key)
@@ -100,7 +100,9 @@ def test_mem_qkf_empty_measurement_set_is_noop() -> None:
     _assert_snapshot_unchanged(before, _snapshot_mem_qkf(tracker))
 
 
-def test_velocity_aided_mem_qkf_empty_measurement_set_does_not_apply_heading_aid() -> None:
+def test_velocity_aided_mem_qkf_empty_measurement_set_does_not_apply_heading_aid() -> (
+    None
+):
     tracker = VelocityAidedMEMQKFTracker(
         _kinematic_state(),
         _kinematic_covariance(),
@@ -118,7 +120,9 @@ def test_velocity_aided_mem_qkf_empty_measurement_set_does_not_apply_heading_aid
     assert not tracker._heading_update_pending  # pylint: disable=protected-access
 
 
-def test_velocity_locked_mem_qkf_empty_measurement_set_does_not_relock_orientation() -> None:
+def test_velocity_locked_mem_qkf_empty_measurement_set_does_not_relock_orientation() -> (
+    None
+):
     tracker = VelocityLockedMEMQKFTracker(
         _kinematic_state(),
         _kinematic_covariance(),
