@@ -341,7 +341,9 @@ class VBRMTracker(AbstractExtendedObjectTracker):
             ),
             linalg.block_diag(orientation_covariance, axis_covariance),
         )
-        return state, self._project_symmetric_covariance(covariance, minimum_covariance_eigenvalue)
+        return state, self._project_symmetric_covariance(
+            covariance, minimum_covariance_eigenvalue
+        )
 
     def get_point_estimate_kinematics(self):
         return self.kinematic_state
@@ -375,7 +377,11 @@ class VBRMTracker(AbstractExtendedObjectTracker):
 
         floor = max(float(minimum_covariance_eigenvalue), 1e-12)
         axes = array(axes).reshape(2)
-        axis_floor = 2.0 * float(minimum_axis_length) if full_axes else float(minimum_axis_length)
+        axis_floor = (
+            2.0 * float(minimum_axis_length)
+            if full_axes
+            else float(minimum_axis_length)
+        )
         axes = maximum(axes, axis_floor)
         semi_axes = 0.5 * axes if full_axes else axes
         semi_axes = maximum(semi_axes, float(minimum_axis_length))
@@ -395,8 +401,8 @@ class VBRMTracker(AbstractExtendedObjectTracker):
         alpha_minus_one = maximum(alpha - 1.0, 1e-12)
         alpha_minus_two = maximum(alpha - 2.0, 1e-12)
         beta = maximum(beta, 0.0)
-        extent_variance = beta * beta / (
-            alpha_minus_one * alpha_minus_one * alpha_minus_two
+        extent_variance = (
+            beta * beta / (alpha_minus_one * alpha_minus_one * alpha_minus_two)
         )
         axis_variance = extent_variance / mean_extent_variance
         if not full_axes:

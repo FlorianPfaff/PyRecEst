@@ -12,7 +12,6 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any, TypeAlias
 
-
 DelayedStateOutput: TypeAlias = tuple[int, Any]
 
 

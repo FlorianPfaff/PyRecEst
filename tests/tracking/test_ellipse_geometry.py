@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import numpy as np
 import numpy.testing as npt
-
 from pyrecest.tracking import (
     canonicalize_ellipse_axes,
     canonicalize_ellipse_shape,

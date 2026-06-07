@@ -335,7 +335,9 @@ class MEMQKFTracker(MEMEKFTracker):
             self._project_symmetric_covariance(self.covariance),
             self._project_symmetric_covariance(shape_covariance),
         )
-        return self.get_state(full_axis_lengths=full_axis_lengths), self._project_symmetric_covariance(covariance)
+        return self.get_state(
+            full_axis_lengths=full_axis_lengths
+        ), self._project_symmetric_covariance(covariance)
 
     # pylint: disable=too-many-arguments,too-many-positional-arguments
     def _update_single_measurement_qkf(

@@ -122,7 +122,9 @@ def shape_from_extent_matrix(
     major_vector = eigenvectors[:, major_index]
     orientation = arctan2(major_vector[1], major_vector[0])
     if reference_orientation is not None:
-        orientation = wrap_ellipse_angle_to_reference(reference_orientation, orientation)
+        orientation = wrap_ellipse_angle_to_reference(
+            reference_orientation, orientation
+        )
     return array([orientation, major_axis, minor_axis])
 
 
@@ -183,7 +185,9 @@ def ellipse_shape_canonicalization_transform(
         orientation = orientation + 0.5 * pi
 
     if reference_orientation is not None:
-        orientation = wrap_ellipse_angle_to_reference(reference_orientation, orientation)
+        orientation = wrap_ellipse_angle_to_reference(
+            reference_orientation, orientation
+        )
     return array([orientation, axes[0], axes[1]]), transform
 
 
@@ -247,13 +251,17 @@ def canonicalize_ellipse_axes(
     )
     axes = shape[1:]
     axis_transform = transform[1:, 1:]
-    swapped = bool(float(axis_transform[0, 1]) != 0.0 or float(axis_transform[1, 0]) != 0.0)
+    swapped = bool(
+        float(axis_transform[0, 1]) != 0.0 or float(axis_transform[1, 0]) != 0.0
+    )
     if axis_covariance is None:
         return axes, None, swapped
     axis_covariance = asarray(axis_covariance)
     if axis_covariance.shape != (2, 2):
         raise ValueError("axis_covariance must have shape (2, 2)")
-    canonical_axis_covariance = axis_transform @ symmetrize(axis_covariance) @ axis_transform.T
+    canonical_axis_covariance = (
+        axis_transform @ symmetrize(axis_covariance) @ axis_transform.T
+    )
     canonical_axis_covariance = project_symmetric_covariance(
         canonical_axis_covariance,
         minimum_eigenvalue=minimum_covariance_eigenvalue,

@@ -693,7 +693,9 @@ class MEMRBPFTracker(AbstractExtendedObjectTracker):
         axis = backend_abs(self.axis.reshape((n_particles, 2)))
         if full_axis_lengths:
             axis = 2.0 * axis
-        return concatenate([kinematic_rows, theta.reshape((n_particles, 1)), axis], axis=1)
+        return concatenate(
+            [kinematic_rows, theta.reshape((n_particles, 1)), axis], axis=1
+        )
 
     def _particle_public_axis_covariances(self, n_particles, full_axis_lengths=True):
         covariances = self.axis_covariances
@@ -731,7 +733,9 @@ class MEMRBPFTracker(AbstractExtendedObjectTracker):
 
     @staticmethod
     def _ellipse_angle_delta(reference, theta):
-        return 0.5 * arctan2(sin(2.0 * (theta - reference)), cos(2.0 * (theta - reference)))
+        return 0.5 * arctan2(
+            sin(2.0 * (theta - reference)), cos(2.0 * (theta - reference))
+        )
 
     def get_state_array(self, with_weight=False, full_axis_lengths=False):
         kinematic_rows = ones((self.n_particles, self.state_dim)) * self.kinematic_state

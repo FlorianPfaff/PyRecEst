@@ -446,11 +446,31 @@ def _arg_reduction(
 
 
 def argmax(a, axis=None, out=None, keepdims=False, *, dim=None, keepdim=None):
-    return _arg_reduction(a, _np.argmax, _torch.argmax, "argmax", axis, out, keepdims, dim=dim, keepdim=keepdim)
+    return _arg_reduction(
+        a,
+        _np.argmax,
+        _torch.argmax,
+        "argmax",
+        axis,
+        out,
+        keepdims,
+        dim=dim,
+        keepdim=keepdim,
+    )
 
 
 def argmin(a, axis=None, out=None, keepdims=False, *, dim=None, keepdim=None):
-    return _arg_reduction(a, _np.argmin, _torch.argmin, "argmin", axis, out, keepdims, dim=dim, keepdim=keepdim)
+    return _arg_reduction(
+        a,
+        _np.argmin,
+        _torch.argmin,
+        "argmin",
+        axis,
+        out,
+        keepdims,
+        dim=dim,
+        keepdim=keepdim,
+    )
 
 
 def convert_to_wider_dtype(tensor_list):
