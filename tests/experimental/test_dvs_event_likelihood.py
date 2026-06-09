@@ -7,8 +7,8 @@ from pyrecest.experimental.dvs.event_likelihood import (
     contour_event_intensity,
     event_batch_log_likelihood,
     expected_event_count,
-    scgp_event_batch_log_likelihood_terms,
     normal_flow_activities,
+    scgp_event_batch_log_likelihood_terms,
 )
 
 
@@ -209,5 +209,7 @@ def test_scgp_event_batch_log_likelihood_terms_uses_tracker_contour_sampler():
 
     assert tracker.last_sample_count == 17
     assert terms.log_likelihood == pytest.approx(
-        event_batch_log_likelihood(events, contour, np.array([1.0, 0.0]), update_config.likelihood)
+        event_batch_log_likelihood(
+            events, contour, np.array([1.0, 0.0]), update_config.likelihood
+        )
     )

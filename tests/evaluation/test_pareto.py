@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import pandas as pd
 import pytest
-
 from pyrecest.evaluation import (
     constraint_mask,
     equal_quality_selection,
@@ -22,7 +21,9 @@ def test_pareto_front_indices_handles_min_and_max_objectives() -> None:
         ]
     )
 
-    indices = pareto_front_indices(table, ["size", "quality"], directions={"size": "min", "quality": "max"})
+    indices = pareto_front_indices(
+        table, ["size", "quality"], directions={"size": "min", "quality": "max"}
+    )
 
     assert set(table.loc[indices, "name"]) == {"small_good", "tiny_ok"}
 
@@ -36,7 +37,12 @@ def test_is_pareto_front_respects_feasible_mask() -> None:
         ]
     )
 
-    mask = is_pareto_front(table, ["size", "quality"], directions=["min", "max"], feasible_mask=table["allowed"])
+    mask = is_pareto_front(
+        table,
+        ["size", "quality"],
+        directions=["min", "max"],
+        feasible_mask=table["allowed"],
+    )
 
     assert set(table.loc[mask, "name"]) == {"baseline", "fast"}
 
@@ -45,8 +51,19 @@ def test_record_dominates_can_skip_missing_optional_metrics() -> None:
     left = {"size": 4.0, "quality": 0.95, "optional": float("nan")}
     right = {"size": 5.0, "quality": 0.95, "optional": 2.0}
 
-    assert record_dominates(left, right, ["size", "quality", "optional"], directions={"size": "min", "quality": "max", "optional": "max"})
-    assert not record_dominates(left, right, ["size", "quality", "optional"], directions={"size": "min", "quality": "max", "optional": "max"}, allow_missing=False)
+    assert record_dominates(
+        left,
+        right,
+        ["size", "quality", "optional"],
+        directions={"size": "min", "quality": "max", "optional": "max"},
+    )
+    assert not record_dominates(
+        left,
+        right,
+        ["size", "quality", "optional"],
+        directions={"size": "min", "quality": "max", "optional": "max"},
+        allow_missing=False,
+    )
 
 
 def test_constraint_mask_supports_tuple_and_mapping_specs() -> None:
@@ -58,7 +75,9 @@ def test_constraint_mask_supports_tuple_and_mapping_specs() -> None:
         ]
     )
 
-    mask = constraint_mask(table, {"drop": (">=", -0.06), "lpips": {"op": "<=", "value": 0.0035}})
+    mask = constraint_mask(
+        table, {"drop": (">=", -0.06), "lpips": {"op": "<=", "value": 0.0035}}
+    )
 
     assert table.loc[mask, "name"].tolist() == ["a"]
 
@@ -66,15 +85,36 @@ def test_constraint_mask_supports_tuple_and_mapping_specs() -> None:
 def test_equal_quality_selection_returns_best_compression_row() -> None:
     table = pd.DataFrame(
         [
-            {"name": "safe_large", "retention": 0.8, "psnr_delta": -0.01, "lpips_delta": 0.001, "f_score": 0.24},
-            {"name": "safe_small", "retention": 0.5, "psnr_delta": -0.05, "lpips_delta": 0.003, "f_score": 0.20},
-            {"name": "unsafe_tiny", "retention": 0.4, "psnr_delta": -0.09, "lpips_delta": 0.003, "f_score": 0.26},
+            {
+                "name": "safe_large",
+                "retention": 0.8,
+                "psnr_delta": -0.01,
+                "lpips_delta": 0.001,
+                "f_score": 0.24,
+            },
+            {
+                "name": "safe_small",
+                "retention": 0.5,
+                "psnr_delta": -0.05,
+                "lpips_delta": 0.003,
+                "f_score": 0.20,
+            },
+            {
+                "name": "unsafe_tiny",
+                "retention": 0.4,
+                "psnr_delta": -0.09,
+                "lpips_delta": 0.003,
+                "f_score": 0.26,
+            },
         ]
     )
 
     selected = equal_quality_selection(
         table,
-        quality_constraints={"psnr_delta": (">=", -0.06), "lpips_delta": ("<=", 0.0035)},
+        quality_constraints={
+            "psnr_delta": (">=", -0.06),
+            "lpips_delta": ("<=", 0.0035),
+        },
         compression_objective="retention",
         compression_direction="min",
         tie_breakers=(("f_score", "max"),),

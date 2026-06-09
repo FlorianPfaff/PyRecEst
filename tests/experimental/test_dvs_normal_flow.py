@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.experimental.dvs.normal_flow import (
     INFER_POLARITY_CONTRAST_SIGN,
     event_polarity_sign,

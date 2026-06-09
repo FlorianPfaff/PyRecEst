@@ -12,7 +12,9 @@ def _as_real_array(name: str, value: np.ndarray | Sequence[float]) -> np.ndarray
     return array
 
 
-def _as_point_batch(name: str, points: np.ndarray | Sequence[float]) -> tuple[np.ndarray, bool]:
+def _as_point_batch(
+    name: str, points: np.ndarray | Sequence[float]
+) -> tuple[np.ndarray, bool]:
     array = _as_real_array(name, points)
     if array.ndim == 1:
         if array.shape[0] < 1:
@@ -20,12 +22,16 @@ def _as_point_batch(name: str, points: np.ndarray | Sequence[float]) -> tuple[np
         return array.reshape(1, -1), True
     if array.ndim == 2:
         if array.shape[0] < 1 or array.shape[1] < 1:
-            raise ValueError(f"{name} must be non-empty and have at least one dimension.")
+            raise ValueError(
+                f"{name} must be non-empty and have at least one dimension."
+            )
         return array, False
     raise ValueError(f"{name} must have shape (dim,) or (count, dim).")
 
 
-def _as_covariance_batch(name: str, covariance: np.ndarray | Sequence[Sequence[float]]) -> tuple[np.ndarray, bool]:
+def _as_covariance_batch(
+    name: str, covariance: np.ndarray | Sequence[Sequence[float]]
+) -> tuple[np.ndarray, bool]:
     array = _as_real_array(name, covariance)
     if array.ndim == 2:
         if array.shape[0] != array.shape[1] or array.shape[0] < 1:
@@ -33,16 +39,22 @@ def _as_covariance_batch(name: str, covariance: np.ndarray | Sequence[Sequence[f
         return array.reshape(1, array.shape[0], array.shape[1]), True
     if array.ndim == 3:
         if array.shape[0] < 1 or array.shape[1] != array.shape[2] or array.shape[1] < 1:
-            raise ValueError(f"{name} must have shape (count, dim, dim) with square matrices.")
+            raise ValueError(
+                f"{name} must have shape (count, dim, dim) with square matrices."
+            )
         return array, False
     raise ValueError(f"{name} must have shape (dim, dim) or (count, dim, dim).")
 
 
-def _as_axis_offset_batch(axis_offsets: np.ndarray | Sequence[Sequence[float]], *, dim: int) -> tuple[np.ndarray, bool]:
+def _as_axis_offset_batch(
+    axis_offsets: np.ndarray | Sequence[Sequence[float]], *, dim: int
+) -> tuple[np.ndarray, bool]:
     array = _as_real_array("axis_offsets", axis_offsets)
     if array.ndim == 2:
         if array.shape != (dim, dim):
-            raise ValueError(f"axis_offsets must have shape ({dim}, {dim}) for a single center.")
+            raise ValueError(
+                f"axis_offsets must have shape ({dim}, {dim}) for a single center."
+            )
         return array.reshape(1, dim, dim), True
     if array.ndim == 3:
         if array.shape[1:] != (dim, dim):
@@ -51,15 +63,30 @@ def _as_axis_offset_batch(axis_offsets: np.ndarray | Sequence[Sequence[float]], 
     raise ValueError("axis_offsets must have shape (dim, dim) or (count, dim, dim).")
 
 
-def _broadcast_batches(points: np.ndarray, point_single: bool, axis_offsets: np.ndarray, axis_single: bool) -> tuple[np.ndarray, np.ndarray, bool]:
+def _broadcast_batches(
+    points: np.ndarray, point_single: bool, axis_offsets: np.ndarray, axis_single: bool
+) -> tuple[np.ndarray, np.ndarray, bool]:
     if point_single and axis_single:
         return points, axis_offsets, True
     if point_single:
-        return np.broadcast_to(points, (axis_offsets.shape[0], points.shape[1])).copy(), axis_offsets, False
+        return (
+            np.broadcast_to(points, (axis_offsets.shape[0], points.shape[1])).copy(),
+            axis_offsets,
+            False,
+        )
     if axis_single:
-        return points, np.broadcast_to(axis_offsets, (points.shape[0], axis_offsets.shape[1], axis_offsets.shape[2])).copy(), False
+        return (
+            points,
+            np.broadcast_to(
+                axis_offsets,
+                (points.shape[0], axis_offsets.shape[1], axis_offsets.shape[2]),
+            ).copy(),
+            False,
+        )
     if points.shape[0] != axis_offsets.shape[0]:
-        raise ValueError("point and axis-offset batches must have the same length or one batch must be singular.")
+        raise ValueError(
+            "point and axis-offset batches must have the same length or one batch must be singular."
+        )
     return points, axis_offsets, False
 
 
@@ -108,8 +135,12 @@ def support_points_from_axis_offsets(
     """
 
     point_batch, point_single = _as_point_batch("centers", centers)
-    axis_batch, axis_single = _as_axis_offset_batch(axis_offsets, dim=point_batch.shape[1])
-    point_batch, axis_batch, single = _broadcast_batches(point_batch, point_single, axis_batch, axis_single)
+    axis_batch, axis_single = _as_axis_offset_batch(
+        axis_offsets, dim=point_batch.shape[1]
+    )
+    point_batch, axis_batch, single = _broadcast_batches(
+        point_batch, point_single, axis_batch, axis_single
+    )
 
     pieces: list[np.ndarray] = []
     if include_center:
@@ -135,8 +166,15 @@ def ellipsoid_axis_support_points(
 ) -> np.ndarray:
     """Return center and principal-axis support points of a covariance ellipsoid."""
 
-    offsets = ellipsoid_axis_offsets(covariance, radius=radius, sort_descending=sort_descending, clip_negative_eigenvalues=clip_negative_eigenvalues)
-    return support_points_from_axis_offsets(mean, offsets, include_center=include_center)
+    offsets = ellipsoid_axis_offsets(
+        covariance,
+        radius=radius,
+        sort_descending=sort_descending,
+        clip_negative_eigenvalues=clip_negative_eigenvalues,
+    )
+    return support_points_from_axis_offsets(
+        mean, offsets, include_center=include_center
+    )
 
 
 def ellipsoid_sigma_points(
@@ -166,24 +204,37 @@ def ellipsoid_sigma_points(
     if covariances.shape[1] != centers.shape[1]:
         raise ValueError("mean and covariance dimensions must agree.")
     if center_single and not cov_single:
-        centers = np.broadcast_to(centers, (covariances.shape[0], centers.shape[1])).copy()
+        centers = np.broadcast_to(
+            centers, (covariances.shape[0], centers.shape[1])
+        ).copy()
         single = False
     elif cov_single and not center_single:
-        covariances = np.broadcast_to(covariances, (centers.shape[0], covariances.shape[1], covariances.shape[2])).copy()
+        covariances = np.broadcast_to(
+            covariances, (centers.shape[0], covariances.shape[1], covariances.shape[2])
+        ).copy()
         single = False
     elif center_single and cov_single:
         single = True
     else:
         if centers.shape[0] != covariances.shape[0]:
-            raise ValueError("mean and covariance batches must have the same length or one batch must be singular.")
+            raise ValueError(
+                "mean and covariance batches must have the same length or one batch must be singular."
+            )
         single = False
 
     pieces: list[np.ndarray] = []
     if include_center:
         pieces.append(centers)
     for radius in radii_tuple:
-        offsets = ellipsoid_axis_offsets(covariances, radius=radius, sort_descending=sort_descending, clip_negative_eigenvalues=clip_negative_eigenvalues)
-        offsets = offsets.reshape(covariances.shape[0], centers.shape[1], centers.shape[1])
+        offsets = ellipsoid_axis_offsets(
+            covariances,
+            radius=radius,
+            sort_descending=sort_descending,
+            clip_negative_eigenvalues=clip_negative_eigenvalues,
+        )
+        offsets = offsets.reshape(
+            covariances.shape[0], centers.shape[1], centers.shape[1]
+        )
         for axis in range(centers.shape[1]):
             offset = offsets[:, :, axis]
             pieces.append(centers + offset)
@@ -214,27 +265,40 @@ def mahalanobis_support_points(
     if normalize_directions:
         norms = np.linalg.norm(directions_array, axis=1, keepdims=True)
         if bool(np.any(norms <= 0.0)):
-            raise ValueError("directions must be non-zero when normalize_directions=True.")
+            raise ValueError(
+                "directions must be non-zero when normalize_directions=True."
+            )
         directions_array = directions_array / norms
 
     if covariances.shape[1] != centers.shape[1]:
         raise ValueError("mean and covariance dimensions must agree.")
     if center_single and not cov_single:
-        centers = np.broadcast_to(centers, (covariances.shape[0], centers.shape[1])).copy()
+        centers = np.broadcast_to(
+            centers, (covariances.shape[0], centers.shape[1])
+        ).copy()
         single = False
     elif cov_single and not center_single:
-        covariances = np.broadcast_to(covariances, (centers.shape[0], covariances.shape[1], covariances.shape[2])).copy()
+        covariances = np.broadcast_to(
+            covariances, (centers.shape[0], covariances.shape[1], covariances.shape[2])
+        ).copy()
         single = False
     elif center_single and cov_single:
         single = True
     else:
         if centers.shape[0] != covariances.shape[0]:
-            raise ValueError("mean and covariance batches must have the same length or one batch must be singular.")
+            raise ValueError(
+                "mean and covariance batches must have the same length or one batch must be singular."
+            )
         single = False
 
     eigenvalues, eigenvectors = np.linalg.eigh(covariances)
     eigenvalues = np.clip(eigenvalues, 0.0, None)
-    sqrt_covariances = np.einsum("bij,bj,bkj->bik", eigenvectors, np.sqrt(eigenvalues) * float(radius), eigenvectors)
+    sqrt_covariances = np.einsum(
+        "bij,bj,bkj->bik",
+        eigenvectors,
+        np.sqrt(eigenvalues) * float(radius),
+        eigenvectors,
+    )
     mapped_offsets = np.einsum("mj,bji->bmi", directions_array, sqrt_covariances)
     points = centers[:, None, :] + mapped_offsets
     return points[0] if single else points
@@ -250,9 +314,13 @@ def projected_linear_variance_from_axis_offsets(
     ``a`` over an ellipsoid whose square-root covariance columns are ``u_i``.
     """
 
-    coefficients, coeff_single = _as_point_batch("linear_coefficients", linear_coefficients)
+    coefficients, coeff_single = _as_point_batch(
+        "linear_coefficients", linear_coefficients
+    )
     axes, axis_single = _as_axis_offset_batch(axis_offsets, dim=coefficients.shape[1])
-    coefficients, axes, single = _broadcast_batches(coefficients, coeff_single, axes, axis_single)
+    coefficients, axes, single = _broadcast_batches(
+        coefficients, coeff_single, axes, axis_single
+    )
     projections = np.einsum("bi,bij->bj", coefficients, axes)
     variances = np.sum(np.square(projections), axis=1)
     return float(variances[0]) if single else variances

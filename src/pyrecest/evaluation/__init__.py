@@ -10,7 +10,6 @@ from .generate_simulated_scenarios import generate_simulated_scenarios
 from .get_axis_label import get_axis_label
 from .get_distance_function import get_distance_function
 from .get_extract_mean import get_extract_mean
-from .iterate_configs_and_runs import iterate_configs_and_runs
 from .implicit_surfaces import (
     classify_inside_outside,
     surface_band_mask,
@@ -19,6 +18,7 @@ from .implicit_surfaces import (
     surface_residuals,
     surface_variances,
 )
+from .iterate_configs_and_runs import iterate_configs_and_runs
 from .model_comparison import (
     add_evidence_margin_columns,
     classify_evidence_margin,

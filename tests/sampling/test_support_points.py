@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-
 from pyrecest.sampling import (
     ellipsoid_axis_offsets,
     ellipsoid_axis_support_points,
@@ -44,8 +43,12 @@ def test_support_points_from_axis_offsets_supports_batches() -> None:
     support = support_points_from_axis_offsets(centers, axis_offsets)
 
     assert support.shape == (2, 5, 2)
-    assert np.allclose(support[0], [[0.0, 0.0], [1.0, 0.0], [-1.0, 0.0], [0.0, 1.0], [0.0, -1.0]])
-    assert np.allclose(support[1], [[1.0, 1.0], [3.0, 1.0], [-1.0, 1.0], [1.0, 4.0], [1.0, -2.0]])
+    assert np.allclose(
+        support[0], [[0.0, 0.0], [1.0, 0.0], [-1.0, 0.0], [0.0, 1.0], [0.0, -1.0]]
+    )
+    assert np.allclose(
+        support[1], [[1.0, 1.0], [3.0, 1.0], [-1.0, 1.0], [1.0, 4.0], [1.0, -2.0]]
+    )
 
 
 def test_projected_linear_variance_from_axis_offsets() -> None:
@@ -55,7 +58,9 @@ def test_projected_linear_variance_from_axis_offsets() -> None:
     variance = projected_linear_variance_from_axis_offsets(coefficients, axis_offsets)
 
     assert np.allclose(variance, [25.0, 5.0])
-    assert projected_linear_variance_from_axis_offsets([3.0, 4.0], np.eye(2)) == pytest.approx(25.0)
+    assert projected_linear_variance_from_axis_offsets(
+        [3.0, 4.0], np.eye(2)
+    ) == pytest.approx(25.0)
 
 
 def test_ellipsoid_sigma_points_include_center_once_for_multiple_radii() -> None:
@@ -67,7 +72,9 @@ def test_ellipsoid_sigma_points_include_center_once_for_multiple_radii() -> None
 
 
 def test_mahalanobis_support_points_use_world_directions() -> None:
-    support = mahalanobis_support_points([0.0, 0.0], np.diag([4.0, 1.0]), [[1.0, 0.0], [0.0, 1.0]])
+    support = mahalanobis_support_points(
+        [0.0, 0.0], np.diag([4.0, 1.0]), [[1.0, 0.0], [0.0, 1.0]]
+    )
 
     assert support.shape == (2, 2)
     assert np.allclose(support, [[2.0, 0.0], [0.0, 1.0]])

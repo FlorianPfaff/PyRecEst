@@ -23,10 +23,10 @@ from .event_likelihood import (
     contour_event_intensity,
     event_batch_log_likelihood,
     event_batch_log_likelihood_terms,
-    scgp_event_batch_log_likelihood,
-    scgp_event_batch_log_likelihood_terms,
     expected_event_count,
     normal_flow_activities,
+    scgp_event_batch_log_likelihood,
+    scgp_event_batch_log_likelihood_terms,
 )
 from .normal_flow import (
     INFER_POLARITY_CONTRAST_SIGN,

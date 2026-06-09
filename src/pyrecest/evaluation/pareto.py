@@ -54,14 +54,25 @@ def pareto_front_indices(
         return []
     objective_names = _validate_objectives(objectives)
     direction_map = _directions_by_objective(objective_names, directions)
-    candidates = table.loc[_feasible_index(table, feasible_mask)] if feasible_mask is not None else table
+    candidates = (
+        table.loc[_feasible_index(table, feasible_mask)]
+        if feasible_mask is not None
+        else table
+    )
     indices: list[Any] = []
     for index, row in candidates.iterrows():
         dominated = False
         for other_index, other in candidates.iterrows():
             if index == other_index:
                 continue
-            if record_dominates(other, row, objective_names, directions=direction_map, eps=eps, allow_missing=allow_missing):
+            if record_dominates(
+                other,
+                row,
+                objective_names,
+                directions=direction_map,
+                eps=eps,
+                allow_missing=allow_missing,
+            ):
                 dominated = True
                 break
         if not dominated:
@@ -81,7 +92,16 @@ def is_pareto_front(
     """Return a boolean Series marking non-dominated rows."""
 
     mask = pd.Series(False, index=table.index, dtype=bool)
-    mask.loc[pareto_front_indices(table, objectives, directions=directions, feasible_mask=feasible_mask, eps=eps, allow_missing=allow_missing)] = True
+    mask.loc[
+        pareto_front_indices(
+            table,
+            objectives,
+            directions=directions,
+            feasible_mask=feasible_mask,
+            eps=eps,
+            allow_missing=allow_missing,
+        )
+    ] = True
     return mask
 
 
@@ -176,7 +196,10 @@ def select_under_constraints(
     feasible = table.loc[constraint_mask(table, constraints, eps=eps)].copy()
     if feasible.empty:
         return feasible
-    ascending = [direction == "min", *(tie_direction == "min" for _, tie_direction in tie_breakers)]
+    ascending = [
+        direction == "min",
+        *(tie_direction == "min" for _, tie_direction in tie_breakers),
+    ]
     return feasible.sort_values(sorted_columns, ascending=ascending, na_position="last")
 
 
@@ -227,7 +250,11 @@ def _directions_by_objective(
         if len(directions) != len(objectives):
             raise ValueError("directions must match the number of objectives.")
         result = dict(zip(objectives, directions, strict=True))
-    invalid = [objective for objective, direction in result.items() if direction not in {"min", "max"}]
+    invalid = [
+        objective
+        for objective, direction in result.items()
+        if direction not in {"min", "max"}
+    ]
     if invalid:
         raise ValueError(f"Invalid objective directions for: {', '.join(invalid)}.")
     return result

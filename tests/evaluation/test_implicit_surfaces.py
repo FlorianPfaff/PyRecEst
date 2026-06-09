@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.evaluation import (
     classify_inside_outside,
     surface_band_mask,

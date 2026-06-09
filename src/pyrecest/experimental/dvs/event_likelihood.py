@@ -333,7 +333,9 @@ def _resolve_scgp_likelihood_arguments(
 ) -> tuple[EventLikelihoodConfig, int]:
     if isinstance(config, PointProcessUpdateConfig):
         likelihood_config = config.likelihood
-        sample_count = config.contour_samples if contour_samples is None else contour_samples
+        sample_count = (
+            config.contour_samples if contour_samples is None else contour_samples
+        )
     else:
         likelihood_config = config or EventLikelihoodConfig()
         sample_count = 96 if contour_samples is None else contour_samples
