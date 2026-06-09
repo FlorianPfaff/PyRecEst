@@ -14,7 +14,9 @@ import numpy as np
 _DEFAULT_CHUNK_SIZE = 4096
 
 
-def as_point_set(points: Any, *, name: str = "points", expected_dim: int | None = None) -> np.ndarray:
+def as_point_set(
+    points: Any, *, name: str = "points", expected_dim: int | None = None
+) -> np.ndarray:
     """Return ``points`` as a finite ``float64`` array with shape ``(N, D)``.
 
     Parameters
@@ -39,7 +41,9 @@ def as_point_set(points: Any, *, name: str = "points", expected_dim: int | None 
     return array
 
 
-def deterministic_subsample(points: Any, *, max_points: int | None, seed: int = 0) -> tuple[np.ndarray, np.ndarray]:
+def deterministic_subsample(
+    points: Any, *, max_points: int | None, seed: int = 0
+) -> tuple[np.ndarray, np.ndarray]:
     """Return a deterministic random subset of ``points`` and its indices.
 
     If ``max_points`` is ``None``, non-positive, or at least the number of
@@ -55,7 +59,9 @@ def deterministic_subsample(points: Any, *, max_points: int | None, seed: int = 
         return point_array, indices
 
     rng = np.random.default_rng(seed)
-    indices = np.sort(rng.choice(point_array.shape[0], size=max_points, replace=False)).astype(np.int64)
+    indices = np.sort(
+        rng.choice(point_array.shape[0], size=max_points, replace=False)
+    ).astype(np.int64)
     return point_array[indices], indices
 
 
@@ -109,11 +115,15 @@ def chamfer_distance(
     nearest-neighbor distances.
     """
 
-    a_to_b = nearest_neighbor_distances(points_a, points_b, query_chunk_size=query_chunk_size)
+    a_to_b = nearest_neighbor_distances(
+        points_a, points_b, query_chunk_size=query_chunk_size
+    )
     value = float(np.mean(a_to_b**2 if squared else a_to_b))
     if not symmetric:
         return value
-    b_to_a = nearest_neighbor_distances(points_b, points_a, query_chunk_size=query_chunk_size)
+    b_to_a = nearest_neighbor_distances(
+        points_b, points_a, query_chunk_size=query_chunk_size
+    )
     return value + float(np.mean(b_to_a**2 if squared else b_to_a))
 
 
@@ -127,12 +137,25 @@ def precision_recall_fscore(
     """Return precision, recall, and F-score for a distance threshold."""
 
     threshold_float = _validate_threshold(threshold)
-    estimate_to_reference = nearest_neighbor_distances(estimate_points, reference_points, query_chunk_size=query_chunk_size)
-    reference_to_estimate = nearest_neighbor_distances(reference_points, estimate_points, query_chunk_size=query_chunk_size)
+    estimate_to_reference = nearest_neighbor_distances(
+        estimate_points, reference_points, query_chunk_size=query_chunk_size
+    )
+    reference_to_estimate = nearest_neighbor_distances(
+        reference_points, estimate_points, query_chunk_size=query_chunk_size
+    )
     precision = float(np.mean(estimate_to_reference <= threshold_float))
     recall = float(np.mean(reference_to_estimate <= threshold_float))
-    f_score = 0.0 if precision + recall <= 0.0 else float(2.0 * precision * recall / (precision + recall))
-    return {"threshold": threshold_float, "precision": precision, "recall": recall, "f_score": f_score}
+    f_score = (
+        0.0
+        if precision + recall <= 0.0
+        else float(2.0 * precision * recall / (precision + recall))
+    )
+    return {
+        "threshold": threshold_float,
+        "precision": precision,
+        "recall": recall,
+        "f_score": f_score,
+    }
 
 
 def precision_recall_curve(
@@ -147,14 +170,29 @@ def precision_recall_curve(
     threshold_values = tuple(_validate_threshold(threshold) for threshold in thresholds)
     if not threshold_values:
         raise ValueError("At least one threshold is required.")
-    estimate_to_reference = nearest_neighbor_distances(estimate_points, reference_points, query_chunk_size=query_chunk_size)
-    reference_to_estimate = nearest_neighbor_distances(reference_points, estimate_points, query_chunk_size=query_chunk_size)
+    estimate_to_reference = nearest_neighbor_distances(
+        estimate_points, reference_points, query_chunk_size=query_chunk_size
+    )
+    reference_to_estimate = nearest_neighbor_distances(
+        reference_points, estimate_points, query_chunk_size=query_chunk_size
+    )
     rows = []
     for threshold in threshold_values:
         precision = float(np.mean(estimate_to_reference <= threshold))
         recall = float(np.mean(reference_to_estimate <= threshold))
-        f_score = 0.0 if precision + recall <= 0.0 else float(2.0 * precision * recall / (precision + recall))
-        rows.append({"threshold": float(threshold), "precision": precision, "recall": recall, "f_score": f_score})
+        f_score = (
+            0.0
+            if precision + recall <= 0.0
+            else float(2.0 * precision * recall / (precision + recall))
+        )
+        rows.append(
+            {
+                "threshold": float(threshold),
+                "precision": precision,
+                "recall": recall,
+                "f_score": f_score,
+            }
+        )
     return rows
 
 
@@ -179,8 +217,12 @@ def point_set_geometry_summary(
     if not threshold_values:
         raise ValueError("At least one threshold is required.")
 
-    estimate_to_reference = nearest_neighbor_distances(estimate_points, reference_points, query_chunk_size=query_chunk_size)
-    reference_to_estimate = nearest_neighbor_distances(reference_points, estimate_points, query_chunk_size=query_chunk_size)
+    estimate_to_reference = nearest_neighbor_distances(
+        estimate_points, reference_points, query_chunk_size=query_chunk_size
+    )
+    reference_to_estimate = nearest_neighbor_distances(
+        reference_points, estimate_points, query_chunk_size=query_chunk_size
+    )
 
     summary = {
         "accuracy_mean": float(estimate_to_reference.mean()),
@@ -189,16 +231,31 @@ def point_set_geometry_summary(
         "completion_mean": float(reference_to_estimate.mean()),
         "completion_median": float(np.median(reference_to_estimate)),
         "completion_rmse": float(np.sqrt(np.mean(reference_to_estimate**2))),
-        "chamfer_l1": float(estimate_to_reference.mean() + reference_to_estimate.mean()),
-        "chamfer_l2": float(np.mean(estimate_to_reference**2) + np.mean(reference_to_estimate**2)),
+        "chamfer_l1": float(
+            estimate_to_reference.mean() + reference_to_estimate.mean()
+        ),
+        "chamfer_l2": float(
+            np.mean(estimate_to_reference**2) + np.mean(reference_to_estimate**2)
+        ),
     }
 
     threshold_rows = []
     for threshold in threshold_values:
         precision = float(np.mean(estimate_to_reference <= threshold))
         recall = float(np.mean(reference_to_estimate <= threshold))
-        f_score = 0.0 if precision + recall <= 0.0 else float(2.0 * precision * recall / (precision + recall))
-        threshold_rows.append({"threshold": float(threshold), "precision": precision, "recall": recall, "f_score": f_score})
+        f_score = (
+            0.0
+            if precision + recall <= 0.0
+            else float(2.0 * precision * recall / (precision + recall))
+        )
+        threshold_rows.append(
+            {
+                "threshold": float(threshold),
+                "precision": precision,
+                "recall": recall,
+                "f_score": f_score,
+            }
+        )
     return summary, threshold_rows
 
 
@@ -216,9 +273,14 @@ def distance_quantiles(
         raise ValueError("At least one quantile is required.")
     if any(quantile < 0.0 or quantile > 1.0 for quantile in quantile_values):
         raise ValueError("Quantiles must be in [0, 1].")
-    distances = nearest_neighbor_distances(query, reference, query_chunk_size=query_chunk_size)
+    distances = nearest_neighbor_distances(
+        query, reference, query_chunk_size=query_chunk_size
+    )
     values = np.quantile(distances, quantile_values)
-    return {quantile: float(value) for quantile, value in zip(quantile_values, np.atleast_1d(values), strict=True)}
+    return {
+        quantile: float(value)
+        for quantile, value in zip(quantile_values, np.atleast_1d(values), strict=True)
+    }
 
 
 def _nearest_neighbor_distances_ckdtree(
@@ -261,9 +323,13 @@ def _nearest_neighbor_distances_dense(
     for start in range(0, query.shape[0], query_chunk_size):
         chunk = query[start : start + query_chunk_size]
         chunk_norm = np.sum(chunk**2, axis=1, keepdims=True)
-        squared = np.maximum(chunk_norm + ref_norm[None, :] - 2.0 * (chunk @ ref_t), 0.0)
+        squared = np.maximum(
+            chunk_norm + ref_norm[None, :] - 2.0 * (chunk @ ref_t), 0.0
+        )
         chunk_indices = np.argmin(squared, axis=1)
-        distances[start : start + chunk.shape[0]] = np.sqrt(squared[np.arange(chunk.shape[0]), chunk_indices])
+        distances[start : start + chunk.shape[0]] = np.sqrt(
+            squared[np.arange(chunk.shape[0]), chunk_indices]
+        )
         if indices is not None:
             indices[start : start + chunk.shape[0]] = chunk_indices
     if indices is None:
@@ -273,7 +339,9 @@ def _nearest_neighbor_distances_dense(
 
 def _validate_matching_dimension(query: np.ndarray, reference: np.ndarray) -> None:
     if query.shape[1] != reference.shape[1]:
-        raise ValueError(f"query and reference must have the same point dimension, got {query.shape[1]} and {reference.shape[1]}.")
+        raise ValueError(
+            f"query and reference must have the same point dimension, got {query.shape[1]} and {reference.shape[1]}."
+        )
 
 
 def _validate_chunk_size(query_chunk_size: int) -> None:
@@ -286,4 +354,3 @@ def _validate_threshold(threshold: float) -> float:
     if threshold_float < 0.0:
         raise ValueError("Distance thresholds must be non-negative.")
     return threshold_float
-

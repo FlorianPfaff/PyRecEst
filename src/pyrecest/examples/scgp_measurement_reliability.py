@@ -38,8 +38,7 @@ class SCGPMeasurementReliabilityExampleResult:
         """Return the position shift induced by the weighted update."""
         return float(
             linalg.norm(
-                self.weighted_kinematic_estimate[:2]
-                - self.prior_kinematic_estimate[:2]
+                self.weighted_kinematic_estimate[:2] - self.prior_kinematic_estimate[:2]
             )
         )
 

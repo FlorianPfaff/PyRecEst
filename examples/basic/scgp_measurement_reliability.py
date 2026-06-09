@@ -2,6 +2,5 @@
 
 from pyrecest.examples.scgp_measurement_reliability import main
 
-
 if __name__ == "__main__":
     main()

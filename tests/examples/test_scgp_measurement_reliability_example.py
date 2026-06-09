@@ -1,5 +1,4 @@
 import numpy.testing as npt
-
 from pyrecest.backend import array
 from pyrecest.examples.scgp_measurement_reliability import (
     run_scgp_measurement_reliability_example,

@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.evaluation.point_set_metrics import (
     chamfer_distance,
     deterministic_subsample,
@@ -16,16 +15,24 @@ def test_nearest_neighbor_distances_are_directed():
     query = np.array([[0.0, 0.0], [2.0, 0.0]])
     reference = np.array([[0.0, 0.0], [1.0, 0.0]])
 
-    np.testing.assert_allclose(nearest_neighbor_distances(query, reference, query_chunk_size=1), [0.0, 1.0])
+    np.testing.assert_allclose(
+        nearest_neighbor_distances(query, reference, query_chunk_size=1), [0.0, 1.0]
+    )
 
 
 def test_chamfer_distance_supports_l1_and_l2_conventions():
     points_a = np.array([[0.0, 0.0], [1.0, 0.0]])
     points_b = np.array([[0.0, 0.0], [3.0, 0.0]])
 
-    assert chamfer_distance(points_a, points_b, query_chunk_size=1) == pytest.approx(1.5)
-    assert chamfer_distance(points_a, points_b, squared=True, query_chunk_size=1) == pytest.approx(2.5)
-    assert chamfer_distance(points_a, points_b, symmetric=False, query_chunk_size=1) == pytest.approx(0.5)
+    assert chamfer_distance(points_a, points_b, query_chunk_size=1) == pytest.approx(
+        1.5
+    )
+    assert chamfer_distance(
+        points_a, points_b, squared=True, query_chunk_size=1
+    ) == pytest.approx(2.5)
+    assert chamfer_distance(
+        points_a, points_b, symmetric=False, query_chunk_size=1
+    ) == pytest.approx(0.5)
 
 
 def test_precision_recall_fscore_matches_threshold_definition():
@@ -56,7 +63,9 @@ def test_point_set_geometry_summary_matches_legacy_geometry_columns():
     estimate = np.array([[0.0, 0.0], [1.0, 0.0]])
     reference = np.array([[0.0, 0.0], [3.0, 0.0]])
 
-    summary, threshold_rows = point_set_geometry_summary(estimate, reference, thresholds=(0.25,), query_chunk_size=1)
+    summary, threshold_rows = point_set_geometry_summary(
+        estimate, reference, thresholds=(0.25,), query_chunk_size=1
+    )
 
     assert summary["accuracy_mean"] == pytest.approx(0.5)
     assert summary["completion_mean"] == pytest.approx(1.0)
@@ -70,9 +79,15 @@ def test_distance_quantiles_are_reported_by_requested_probability():
     query = np.array([[0.0], [1.0], [3.0]])
     reference = np.array([[0.0]])
 
-    quantiles = distance_quantiles(query, reference, quantiles=(0.0, 0.5, 1.0), query_chunk_size=1)
+    quantiles = distance_quantiles(
+        query, reference, quantiles=(0.0, 0.5, 1.0), query_chunk_size=1
+    )
 
-    assert quantiles == {0.0: pytest.approx(0.0), 0.5: pytest.approx(1.0), 1.0: pytest.approx(3.0)}
+    assert quantiles == {
+        0.0: pytest.approx(0.0),
+        0.5: pytest.approx(1.0),
+        1.0: pytest.approx(3.0),
+    }
 
 
 def test_deterministic_subsample_returns_sorted_indices_and_is_reproducible():
