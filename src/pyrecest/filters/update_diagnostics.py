@@ -27,8 +27,10 @@ class MeasurementUpdateDiagnostics:
     metadata: Mapping[str, Any] | None = None
 
     def __post_init__(self):
-        indices = () if self.active_measurement_indices is None else tuple(
-            int(index) for index in self.active_measurement_indices
+        indices = (
+            ()
+            if self.active_measurement_indices is None
+            else tuple(int(index) for index in self.active_measurement_indices)
         )
         object.__setattr__(self, "active_measurement_indices", indices)
         if self.measurement_count is not None and self.measurement_count < 0:

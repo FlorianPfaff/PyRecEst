@@ -10,9 +10,9 @@ from pyrecest.filters import (
     DecorrelatedScGpTracker,
     FullSCGPTracker,
     GPRHMTracker,
+    MeasurementUpdateDiagnostics,
     SCGPTracker,
     ScGpTracker,
-    MeasurementUpdateDiagnostics,
 )
 
 
@@ -117,8 +117,12 @@ class TestSCGPTracker(unittest.TestCase):
             atol=1e-12,
         )
         self.assertEqual(masked_tracker.last_active_measurement_indices, [0])
-        self.assertEqual(masked_tracker.last_update_diagnostics.active_measurement_indices, (0,))
-        self.assertEqual(masked_tracker.last_update_diagnostics.active_measurement_count, 1)
+        self.assertEqual(
+            masked_tracker.last_update_diagnostics.active_measurement_indices, (0,)
+        )
+        self.assertEqual(
+            masked_tracker.last_update_diagnostics.active_measurement_count, 1
+        )
         npt.assert_allclose(masked_tracker.last_measurement_weights, array([1.0, 1.0]))
 
     def test_update_reuses_generic_reliability_helpers(self):
