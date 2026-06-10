@@ -104,9 +104,7 @@ class CircularFourierDistribution(AbstractCircularDistribution):
                 )
             _ensure_odd_n(self.n)
             if a.shape[0] != b.shape[0] + 1:
-                raise ValueError(
-                    "a must contain exactly one more coefficient than b."
-                )
+                raise ValueError("a must contain exactly one more coefficient than b.")
         else:
             raise ValueError("Need to provide either c or a and b.")
 
@@ -340,7 +338,9 @@ class CircularFourierDistribution(AbstractCircularDistribution):
 
     def get_full_c(self):
         if self.c is None:
-            raise ValueError("Full complex coefficients are only available when c is set.")
+            raise ValueError(
+                "Full complex coefficients are only available when c is set."
+            )
         neg_c = conj(self.c[-1:0:-1])  # Create array for negative-frequency components
         full_c = concatenate([neg_c, self.c])  # Concatenate arrays to get full spectrum
         return full_c
