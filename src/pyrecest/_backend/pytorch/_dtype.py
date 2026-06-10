@@ -9,7 +9,11 @@ from pyrecest._backend._dtype_utils import (
     _pre_allow_complex_dtype,
     _pre_cast_out_to_input_dtype,
     _update_default_dtypes,
+)
+from pyrecest._backend._dtype_utils import (
     get_default_cdtype as _shared_get_default_cdtype,
+)
+from pyrecest._backend._dtype_utils import (
     get_default_dtype as _shared_get_default_dtype,
 )
 from torch import complex64, complex128, float32, float64
@@ -105,6 +109,7 @@ def _add_default_dtype_by_casting(target=None):
         return _decorator
 
     return _decorator(target)
+
 
 _cast_out_to_input_dtype = _pre_cast_out_to_input_dtype(
     cast, is_floating, is_complex, as_dtype, _dtype_as_str

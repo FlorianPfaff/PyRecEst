@@ -102,9 +102,7 @@ def test_pytorch_custom_gradient_accepts_keyword_arguments_and_defaults():
 
     torch = pytest.importorskip("torch")
 
-    @backend.autodiff.custom_gradient(
-        lambda x, scale=1.0, offset=0.0: 2.0 * scale * x
-    )
+    @backend.autodiff.custom_gradient(lambda x, scale=1.0, offset=0.0: 2.0 * scale * x)
     def quadratic(x, scale=1.0, offset=0.0):
         return scale * x * x + offset
 
