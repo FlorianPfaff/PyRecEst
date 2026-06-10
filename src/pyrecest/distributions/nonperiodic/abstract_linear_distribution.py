@@ -68,9 +68,8 @@ class AbstractLinearDistribution(AbstractManifoldSpecificDistribution):
         from .gaussian_distribution import GaussianDistribution
         from .gaussian_mixture import GaussianMixture
 
-        assert (
-            pyrecest.backend.__backend_name__ == "numpy"
-        ), "Only supported for numpy backend"
+        if pyrecest.backend.__backend_name__ != "numpy":
+            raise NotImplementedError("Only supported for numpy backend")
         if starting_point is None:
             # Take sample if distribution is easy to sample from
             if isinstance(self, (GaussianDistribution, GaussianMixture)):
@@ -113,9 +112,8 @@ class AbstractLinearDistribution(AbstractManifoldSpecificDistribution):
             start_point = self.mean()
 
         start_point = atleast_1d(start_point)
-        assert start_point.shape == (
-            self.input_dim,
-        ), "Starting point must be a 1D array of correct dimension"
+        if start_point.shape != (self.input_dim,):
+            raise ValueError("Starting point must be a 1D array of correct dimension")
 
         if proposal is None:
 

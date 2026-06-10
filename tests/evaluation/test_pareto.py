@@ -28,6 +28,24 @@ def test_pareto_front_indices_handles_min_and_max_objectives() -> None:
     assert set(table.loc[indices, "name"]) == {"small_good", "tiny_ok"}
 
 
+def test_pareto_front_handles_duplicate_index_labels() -> None:
+    table = pd.DataFrame(
+        {"error": [2.0, 1.0], "runtime": [1.0, 1.0]},
+        index=["same", "same"],
+    )
+
+    indices = pareto_front_indices(
+        table, ["error", "runtime"], directions={"error": "min", "runtime": "min"}
+    )
+    mask = is_pareto_front(
+        table, ["error", "runtime"], directions={"error": "min", "runtime": "min"}
+    )
+
+    assert indices == ["same"]
+    assert mask.tolist() == [False, True]
+    assert mask.index.tolist() == ["same", "same"]
+
+
 def test_is_pareto_front_respects_feasible_mask() -> None:
     table = pd.DataFrame(
         [

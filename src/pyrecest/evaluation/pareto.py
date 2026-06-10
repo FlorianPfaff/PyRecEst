@@ -60,25 +60,17 @@ def pareto_front_indices(
         if feasible_mask is not None
         else table
     )
-    indices: list[Any] = []
-    for index, row in candidates.iterrows():
-        dominated = False
-        for other_index, other in candidates.iterrows():
-            if index == other_index:
-                continue
-            if record_dominates(
-                other,
-                row,
+    return list(
+        candidates.index[
+            _pareto_front_position_mask(
+                candidates,
                 objective_names,
                 directions=direction_map,
                 eps=eps,
                 allow_missing=allow_missing,
-            ):
-                dominated = True
-                break
-        if not dominated:
-            indices.append(index)
-    return indices
+            )
+        ]
+    )
 
 
 def is_pareto_front(
@@ -92,18 +84,25 @@ def is_pareto_front(
 ) -> pd.Series:
     """Return a boolean Series marking non-dominated rows."""
 
-    mask = pd.Series(False, index=table.index, dtype=bool)
-    mask.loc[
-        pareto_front_indices(
-            table,
-            objectives,
-            directions=directions,
-            feasible_mask=feasible_mask,
+    objective_names = _validate_objectives(objectives)
+    direction_map = _directions_by_objective(objective_names, directions)
+    if feasible_mask is None:
+        candidate_mask = pd.Series(True, index=table.index, dtype=bool)
+    else:
+        candidate_mask = _feasible_index(table, feasible_mask)
+
+    result = np.zeros(len(table), dtype=bool)
+    candidate_positions = np.flatnonzero(candidate_mask.to_numpy(dtype=bool))
+    if candidate_positions.size:
+        candidates = table.iloc[candidate_positions]
+        result[candidate_positions] = _pareto_front_position_mask(
+            candidates,
+            objective_names,
+            directions=direction_map,
             eps=eps,
             allow_missing=allow_missing,
         )
-    ] = True
-    return mask
+    return pd.Series(result, index=table.index, dtype=bool)
 
 
 def record_dominates(
@@ -227,6 +226,37 @@ def equal_quality_selection(
         tie_breakers=tie_breakers,
         eps=eps,
     )
+
+
+def _pareto_front_position_mask(
+    candidates: pd.DataFrame,
+    objectives: Sequence[str],
+    *,
+    directions: Mapping[str, ObjectiveDirection],
+    eps: float,
+    allow_missing: bool,
+) -> np.ndarray:
+    """Return a positional Pareto-front mask for ``candidates``."""
+
+    front = np.zeros(len(candidates), dtype=bool)
+    rows = [row for _, row in candidates.iterrows()]
+    for position, row in enumerate(rows):
+        dominated = False
+        for other_position, other in enumerate(rows):
+            if position == other_position:
+                continue
+            if record_dominates(
+                other,
+                row,
+                objectives,
+                directions=directions,
+                eps=eps,
+                allow_missing=allow_missing,
+            ):
+                dominated = True
+                break
+        front[position] = not dominated
+    return front
 
 
 def _validate_objectives(objectives: Sequence[str]) -> tuple[str, ...]:

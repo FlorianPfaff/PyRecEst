@@ -208,6 +208,44 @@ class HypertoroidalFourierDistributionTest(unittest.TestCase):
         self.assertEqual(hfd_trunc.coeff_mat.shape, (7, 7))
         npt.assert_allclose(integrate2d(hfd_trunc, N=20), 1.0, atol=1e-8)
 
+    def test_truncate_rejects_even_coefficient_count(self):
+        hfd = HypertoroidalFourierDistribution(
+            array(
+                [
+                    [0.0, 0.0, 0.0],
+                    [0.0, 1.0 / (sqrt(2 * pi) ** 2), 0.0],
+                    [0.0, 0.0, 0.0],
+                ]
+            ),
+            "sqrt",
+        )
+
+        with self.assertRaisesRegex(ValueError, "odd"):
+            hfd.truncate((4, 5))
+
+    def test_transform_via_coefficients_rejects_even_coefficient_count(self):
+        hfd = HypertoroidalFourierDistribution(
+            array(
+                [
+                    [0.0, 0.0, 0.0],
+                    [0.0, 1.0 / (sqrt(2 * pi) ** 2), 0.0],
+                    [0.0, 0.0, 0.0],
+                ]
+            ),
+            "sqrt",
+        )
+
+        with self.assertRaisesRegex(ValueError, "odd"):
+            hfd.transform_via_coefficients("square", (4, 5))
+
+    def test_from_function_values_rejects_coefficient_dimensionality_mismatch(self):
+        fvals = zeros((3, 3))
+
+        with self.assertRaisesRegex(ValueError, "length"):
+            HypertoroidalFourierDistribution.from_function_values(
+                fvals, n_coefficients=(3, 3, 3)
+            )
+
     @parameterized.expand(
         [
             ("identity", "identity"),

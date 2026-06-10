@@ -88,7 +88,8 @@ class AbstractHypertoroidalDistribution(AbstractPeriodicDistribution):
     @staticmethod
     def integrate_fun_over_domain_part(f: Callable, integration_boundaries) -> float:
         integration_boundaries = atleast_2d(integration_boundaries)
-        assert integration_boundaries.shape[-1] == 2
+        if integration_boundaries.shape[-1] != 2:
+            raise ValueError("integration_boundaries must have shape (dim, 2).")
 
         def scalar_f(*args):
             return f(*args).item()  # ensures 0-dim scalar
@@ -96,15 +97,18 @@ class AbstractHypertoroidalDistribution(AbstractPeriodicDistribution):
         return nquad(scalar_f, integration_boundaries)[0]
 
     def integrate_numerically(self, integration_boundaries=None):
-        assert (
-            pyrecest.backend.__backend_name__ == "numpy"
-        ), "Only supported for numpy backend"
+        if pyrecest.backend.__backend_name__ != "numpy":
+            raise NotImplementedError("Only supported for numpy backend.")
         if integration_boundaries is None:
             return self.integrate_fun_over_domain(
                 lambda *args: self.pdf(array(args)), self.dim
             )
 
-        assert self.dim in (1, integration_boundaries.shape[0])
+        integration_boundaries = atleast_2d(integration_boundaries)
+        if self.dim not in (1, integration_boundaries.shape[0]):
+            raise ValueError(
+                "integration_boundaries must contain one row per dimension."
+            )
         return self.integrate_fun_over_domain_part(
             lambda *args: self.pdf(array(args)), integration_boundaries
         )
@@ -164,7 +168,8 @@ class AbstractHypertoroidalDistribution(AbstractPeriodicDistribution):
         Returns:
             float or numpy array: The angular error(s) in radians.
         """
-        assert not isnan(alpha).any() and not isnan(beta).any()
+        if bool(isnan(alpha).any()) or bool(isnan(beta).any()):
+            raise ValueError("Angles must not contain NaN values.")
         # Ensure the angles are between 0 and 2*pi
         alpha = mod(alpha, 2.0 * pi)
         beta = mod(beta, 2.0 * pi)
@@ -178,10 +183,12 @@ class AbstractHypertoroidalDistribution(AbstractPeriodicDistribution):
         return e
 
     def hellinger_distance_numerical(self, other):
-        assert isinstance(other, AbstractHypertoroidalDistribution)
-        assert (
-            self.dim == other.dim
-        ), "Cannot compare distributions with different number of dimensions."
+        if not isinstance(other, AbstractHypertoroidalDistribution):
+            raise TypeError("other must be an AbstractHypertoroidalDistribution.")
+        if self.dim != other.dim:
+            raise ValueError(
+                "Cannot compare distributions with different number of dimensions."
+            )
 
         def hellinger_dist_fun(*args):
             x = array(args)
@@ -193,10 +200,12 @@ class AbstractHypertoroidalDistribution(AbstractPeriodicDistribution):
         return sqrt(squared_dist)
 
     def total_variation_distance_numerical(self, other):
-        assert isinstance(other, AbstractHypertoroidalDistribution)
-        assert (
-            self.dim == other.dim
-        ), "Cannot compare distributions with different number of dimensions"
+        if not isinstance(other, AbstractHypertoroidalDistribution):
+            raise TypeError("other must be an AbstractHypertoroidalDistribution.")
+        if self.dim != other.dim:
+            raise ValueError(
+                "Cannot compare distributions with different number of dimensions."
+            )
 
         def total_variation_dist_fun(*args):
             x = array(args)

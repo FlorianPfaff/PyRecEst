@@ -230,7 +230,8 @@ class HypertoroidalFourierDistribution(
             If True, ensures the resulting distribution is normalized
             even if the transformation is 'identity'.
         """
-        assert all((array(n_coefficients) - 1) % 2 == 0)
+        if not bool(all((array(n_coefficients) - 1) % 2 == 0)):
+            raise ValueError("n_coefficients must be odd in every dimension.")
 
         if not all(array(n_coefficients) > 0):
             raise ValueError("truncate: n_coefficients must be positive.")
@@ -296,7 +297,8 @@ class HypertoroidalFourierDistribution(
         if n_coefficients is None:
             n_coefficients = self.coeff_mat.shape
 
-        assert all((array(n_coefficients) - 1) % 2 == 0)
+        if not bool(all((array(n_coefficients) - 1) % 2 == 0)):
+            raise ValueError("n_coefficients must be odd in every dimension.")
 
         if desired_transformation == "identity":
             return copy.deepcopy(self)
@@ -502,10 +504,11 @@ class HypertoroidalFourierDistribution(
             n_coefficients = cls._odd_coefficient_shape(n_coefficients)
 
         dim = len(n_coefficients)
-        assert dim == ndim(fvals), (
-            "from_function_values: n_coefficients length must match "
-            "number of dimensions of fvals."
-        )
+        if dim != ndim(fvals):
+            raise ValueError(
+                "from_function_values: n_coefficients length must match "
+                "number of dimensions of fvals."
+            )
 
         # Ensure no dimension has only one entry, except [N,1] 1‑D case
         sizes = array(shape(fvals), dtype=int)

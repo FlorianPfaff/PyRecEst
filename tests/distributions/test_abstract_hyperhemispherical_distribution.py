@@ -67,6 +67,16 @@ class TestAbstractHyperhemisphericalDistribution(unittest.TestCase):
         pyrecest.backend.__backend_name__ == "jax",
         reason="Not supported on this backend",
     )
+    def test_mode_numerical_rejects_non_2d_hemisphere(self):
+        dist = HyperhemisphericalUniformDistribution(1)
+
+        with self.assertRaisesRegex(NotImplementedError, "2D"):
+            dist.mode_numerical()
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ == "jax",
+        reason="Not supported on this backend",
+    )
     def test_sampling_hemisphere(self):
         """Test if all samples are on the correct hemisphere."""
         watson_dist = HyperhemisphericalWatsonDistribution(self.mu_, self.kappa_)

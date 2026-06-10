@@ -110,6 +110,12 @@ class TestAbstractLinearDistribution(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "1D array"):
             g.mode_numerical([[1.0, 2.0]])
 
+    def test_sample_metropolis_hastings_rejects_wrong_start_point_dimension(self):
+        g = GaussianDistribution(array([1.0, 2.0]), diag(array([1.0, 1.0])))
+
+        with self.assertRaisesRegex(ValueError, "correct dimension"):
+            g.sample_metropolis_hastings(1, start_point=[0.0])
+
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
         reason="Not supported on this backend",
