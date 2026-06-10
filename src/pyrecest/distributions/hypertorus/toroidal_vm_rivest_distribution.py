@@ -3,11 +3,11 @@ from pyrecest.backend import array, cos, exp, mod, pi, sin, sqrt
 from scipy.special import iv
 
 from ._input_validation import as_shift_vector
-from .abstract_toroidal_distribution import AbstractToroidalDistribution
 from .abstract_toroidal_bivar_vm_distribution import (
     validate_scalar_parameter,
     validate_toroidal_vm_parameters,
 )
+from .abstract_toroidal_distribution import AbstractToroidalDistribution
 
 
 class ToroidalVMRivestDistribution(AbstractToroidalDistribution):

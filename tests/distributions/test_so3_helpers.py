@@ -61,9 +61,7 @@ class SO3HelpersTest(unittest.TestCase):
                 "length 3",
             ),
             (
-                lambda: so3_helpers.so3_exp_map_volume_log_jacobian(
-                    array([1.0, 2.0])
-                ),
+                lambda: so3_helpers.so3_exp_map_volume_log_jacobian(array([1.0, 2.0])),
                 "length 3",
             ),
             (lambda: so3_helpers.exp_map_identity(array(1.0)), "length 3"),

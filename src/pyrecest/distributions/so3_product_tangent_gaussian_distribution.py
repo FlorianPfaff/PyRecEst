@@ -126,7 +126,9 @@ class SO3ProductTangentGaussianDistribution(AbstractBoundedDomainDistribution):
             if rotations.shape[-1] != 4:
                 raise ValueError("SO(3) quaternions must have length 4.")
             if rotations.shape[0] == 0:
-                raise ValueError("SO(3)^K rotations must contain at least one component.")
+                raise ValueError(
+                    "SO(3)^K rotations must contain at least one component."
+                )
             inferred_num_rotations = rotations.shape[0]
         else:
             raise ValueError("A product point must have shape (K, 4) or (4 * K,).")
@@ -173,7 +175,9 @@ class SO3ProductTangentGaussianDistribution(AbstractBoundedDomainDistribution):
             if rotations.shape[-1] != 4:
                 raise ValueError("SO(3) quaternions must have length 4.")
             if rotations.shape[1] == 0:
-                raise ValueError("SO(3)^K rotations must contain at least one component.")
+                raise ValueError(
+                    "SO(3)^K rotations must contain at least one component."
+                )
             inferred_num_rotations = rotations.shape[1]
         else:
             raise ValueError(

@@ -154,7 +154,9 @@ class TestHypertoroidalWNDistribution(unittest.TestCase):
     def test_trigonometric_moment_rejects_invalid_order(self):
         dist = HypertoroidalWNDistribution([1.0, 2.0], [[0.5, 0.1], [0.1, 0.6]])
 
-        npt.assert_allclose(dist.trigonometric_moment(np.int64(1)), dist.trigonometric_moment(1))
+        npt.assert_allclose(
+            dist.trigonometric_moment(np.int64(1)), dist.trigonometric_moment(1)
+        )
 
         for n in (True, 1.5, [1]):
             with self.subTest(n=n):

@@ -172,7 +172,9 @@ class BinghamDistribution(AbstractHypersphericalDistribution):
             raise ValueError("Z needs to be a 1-D vector")
         if Z.shape[0] != M.shape[0]:
             raise ValueError("Z has wrong length")
-        if not _as_python_bool(all(isfinite(Z))) or not _as_python_bool(all(isfinite(M))):
+        if not _as_python_bool(all(isfinite(Z))) or not _as_python_bool(
+            all(isfinite(M))
+        ):
             raise ValueError("Z and M must contain only finite values")
         if not _as_python_bool(abs(Z[-1]) <= 1e-12):
             raise ValueError("Last entry of Z needs to be zero")

@@ -4,8 +4,8 @@ from typing import Union
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
 # pylint: disable=no-name-in-module,no-member
+from pyrecest.backend import all as backend_all
 from pyrecest.backend import (
-    all as backend_all,
     allclose,
     arange,
     array,

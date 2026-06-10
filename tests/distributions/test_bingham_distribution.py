@@ -45,7 +45,11 @@ class TestBinghamDistribution(unittest.TestCase):
             (array([-5.0, -3.0, 1.0]), valid_M, "zero"),
             (array([-3.0, -5.0, 0.0]), valid_M, "ascending"),
             (array([float("nan"), -3.0, 0.0]), valid_M, "finite"),
-            (valid_Z, array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 2.0]]), "orthogonal"),
+            (
+                valid_Z,
+                array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 2.0]]),
+                "orthogonal",
+            ),
         ]
 
         for Z, M, message in invalid_cases:
@@ -95,7 +99,9 @@ class TestBinghamDistribution(unittest.TestCase):
             self.bd.pdf([1.0, 0.0])
 
     def test_multiply_rejects_invalid_partner(self):
-        lower_dim = BinghamDistribution(array([-1.0, 0.0]), array([[1.0, 0.0], [0.0, 1.0]]))
+        lower_dim = BinghamDistribution(
+            array([-1.0, 0.0]), array([[1.0, 0.0], [0.0, 1.0]])
+        )
 
         with self.assertRaisesRegex(ValueError, "BinghamDistribution"):
             self.bd.multiply(object())
@@ -103,7 +109,9 @@ class TestBinghamDistribution(unittest.TestCase):
             self.bd.multiply(lower_dim)
 
     def test_compose_rejects_invalid_partner_or_dimension(self):
-        lower_dim = BinghamDistribution(array([-1.0, 0.0]), array([[1.0, 0.0], [0.0, 1.0]]))
+        lower_dim = BinghamDistribution(
+            array([-1.0, 0.0]), array([[1.0, 0.0], [0.0, 1.0]])
+        )
 
         with self.assertRaisesRegex(ValueError, "BinghamDistribution"):
             self.bd.compose(object())

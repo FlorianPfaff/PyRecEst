@@ -22,11 +22,11 @@ from scipy.special import iv
 
 from ..circle.custom_circular_distribution import CustomCircularDistribution
 from ._input_validation import as_shift_vector
-from .abstract_toroidal_distribution import AbstractToroidalDistribution
 from .abstract_toroidal_bivar_vm_distribution import (
     _as_python_bool,
     validate_toroidal_vm_parameters,
 )
+from .abstract_toroidal_distribution import AbstractToroidalDistribution
 
 _2pi = 2.0 * pi
 

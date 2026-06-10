@@ -214,7 +214,6 @@ class TestVonMisesFisherDistribution(
         with self.assertRaisesRegex(ValueError, "zonal"):
             self.vmf.convolve(non_zonal)
 
-
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ == "jax",
         "Test not supported for this backend",
