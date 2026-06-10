@@ -60,9 +60,7 @@ class HypertoroidalWrappedNormalDistribution(AbstractHypertoroidalDistribution):
         """
         mu = _as_1d_mu(mu)
         C = _as_2d_covariance(C)
-        assert C.ndim == 2 and C.shape[0] == C.shape[1], (
-            "C must be of shape (dim, dim)"
-        )
+        assert C.ndim == 2 and C.shape[0] == C.shape[1], "C must be of shape (dim, dim)"
         assert allclose(C, C.T, atol=1e-8), "C must be symmetric"
         assert len(linalg.cholesky(C)) > 0, "C must be positive definite"
         assert mu.shape == (C.shape[0],), "mu must be of shape (dim,)"

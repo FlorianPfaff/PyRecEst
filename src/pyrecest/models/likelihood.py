@@ -87,7 +87,7 @@ class LikelihoodMeasurementModel:
         likelihood: Callable[[Any, Any], Any],
         *,
         log_likelihood: Callable[[Any, Any], Any] | None = None,
-        name: str | None = None
+        name: str | None = None,
     ):
         _ensure_callable(likelihood, "likelihood")
         if log_likelihood is not None:

@@ -146,7 +146,9 @@ class TestDVSFullSCGPTracker(unittest.TestCase):
         self.assertEqual(tracker.last_event_likelihood_terms.event_count, 2)
         self.assertIsNotNone(tracker.last_event_likelihood_gradient)
 
-    def test_point_process_update_temporary_scale_parameters_do_not_mutate_tracker_defaults(self):
+    def test_point_process_update_temporary_scale_parameters_do_not_mutate_tracker_defaults(
+        self,
+    ):
         tracker = DVSPointProcessSCGPTracker(
             8,
             kinematic_state=array([0.0, 0.0, 0.0, 0.0, 0.0]),

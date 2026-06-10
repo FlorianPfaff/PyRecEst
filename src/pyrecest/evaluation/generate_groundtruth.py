@@ -69,7 +69,9 @@ def generate_groundtruth(simulation_param, x0=None):
                             simulation_param["inputs"][:, t - 1],
                         )
                 else:
-                    assert not has_inputs, "No inputs accepted for the identity system model."
+                    assert (
+                        not has_inputs
+                    ), "No inputs accepted for the identity system model."
                     state_to_add_noise_to = previous_state
 
                 groundtruth[t][target_no, :] = state_to_add_noise_to + simulation_param[
