@@ -24,7 +24,8 @@ def test_particle_sampleable_alias_supports_public_constructor_features():
 
     model = ParticleSampleableTransitionModel(
         sample_next,
-        transition_density=lambda state_next, state_previous: state_next - state_previous,
+        transition_density=lambda state_next, state_previous: state_next
+        - state_previous,
         name="legacy-particle-transition",
         function_is_vectorized=False,
     )
