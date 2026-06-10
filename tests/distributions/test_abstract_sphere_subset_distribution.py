@@ -144,9 +144,7 @@ class TestAbstractSphereSubsetDistribution(unittest.TestCase):
         z = array([[0.0, 0.0]])
 
         with self.assertRaisesRegex(ValueError, "1-dimensional"):
-            AbstractSphereSubsetDistribution._sph_to_cart_elevation(
-                azimuth, elevation
-            )
+            AbstractSphereSubsetDistribution._sph_to_cart_elevation(azimuth, elevation)
         with self.assertRaisesRegex(ValueError, "1-dimensional"):
             AbstractSphereSubsetDistribution._cart_to_sph_elevation(x, y, z)
 

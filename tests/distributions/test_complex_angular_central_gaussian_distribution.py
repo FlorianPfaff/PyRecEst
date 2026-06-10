@@ -54,7 +54,9 @@ class TestComplexAngularCentralGaussianDistribution(unittest.TestCase):
         ]
 
         for C_bad, message in invalid_matrices:
-            with self.subTest(message=message), self.assertRaisesRegex(ValueError, message):
+            with self.subTest(message=message), self.assertRaisesRegex(
+                ValueError, message
+            ):
                 ComplexAngularCentralGaussianDistribution(C_bad)
 
     def test_constructor_rejects_non_positive_definite_matrix(self):
@@ -142,7 +144,9 @@ class TestComplexAngularCentralGaussianDistribution(unittest.TestCase):
     def test_pdf_accepts_list_and_rejects_wrong_dimension(self):
         z = [[1.0 + 0j, 0.0 + 0j]]
 
-        npt.assert_allclose(self.dist_identity_2d.pdf(z), self.dist_identity_2d.pdf(array(z)))
+        npt.assert_allclose(
+            self.dist_identity_2d.pdf(z), self.dist_identity_2d.pdf(array(z))
+        )
 
         for invalid_z in (1.0 + 0j, [1.0 + 0j], [[1.0 + 0j, 0.0 + 0j, 0.0 + 0j]]):
             with self.subTest(invalid_z=invalid_z):
