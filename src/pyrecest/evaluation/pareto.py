@@ -310,7 +310,7 @@ def _feasible_index(
         mask = feasible_mask.reindex(table.index, fill_value=False)
     else:
         mask = pd.Series(feasible_mask, index=table.index)
-    return mask.astype(bool)
+    return mask.fillna(False).astype(bool)
 
 
 def _lookup_numeric(record: Mapping[str, Any] | pd.Series, key: str) -> float:

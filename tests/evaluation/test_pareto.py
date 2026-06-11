@@ -46,6 +46,27 @@ def test_pareto_front_handles_duplicate_index_labels() -> None:
     assert mask.index.tolist() == ["same", "same"]
 
 
+def test_feasible_mask_treats_missing_nullable_values_as_infeasible() -> None:
+    table = pd.DataFrame(
+        [
+            {"name": "balanced", "error": 1.0, "runtime": 2.0},
+            {"name": "best_but_unknown", "error": 0.5, "runtime": 0.5},
+            {"name": "fast", "error": 2.0, "runtime": 1.0},
+        ]
+    )
+    feasible_mask = pd.Series([True, pd.NA, True], dtype="boolean")
+
+    indices = pareto_front_indices(
+        table, ["error", "runtime"], directions={"error": "min", "runtime": "min"}, feasible_mask=feasible_mask
+    )
+    mask = is_pareto_front(
+        table, ["error", "runtime"], directions={"error": "min", "runtime": "min"}, feasible_mask=feasible_mask
+    )
+
+    assert indices == [0, 2]
+    assert mask.tolist() == [True, False, True]
+
+
 def test_is_pareto_front_respects_feasible_mask() -> None:
     table = pd.DataFrame(
         [

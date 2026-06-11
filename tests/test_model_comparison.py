@@ -65,6 +65,27 @@ def test_paired_model_margin_decisions_summary_and_threshold_selection():
     assert selected.iloc[0]["selected_margin_threshold"] == 0.0
 
 
+def test_paired_model_margin_decisions_treats_exact_ties_as_ambiguous():
+    scores = pd.DataFrame(
+        [
+            _score("s1", 0, "positive", 4.0),
+            _score("s1", 0, "reference", 4.0),
+        ]
+    )
+
+    decisions = paired_model_margin_decisions(
+        scores,
+        positive_model="positive",
+        reference_model="reference",
+        margin_threshold=0.0,
+        group_cols=("session", "event_index"),
+    )
+
+    assert decisions["margin_decision"].tolist() == ["ambiguous"]
+    assert decisions["positive_model_claimed"].tolist() == [False]
+    assert decisions["positive_minus_reference_log_evidence"].tolist() == [0.0]
+
+
 def test_grouped_leave_one_out_and_cluster_bootstrap_are_generic():
     decisions = pd.DataFrame(
         [

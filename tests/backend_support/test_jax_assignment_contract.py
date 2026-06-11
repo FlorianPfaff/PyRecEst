@@ -31,6 +31,28 @@ assert backend.to_numpy(summed).tolist() == [[1.0, 6.0, 1.0], [1.0, 1.0, 8.0], [
 
 
 @pytest.mark.backend_portable
+def test_jax_assignment_accepts_scalar_tuple_index():
+    if importlib.util.find_spec("jax") is None:
+        pytest.skip("JAX is not installed")
+
+    result = run_backend_code(
+        "jax",
+        """
+import pyrecest.backend as backend
+
+x = backend.zeros((2, 3))
+assigned = backend.assignment(x, 9.0, (0, 1))
+summed = backend.assignment_by_sum(backend.ones((2, 3)), 4.0, (1, 2))
+
+assert backend.to_numpy(assigned).tolist() == [[0.0, 9.0, 0.0], [0.0, 0.0, 0.0]]
+assert backend.to_numpy(summed).tolist() == [[1.0, 1.0, 1.0], [1.0, 1.0, 5.0]]
+""",
+    )
+
+    assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.backend_portable
 def test_jax_assignment_accepts_list_and_boolean_indices():
     if importlib.util.find_spec("jax") is None:
         pytest.skip("JAX is not installed")

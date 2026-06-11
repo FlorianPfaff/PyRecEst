@@ -226,7 +226,10 @@ def paired_model_margin_decisions(
         positive_value = float(by_model.loc[positive_model, evidence_col])
         reference_value = float(by_model.loc[reference_model, evidence_col])
         delta = positive_value - reference_value
-        if delta >= threshold:
+        if delta == 0.0:
+            decision = "ambiguous"
+            positive_claimed = False
+        elif delta >= threshold:
             decision = positive_model
             positive_claimed = True
         elif delta <= -threshold:

@@ -403,7 +403,7 @@ def _normalize_assignment_index(indices, ndim_x, axis=0):
     if isinstance(indices, _jnp.ndarray) and indices.ndim > 0:
         return indices, False, indices.shape[0]
     if isinstance(indices, tuple):
-        if all(_is_scalar_index(index) for index in indices):
+        if _builtins.all(_is_scalar_index(index) for index in indices):
             return indices, False, 1
         if indices and _is_iterable_index(indices[0]):
             return indices, False, len(indices[0])
