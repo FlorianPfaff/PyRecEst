@@ -142,12 +142,12 @@ class HyperhemisphereCartProdDiracDistribution(
         if not f_supports_multiple:
             raise ValueError("Function must support multiple inputs.")
         dist = copy.deepcopy(self)
-        for i in range(self.n_hemispheres):
-            component_values = f(self.component_particles(i))
-            if self._store_flat:
-                start = i * self.component_dim
-                stop = (i + 1) * self.component_dim
-                dist.d[:, start:stop] = component_values
-            else:
-                dist.d[:, i, :] = component_values
+        component_values = stack(
+            [array(f(self.component_particles(i))) for i in range(self.n_hemispheres)],
+            1,
+        )
+        if self._store_flat:
+            dist.d = reshape(component_values, (self.d.shape[0], self.input_dim))
+        else:
+            dist.d = component_values
         return dist
