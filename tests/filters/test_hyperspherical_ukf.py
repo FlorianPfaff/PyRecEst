@@ -56,6 +56,30 @@ class HypersphericalUKFTest(unittest.TestCase):
         npt.assert_array_equal(np.asarray(self.gauss_2d.mu), np.asarray(g.mu))
         npt.assert_array_equal(np.asarray(self.gauss_2d.C), np.asarray(g.C))
 
+    def test_initialization_rejects_jax_backend_without_asserts(self):
+        """Unsupported-backend checks must survive optimized Python."""
+        original_backend = pyrecest.backend.__backend_name__
+        try:
+            pyrecest.backend.__backend_name__ = "jax"
+            with self.assertRaisesRegex(NotImplementedError, "jax backend"):
+                HypersphericalUKF(dim=2)
+        finally:
+            pyrecest.backend.__backend_name__ = original_backend
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ in ("jax",),
+        reason="Not supported on this backend",
+    )
+    def test_predict_rejects_unsupported_backend_without_asserts(self):
+        """Predict-time backend checks must not rely on assert statements."""
+        original_backend = pyrecest.backend.__backend_name__
+        try:
+            pyrecest.backend.__backend_name__ = "pytorch"
+            with self.assertRaisesRegex(NotImplementedError, "pytorch backend"):
+                self.filter_2d.predict_identity(self.gauss_2d)
+        finally:
+            pyrecest.backend.__backend_name__ = original_backend
+
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
         reason="Not supported on this backend",
@@ -216,6 +240,34 @@ class HypersphericalUKFTest(unittest.TestCase):
         npt.assert_allclose(
             float(linalg.norm(self.filter_3d.get_point_estimate())), 1.0, atol=1e-10
         )
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
+        reason="Not supported on this backend",
+    )
+    def test_predict_nonlinear_arbitrary_noise_validates_noise_samples(self):
+        """Malformed arbitrary-noise samples should fail before prediction math."""
+        with self.assertRaisesRegex(ValueError, "2D array"):
+            self.filter_3d.predict_nonlinear_arbitrary_noise(
+                lambda x, v: x,
+                np.ones(3),
+                np.ones(3),
+            )
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
+        reason="Not supported on this backend",
+    )
+    def test_predict_nonlinear_arbitrary_noise_validates_weights(self):
+        """Weight validation should not disappear under optimized Python."""
+        with self.assertRaisesRegex(ValueError, "same number"):
+            self.filter_3d.predict_nonlinear_arbitrary_noise(
+                lambda x, v: x, np.ones((3, 2)), np.ones(3)
+            )
+        with self.assertRaisesRegex(ValueError, "strictly positive"):
+            self.filter_3d.predict_nonlinear_arbitrary_noise(
+                lambda x, v: x, np.ones((3, 2)), np.array([1.0, 0.0])
+            )
 
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ in ("pytorch", "jax"),

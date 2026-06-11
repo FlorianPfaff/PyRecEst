@@ -64,7 +64,8 @@ class CartProdStackedDistribution(AbstractCartProdDistribution):
         return prod(stack(ps), axis=0)
 
     def shift(self, shift_by):
-        assert len(shift_by) == self.dim, "Incorrect number of offsets"
+        if len(shift_by) != self.dim:
+            raise ValueError("Incorrect number of offsets.")
         shifted_dists = []
         curr_dim = 0
         for dist in self.dists:

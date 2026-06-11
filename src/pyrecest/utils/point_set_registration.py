@@ -183,9 +183,10 @@ def estimate_transform(  # pylint: disable=too-many-locals
         Only relevant for the rigid model. If ``False`` the returned rotation is
         constrained to have determinant ``+1``.
     """
-    assert (
-        pyrecest.backend.__backend_name__ != "jax"
-    ), "Not supported for the JAX backend."
+    if pyrecest.backend.__backend_name__ == "jax":  # pylint: disable=no-member
+        raise NotImplementedError(
+            "estimate_transform is not supported on the JAX backend."
+        )
 
     source, target = _validate_pair(source_points, target_points)
     n_points, dim = source.shape
@@ -279,9 +280,10 @@ def joint_registration_assignment(  # pylint: disable=too-many-arguments,too-man
     allow_reflection:
         Passed through to :func:`estimate_transform` for the rigid model.
     """
-    assert (
-        pyrecest.backend.__backend_name__ != "jax"
-    ), "Not supported for the JAX backend."
+    if pyrecest.backend.__backend_name__ == "jax":  # pylint: disable=no-member
+        raise NotImplementedError(
+            "joint_registration_assignment is not supported on the JAX backend."
+        )
 
     reference = _as_point_array(reference_points)
     moving = _as_point_array(moving_points)

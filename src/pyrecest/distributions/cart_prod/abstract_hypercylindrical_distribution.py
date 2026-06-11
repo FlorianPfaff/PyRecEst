@@ -116,8 +116,11 @@ class AbstractHypercylindricalDistribution(AbstractLinPeriodicCartProdDistributi
         """
         if approximate_mean is None:
             approximate_mean = full((self.lin_dim,), float("NaN"))
+        else:
+            approximate_mean = asarray(approximate_mean)
 
-        assert approximate_mean.shape[0] == self.lin_dim
+        if approximate_mean.ndim != 1 or approximate_mean.shape[0] != self.lin_dim:
+            raise ValueError("approximate_mean must have shape (lin_dim,).")
 
         return self.linear_covariance_numerical(approximate_mean)
 
@@ -188,21 +191,24 @@ class AbstractHypercylindricalDistribution(AbstractLinPeriodicCartProdDistributi
             The distribution after conditioning.
         """
         input_lin = asarray(input_lin)
-        assert (
+        if not (
             input_lin.ndim == 0
             and self.lin_dim == 1
             or ndim(input_lin) == 1
             and input_lin.shape[0] == self.lin_dim
-        ), "Input should be of size (lin_dim,)."
+        ):
+            raise ValueError("Input should be of size (lin_dim,).")
 
         def f_cond_unnorm(xs, input_lin=input_lin):
             if xs.ndim == 0:
-                assert self.bound_dim == 1
+                if self.bound_dim != 1:
+                    raise ValueError("Scalar input is only valid for bound_dim == 1.")
                 n_inputs = 1
             elif xs.ndim == 1 and self.bound_dim == 1:
                 n_inputs = xs.shape[0]
             elif xs.ndim == 1:
-                assert self.bound_dim == xs.shape[0]
+                if self.bound_dim != xs.shape[0]:
+                    raise ValueError("Input should be of size (bound_dim,).")
                 n_inputs = 1
             else:
                 n_inputs = xs.shape[0]
@@ -232,23 +238,29 @@ class AbstractHypercylindricalDistribution(AbstractLinPeriodicCartProdDistributi
                 CustomLinearDistribution instance
         """
         input_periodic = asarray(input_periodic)
-        assert (
+        if not (
             input_periodic.ndim == 0
             and self.bound_dim == 1
             or ndim(input_periodic) == 1
             and input_periodic.shape[0] == self.bound_dim
-        ), "Input should be a scalar for bound_dim == 1 or of size (bound_dim,)."
+        ):
+            raise ValueError(
+                "Input should be a scalar for bound_dim == 1 or of size "
+                "(bound_dim,)."
+            )
 
         input_periodic = mod(input_periodic, 2.0 * pi)
 
         def f_cond_unnorm(xs, input_periodic=input_periodic):
             if xs.ndim == 0:
-                assert self.lin_dim == 1
+                if self.lin_dim != 1:
+                    raise ValueError("Scalar input is only valid for lin_dim == 1.")
                 n_inputs = 1
             elif xs.ndim == 1 and self.lin_dim == 1:
                 n_inputs = xs.shape[0]
             elif xs.ndim == 1:
-                assert self.lin_dim == xs.shape[0]
+                if self.lin_dim != xs.shape[0]:
+                    raise ValueError("Input should be of size (lin_dim,).")
                 n_inputs = 1
             else:
                 n_inputs = xs.shape[0]
@@ -311,10 +323,8 @@ class AbstractHypercylindricalDistribution(AbstractLinPeriodicCartProdDistributi
         m : ndarray
           The mode of the distribution.
         """
-        assert pyrecest.backend.__backend_name__ in (
-            "numpy",
-            "pytorch",
-        ), "Not supported for this backend."
+        if pyrecest.backend.__backend_name__ not in ("numpy", "pytorch"):
+            raise NotImplementedError("Not supported for this backend.")
         if starting_point is None:
             starting_point = concatenate(
                 [pi * ones(self.bound_dim), zeros(self.lin_dim)]
@@ -385,9 +395,10 @@ class AbstractHypercylindricalDistribution(AbstractLinPeriodicCartProdDistributi
 
     # pylint: disable=too-many-locals
     def plot_cylinder(self, limits_linear=None):
-        assert (
-            self.bound_dim == 1 and self.lin_dim == 1
-        ), "plot_cylinder is only implemented for bound_dim == 1 and lin_dim == 1."
+        if not (self.bound_dim == 1 and self.lin_dim == 1):
+            raise NotImplementedError(
+                "plot_cylinder is only implemented for bound_dim == 1 and lin_dim == 1."
+            )
 
         if limits_linear is None:
             scale_lin = 3

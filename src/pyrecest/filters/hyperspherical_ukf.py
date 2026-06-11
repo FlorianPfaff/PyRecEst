@@ -35,6 +35,14 @@ from .abstract_filter import AbstractFilter
 from .manifold_mixins import HypersphericalFilterMixin
 
 
+def _assert_supported_backend(*unsupported_backends):
+    if pyrecest.backend.__backend_name__ in unsupported_backends:
+        raise NotImplementedError(
+            "HypersphericalUKF is not supported on the "
+            f"{pyrecest.backend.__backend_name__} backend."
+        )
+
+
 class HypersphericalUKF(AbstractFilter, HypersphericalFilterMixin):
     """
     Unscented Kalman filter on the unit hypersphere S^(d-1).
@@ -58,9 +66,7 @@ class HypersphericalUKF(AbstractFilter, HypersphericalFilterMixin):
         beta: float = 2.0,
         kappa: float = 0.0,
     ):
-        assert pyrecest.backend.__backend_name__ not in (
-            "jax",
-        ), "HypersphericalUKF is not supported on the JAX backend"
+        _assert_supported_backend("jax")
         self._alpha = alpha
         self._beta = beta
         self._kappa = kappa
@@ -128,10 +134,7 @@ class HypersphericalUKF(AbstractFilter, HypersphericalFilterMixin):
         gauss_sys:
             Distribution of additive system noise (mean is ignored).
         """
-        assert pyrecest.backend.__backend_name__ not in (
-            "pytorch",
-            "jax",
-        ), "Not supported on this backend"
+        _assert_supported_backend("pytorch", "jax")
 
         if not isinstance(gauss_sys, GaussianDistribution):
             gauss_sys = GaussianDistribution.from_distribution(gauss_sys)
@@ -172,15 +175,21 @@ class HypersphericalUKF(AbstractFilter, HypersphericalFilterMixin):
         noise_weights:
             Array of length ``n_noise`` with positive weights.
         """
-        assert pyrecest.backend.__backend_name__ not in (
-            "pytorch",
-            "jax",
-        ), "Not supported on this backend"
+        _assert_supported_backend("pytorch", "jax")
 
         noise_samples = asarray(noise_samples, dtype=float64)
         noise_weights = reshape(asarray(noise_weights, dtype=float64), (-1,))
-        assert noise_samples.shape[1] == noise_weights.shape[0]
-        assert all(noise_weights > 0)
+        if noise_samples.ndim != 2:
+            raise ValueError(
+                "noise_samples must be a 2D array with shape (noise_dim, n_noise)."
+            )
+        if noise_samples.shape[1] != noise_weights.shape[0]:
+            raise ValueError(
+                "noise_samples and noise_weights must contain the same number "
+                "of samples."
+            )
+        if not all(noise_weights > 0):
+            raise ValueError("noise_weights must be strictly positive.")
         noise_weights = noise_weights / noise_weights.sum()
 
         mu = reshape(asarray(self._filter_state.mu, dtype=float64), (-1,))
@@ -252,10 +261,7 @@ class HypersphericalUKF(AbstractFilter, HypersphericalFilterMixin):
         z:
             Measurement vector of shape (m,) or scalar.
         """
-        assert pyrecest.backend.__backend_name__ not in (
-            "pytorch",
-            "jax",
-        ), "Not supported on this backend"
+        _assert_supported_backend("pytorch", "jax")
 
         if not isinstance(gauss_meas, GaussianDistribution):
             gauss_meas = GaussianDistribution.from_distribution(gauss_meas)

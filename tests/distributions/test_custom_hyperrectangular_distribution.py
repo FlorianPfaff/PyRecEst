@@ -143,7 +143,9 @@ class TestCustomHyperrectangularDistribution(unittest.TestCase):
             with self.assertRaisesRegex(NotImplementedError, "numpy backend"):
                 dist.normalize()
         finally:
-            backend.__backend_name__ = original_backend_name  # pylint: disable=no-member
+            backend.__backend_name__ = (
+                original_backend_name  # pylint: disable=no-member
+            )
 
 
 if __name__ == "__main__":

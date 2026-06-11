@@ -3,9 +3,30 @@ import unittest
 import numpy as np
 from pyrecest.backend import allclose, array, eye
 from pyrecest.distributions import GaussianDistribution, VonMisesFisherDistribution
+from pyrecest.distributions.cart_prod.abstract_lin_periodic_cart_prod_distribution import (
+    AbstractLinPeriodicCartProdDistribution,
+)
 from pyrecest.distributions.cart_prod.cart_prod_stacked_distribution import (
     CartProdStackedDistribution,
 )
+
+
+class PurePeriodicLinPeriodicDistribution(AbstractLinPeriodicCartProdDistribution):
+    def __init__(self):
+        super().__init__(bound_dim=1, lin_dim=0)
+
+    @property
+    def input_dim(self):
+        return self.dim
+
+    def pdf(self, _xs):
+        raise NotImplementedError
+
+    def marginalize_linear(self):
+        raise NotImplementedError
+
+    def marginalize_periodic(self):
+        raise NotImplementedError
 
 
 class ConcreteCartProdStackedDistribution(CartProdStackedDistribution):
@@ -18,6 +39,12 @@ class ConcreteCartProdStackedDistribution(CartProdStackedDistribution):
 
 
 class TestCartProdStackedDistribution(unittest.TestCase):
+    def test_lin_periodic_base_rejects_purely_periodic_manifold_size(self):
+        dist = PurePeriodicLinPeriodicDistribution()
+
+        with self.assertRaisesRegex(ValueError, "purely periodic"):
+            dist.get_manifold_size()
+
     def test_base_class_is_instantiable_and_reports_geometry(self):
         dist = CartProdStackedDistribution(
             [
@@ -135,6 +162,17 @@ class TestCartProdStackedDistribution(unittest.TestCase):
         self.assertIsInstance(shifted, ConcreteCartProdStackedDistribution)
         self.assertTrue(allclose(shifted.dists[0].mu, array([11.0, 22.0])))
         self.assertTrue(allclose(shifted.dists[1].mu, array([33.0, 44.0, 55.0])))
+
+    def test_shift_rejects_wrong_offset_count(self):
+        dist = ConcreteCartProdStackedDistribution(
+            [
+                GaussianDistribution(array([1.0, 2.0]), eye(2)),
+                GaussianDistribution(array([3.0, 4.0, 5.0]), eye(3)),
+            ]
+        )
+
+        with self.assertRaisesRegex(ValueError, "offsets"):
+            dist.shift(array([1.0, 2.0]))
 
     def test_set_mode_preserves_concrete_distribution_type(self):
         dist = ConcreteCartProdStackedDistribution(

@@ -33,6 +33,39 @@ class TestSE3LinVelCartProdStackedDistribution(unittest.TestCase):
             ]
         )
 
+    def test_constructor_rejects_invalid_components(self):
+        valid_orientation = HyperhemisphericalUniformDistribution(3)
+        valid_velocity = GaussianDistribution(
+            array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0]),
+            diag(array([3.0, 2.0, 1.0, 4.0, 3.0, 4.0])),
+        )
+
+        with self.assertRaisesRegex(ValueError, "exactly 2"):
+            SE3LinVelCartProdStackedDistribution([valid_orientation])
+
+        with self.assertRaisesRegex(
+            TypeError, "AbstractHyperhemisphericalDistribution"
+        ):
+            SE3LinVelCartProdStackedDistribution([valid_velocity, valid_velocity])
+
+        with self.assertRaisesRegex(ValueError, "input dimension 4"):
+            SE3LinVelCartProdStackedDistribution(
+                [HyperhemisphericalUniformDistribution(2), valid_velocity]
+            )
+
+        with self.assertRaisesRegex(TypeError, "AbstractLinearDistribution"):
+            SE3LinVelCartProdStackedDistribution(
+                [valid_orientation, HyperhemisphericalUniformDistribution(6)]
+            )
+
+        with self.assertRaisesRegex(ValueError, "6 dimensions"):
+            SE3LinVelCartProdStackedDistribution(
+                [
+                    valid_orientation,
+                    GaussianDistribution(array([1.0, 2.0, 3.0]), diag(ones(3))),
+                ]
+            )
+
     def test_sampling(self):
         cpd = SE3LinVelCartProdStackedDistribution(
             [

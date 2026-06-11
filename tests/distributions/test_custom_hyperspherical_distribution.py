@@ -71,6 +71,10 @@ class CustomHypersphericalDistributionTest(unittest.TestCase):
             "Type mismatch when creating from distribution.",
         )
 
+    def test_from_distribution_rejects_wrong_type(self):
+        with self.assertRaisesRegex(ValueError, "wrong class"):
+            CustomHypersphericalDistribution.from_distribution(object())
+
 
 if __name__ == "__main__":
     unittest.main()

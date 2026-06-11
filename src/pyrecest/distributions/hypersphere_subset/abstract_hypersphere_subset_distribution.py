@@ -378,7 +378,8 @@ class AbstractHypersphereSubsetDistribution(AbstractBoundedDomainDistribution):
         ``AbstractHypersphereSubsetDistribution``: the first angle is the
         azimuth and all remaining angles are colatitudes.
         """
-        single_input = getattr(hypersph_coords, "ndim", 0) == 1
+        hypersph_coords = array(hypersph_coords)
+        single_input = hypersph_coords.ndim == 1
         hypersph_coords = atleast_2d(hypersph_coords)
         if mode == "colatitude":
             cart_coords = (
@@ -391,7 +392,8 @@ class AbstractHypersphereSubsetDistribution(AbstractBoundedDomainDistribution):
                 AbstractSphereSubsetDistribution,
             )
 
-            assert hypersph_coords.shape[1] == 2, "Mode only S2 dimensions"
+            if hypersph_coords.shape[1] != 2:
+                raise ValueError("Mode only supports S2 coordinates")
             x, y, z = AbstractSphereSubsetDistribution.sph_to_cart(
                 hypersph_coords[:, 0], hypersph_coords[:, 1], mode=mode
             )
@@ -404,7 +406,8 @@ class AbstractHypersphereSubsetDistribution(AbstractBoundedDomainDistribution):
     @staticmethod
     def cart_to_hypersph(cart_coords, mode: str = "colatitude"):
         """Inverse of ``hypersph_to_cart`` for the selected convention."""
-        single_input = getattr(cart_coords, "ndim", 0) == 1
+        cart_coords = array(cart_coords)
+        single_input = cart_coords.ndim == 1
         cart_coords = atleast_2d(cart_coords)
         if mode == "colatitude":
             hypersph_coords = (
@@ -417,7 +420,8 @@ class AbstractHypersphereSubsetDistribution(AbstractBoundedDomainDistribution):
                 AbstractSphereSubsetDistribution,
             )
 
-            assert cart_coords.shape[1] == 3, "Mode only supports S2"
+            if cart_coords.shape[1] != 3:
+                raise ValueError("Mode only supports S2 coordinates")
             theta, phi = AbstractSphereSubsetDistribution.cart_to_sph(
                 cart_coords[:, 0], cart_coords[:, 1], cart_coords[:, 2], mode=mode
             )

@@ -101,7 +101,9 @@ class ComplexAngularCentralGaussianDistribution:
         """
         za = array(za)
         if za.ndim == 0 or za.shape[-1] != self.dim:
-            raise ValueError(f"za must have trailing dimension {self.dim}, got {za.shape}.")
+            raise ValueError(
+                f"za must have trailing dimension {self.dim}, got {za.shape}."
+            )
         single = za.ndim == 1
         if single:
             za = za.reshape(1, -1)

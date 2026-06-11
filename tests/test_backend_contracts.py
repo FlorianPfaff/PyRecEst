@@ -129,6 +129,20 @@ def test_pytorch_cov_bias_accepts_array_weights():
     assert _to_python(result) == [[0.5, 1.0], [1.0, 2.0]]
 
 
+def test_pytorch_cov_bias_honors_frequency_weights():
+    if backend.__backend_name__ != "pytorch":
+        pytest.skip("PyTorch-specific covariance regression test")
+
+    result = backend.cov(
+        array([[1.0, 2.0, 3.0], [2.0, 4.0, 6.0]]),
+        bias=True,
+        fweights=backend.asarray([1, 2, 1], dtype=backend.int64),
+    )
+
+    assert result.shape == (2, 2)
+    assert _to_python(result) == [[0.5, 1.0], [1.0, 2.0]]
+
+
 def test_array_like_sequence_helpers_accept_python_lists():
     assert _to_python(backend.concatenate(([1, 2], [3, 4]), axis=0)) == [1, 2, 3, 4]
     assert _to_python(backend.stack(([1, 2], [3, 4]), axis=0)) == [[1, 2], [3, 4]]

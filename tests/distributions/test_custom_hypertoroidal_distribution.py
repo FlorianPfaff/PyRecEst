@@ -68,6 +68,12 @@ class CustomHypertoroidalDistributionTest(unittest.TestCase):
 
         npt.assert_allclose(circular.pdf(xs), dist.pdf(xs))
 
+    def test_to_custom_circular_rejects_multidimensional_distribution(self):
+        dist = CustomHypertoroidalDistribution(lambda xs: xs[:, 0], 2)
+
+        with self.assertRaisesRegex(ValueError, "dim == 1"):
+            dist.to_custom_circular()
+
     def test_to_custom_toroidal_preserves_scale_and_shift(self):
         dist = CustomHypertoroidalDistribution(
             lambda xs: xs[:, 0] + 2.0 * xs[:, 1],
@@ -81,6 +87,12 @@ class CustomHypertoroidalDistributionTest(unittest.TestCase):
 
         self.assertIsInstance(toroidal, CustomToroidalDistribution)
         npt.assert_allclose(toroidal.pdf(xs), dist.pdf(xs))
+
+    def test_to_custom_toroidal_rejects_wrong_dimension(self):
+        dist = CustomHypertoroidalDistribution(cos, 1)
+
+        with self.assertRaisesRegex(ValueError, "dim == 2"):
+            dist.to_custom_toroidal()
 
 
 if __name__ == "__main__":

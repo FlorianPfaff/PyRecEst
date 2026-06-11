@@ -14,6 +14,17 @@ from pyrecest.distributions import (
 
 
 class HypersphericalMixtureTest(unittest.TestCase):
+    def test_constructor_rejects_invalid_distribution_list(self):
+        invalid_cases = (
+            ([], array([]), "at least one"),
+            ([object()], array([1.0]), "hyperspherical distributions"),
+        )
+
+        for dists, weights, message in invalid_cases:
+            with self.subTest(message=message):
+                with self.assertRaisesRegex(ValueError, message):
+                    HypersphericalMixture(dists, weights)
+
     def test_pdf_3d(self):
         wad = WatsonDistribution(array([0.0, 0.0, 1.0]), -10.0)
         vmf = VonMisesFisherDistribution(array([0.0, 0.0, 1.0]), 1.0)

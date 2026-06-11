@@ -63,7 +63,8 @@ class HypertoroidalMixture(AbstractMixture, AbstractHypertoroidalDistribution):
 
         :returns: CircularMixture with same parameters
         """
-        assert self.dim == 1
+        if self.dim != 1:
+            raise ValueError("Conversion to CircularMixture requires dim == 1")
         from ..circle.circular_mixture import CircularMixture
 
         return CircularMixture(self.dists, self.w)
@@ -74,7 +75,8 @@ class HypertoroidalMixture(AbstractMixture, AbstractHypertoroidalDistribution):
 
         :returns: ToroidalMixture with same parameters
         """
-        assert self.dim == 2
+        if self.dim != 2:
+            raise ValueError("Conversion to ToroidalMixture requires dim == 2")
         from .toroidal_mixture import ToroidalMixture
 
         return ToroidalMixture(self.dists, self.w)

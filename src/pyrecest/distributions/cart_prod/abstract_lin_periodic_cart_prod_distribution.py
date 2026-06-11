@@ -13,7 +13,8 @@ class AbstractLinPeriodicCartProdDistribution(AbstractLinBoundedCartProdDistribu
         AbstractLinBoundedCartProdDistribution.__init__(self, bound_dim, lin_dim)
 
     def get_manifold_size(self):
-        assert (
-            self.lin_dim > 0
-        ), "This class is not intended to be used for purely periodic domains."
+        if self.lin_dim <= 0:
+            raise ValueError(
+                "This class is not intended to be used for purely periodic domains."
+            )
         return float("inf")

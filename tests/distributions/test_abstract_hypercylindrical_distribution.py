@@ -17,9 +17,27 @@ from pyrecest.backend import (
     pi,
     zeros,
 )
+from pyrecest.distributions.cart_prod.abstract_hypercylindrical_distribution import (
+    AbstractHypercylindricalDistribution,
+)
 from pyrecest.distributions.cart_prod.partially_wrapped_normal_distribution import (
     PartiallyWrappedNormalDistribution,
 )
+
+
+class DummyHypercylindricalDistribution(AbstractHypercylindricalDistribution):
+    def __init__(self, bound_dim=1, lin_dim=1):
+        super().__init__(bound_dim, lin_dim)
+
+    def pdf(self, xs):
+        xs = array(xs)
+        return ones(1 if xs.ndim == 1 else xs.shape[0])
+
+    def marginalize_linear(self):
+        raise NotImplementedError
+
+    def marginalize_periodic(self):
+        raise NotImplementedError
 
 
 class AbstractHypercylindricalDistributionTest(unittest.TestCase):
@@ -58,6 +76,52 @@ class AbstractHypercylindricalDistributionTest(unittest.TestCase):
             array([1.0, 2.0]), array([[2.0, 0.3], [0.3, 1.0]]), 1
         )
         npt.assert_allclose(hwn.linear_mean_numerical(), hwn.mu[-1])
+
+    def test_linear_covariance_rejects_wrong_mean_dimension(self):
+        dist = DummyHypercylindricalDistribution()
+
+        with self.assertRaisesRegex(ValueError, "lin_dim"):
+            dist.linear_covariance(array([0.0, 1.0]))
+
+    def test_condition_on_linear_rejects_wrong_input_dimension(self):
+        hwn = PartiallyWrappedNormalDistribution(
+            array([1.0, 2.0]), array([[2.0, 0.3], [0.3, 1.0]]), 1
+        )
+
+        with self.assertRaisesRegex(ValueError, "lin_dim"):
+            hwn.condition_on_linear(array([1.0, 2.0]), normalize=False)
+
+    def test_condition_on_periodic_rejects_wrong_input_dimension(self):
+        hwn = PartiallyWrappedNormalDistribution(
+            array([1.0, 2.0, 3.0]),
+            array([[2.0, 0.3, 0.1], [0.3, 1.5, 0.2], [0.1, 0.2, 1.0]]),
+            2,
+        )
+
+        with self.assertRaisesRegex(ValueError, "bound_dim"):
+            hwn.condition_on_periodic(array([1.0]), normalize=False)
+
+    def test_mode_numerical_rejects_unsupported_backend(self):
+        hwn = PartiallyWrappedNormalDistribution(
+            array([1.0, 2.0]), array([[2.0, 0.3], [0.3, 1.0]]), 1
+        )
+        original_backend_name = pyrecest.backend.__backend_name__
+        pyrecest.backend.__backend_name__ = "jax"
+        try:
+            with self.assertRaisesRegex(NotImplementedError, "backend"):
+                hwn.mode_numerical()
+        finally:
+            pyrecest.backend.__backend_name__ = original_backend_name
+
+    def test_plot_cylinder_rejects_unsupported_dimensions(self):
+        hwn = PartiallyWrappedNormalDistribution(
+            array([1.0, 2.0, 3.0]),
+            array([[2.0, 0.3, 0.1], [0.3, 1.5, 0.2], [0.1, 0.2, 1.0]]),
+            2,
+        )
+
+        with self.assertRaisesRegex(NotImplementedError, "bound_dim == 1"):
+            hwn.plot_cylinder()
 
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ in ("pytorch", "jax"),

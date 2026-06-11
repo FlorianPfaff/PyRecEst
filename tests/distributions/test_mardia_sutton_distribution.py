@@ -58,6 +58,10 @@ class TestMardiaSuttonDistribution(unittest.TestCase):
         self.assertEqual(p.shape, (1,))
         self.assertTrue(float(p[0]) > 0)
 
+    def test_pdf_rejects_wrong_point_dimension(self):
+        with self.assertRaisesRegex(ValueError, "circular and linear"):
+            self.dist.pdf(array([[1.0, 2.0, 3.0]]))
+
     def test_pdf_normalization(self):
         import math
 

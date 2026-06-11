@@ -38,7 +38,7 @@ class ToroidalFourierDistribution(
 
     def __init__(self, coeff_mat, transformation: str = "sqrt"):
         cm = array(coeff_mat) if not hasattr(coeff_mat, "shape") else coeff_mat
-        if ndim(cm) < 2 or (ndim(cm) >= 2 and any(s == 1 for s in cm.shape)):
+        if ndim(cm) != 2 or any(s == 1 for s in cm.shape):
             raise ValueError(
                 "ToroidalFourierDistribution:VectorGiven: "
                 "ToroidalFourierDistributions require a 2-D coefficient matrix "
@@ -47,10 +47,11 @@ class ToroidalFourierDistribution(
 
         HypertoroidalFourierDistribution.__init__(self, coeff_mat, transformation)
         AbstractToroidalDistribution.__init__(self)
-        assert self.dim == 2, (
-            "ToroidalFourierDistribution requires a 2-D coefficient matrix, "
-            f"but got dim={self.dim}."
-        )
+        if self.dim != 2:
+            raise ValueError(
+                "ToroidalFourierDistribution requires a 2-D coefficient matrix, "
+                f"but got dim={self.dim}."
+            )
 
     # ------------------------------------------------------------------
     # Analytical integral with optional bounds

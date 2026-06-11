@@ -148,7 +148,9 @@ class ComplexWatsonDistribution:
         """
         za = asarray(za, dtype=complex128)
         if za.ndim == 0 or za.shape[-1] != self.dim:
-            raise ValueError(f"za must have trailing dimension {self.dim}, got {za.shape}.")
+            raise ValueError(
+                f"za must have trailing dimension {self.dim}, got {za.shape}."
+            )
         inner = za @ conj(self.mu)  # complex inner product, shape (N,) or scalar
         return real(exp(self.log_norm_const + self.kappa * abs(inner) ** 2))
 
