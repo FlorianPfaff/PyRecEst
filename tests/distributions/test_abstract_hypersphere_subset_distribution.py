@@ -242,6 +242,45 @@ class TestAbstractHypersphereSubsetDistribution(unittest.TestCase):
 
         npt.assert_allclose(cartesian_round_trip, cartesian, atol=1e-7)
 
+    def test_single_list_inputs_keep_single_output_shape(self):
+        angles = [pi / 2.0, pi / 2.0]
+
+        cartesian_from_list = AbstractHypersphereSubsetDistribution.hypersph_to_cart(
+            angles, mode="colatitude"
+        )
+        cartesian_from_array = AbstractHypersphereSubsetDistribution.hypersph_to_cart(
+            array(angles), mode="colatitude"
+        )
+
+        self.assertEqual(cartesian_from_array.shape, cartesian_from_list.shape)
+        npt.assert_allclose(cartesian_from_list, cartesian_from_array, atol=1e-7)
+
+        coords = [0.0, 1.0, 0.0]
+        angles_from_list = AbstractHypersphereSubsetDistribution.cart_to_hypersph(
+            coords, mode="colatitude"
+        )
+        angles_from_array = AbstractHypersphereSubsetDistribution.cart_to_hypersph(
+            array(coords), mode="colatitude"
+        )
+
+        self.assertEqual(angles_from_array.shape, angles_from_list.shape)
+        npt.assert_allclose(angles_from_list, angles_from_array, atol=1e-7)
+
+    def test_s2_only_modes_reject_wrong_input_dimension(self):
+        hyperspherical_s3 = array([[0.0, pi / 2.0, pi / 4.0]])
+        cartesian_s3 = array([[0.0, 1.0, 0.0, 0.0]])
+
+        for mode in ("elevation", "inclination"):
+            with self.subTest(mode=mode):
+                with self.assertRaisesRegex(ValueError, "S2"):
+                    AbstractHypersphereSubsetDistribution.hypersph_to_cart(
+                        hyperspherical_s3, mode=mode
+                    )
+                with self.assertRaisesRegex(ValueError, "S2"):
+                    AbstractHypersphereSubsetDistribution.cart_to_hypersph(
+                        cartesian_s3, mode=mode
+                    )
+
     def test_sphere_colatitude_matches_hyperspherical_convention(self):
         azimuth = array([0.0, pi / 2.0])
         colatitude = array([pi / 2.0, pi / 2.0])

@@ -54,7 +54,8 @@ class GeneralizedKSineSkewedVonMisesDistribution(AbstractCircularDistribution):
 
     def pdf(self, xs):
         # Evaluate the von Mises distribution and multiply by (1 + lambda_ * sin(xa - mu))
-        assert self.k == 1, "Currently, only k=1 is supported"
+        if self.k != 1:
+            raise NotImplementedError("Currently, only k=1 is supported")
         vm_pdf = VonMisesDistribution(self.mu, self.kappa).pdf(xs)
         skew_factor = (1 + self.lambda_ * sin(self.k * (xs - self.mu))) ** self.m
         if self.m == 1:
@@ -236,7 +237,8 @@ class GeneralizedKSineSkewedWrappedCauchyDistribution(AbstractCircularDistributi
         self.m = _validate_sine_power(self.m, "m")
 
     def pdf(self, xs):
-        assert self.k == 1, "Currently, only k=1 is supported"
+        if self.k != 1:
+            raise NotImplementedError("Currently, only k=1 is supported")
         # Use the WC pdf formula directly to ensure correct centering at mu
         wc_pdf_vals = (
             1 / (2 * pi) * sinh(self.gamma) / (cosh(self.gamma) - cos(xs - self.mu))

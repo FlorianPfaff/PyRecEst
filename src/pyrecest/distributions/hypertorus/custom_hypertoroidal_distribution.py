@@ -44,7 +44,10 @@ class CustomHypertoroidalDistribution(
         # Returns:
         #   ccd (CustomCircularDistribution)
         #       CustomCircularDistribution with same parameters
-        assert self.dim == 1
+        if self.dim != 1:
+            raise ValueError(
+                "Conversion to CustomCircularDistribution requires dim == 1"
+            )
         ccd = CustomCircularDistribution(
             self.f, scale_by=self.scale_by, shift_by=self.shift_by[0]
         )
@@ -58,7 +61,10 @@ class CustomHypertoroidalDistribution(
         #       CustomToroidalDistribution with same parameters
         from .custom_toroidal_distribution import CustomToroidalDistribution
 
-        assert self.dim == 2
+        if self.dim != 2:
+            raise ValueError(
+                "Conversion to CustomToroidalDistribution requires dim == 2"
+            )
         ctd = CustomToroidalDistribution(
             self.f, scale_by=self.scale_by, shift_by=self.shift_by
         )
