@@ -53,6 +53,30 @@ class EuclideanParticleFilterTest(unittest.TestCase):
         npt.assert_allclose(pf.filter_state.d, particles)
         npt.assert_allclose(noise.d, noise_particles)
 
+    def test_predict_nonlinear_rejects_dimension_mismatched_noise(self):
+        mismatched_noise = GaussianDistribution(
+            array([0.0, 0.0]), array([[1.0, 0.0], [0.0, 1.0]])
+        )
+
+        with self.assertRaisesRegex(ValueError, "dimension"):
+            self.pf.predict_nonlinear(lambda xs: xs, mismatched_noise)
+
+    def test_update_identity_accepts_scalar_measurement_for_one_dimensional_noise(self):
+        pf = EuclideanParticleFilter(n_particles=3, dim=1)
+        particles = array([[0.0], [1.0], [2.0]])
+        pf.filter_state = LinearDiracDistribution(particles)
+        pf.set_resampling_criterion(lambda _state: False)
+        meas_noise = GaussianDistribution(array([0.0]), array([[1.0]]))
+
+        pf.update_identity(meas_noise, 1.0)
+
+        npt.assert_allclose(pf.filter_state.d, particles)
+        self.assertEqual(pf.filter_state.w.shape, (3,))
+
+    def test_update_identity_rejects_wrong_measurement_shape(self):
+        with self.assertRaisesRegex(ValueError, "measurement"):
+            self.pf.update_identity(self.sys_noise_default, array([1.0, 2.0]))
+
     def test_predict_update_cycle_3d(self):
         for _ in range(50):
             self.pf.predict_identity(GaussianDistribution(zeros(3), self.C_prior))
@@ -77,6 +101,16 @@ class EuclideanParticleFilterTest(unittest.TestCase):
         est = self.pf.get_point_estimate()
         self.assertEqual(self.pf.get_point_estimate().shape, (3,))
         npt.assert_allclose(est, self.prior.mu + mean(samples, axis=0), atol=0.1)
+
+    def test_predict_nonlinear_nonadditive_rejects_sample_weight_size_mismatch(self):
+        samples = array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]])
+        weights = array([1.0])
+
+        def f(x, w):
+            return x + w
+
+        with self.assertRaisesRegex(ValueError, "samples and weights"):
+            self.pf.predict_nonlinear_nonadditive(f, samples, weights)
 
     def test_predict_nonlinear_nonadditive_rejects_invalid_weights(self):
         samples = array([[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]])

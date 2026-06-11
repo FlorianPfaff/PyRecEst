@@ -11,6 +11,7 @@ from pyrecest.backend import (
     ndim,
     ones_like,
     random,
+    reshape,
     sum,
     vmap,
     vstack,
@@ -170,10 +171,13 @@ class AbstractParticleFilter(AbstractFilter):
         function_is_vectorized: bool = True,
         shift_instead_of_add: bool = True,
     ):
-        assert (
-            noise_distribution is None
-            or self.filter_state.dim == noise_distribution.dim
-        )
+        if (
+            noise_distribution is not None
+            and self.filter_state.dim != noise_distribution.dim
+        ):
+            raise ValueError(
+                f"Noise distribution dimension {noise_distribution.dim} does not match filter-state dimension {self.filter_state.dim}."
+            )
 
         if function_is_vectorized:
             d_f_applied = f(self.filter_state.d)
@@ -206,9 +210,8 @@ class AbstractParticleFilter(AbstractFilter):
 
     def predict_nonlinear_nonadditive(self, f, samples, weights):
         weights = array(weights, dtype=float)
-        assert (
-            samples.shape[0] == weights.shape[0]
-        ), "samples and weights must match in size"
+        if samples.shape[0] != weights.shape[0]:
+            raise ValueError("samples and weights must match in size")
 
         if not bool(all(isfinite(weights))):
             raise ValueError("Noise weights must be finite.")
@@ -236,11 +239,18 @@ class AbstractParticleFilter(AbstractFilter):
         if self._filter_state is None:
             self._filter_state = copy.deepcopy(new_state)
         elif isinstance(new_state, type(self.filter_state)):
-            assert self.filter_state.d.shape == new_state.d.shape
+            if self.filter_state.d.shape != new_state.d.shape:
+                raise ValueError(
+                    "The shape of new state does not match with the existing state."
+                )
             self._filter_state = copy.deepcopy(new_state)
         else:
             samples = new_state.sample(self.filter_state.w.shape[0])
-            assert samples.shape == self.filter_state.d.shape
+            if samples.shape != self.filter_state.d.shape:
+                raise ValueError(
+                    "Samples from new state have shape "
+                    f"{samples.shape}, expected {self.filter_state.d.shape}."
+                )
             self._filter_state.d = samples
             self._filter_state.w = (
                 ones_like(self.filter_state.w) / self.filter_state.w.shape[0]
@@ -269,13 +279,16 @@ class AbstractParticleFilter(AbstractFilter):
         *,
         return_diagnostics=False,
     ):
-        assert (
-            measurement is None
-            or measurement.shape == (meas_noise.dim,)
-            or meas_noise.dim == 1
-            and measurement.shape == ()
-        )
-        assert ndim(measurement) == 1 or ndim(measurement) == 0 and meas_noise.dim == 1
+        if measurement is None:
+            raise ValueError("measurement must not be None.")
+
+        measurement = array(measurement)
+        if meas_noise.dim == 1 and ndim(measurement) == 0:
+            measurement = reshape(measurement, (1,))
+        if ndim(measurement) != 1 or measurement.shape[0] != meas_noise.dim:
+            raise ValueError(
+                f"measurement must have shape ({meas_noise.dim},), got {measurement.shape}."
+            )
         if not shift_instead_of_add:
             raise NotImplementedError()
 
