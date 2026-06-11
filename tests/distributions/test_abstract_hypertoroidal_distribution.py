@@ -70,7 +70,7 @@ class TestAbstractHypertoroidalDistribution(unittest.TestCase):
 
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ != "numpy",
-        reason="Only supported on numpy backend",
+        reason="integrate_numerically validates boundaries only on the numpy backend",
     )
     def test_integrate_numerically_rejects_wrong_boundary_count(self):
         dist = ZeroMomentHypertoroidalDistribution()
