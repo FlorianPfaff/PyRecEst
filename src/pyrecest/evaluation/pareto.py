@@ -85,6 +85,7 @@ def is_pareto_front(
     """Return a boolean Series marking non-dominated rows."""
 
     objective_names = _validate_objectives(objectives)
+    _require_table_columns(table, objective_names, "Pareto objective")
     direction_map = _directions_by_objective(objective_names, directions)
     if feasible_mask is None:
         candidate_mask = pd.Series(True, index=table.index, dtype=bool)
