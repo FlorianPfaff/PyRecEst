@@ -112,8 +112,15 @@ class TestAbstractSphereSubsetDistribution(unittest.TestCase):
         y = array([0.0, 1.0])
         z = array([[0.0, 0.0]])
 
-        with self.assertRaises(AssertionError):
+        with self.assertRaisesRegex(ValueError, "1-dimensional"):
             AbstractSphereSubsetDistribution.cart_to_sph(x, y, z)
+
+    def test_sph_to_cart_rejects_matrix_angles(self):
+        azimuth = array([0.0, 0.5])
+        colatitude = array([[0.1, 0.2]])
+
+        with self.assertRaisesRegex(ValueError, "1-dimensional"):
+            AbstractSphereSubsetDistribution.sph_to_cart(azimuth, colatitude)
 
     def test_inclination_helpers_reject_matrix_inputs(self):
         azimuth = array([0.0, 0.5])
@@ -122,12 +129,24 @@ class TestAbstractSphereSubsetDistribution(unittest.TestCase):
         y = array([0.0, 1.0])
         z = array([[0.0, 0.0]])
 
-        with self.assertRaises(AssertionError):
+        with self.assertRaisesRegex(ValueError, "1-dimensional"):
             AbstractSphereSubsetDistribution._sph_to_cart_inclination(
                 azimuth, colatitude
             )
-        with self.assertRaises(AssertionError):
+        with self.assertRaisesRegex(ValueError, "1-dimensional"):
             AbstractSphereSubsetDistribution._cart_to_sph_inclination(x, y, z)
+
+    def test_elevation_helpers_reject_matrix_inputs(self):
+        azimuth = array([0.0, 0.5])
+        elevation = array([[0.1, 0.2]])
+        x = array([1.0, 0.0])
+        y = array([0.0, 1.0])
+        z = array([[0.0, 0.0]])
+
+        with self.assertRaisesRegex(ValueError, "1-dimensional"):
+            AbstractSphereSubsetDistribution._sph_to_cart_elevation(azimuth, elevation)
+        with self.assertRaisesRegex(ValueError, "1-dimensional"):
+            AbstractSphereSubsetDistribution._cart_to_sph_elevation(x, y, z)
 
     def test_elevation_map_to_inclination_matches_direct_formula(self):
         azimuth = array([0.25, 1.25, 2.25])

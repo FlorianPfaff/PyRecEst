@@ -32,6 +32,17 @@ class LinearMixtureTest(unittest.TestCase):
                 str(w[-1].message),
             )
 
+    def test_constructor_rejects_invalid_distribution_list(self):
+        invalid_cases = (
+            ([], array([]), "at least one"),
+            ([object()], array([1.0]), "linear distributions"),
+        )
+
+        for dists, weights, message in invalid_cases:
+            with self.subTest(message=message):
+                with self.assertRaisesRegex(ValueError, message):
+                    LinearMixture(dists, weights)
+
     def test_prunes_zero_weight_components(self):
         gm1 = GaussianDistribution(array([1.0]), array([[1.0]]))
         gm2 = GaussianDistribution(array([50.0]), array([[1.0]]))

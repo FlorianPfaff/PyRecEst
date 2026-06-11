@@ -203,6 +203,18 @@ class TestHypertoroidalDiracDistribution(TestAbstractDiracDistribution):
         npt.assert_array_almost_equal(twd1.d, twd2.d, decimal=10)
         npt.assert_array_almost_equal(twd1.w, twd2.w, decimal=10)
 
+    def test_to_toroidal_wd_rejects_wrong_dimension(self):
+        hwd = TestHypertoroidalDiracDistribution.get_pseudorandom_hypertoroidal_wd(3)
+
+        with self.assertRaisesRegex(ValueError, "dimension"):
+            hwd.to_toroidal_wd()
+
+    def test_to_wd_rejects_wrong_dimension(self):
+        hwd = TestHypertoroidalDiracDistribution.get_pseudorandom_hypertoroidal_wd(2)
+
+        with self.assertRaisesRegex(ValueError, "dimension"):
+            hwd.to_wd()
+
     def test_marginalization(self):
         hwd = TestHypertoroidalDiracDistribution.get_pseudorandom_hypertoroidal_wd(2)
         wd1 = hwd.marginalize_to_1D(0)
@@ -242,6 +254,12 @@ class TestHypertoroidalDiracDistribution(TestAbstractDiracDistribution):
     )
     def test_plot(self, name, dist, dim):
         self._test_plot_helper(name, dist, dim, HypertoroidalDiracDistribution)
+
+    def test_plot_rejects_unsupported_dimension(self):
+        dist = TestHypertoroidalDiracDistribution.get_pseudorandom_hypertoroidal_wd(4)
+
+        with self.assertRaisesRegex(ValueError, "Plotting"):
+            dist.plot()
 
     # jscpd:ignore-end
 

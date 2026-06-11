@@ -142,6 +142,21 @@ class TestLogisticPairwiseAssociationModel(unittest.TestCase):
         self.assertGreater(model.n_iter_, 0)
         self.assertTrue(all(isfinite(probabilities)))
 
+    def test_fit_uses_pinv_fallback_for_backend_value_errors(self):
+        model = LogisticPairwiseAssociationModel(
+            class_weight="balanced", max_iterations=3
+        )
+
+        with patch(
+            "pyrecest.utils.association_models.linalg.solve",
+            side_effect=ValueError("backend rejected singular linear system"),
+        ):
+            model.fit(self.training_features, self.training_labels)
+
+        probabilities = model.predict_match_probability(self.training_features)
+        self.assertGreater(model.n_iter_, 0)
+        self.assertTrue(all(isfinite(probabilities)))
+
     def test_fit_uses_pinv_fallback_for_nonfinite_backend_solve_results(self):
         model = LogisticPairwiseAssociationModel(
             class_weight="balanced", max_iterations=3

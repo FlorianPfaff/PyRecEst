@@ -97,7 +97,8 @@ class HypertoroidalDiracDistribution(
 
     def plot(self, resolution=128, **kwargs):
         _ = resolution
-        assert self.dim <= 3, "Plotting not supported for this dimension"
+        if self.dim > 3:
+            raise ValueError("Plotting not supported for this dimension")
         LinearDiracDistribution.plot(self, **kwargs)
         if self.dim >= 1:
             plt.xlim(0, 2 * pi)
@@ -145,7 +146,8 @@ class HypertoroidalDiracDistribution(
     def to_toroidal_wd(self):
         from .toroidal_dirac_distribution import ToroidalDiracDistribution
 
-        assert self.dim == 2, "The dimension must be 2"
+        if self.dim != 2:
+            raise ValueError("The dimension must be 2")
         twd = ToroidalDiracDistribution(self.d, self.w)
         return twd
 
@@ -208,7 +210,8 @@ class HypertoroidalDiracDistribution(
         raise NotImplementedError("Entropy calculation is not implemented")
 
     def to_wd(self):
-        assert self.dim == 1
+        if self.dim != 1:
+            raise ValueError("The dimension must be 1")
         from ..circle.circular_dirac_distribution import CircularDiracDistribution
 
         return CircularDiracDistribution(self.d, self.w)

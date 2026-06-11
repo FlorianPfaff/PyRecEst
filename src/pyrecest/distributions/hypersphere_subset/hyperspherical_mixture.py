@@ -15,9 +15,12 @@ class HypersphericalMixture(AbstractMixture, AbstractHypersphericalDistribution)
             dists (List[AbstractHypersphericalDistribution]): The list of hyperspherical distributions.
             w (List[float]): The list of weights for each distribution.
         """
-        AbstractHypersphericalDistribution.__init__(self, dim=dists[0].dim)
-        assert all(
+        if len(dists) == 0:
+            raise ValueError("Mixture must contain at least one distribution")
+        if not all(
             isinstance(dist, AbstractHypersphericalDistribution) for dist in dists
-        ), "dists must be a list of hyperspherical distributions"
+        ):
+            raise ValueError("dists must be a list of hyperspherical distributions")
+        AbstractHypersphericalDistribution.__init__(self, dim=dists[0].dim)
 
         AbstractMixture.__init__(self, dists, w)

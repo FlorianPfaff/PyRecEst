@@ -243,31 +243,11 @@ def cov(input, correction=1, fweights=None, aweights=None, bias=False):
     if aweights is not None:
         aweights = asarray(aweights, dtype=input.dtype, device=input.device)
 
-    if not bias:
-        return _torch.cov(
-            input, correction=correction, fweights=fweights, aweights=aweights
-        )
-    assert fweights is None
-
-    if aweights is None:
-        aweights = ones(input.shape[1], dtype=input.dtype, device=input.device)
-    else:
-        aweights = copy(aweights)
-
-    # Ensure weights sum to 1
-    aweights = aweights / sum(aweights)
-
-    # Calculate weighted means
-    means = sum(input * aweights, axis=1, keepdims=True)
-
-    deviation_centered = input - means
-
-    # Calculate weighted biased covariance
-    cov_matrix = _torch.einsum(
-        "ij,kj,j->ik", deviation_centered, deviation_centered, aweights
+    if bias:
+        correction = 0
+    return _torch.cov(
+        input, correction=correction, fweights=fweights, aweights=aweights
     )
-
-    return cov_matrix
 
 
 def _quantile_q(q, x):
