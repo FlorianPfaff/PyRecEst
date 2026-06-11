@@ -1,4 +1,6 @@
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
+from numbers import Integral
+
 import mpmath
 import numpy as np
 import pyrecest.backend
@@ -17,6 +19,7 @@ from pyrecest.backend import (
     eye,
     flip,
     gammaln,
+    isfinite,
     linalg,
     log,
     maximum,
@@ -56,6 +59,46 @@ def _validate_positive_sample_count(n) -> int:
     return count_int
 
 
+def _to_python_bool(value) -> bool:
+    if isinstance(value, bool):
+        return value
+    if hasattr(value, "item"):
+        return bool(value.item())
+    return bool(value)
+
+
+def _validate_numpy_or_pytorch_backend(method_name: str):
+    if pyrecest.backend.__backend_name__ == "jax":  # pylint: disable=no-member
+        raise NotImplementedError(
+            f"{method_name} uses in-place array assignment which is incompatible "
+            "with JAX. Use numpy or pytorch backend instead."
+        )
+
+
+def _validate_unit_vector(mu, tolerance: float):
+    mu = asarray(mu, dtype=complex128)
+    if mu.ndim != 1:
+        raise ValueError("mu must be a 1-D vector")
+    if not _to_python_bool(all(isfinite(mu))):
+        raise ValueError("mu must contain only finite values")
+    if not _to_python_bool(abs(linalg.norm(mu) - 1.0) < tolerance):
+        raise ValueError("mu must be a unit vector")
+    return mu
+
+
+def _validate_finite_scalar(value, name: str) -> float:
+    value_array = np.asarray(value)
+    if value_array.ndim != 0:
+        raise ValueError(f"{name} must be a finite scalar")
+    try:
+        scalar = float(value_array.item())
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{name} must be a finite scalar") from exc
+    if not np.isfinite(scalar):
+        raise ValueError(f"{name} must be finite")
+    return scalar
+
+
 class ComplexWatsonDistribution:
     """Complex Watson distribution on the complex unit sphere C^D.
 
@@ -74,12 +117,10 @@ class ComplexWatsonDistribution:
             mu: 1-D complex array of shape (D,), must be a unit vector
             kappa: scalar concentration parameter
         """
-        mu = asarray(mu, dtype=complex128)
-        assert mu.ndim == 1, "mu must be a 1-D vector"
-        assert abs(linalg.norm(mu) - 1.0) < self.EPSILON, "mu must be a unit vector"
+        mu = _validate_unit_vector(mu, self.EPSILON)
 
         self.mu = mu
-        self.kappa = float(kappa)
+        self.kappa = _validate_finite_scalar(kappa, "kappa")
         self.dim = mu.shape[0]  # D: length of the complex feature vector
         self._log_norm_const = None
 
@@ -106,6 +147,10 @@ class ComplexWatsonDistribution:
             Real-valued array of shape (N,) or a scalar
         """
         za = asarray(za, dtype=complex128)
+        if za.ndim == 0 or za.shape[-1] != self.dim:
+            raise ValueError(
+                f"za must have trailing dimension {self.dim}, got {za.shape}."
+            )
         inner = za @ conj(self.mu)  # complex inner product, shape (N,) or scalar
         return real(exp(self.log_norm_const + self.kappa * abs(inner) ** 2))
 
@@ -121,9 +166,7 @@ class ComplexWatsonDistribution:
         Returns:
             complex array of shape (n, D)
         """  # pylint: disable=too-many-locals
-        assert (
-            pyrecest.backend.__backend_name__ != "jax"  # pylint: disable=no-member
-        ), "sample() uses in-place array assignment which is incompatible with JAX. Use numpy or pytorch backend instead."
+        _validate_numpy_or_pytorch_backend("sample()")
         n = _validate_positive_sample_count(n)
 
         D = self.dim
@@ -203,15 +246,27 @@ class ComplexWatsonDistribution:
             tuple (mu_hat, kappa_hat)
         """
         Z = asarray(Z, dtype=complex128)
+        if Z.ndim != 2:
+            raise ValueError("Z must be a two-dimensional array")
+        if not _to_python_bool(all(isfinite(Z))):
+            raise ValueError("Z must contain only finite values")
         N, D = Z.shape
 
         # Build the Hermitian scatter matrix S (D x D)
         if weights is None:
             S = conj(Z).T @ Z
         else:
-            weights = asarray(weights).ravel()
-            assert weights.shape[0] == N, "dimensions of Z and weights mismatch"
-            assert weights.ndim == 1, "weights must be a 1-D vector"
+            weights = asarray(weights, dtype=float)
+            if weights.ndim != 1:
+                raise ValueError("weights must be a 1-D vector")
+            if weights.shape[0] != N:
+                raise ValueError("dimensions of Z and weights mismatch")
+            if not _to_python_bool(all(isfinite(weights))):
+                raise ValueError("weights must contain only finite values")
+            if not _to_python_bool(all(weights >= 0.0)):
+                raise ValueError("weights must be nonnegative")
+            if not _to_python_bool(sum(weights) > 0.0):
+                raise ValueError("weights must have positive total mass")
             # Weighted scatter: Σ_i w_i·z_i·z_i^H, normalised so uniform
             # weights (w_i=1) reproduce the unweighted result Z^H Z.
             S = (Z * weights[:, None]).conj().T @ Z * (N / sum(weights))
@@ -226,10 +281,11 @@ class ComplexWatsonDistribution:
         eigvals = real(eigvals[idx])
         eigvecs = eigvecs[:, idx]
 
-        assert all(eigvals > 0), (
-            "All eigenvalues of the scatter matrix must be positive; "
-            "this may indicate that fewer samples than features were provided."
-        )
+        if not _to_python_bool(all(eigvals > 0)):
+            raise ValueError(
+                "All eigenvalues of the scatter matrix must be positive; "
+                "this may indicate that fewer samples than features were provided."
+            )
 
         mu_hat = eigvecs[:, 0]
 
@@ -292,11 +348,16 @@ class ComplexWatsonDistribution:
         Returns:
             log(C_D(kappa)); same shape as kappa (scalar if scalar input)
         """  # pylint: disable=too-many-locals
-        assert (
-            pyrecest.backend.__backend_name__ != "jax"  # pylint: disable=no-member
-        ), "log_norm() uses in-place array assignment which is incompatible with JAX. Use numpy or pytorch backend instead."
+        if isinstance(D, bool) or not isinstance(D, Integral):
+            raise ValueError("D must be a positive integer")
+        D = int(D)
+        if D <= 0:
+            raise ValueError("D must be a positive integer")
         scalar_input = ndim(asarray(kappa)) == 0
         kappa_arr = atleast_1d(asarray(kappa, dtype=float)).ravel()
+        if not _to_python_bool(all(isfinite(kappa_arr))):
+            raise ValueError("kappa must contain only finite values")
+        _validate_numpy_or_pytorch_backend("log_norm()")
         log_c = zeros_like(kappa_arr)
 
         # ----------------------------------------------------------

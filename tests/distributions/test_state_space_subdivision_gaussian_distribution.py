@@ -27,6 +27,66 @@ from pyrecest.distributions.nonperiodic.gaussian_distribution import (
 
 
 class TestStateSpaceSubdivisionGaussianDistribution(unittest.TestCase):
+    @staticmethod
+    def _make_grid(n):
+        return HypertoroidalGridDistribution.from_distribution(
+            CircularUniformDistribution(), (n,)
+        )
+
+    @staticmethod
+    def _make_gaussians(n, dim=1):
+        return [GaussianDistribution(array([0.0] * dim), eye(dim)) for _ in range(n)]
+
+    def test_constructor_rejects_non_gaussian_conditionals(self):
+        gd = self._make_grid(2)
+
+        with self.assertRaisesRegex(TypeError, "GaussianDistribution"):
+            StateSpaceSubdivisionGaussianDistribution(
+                gd, [GaussianDistribution(array([0.0]), eye(1)), object()]
+            )
+
+    def test_constructor_rejects_grid_length_mismatch(self):
+        gd = self._make_grid(3)
+
+        with self.assertRaisesRegex(ValueError, "Number of grid points"):
+            StateSpaceSubdivisionGaussianDistribution(gd, self._make_gaussians(2))
+
+    def test_constructor_rejects_mismatched_linear_dimensions(self):
+        gd = self._make_grid(2)
+        gaussians = [
+            GaussianDistribution(array([0.0]), eye(1)),
+            GaussianDistribution(array([0.0, 0.0]), eye(2)),
+        ]
+
+        with self.assertRaisesRegex(ValueError, "same dimension"):
+            StateSpaceSubdivisionGaussianDistribution(gd, gaussians)
+
+    def test_multiply_rejects_incompatible_operands(self):
+        gd = self._make_grid(2)
+        rbd = StateSpaceSubdivisionGaussianDistribution(gd, self._make_gaussians(2))
+
+        with self.assertRaisesRegex(
+            TypeError, "StateSpaceSubdivisionGaussianDistribution"
+        ):
+            rbd.multiply(object())
+
+        other_count = StateSpaceSubdivisionGaussianDistribution(
+            self._make_grid(3), self._make_gaussians(3)
+        )
+        with self.assertRaisesRegex(ValueError, "same number"):
+            rbd.multiply(other_count)
+
+        gd_shifted = HypertoroidalGridDistribution(
+            array([1.0, 1.0]),
+            grid_type="custom",
+            grid=array([[0.1], [pi + 0.1]]),
+        )
+        other_grid = StateSpaceSubdivisionGaussianDistribution(
+            gd_shifted, self._make_gaussians(2)
+        )
+        with self.assertRaisesRegex(ValueError, "equal grids"):
+            rbd.multiply(other_grid)
+
     def test_multiply_s1_x_r1_identical_precise(self):
         """Multiply two S1xR1 distributions; linear uncertainty must decrease."""
         n = 100

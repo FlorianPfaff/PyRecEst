@@ -82,7 +82,7 @@ class CircularMixture(AbstractCircularDistribution, HypertoroidalMixture):
             xs_eval = reshape(xs, (-1,))
             scalar_input = False
         else:
-            raise AssertionError("Dimension mismatch")
+            raise ValueError("Dimension mismatch")
 
         p = zeros(shape(atleast_1d(xs_eval)))
 

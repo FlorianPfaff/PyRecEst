@@ -54,6 +54,39 @@ class TestSE2BinghamDistribution(unittest.TestCase):
         npt.assert_array_almost_equal(dist.C2, self.dist.C2)
         npt.assert_array_almost_equal(dist.C3, self.dist.C3)
 
+    def test_constructor_rejects_invalid_full_matrix(self):
+        asymmetric_full = np.asarray(self.dist.C).copy()
+        asymmetric_full[0, 1] = 5.0
+        nonfinite_full = np.asarray(self.dist.C).copy()
+        nonfinite_full[0, 0] = np.nan
+        invalid_cases = [
+            (self.dist.C, self.C2, None, "both C2 and C3"),
+            (array([[1.0, 0.0], [0.0, 1.0]]), None, None, "4x4"),
+            (asymmetric_full, None, None, "symmetric"),
+            (nonfinite_full, None, None, "finite"),
+        ]
+
+        for C, C2, C3, message in invalid_cases:
+            with self.subTest(message=message):
+                with self.assertRaisesRegex(ValueError, message):
+                    SE2BinghamDistribution(C, C2, C3)
+
+    def test_constructor_rejects_invalid_parts(self):
+        invalid_cases = [
+            ([[1.0, 0.0]], self.C2, self.C3, "C1"),
+            (self.C1, [[0.1, 0.2]], self.C3, "C2"),
+            (self.C1, self.C2, [[-2.0, 0.1]], "C3"),
+            (array([[-3.0, 2.0], [0.5, -1.0]]), self.C2, self.C3, "C1"),
+            (self.C1, self.C2, array([[-2.0, 2.0], [0.1, -1.5]]), "C3"),
+            (array([[float("nan"), 0.5], [0.5, -1.0]]), self.C2, self.C3, "finite"),
+            (self.C1, self.C2, array([[1.0, 0.0], [0.0, -1.0]]), "negative"),
+        ]
+
+        for C1, C2, C3, message in invalid_cases:
+            with self.subTest(message=message):
+                with self.assertRaisesRegex(ValueError, message):
+                    SE2BinghamDistribution(C1, C2, C3)
+
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ == "jax",
         reason="Not supported on JAX backend",
@@ -96,6 +129,12 @@ class TestSE2BinghamDistribution(unittest.TestCase):
         dq = AbstractSE2Distribution.angle_pos_to_dual_quaternion(angle_pos)
         p_dq = self.dist.pdf(dq)
         npt.assert_array_almost_equal(p_ap, p_dq)
+
+    def test_pdf_rejects_invalid_shape(self):
+        for xs in (1.0, [[1.0, 0.0]], [[1.0, 0.0, 0.0, 0.0, 0.0]]):
+            with self.subTest(xs=xs):
+                with self.assertRaises(ValueError):
+                    self.dist.pdf(xs)
 
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ == "jax",
@@ -188,6 +227,24 @@ class TestSE2BinghamDistribution(unittest.TestCase):
         weights = ones(n) / n
         fitted = SE2BinghamDistribution.fit(samples, weights)
         self.assertIsInstance(fitted, SE2BinghamDistribution)
+
+    def test_fit_rejects_invalid_samples_or_weights(self):
+        samples = self.dist.sample(5)
+        invalid_cases = [
+            (samples[0], None, "two-dimensional"),
+            (np.ones((5, 2)), None, "3 or 4 columns"),
+            (np.full((5, 4), np.nan), None, "finite"),
+            (samples, np.ones((1, 5)), "one-dimensional"),
+            (samples, ones(4), "one entry"),
+            (samples, array([1.0, np.nan, 1.0, 1.0, 1.0]), "finite"),
+            (samples, array([1.0, -1.0, 1.0, 1.0, 1.0]), "nonnegative"),
+            (samples, array([0.0, 0.0, 0.0, 0.0, 0.0]), "positive total mass"),
+        ]
+
+        for sample_values, weights, message in invalid_cases:
+            with self.subTest(message=message):
+                with self.assertRaisesRegex(ValueError, message):
+                    SE2BinghamDistribution.fit(sample_values, weights)
 
 
 if __name__ == "__main__":

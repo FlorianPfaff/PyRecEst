@@ -25,6 +25,10 @@ class TestCircularDiracDistribution(unittest.TestCase):
         self.assertEqual(wd.w.shape, (3,))
         npt.assert_allclose(wd.d, d[:, 0])
 
+    def test_rejects_multidimensional_locations_for_circular_dirac(self):
+        with self.assertRaisesRegex(ValueError, "shapes of d and w"):
+            CircularDiracDistribution(array([[0.0, pi / 2.0], [pi, 3.0 * pi / 2.0]]))
+
 
 if __name__ == "__main__":
     unittest.main()

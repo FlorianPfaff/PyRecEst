@@ -60,13 +60,21 @@ class CustomLinearDistribution(
 
     def pdf(self, xs):
         xs = array(xs)
-        assert self.dim == 1 and xs.ndim <= 1 or xs.shape[-1] == self.dim
+        if not (
+            (self.dim == 1 and xs.ndim <= 1)
+            or (xs.ndim > 0 and xs.shape[-1] == self.dim)
+        ):
+            raise ValueError(
+                f"xs must be scalar, one-dimensional for dim=1, or have last "
+                f"dimension {self.dim}; got shape {xs.shape}."
+            )
         p = self.scale_by * self.f(
             # To ensure 2-d for broadcasting
             reshape(xs, (-1, self.dim))
             - reshape(self.shift_by, (1, -1))
         )
-        assert ndim(p) <= 1
+        if ndim(p) > 1:
+            raise ValueError("The custom pdf function must return at most 1-D values.")
         return p
 
     @staticmethod

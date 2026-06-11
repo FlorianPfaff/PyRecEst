@@ -363,18 +363,6 @@ class LogisticPairwiseAssociationModel:  # pylint: disable=too-many-instance-att
         self.intercept_ = 0.0
         self.coefficients_ = parameter_vector
 
-    @staticmethod
-    def _solve_newton_step(hessian: Any, gradient: Any) -> Any:
-        """Solve an IRLS Newton system with backend-portable fallback handling."""
-        try:
-            step = linalg.solve(hessian, gradient)
-        except (LinAlgError, RuntimeError):
-            return linalg.pinv(hessian) @ gradient
-
-        if all(isfinite(step)):
-            return step
-        return linalg.pinv(hessian) @ gradient
-
     def fit(  # pylint: disable=too-many-locals
         self,
         features: Any,

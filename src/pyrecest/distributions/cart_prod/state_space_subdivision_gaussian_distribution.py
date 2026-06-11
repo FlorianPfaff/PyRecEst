@@ -43,9 +43,10 @@ class StateSpaceSubdivisionGaussianDistribution(StateSpaceSubdivisionDistributio
         gaussians : list of GaussianDistribution
             One Gaussian per grid point of *gd*.
         """
-        assert all(
-            isinstance(g, GaussianDistribution) for g in gaussians
-        ), "All elements of gaussians must be GaussianDistribution instances."
+        if not all(isinstance(g, GaussianDistribution) for g in gaussians):
+            raise TypeError(
+                "All elements of gaussians must be GaussianDistribution instances."
+            )
         super().__init__(gd, gaussians)
 
     # ------------------------------------------------------------------
@@ -129,14 +130,19 @@ class StateSpaceSubdivisionGaussianDistribution(StateSpaceSubdivisionDistributio
         -------
         StateSpaceSubdivisionGaussianDistribution
         """
-        assert isinstance(other, StateSpaceSubdivisionGaussianDistribution)
-        assert self.gd.n_grid_points == other.gd.n_grid_points, (
-            "Can only multiply distributions defined on grids with the same "
-            "number of grid points."
-        )
+        if not isinstance(other, StateSpaceSubdivisionGaussianDistribution):
+            raise TypeError(
+                "other must be a StateSpaceSubdivisionGaussianDistribution."
+            )
+        if self.gd.n_grid_points != other.gd.n_grid_points:
+            raise ValueError(
+                "Can only multiply distributions defined on grids with the same "
+                "number of grid points."
+            )
         self_grid = asarray(self.gd.get_grid())
         other_grid = asarray(other.gd.get_grid())
-        assert allclose(self_grid, other_grid), "Can only multiply for equal grids."
+        if not allclose(self_grid, other_grid):
+            raise ValueError("Can only multiply for equal grids.")
 
         n = len(self.linear_distributions)
         new_linear_distributions = []

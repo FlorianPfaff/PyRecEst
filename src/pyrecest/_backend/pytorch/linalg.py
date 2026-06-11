@@ -252,12 +252,11 @@ def fractional_matrix_power(A, t):
     return _torch_as_like(out, A)
 
 
-def polar(a, *args, **kwargs):
-    """Polar decomposition of a matrix."""
+def polar(a, side="right"):
+    """Polar decomposition of a square or rectangular matrix."""
     a = _as_linalg_tensor(a)
-    func = _np.vectorize(
-        _scipy.linalg.polar, signature="(n,n)->(n,n),(n,n)", excluded=["side"]
-    )
-    unitary, hermitian = func(_as_numpy_no_grad(a), *args, **kwargs)
+    signature = "(m,n)->(m,n),(m,m)" if side == "left" else "(m,n)->(m,n),(n,n)"
+    func = _np.vectorize(_scipy.linalg.polar, signature=signature, excluded=["side"])
+    unitary, hermitian = func(_as_numpy_no_grad(a), side=side)
 
     return _torch_as_like(unitary, a), _torch_as_like(hermitian, a)

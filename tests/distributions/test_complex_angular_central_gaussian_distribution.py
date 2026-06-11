@@ -44,8 +44,20 @@ class TestComplexAngularCentralGaussianDistribution(unittest.TestCase):
     def test_constructor_non_hermitian_raises(self):
         """Test that constructor rejects a non-Hermitian matrix."""
         C_bad = array([[1.0 + 0j, 2.0 + 1.0j], [0.0 + 0j, 1.0 + 0j]])
-        with self.assertRaises(AssertionError):
+        with self.assertRaisesRegex(ValueError, "Hermitian"):
             ComplexAngularCentralGaussianDistribution(C_bad)
+
+    def test_constructor_rejects_invalid_shape_or_nonfinite_matrix(self):
+        invalid_matrices = [
+            ([[1.0 + 0j, 0.0 + 0j]], "square"),
+            (array([[float("nan") + 0j, 0.0 + 0j], [0.0 + 0j, 1.0 + 0j]]), "finite"),
+        ]
+
+        for C_bad, message in invalid_matrices:
+            with self.subTest(message=message), self.assertRaisesRegex(
+                ValueError, message
+            ):
+                ComplexAngularCentralGaussianDistribution(C_bad)
 
     def test_constructor_rejects_non_positive_definite_matrix(self):
         """Hermitian parameter matrices must be positive definite."""
@@ -54,7 +66,9 @@ class TestComplexAngularCentralGaussianDistribution(unittest.TestCase):
             array([[1.0 + 0j, 0.0 + 0j], [0.0 + 0j, -1.0 + 0j]]),
         ]
         for C_bad in invalid_matrices:
-            with self.subTest(C=C_bad), self.assertRaises(AssertionError):
+            with self.subTest(C=C_bad), self.assertRaisesRegex(
+                ValueError, "positive definite"
+            ):
                 ComplexAngularCentralGaussianDistribution(C_bad)
 
     @unittest.skipIf(
@@ -122,6 +136,22 @@ class TestComplexAngularCentralGaussianDistribution(unittest.TestCase):
                 float(real(p_single[0])),
                 rtol=1e-10,
             )
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ == "jax",
+        reason="Not supported on JAX backend",
+    )  # pylint: disable=no-member
+    def test_pdf_accepts_list_and_rejects_wrong_dimension(self):
+        z = [[1.0 + 0j, 0.0 + 0j]]
+
+        npt.assert_allclose(
+            self.dist_identity_2d.pdf(z), self.dist_identity_2d.pdf(array(z))
+        )
+
+        for invalid_z in (1.0 + 0j, [1.0 + 0j], [[1.0 + 0j, 0.0 + 0j, 0.0 + 0j]]):
+            with self.subTest(invalid_z=invalid_z):
+                with self.assertRaisesRegex(ValueError, "trailing dimension"):
+                    self.dist_identity_2d.pdf(invalid_z)
 
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ == "jax",

@@ -55,6 +55,12 @@ class AbstractCircularDistributionTest(unittest.TestCase):
         )
         self.assertTrue(allclose(dist.cdf_numerical(xs), dist.cdf_numerical(array(xs))))
 
+    def test_cdf_numerical_rejects_multidimensional_input(self):
+        dist = WrappedNormalDistribution(array(0.3), array(0.8))
+
+        with self.assertRaisesRegex(ValueError, "1D array"):
+            dist.cdf_numerical(array([[0.5], [1.0]]))
+
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ == "jax",
         reason="Not supported on jax backend",
@@ -123,6 +129,12 @@ class AbstractCircularDistributionTest(unittest.TestCase):
                 rtol=1e-8,
             )
         )
+
+    def test_kld_numerical_rejects_non_circular_distribution(self):
+        dist = WrappedNormalDistribution(array(0.3), array(0.8))
+
+        with self.assertRaisesRegex(TypeError, "AbstractCircularDistribution"):
+            dist.kld_numerical(object())
 
     def test_shift_moves_density_forward(self):
         """A positive shift should move mass from x to x + shift_by."""

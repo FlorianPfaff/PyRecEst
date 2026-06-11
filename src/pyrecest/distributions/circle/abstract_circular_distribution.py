@@ -24,7 +24,8 @@ class AbstractCircularDistribution(AbstractHypertoroidalDistribution):
             : The computed CDF as a numpy array.
         """
         xs = atleast_1d(array(xs))
-        assert xs.ndim == 1, "xs must be a 1D array"
+        if xs.ndim != 1:
+            raise ValueError("xs must be a 1D array.")
 
         return array([self._cdf_numerical_single(x, starting_point) for x in xs])
 
@@ -52,10 +53,12 @@ class AbstractCircularDistribution(AbstractHypertoroidalDistribution):
         Returns:
             : The Kullback-Leibler divergence D_KL(self || other).
         """
-        assert isinstance(other, AbstractCircularDistribution)
-        assert (
-            self.dim == other.dim
-        ), "Cannot compare distributions with different number of dimensions."
+        if not isinstance(other, AbstractCircularDistribution):
+            raise TypeError("other must be an AbstractCircularDistribution.")
+        if self.dim != other.dim:
+            raise ValueError(
+                "Cannot compare distributions with different number of dimensions."
+            )
 
         def kld_fun(*args):
             x = array(args)

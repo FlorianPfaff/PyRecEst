@@ -64,6 +64,12 @@ class TestToroidalFourierDistributionConstructor(unittest.TestCase):
         with self.assertRaises(ValueError):
             ToroidalFourierDistribution(array(c), "identity")
 
+    def test_higher_dimensional_coefficients_raise(self):
+        c = zeros((3, 3, 3), dtype=complex)
+
+        with self.assertRaisesRegex(ValueError, "2-D coefficient matrix"):
+            ToroidalFourierDistribution(c, "identity")
+
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ == "jax",  # pylint: disable=no-member
         reason="Not supported on JAX backend",

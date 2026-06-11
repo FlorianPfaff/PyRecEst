@@ -48,6 +48,14 @@ class TestGeneralizedKSineSkewedVonMisesDistribution(unittest.TestCase):
         # This is more of a sanity check; a more comprehensive test would compare against a known result
         self.assertTrue(0 <= pdf_val <= 2, "PDF value out of expected range.")
 
+    def test_pdf_rejects_unsupported_k(self):
+        dist = GeneralizedKSineSkewedVonMisesDistribution(
+            mu=pi, kappa=1, lambda_=0.5, k=2, m=1
+        )
+
+        with self.assertRaisesRegex(NotImplementedError, "k=1"):
+            dist.pdf(array([0.0]))
+
     def test_shift(self):
         """Test the shift method modifies mu correctly."""
         dist = GeneralizedKSineSkewedVonMisesDistribution(
@@ -265,6 +273,14 @@ class TestGeneralizedKSineSkewedWrappedCauchyDistribution(unittest.TestCase):
             )
             xs = array([0.0, pi / 4, pi / 2, pi, 3 * pi / 2, 2 * pi - 0.01])
             assert all(dist.pdf(xs) >= 0), f"Negative PDF value for m={m}"
+
+    def test_pdf_rejects_unsupported_k(self):
+        dist = GeneralizedKSineSkewedWrappedCauchyDistribution(
+            mu=pi, gamma=0.5, lambda_=0.5, k=2, m=1
+        )
+
+        with self.assertRaisesRegex(NotImplementedError, "k=1"):
+            dist.pdf(array([0.0]))
 
     def test_shift(self):
         """Test the shift method modifies mu correctly."""

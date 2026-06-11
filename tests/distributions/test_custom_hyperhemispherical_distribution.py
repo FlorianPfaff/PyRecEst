@@ -27,6 +27,12 @@ class CustomHyperhemisphericalDistributionTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             dist.pdf([1.0, 0.0])
 
+    def test_pdf_rejects_matrix_callback_output(self):
+        dist = CustomHyperhemisphericalDistribution(lambda xs: ones((2, 2)), 2)
+
+        with self.assertRaisesRegex(ValueError, "Output format"):
+            dist.pdf([1.0, 0.0, 0.0])
+
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
         reason="Numerical integration is only supported for the NumPy backend",

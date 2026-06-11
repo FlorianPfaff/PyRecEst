@@ -168,7 +168,8 @@ class GaussVonMisesDistribution(AbstractHypercylindricalDistribution):
         if single_point:
             xa = xa.reshape(-1, 1)
 
-        assert xa.shape[0] == self.lin_dim + 1
+        if xa.shape[0] != self.lin_dim + 1:
+            raise ValueError("xs must have lin_dim + 1 rows/elements")
 
         theta = self.get_theta(xa[1:, :])
         mvn_vals = GaussianDistribution(self.mu, self.P, check_validity=False).pdf(

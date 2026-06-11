@@ -6,7 +6,7 @@ from math import prod
 from beartype import beartype
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
-from pyrecest.backend import abs, any, mean
+from pyrecest.backend import abs, allclose, any, mean
 
 from .abstract_distribution_type import AbstractDistributionType
 
@@ -22,18 +22,22 @@ class AbstractGridDistribution(AbstractDistributionType):
         dim=None,
         enforce_pdf_nonnegative: bool = True,
     ):
-        assert (
-            not grid_type == "custom" or grid is not None
-        )  # if grid_type is custom, grid needs to be given
-        assert (
+        if grid_type == "custom" and grid is None:
+            raise ValueError("Custom grids require grid coordinates.")
+        if grid is not None and grid.shape != ():
             # Use builtin prod because .shape is a tuple of ints
-            grid is None
-            or grid.shape == ()
-            or grid.shape[0] == prod(grid_values.shape)
-        )
-        assert (
-            grid is None or grid.shape == () or grid.ndim == 1 or grid.shape[1] == dim
-        )
+            expected_grid_points = prod(grid_values.shape)
+            if grid.shape[0] != expected_grid_points:
+                raise ValueError(
+                    "The number of grid coordinates must match the number of "
+                    f"grid values. Expected {expected_grid_points}, got "
+                    f"{grid.shape[0]}."
+                )
+            if grid.ndim != 1 and grid.shape[1] != dim:
+                raise ValueError(
+                    f"Grid coordinates must have dimension {dim}, got "
+                    f"{grid.shape[1]}."
+                )
         if grid is None or grid.ndim > 1 and grid.shape[0] < grid.shape[1]:
             warnings.warn(
                 "Warning: Dimension is higher than number of grid points. Verify that this is really intended."
@@ -67,9 +71,10 @@ class AbstractGridDistribution(AbstractDistributionType):
         pass
 
     def integrate(self, integration_boundaries=None):
-        assert (
-            integration_boundaries is None
-        ), "Custom integration boundaries are currently not supported"
+        if integration_boundaries is not None:
+            raise NotImplementedError(
+                "Custom integration boundaries are currently not supported."
+            )
         return self.get_manifold_size() * mean(self.grid_values)
 
     def normalize_in_place(self, tol=1e-4, warn_unnorm=True):
@@ -105,7 +110,22 @@ class AbstractGridDistribution(AbstractDistributionType):
         return self.grid[indices, :]
 
     def multiply(self, other):
-        assert self.enforce_pdf_nonnegative == other.enforce_pdf_nonnegative
+        if not isinstance(other, AbstractGridDistribution):
+            raise TypeError("other must be an AbstractGridDistribution.")
+        if self.enforce_pdf_nonnegative != other.enforce_pdf_nonnegative:
+            raise ValueError(
+                "Both grid distributions must agree on enforce_pdf_nonnegative."
+            )
+        if self.grid_values.shape != other.grid_values.shape:
+            raise ValueError("Grid value shapes must match before multiplication.")
+        if self.grid_type != other.grid_type:
+            raise ValueError("Grid types must match before multiplication.")
+        if (self.grid is None) != (other.grid is None):
+            raise ValueError(
+                "Both grid distributions must either store grids or omit them."
+            )
+        if self.grid is not None and not allclose(self.grid, other.grid):
+            raise ValueError("Grid coordinates must match before multiplication.")
         gd = copy.deepcopy(self)
         gd.grid_values = gd.grid_values * other.grid_values
         gd = gd.normalize(warn_unnorm=False)

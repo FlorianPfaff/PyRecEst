@@ -46,7 +46,7 @@ class TestCircularMixture(unittest.TestCase):
         npt.assert_allclose(actual, expected)
 
     def test_pdf_rejects_row_vector(self):
-        with self.assertRaises(AssertionError):
+        with self.assertRaisesRegex(ValueError, "Dimension mismatch"):
             self.mixture.pdf(array([[0.0, 0.5, 1.0]]))
 
     def test_sample_returns_vector_of_angles(self):

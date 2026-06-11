@@ -100,6 +100,75 @@ class TestCircularFourierDistribution(unittest.TestCase):
         npt.assert_allclose(fd.pdf(0.5), fd.pdf(array([0.5])))
         npt.assert_allclose(fd.pdf([0.5, 1.0]), fd.pdf(array([0.5, 1.0])))
 
+    def test_constructor_rejects_invalid_coefficient_sets(self):
+        with self.assertRaisesRegex(ValueError, "a and b"):
+            CircularFourierDistribution(
+                a=array([1.0]),
+                transformation="identity",
+            )
+
+        with self.assertRaisesRegex(ValueError, "either c or"):
+            CircularFourierDistribution(
+                a=array([1.0]),
+                b=array([]),
+                c=array([1.0]),
+                transformation="identity",
+            )
+
+        with self.assertRaisesRegex(ValueError, "c must be one-dimensional"):
+            CircularFourierDistribution(
+                c=array([[1.0]]),
+                n=1,
+                transformation="identity",
+            )
+
+        with self.assertRaisesRegex(ValueError, "a must be one-dimensional"):
+            CircularFourierDistribution(
+                a=array([[1.0]]),
+                b=array([]),
+                transformation="identity",
+            )
+
+        with self.assertRaisesRegex(ValueError, "b must be one-dimensional"):
+            CircularFourierDistribution(
+                a=array([1.0]),
+                b=array([[0.0]]),
+                transformation="identity",
+            )
+
+        with self.assertRaisesRegex(ValueError, "one more coefficient"):
+            CircularFourierDistribution(
+                a=array([1.0, 2.0, 3.0]),
+                b=array([]),
+                transformation="identity",
+            )
+
+        with self.assertRaisesRegex(ValueError, "len\\(a\\) \\+ len\\(b\\)"):
+            CircularFourierDistribution(
+                a=array([1.0, 2.0]),
+                b=array([0.0]),
+                n=5,
+                transformation="identity",
+            )
+
+        with self.assertRaisesRegex(ValueError, "coefficients for n=5"):
+            CircularFourierDistribution(
+                c=array([1.0, 0.0]),
+                n=5,
+                transformation="identity",
+            )
+
+    def test_pdf_rejects_more_than_two_dimensions(self):
+        fd = CircularFourierDistribution(
+            c=array([1.0]),
+            n=1,
+            transformation="identity",
+            multiplied_by_n=False,
+        )
+
+        with self.assertRaisesRegex(ValueError, "at most 2 dimensions"):
+            fd.pdf(array([[[0.0]]]))
+
     def test_even_number_of_grid_values_is_rejected(self):
         dist = VonMisesDistribution(2.5, 1.5)
 
@@ -153,6 +222,88 @@ class TestCircularFourierDistribution(unittest.TestCase):
         npt.assert_allclose(a_round_trip, a)
         npt.assert_allclose(b_round_trip, b)
         npt.assert_allclose(fd_complex.pdf(xs), fd_real.pdf(xs))
+
+    def test_subtraction_rejects_incompatible_distributions(self):
+        fd_real = CircularFourierDistribution(
+            a=array([1.0, 0.0]),
+            b=array([0.0]),
+            n=3,
+            transformation="identity",
+            multiplied_by_n=False,
+        )
+        fd_complex = CircularFourierDistribution(
+            c=fd_real.get_c(),
+            n=3,
+            transformation="identity",
+            multiplied_by_n=False,
+        )
+        fd_sqrt = CircularFourierDistribution(
+            a=array([1.0, 0.0]),
+            b=array([0.0]),
+            n=3,
+            transformation="sqrt",
+            multiplied_by_n=False,
+        )
+        fd_n5 = CircularFourierDistribution(
+            a=array([1.0, 0.0, 0.0]),
+            b=array([0.0, 0.0]),
+            n=5,
+            transformation="identity",
+            multiplied_by_n=False,
+        )
+        fd_scaled = CircularFourierDistribution(
+            a=array([1.0, 0.0]),
+            b=array([0.0]),
+            n=3,
+            transformation="identity",
+            multiplied_by_n=True,
+        )
+
+        with self.assertRaisesRegex(ValueError, "Either both"):
+            fd_real - fd_complex
+
+        with self.assertRaisesRegex(ValueError, "same transformation"):
+            fd_real - fd_sqrt
+
+        with self.assertRaisesRegex(ValueError, "same n"):
+            fd_real - fd_n5
+
+        with self.assertRaisesRegex(ValueError, "multiplied_by_n"):
+            fd_real - fd_scaled
+
+    def test_integrate_rejects_partial_boundaries(self):
+        fd = CircularFourierDistribution(
+            c=array([1.0]),
+            n=1,
+            transformation="identity",
+            multiplied_by_n=False,
+        )
+
+        with self.assertRaisesRegex(NotImplementedError, "entire domain"):
+            fd.integrate((0.0, 1.0))
+
+    def test_getters_reject_inconsistent_storage(self):
+        fd_real = CircularFourierDistribution(
+            a=array([1.0, 0.0]),
+            b=array([0.0]),
+            n=3,
+            transformation="identity",
+            multiplied_by_n=False,
+        )
+
+        with self.assertRaisesRegex(ValueError, "only available when c is set"):
+            fd_real.get_full_c()
+
+        fd_complex = CircularFourierDistribution(
+            c=array([1.0, 0.0, 0.0]),
+            n=5,
+            transformation="identity",
+            multiplied_by_n=False,
+        )
+        fd_complex.n = 7
+
+        with self.assertRaisesRegex(ValueError, "does not match n"):
+            fd_complex.get_a_b()
 
     @parameterized.expand(
         [

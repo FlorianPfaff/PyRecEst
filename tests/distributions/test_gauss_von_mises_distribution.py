@@ -67,6 +67,10 @@ class GaussVonMisesDistributionTest(unittest.TestCase):
             )
         )
 
+    def test_pdf_rejects_wrong_point_dimension(self):
+        with self.assertRaisesRegex(ValueError, "lin_dim"):
+            self.g.pdf(array([0.0, 1.0, 2.0]))
+
     def test_integral(self):
         self.assertAlmostEqual(self.g.integrate(), 1, delta=1e-5)
 

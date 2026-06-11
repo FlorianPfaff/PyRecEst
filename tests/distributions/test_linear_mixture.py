@@ -32,6 +32,17 @@ class LinearMixtureTest(unittest.TestCase):
                 str(w[-1].message),
             )
 
+    def test_constructor_rejects_invalid_distribution_list(self):
+        invalid_cases = (
+            ([], array([]), "at least one"),
+            ([object()], array([1.0]), "linear distributions"),
+        )
+
+        for dists, weights, message in invalid_cases:
+            with self.subTest(message=message):
+                with self.assertRaisesRegex(ValueError, message):
+                    LinearMixture(dists, weights)
+
     def test_prunes_zero_weight_components(self):
         gm1 = GaussianDistribution(array([1.0]), array([[1.0]]))
         gm2 = GaussianDistribution(array([50.0]), array([[1.0]]))
@@ -82,6 +93,14 @@ class LinearMixtureTest(unittest.TestCase):
         expected = 0.3 * gm1.pdf(xs) + 0.7 * gm2.pdf(xs)
         npt.assert_allclose(lm.pdf(xs), expected, atol=1e-20)
         npt.assert_allclose(lm.pdf(reshape(xs, (-1, 1))), expected, atol=1e-20)
+
+    def test_pdf_rejects_wrong_point_dimension(self):
+        gm1 = GaussianDistribution(array([0.0, 0.0]), diag(array([1.0, 1.0])))
+        gm2 = GaussianDistribution(array([1.0, 1.0]), diag(array([1.0, 1.0])))
+        gmix = GaussianMixture([gm1, gm2], array([0.25, 0.75]))
+
+        with self.assertRaisesRegex(ValueError, "Dimension mismatch"):
+            gmix.pdf(array([1.0, 2.0, 3.0, 4.0]))
 
     def test_gaussian_mixture_pdf_accepts_vectorized_one_dimensional_inputs(self):
         gm1 = GaussianDistribution(array([1.0]), array([[2.0]]))

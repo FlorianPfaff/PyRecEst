@@ -63,6 +63,11 @@ def _validate_positive_sample_count(n) -> int:
     return count_int
 
 
+def _require_numpy_backend() -> None:
+    if backend_name != "numpy":
+        raise NotImplementedError("Only supported for numpy backend.")
+
+
 class HypercylindricalStateSpaceSubdivisionDistribution(
     StateSpaceSubdivisionDistribution, AbstractHypercylindricalDistribution
 ):
@@ -106,7 +111,7 @@ class HypercylindricalStateSpaceSubdivisionDistribution(
         -------
         p : array, shape (n_samples,)
         """
-        assert backend_name == "numpy", "Only supported for numpy backend"
+        _require_numpy_backend()
         xs = atleast_2d(asarray(xs))
         n_eval = xs.shape[0]
         x_bound = xs[:, : self.bound_dim]  # (n_eval, bound_dim)
@@ -152,7 +157,7 @@ class HypercylindricalStateSpaceSubdivisionDistribution(
         -------
         m : array, shape (bound_dim + lin_dim,)
         """
-        assert backend_name == "numpy", "Only supported for numpy backend"
+        _require_numpy_backend()
         n = self.gd.n_grid_points
         pdf_at_grid_points = zeros(n)
         lin_modes = zeros((n, self.lin_dim))
@@ -183,7 +188,7 @@ class HypercylindricalStateSpaceSubdivisionDistribution(
         -------
         s : array, shape (n, bound_dim + lin_dim)
         """
-        assert backend_name == "numpy", "Only supported for numpy backend"
+        _require_numpy_backend()
         n = _validate_positive_sample_count(n)
         # Sample indices from the grid distribution weighted by grid_values
         weights = reshape(self.gd.grid_values, (-1,))
@@ -266,8 +271,10 @@ class HypercylindricalStateSpaceSubdivisionDistribution(
         -------
         HypercylindricalStateSpaceSubdivisionDistribution
         """
-        assert dim_lin == 1, "Currently, linear dimension must be 1."
-        assert dim_bound == 1, "Currently, bounded dimension must be 1."
+        if dim_lin != 1:
+            raise NotImplementedError("Currently, linear dimension must be 1.")
+        if dim_bound != 1:
+            raise NotImplementedError("Currently, bounded dimension must be 1.")
 
         # Generate equidistant grid on the circle: shape (no_of_grid_points, 1)
         grid = HypertoroidalGridDistribution.generate_cartesian_product_grid(

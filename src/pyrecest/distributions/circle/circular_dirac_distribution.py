@@ -19,7 +19,8 @@ class CircularDiracDistribution(
             d, w, dim=1
         )  # Necessary so it is clear that the dimension is 1.
         self.d = reshape(self.d, (-1,))
-        assert self.d.shape == self.w.shape, "The shapes of d and w should match."
+        if self.d.shape != self.w.shape:
+            raise ValueError("The shapes of d and w should match.")
 
     def plot_interpolated(self, _):
         """

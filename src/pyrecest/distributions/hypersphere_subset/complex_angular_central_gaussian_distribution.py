@@ -12,6 +12,7 @@ from pyrecest.backend import (
     exp,
     eye,
     gammaln,
+    isfinite,
     linalg,
     log,
     pi,
@@ -74,11 +75,14 @@ class ComplexAngularCentralGaussianDistribution:
             Hermitian positive definite parameter matrix.
         """
         C = array(C)
-        assert C.ndim == 2 and C.shape[0] == C.shape[1], "C must be a square matrix"
-        assert _to_python_bool(allclose(C, conj(transpose(C)))), "C must be Hermitian"
-        assert _to_python_bool(
-            backend_all(linalg.eigvalsh(C) > 0.0)
-        ), "C must be positive definite"
+        if C.ndim != 2 or C.shape[0] != C.shape[1]:
+            raise ValueError("C must be a square matrix")
+        if not _to_python_bool(backend_all(isfinite(C))):
+            raise ValueError("C must contain only finite values")
+        if not _to_python_bool(allclose(C, conj(transpose(C)))):
+            raise ValueError("C must be Hermitian")
+        if not _to_python_bool(backend_all(linalg.eigvalsh(C) > 0.0)):
+            raise ValueError("C must be positive definite")
         self.C = C
         self.dim = C.shape[0]
 
@@ -95,6 +99,11 @@ class ComplexAngularCentralGaussianDistribution:
         p : array-like of shape (n,) or scalar
             PDF values at each row of za.
         """
+        za = array(za)
+        if za.ndim == 0 or za.shape[-1] != self.dim:
+            raise ValueError(
+                f"za must have trailing dimension {self.dim}, got {za.shape}."
+            )
         single = za.ndim == 1
         if single:
             za = za.reshape(1, -1)

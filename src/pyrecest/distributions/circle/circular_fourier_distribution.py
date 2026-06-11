@@ -64,10 +64,13 @@ class CircularFourierDistribution(AbstractCircularDistribution):
         multiplied_by_n: bool = True,
     ):
         AbstractCircularDistribution.__init__(self)
-        assert (a is None) == (b is None)
-        assert (a is None) != (c is None)
+        if (a is None) != (b is None):
+            raise ValueError("a and b must either both be provided or both be None.")
+        if (a is None) == (c is None):
+            raise ValueError("Provide either c or the pair a and b, but not both.")
         if c is not None:  # Assumed as result from rfft
-            assert c.ndim == 1
+            if c.ndim != 1:
+                raise ValueError(f"c must be one-dimensional, got shape {c.shape}.")
             self.c = c
             self.a = None
             self.b = None
@@ -79,15 +82,29 @@ class CircularFourierDistribution(AbstractCircularDistribution):
             else:
                 self.n = int(n)
             _ensure_odd_n(self.n)
+            expected_coefficients = self.n // 2 + 1
+            if c.shape[0] != expected_coefficients:
+                raise ValueError(
+                    f"c must contain {expected_coefficients} coefficients for "
+                    f"n={self.n}, got {c.shape[0]}."
+                )
         elif a is not None and b is not None:
-            assert a.ndim == 1
-            assert b.ndim == 1
+            if a.ndim != 1:
+                raise ValueError(f"a must be one-dimensional, got shape {a.shape}.")
+            if b.ndim != 1:
+                raise ValueError(f"b must be one-dimensional, got shape {b.shape}.")
             self.a = a
             self.b = b
             self.c = None
             self.n = a.shape[0] + b.shape[0]
-            assert self.n == n or n is None
+            if n is not None and self.n != int(n):
+                raise ValueError(
+                    f"n must match len(a) + len(b), got n={n} and "
+                    f"len(a) + len(b)={self.n}."
+                )
             _ensure_odd_n(self.n)
+            if a.shape[0] != b.shape[0] + 1:
+                raise ValueError("a must contain exactly one more coefficient than b.")
         else:
             raise ValueError("Need to provide either c or a and b.")
 
@@ -98,16 +115,26 @@ class CircularFourierDistribution(AbstractCircularDistribution):
         self, other: "CircularFourierDistribution"
     ) -> "CircularFourierDistribution":
         # If transformed will not yield minus of pdfs!
-        assert (
-            (self.a is not None and other.a is not None)
-            and (self.b is not None and other.b is not None)
-        ) or (
-            self.c is not None and other.c is not None
-        ), "Either both instances should have `a` and `b` defined, or both should have `c` defined."
+        if not (
+            (
+                (self.a is not None and other.a is not None)
+                and (self.b is not None and other.b is not None)
+            )
+            or (self.c is not None and other.c is not None)
+        ):
+            raise ValueError(
+                "Either both instances should have a and b defined, or both "
+                "should have c defined."
+            )
 
-        assert self.transformation == other.transformation
-        assert self.n == other.n
-        assert self.multiplied_by_n == other.multiplied_by_n
+        if self.transformation != other.transformation:
+            raise ValueError("Both distributions must use the same transformation.")
+        if self.n != other.n:
+            raise ValueError("Both distributions must have the same n.")
+        if self.multiplied_by_n != other.multiplied_by_n:
+            raise ValueError(
+                "Both distributions must agree on multiplied_by_n before subtracting."
+            )
         if self.a is not None and self.b is not None:
             aNew = self.a - other.a
             bNew = self.b - other.b
@@ -129,7 +156,8 @@ class CircularFourierDistribution(AbstractCircularDistribution):
 
     def pdf(self, xs):
         xs = array(xs)
-        assert xs.ndim <= 2, "xs should have at most 2 dimensions."
+        if xs.ndim > 2:
+            raise ValueError(f"xs should have at most 2 dimensions, got {xs.ndim}.")
         xs = xs.reshape(-1, 1)
         a, b = self.get_a_b()
 
@@ -193,9 +221,8 @@ class CircularFourierDistribution(AbstractCircularDistribution):
 
     # pylint: disable=too-many-branches
     def integrate(self, integration_boundaries=None) -> float:
-        assert (
-            integration_boundaries is None
-        ), "Currently, only supported for entire domain."
+        if integration_boundaries is not None:
+            raise NotImplementedError("Currently, only supported for entire domain.")
         if self.a is not None and self.b is not None:
             a: array = self.a
             b: array = self.b
@@ -276,9 +303,10 @@ class CircularFourierDistribution(AbstractCircularDistribution):
             b = -2.0 * imag(self.c[1:])
         else:
             raise ValueError("Need either a and b or c.")
-        assert (
-            self.n is None or (a.shape[0] + b.shape[0]) == self.n
-        )  # Other case not implemented yet!
+        if self.n is not None and (a.shape[0] + b.shape[0]) != self.n:
+            raise ValueError(
+                "The number of real Fourier coefficients does not match n."
+            )
         return a, b
 
     def get_c(self):
@@ -309,7 +337,10 @@ class CircularFourierDistribution(AbstractCircularDistribution):
         return fd
 
     def get_full_c(self):
-        assert self.c is not None
+        if self.c is None:
+            raise ValueError(
+                "Full complex coefficients are only available when c is set."
+            )
         neg_c = conj(self.c[-1:0:-1])  # Create array for negative-frequency components
         full_c = concatenate([neg_c, self.c])  # Concatenate arrays to get full spectrum
         return full_c

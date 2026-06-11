@@ -133,6 +133,20 @@ class TestCustomHyperrectangularDistribution(unittest.TestCase):
 
         self.assertAlmostEqual(float(normalized.integrate()), 1.0, places=10)
 
+    def test_normalize_rejects_non_numpy_backend(self):
+        dist = CustomHyperrectangularDistribution(
+            lambda xs: 2.0 * ones(xs.shape[0]), self.bounds
+        )
+        original_backend_name = backend.__backend_name__  # pylint: disable=no-member
+        backend.__backend_name__ = "jax"  # pylint: disable=no-member
+        try:
+            with self.assertRaisesRegex(NotImplementedError, "numpy backend"):
+                dist.normalize()
+        finally:
+            backend.__backend_name__ = (
+                original_backend_name  # pylint: disable=no-member
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -63,9 +63,8 @@ class AbstractCustomDistribution(AbstractDistributionType):
         :param verify: Whether to verify if the density is properly normalized, default is None.
         :returns: A copy of the original distribution, with the PDF normalized.
         """
-        assert (
-            pyrecest.backend.__backend_name__ == "numpy"
-        ), "Only supported for numpy backend"
+        if pyrecest.backend.__backend_name__ != "numpy":
+            raise NotImplementedError("Only supported for numpy backend.")
         cd = copy.deepcopy(self)
 
         integral = self.integrate()

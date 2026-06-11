@@ -57,6 +57,18 @@ class CustomLinearDistributionTest(unittest.TestCase):
 
         npt.assert_allclose(list_pdf, array_pdf)
 
+    def test_pdf_rejects_wrong_input_shape(self):
+        cld = CustomLinearDistribution(lambda xs: xs[:, 0], 2)
+
+        with self.assertRaisesRegex(ValueError, "last dimension 2"):
+            cld.pdf(array([1.0, 2.0, 3.0, 4.0]))
+
+    def test_pdf_rejects_multidimensional_custom_output(self):
+        cld = CustomLinearDistribution(lambda xs: array([[1.0]]), 1)
+
+        with self.assertRaisesRegex(ValueError, "at most 1-D"):
+            cld.pdf(array([0.0]))
+
     def test_constructor_rejects_wrong_shift_shape(self):
         with self.assertRaisesRegex(ValueError, "shift_by"):
             CustomLinearDistribution(lambda xs: xs[:, 0], 2, shift_by=[0.2])

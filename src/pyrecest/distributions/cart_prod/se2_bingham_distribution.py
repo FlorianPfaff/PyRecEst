@@ -10,6 +10,7 @@ from pyrecest.backend import (
     concatenate,
     diag,
     exp,
+    isfinite,
     linalg,
     ones,
     pi,
@@ -46,6 +47,19 @@ def _validate_positive_sample_count(n) -> int:
     if count_int <= 0:
         raise ValueError("n must be positive")
     return count_int
+
+
+def _to_python_bool(value) -> bool:
+    if isinstance(value, bool):
+        return value
+    if hasattr(value, "item"):
+        return bool(value.item())
+    return bool(value)
+
+
+def _validate_finite_matrix(matrix, name: str):
+    if not _to_python_bool(all(isfinite(matrix))):
+        raise ValueError(f"{name} must contain only finite values")
 
 
 class SE2BinghamDistribution(AbstractSE2Distribution):
@@ -90,14 +104,16 @@ class SE2BinghamDistribution(AbstractSE2Distribution):
         """
         AbstractSE2Distribution.__init__(self)
 
-        assert (C2 is None) == (
-            C3 is None
-        ), "Either both C2 and C3 must be provided, or neither."
+        if (C2 is None) != (C3 is None):
+            raise ValueError("Either both C2 and C3 must be provided, or neither.")
 
         C = array(C, dtype=float)
         if C2 is None:
-            assert C.shape == (4, 4), "C must be 4x4 when C2 and C3 are not provided."
-            assert allclose(C, C.T, atol=1e-6), "Full C matrix must be symmetric."
+            if C.shape != (4, 4):
+                raise ValueError("C must be 4x4 when C2 and C3 are not provided.")
+            _validate_finite_matrix(C, "C")
+            if not _to_python_bool(allclose(C, C.T, atol=1e-6)):
+                raise ValueError("Full C matrix must be symmetric.")
             self.C = C
             self.C1 = C[:2, :2]
             self.C2 = C[2:, :2]
@@ -105,11 +121,19 @@ class SE2BinghamDistribution(AbstractSE2Distribution):
         else:
             C2 = array(C2, dtype=float)
             C3 = array(C3, dtype=float)
-            assert C.shape == (2, 2), "C1 must be 2x2."
-            assert C2.shape == (2, 2), "C2 must be 2x2."
-            assert C3.shape == (2, 2), "C3 must be 2x2."
-            assert allclose(C, C.T, atol=1e-6), "C1 must be symmetric."
-            assert allclose(C3, C3.T, atol=1e-6), "C3 must be symmetric."
+            if C.shape != (2, 2):
+                raise ValueError("C1 must be 2x2.")
+            if C2.shape != (2, 2):
+                raise ValueError("C2 must be 2x2.")
+            if C3.shape != (2, 2):
+                raise ValueError("C3 must be 2x2.")
+            _validate_finite_matrix(C, "C1")
+            _validate_finite_matrix(C2, "C2")
+            _validate_finite_matrix(C3, "C3")
+            if not _to_python_bool(allclose(C, C.T, atol=1e-6)):
+                raise ValueError("C1 must be symmetric.")
+            if not _to_python_bool(allclose(C3, C3.T, atol=1e-6)):
+                raise ValueError("C3 must be symmetric.")
             self.C1 = C
             self.C2 = C2
             self.C3 = C3
@@ -120,7 +144,8 @@ class SE2BinghamDistribution(AbstractSE2Distribution):
                 ]
             ).T
 
-        assert all(linalg.eigvalsh(self.C3) <= 0), "C3 must be negative semi-definite."
+        if not _to_python_bool(all(linalg.eigvalsh(self.C3) <= 0)):
+            raise ValueError("C3 must be negative semi-definite.")
 
         self._nc = None  # lazily computed
 
@@ -171,9 +196,12 @@ class SE2BinghamDistribution(AbstractSE2Distribution):
         xs = array(xs)
         if xs.ndim == 1:
             xs = xs.reshape(1, -1)
+        if xs.ndim != 2:
+            raise ValueError("xs must be a two-dimensional array or a single point.")
         if xs.shape[1] == 3:
             xs = AbstractSE2Distribution.angle_pos_to_dual_quaternion(xs)
-        assert xs.shape[1] == 4, "Input must have 4 columns (dual quaternion)."
+        if xs.shape[1] != 4:
+            raise ValueError("Input must have 4 columns (dual quaternion).")
         return (1.0 / self.nc) * exp(sum(xs * (xs @ self.C.T), axis=1))
 
     def mode(self):
@@ -317,15 +345,29 @@ class SE2BinghamDistribution(AbstractSE2Distribution):
             Fitted distribution.
         """
         samples = array(samples, dtype=float)
+        if samples.ndim != 2:
+            raise ValueError("samples must be a two-dimensional array")
         if samples.shape[1] == 3:
             samples = AbstractSE2Distribution.angle_pos_to_dual_quaternion(samples)
-        assert samples.shape[1] == 4
+        if samples.shape[1] != 4:
+            raise ValueError("samples must have 3 or 4 columns")
+        _validate_finite_matrix(samples, "samples")
 
         n = samples.shape[0]
         if weights is None:
             weights = ones(n) / n
         else:
             weights = array(weights, dtype=float)
+            if weights.ndim != 1:
+                raise ValueError("weights must be a one-dimensional array")
+            if weights.shape[0] != n:
+                raise ValueError("weights must have one entry per sample")
+            if not _to_python_bool(all(isfinite(weights))):
+                raise ValueError("weights must contain only finite values")
+            if not _to_python_bool(all(weights >= 0.0)):
+                raise ValueError("weights must be nonnegative")
+            if not _to_python_bool(sum(weights) > 0.0):
+                raise ValueError("weights must have positive total mass")
             weights = weights / sum(weights)
 
         w = weights.reshape(-1, 1)

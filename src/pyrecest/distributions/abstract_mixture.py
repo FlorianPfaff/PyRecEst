@@ -161,7 +161,8 @@ class AbstractMixture(AbstractDistributionType):
             # and avoids rejecting natural inputs such as xs.shape == (n,).
             p = zeros(xs.shape)
         else:
-            assert xs.shape[-1] == self.input_dim, "Dimension mismatch"
+            if xs.ndim == 0 or xs.shape[-1] != self.input_dim:
+                raise ValueError("Dimension mismatch")
             p = zeros(1) if xs.ndim == 1 else zeros(xs.shape[0])
 
         for i, dist in enumerate(self.dists):

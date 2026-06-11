@@ -3,6 +3,7 @@ from math import pi
 
 import numpy as np
 import numpy.testing as npt
+import pyrecest.distributions.cart_prod.hypercylindrical_state_space_subdivision_distribution as hsssd_module
 from pyrecest.backend import __backend_name__ as backend_name
 from pyrecest.backend import all as backend_all
 from pyrecest.backend import (
@@ -46,6 +47,17 @@ class HypercylindricalStateSpaceSubdivisionDistributionTest(unittest.TestCase):
             self.fun, self.n, 1, 1
         )
         self.assertIsInstance(hcrbd, HypercylindricalStateSpaceSubdivisionDistribution)
+
+    def test_from_function_rejects_unsupported_dimensions(self):
+        with self.assertRaisesRegex(NotImplementedError, "linear dimension"):
+            HypercylindricalStateSpaceSubdivisionDistribution.from_function(
+                self.fun, self.n, 2, 1
+            )
+
+        with self.assertRaisesRegex(NotImplementedError, "bounded dimension"):
+            HypercylindricalStateSpaceSubdivisionDistribution.from_function(
+                self.fun, self.n, 1, 2
+            )
 
     def test_marginalize_linear(self):
         from pyrecest.distributions.hypertorus.hypertoroidal_grid_distribution import (
@@ -193,6 +205,37 @@ class HypercylindricalStateSpaceSubdivisionDistributionTest(unittest.TestCase):
             with self.subTest(n=n):
                 with self.assertRaises(ValueError):
                     hcrbd.sample(n)
+
+    def test_numpy_only_methods_reject_other_backends(self):
+        from pyrecest.distributions.circle.circular_uniform_distribution import (
+            CircularUniformDistribution,
+        )
+        from pyrecest.distributions.hypertorus.hypertoroidal_grid_distribution import (
+            HypertoroidalGridDistribution,
+        )
+
+        n_grid = 3
+        gd = HypertoroidalGridDistribution.from_distribution(
+            CircularUniformDistribution(), (n_grid,)
+        )
+        lin_dists = [
+            GaussianDistribution(array([0.0]), array([[1.0]])) for _ in range(n_grid)
+        ]
+        hcrbd = HypercylindricalStateSpaceSubdivisionDistribution(gd, lin_dists)
+
+        original_backend_name = hsssd_module.backend_name
+        hsssd_module.backend_name = "jax"
+        try:
+            with self.assertRaisesRegex(NotImplementedError, "numpy backend"):
+                hcrbd.pdf(array([[0.0, 0.0]]))
+
+            with self.assertRaisesRegex(NotImplementedError, "numpy backend"):
+                hcrbd.mode()
+
+            with self.assertRaisesRegex(NotImplementedError, "numpy backend"):
+                hcrbd.sample(1)
+        finally:
+            hsssd_module.backend_name = original_backend_name
 
     @unittest.skipIf(
         backend_name != "numpy",

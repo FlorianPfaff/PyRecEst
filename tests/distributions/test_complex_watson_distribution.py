@@ -40,12 +40,25 @@ class TestComplexWatsonDistribution(unittest.TestCase):
         self.assertEqual(cw.dim, 2)
 
     def test_constructor_rejects_unnormalized_mu(self):
-        with self.assertRaises(AssertionError):
+        with self.assertRaisesRegex(ValueError, "unit vector"):
             ComplexWatsonDistribution(array([1.0, 1.0], dtype=complex128), 1.0)
 
     def test_constructor_rejects_2d_mu(self):
-        with self.assertRaises(AssertionError):
+        with self.assertRaisesRegex(ValueError, "1-D"):
             ComplexWatsonDistribution(array([[1.0, 0.0]], dtype=complex128), 1.0)
+
+    def test_constructor_rejects_nonfinite_mu_or_kappa(self):
+        invalid_cases = [
+            (array([float("nan"), 0.0], dtype=complex128), 1.0, "finite"),
+            (self.mu2, float("nan"), "finite"),
+            (self.mu2, float("inf"), "finite"),
+            (self.mu2, [1.0, 2.0], "scalar"),
+        ]
+
+        for mu, kappa, message in invalid_cases:
+            with self.subTest(message=message):
+                with self.assertRaisesRegex(ValueError, message):
+                    ComplexWatsonDistribution(mu, kappa)
 
     # ------------------------------------------------------------------
     # mean
@@ -146,6 +159,14 @@ class TestComplexWatsonDistribution(unittest.TestCase):
         cw = ComplexWatsonDistribution(self.mu2, self.kappa2)
         p = cw.pdf(self.mu2)
         self.assertIsInstance(float(p), float)
+
+    def test_pdf_rejects_wrong_dimension(self):
+        cw = ComplexWatsonDistribution(self.mu2, self.kappa2)
+
+        for za in (1.0 + 0j, [1.0 + 0j], [[1.0 + 0j, 0.0 + 0j, 0.0 + 0j]]):
+            with self.subTest(za=za):
+                with self.assertRaisesRegex(ValueError, "trailing dimension"):
+                    cw.pdf(za)
 
     # ------------------------------------------------------------------
     # sample
@@ -253,6 +274,42 @@ class TestComplexWatsonDistribution(unittest.TestCase):
         w = ones(200)
         cw_fit = ComplexWatsonDistribution.fit(Z, weights=w)
         self.assertIsInstance(cw_fit, ComplexWatsonDistribution)
+
+    def test_estimate_parameters_rejects_invalid_inputs(self):
+        valid_Z = array([[1.0 + 0j, 0.0 + 0j], [0.0 + 0j, 1.0 + 0j]], dtype=complex128)
+        invalid_cases = [
+            ([1.0 + 0j, 0.0 + 0j], None, "two-dimensional"),
+            (array([[float("nan") + 0j, 0.0 + 0j]], dtype=complex128), None, "finite"),
+            (valid_Z, array([[1.0, 1.0]]), "1-D"),
+            (valid_Z, ones(3), "dimensions"),
+            (valid_Z, array([1.0, float("nan")]), "finite"),
+            (valid_Z, array([1.0, -1.0]), "nonnegative"),
+            (valid_Z, array([0.0, 0.0]), "positive total mass"),
+        ]
+
+        for Z, weights, message in invalid_cases:
+            with self.subTest(message=message):
+                with self.assertRaisesRegex(ValueError, message):
+                    ComplexWatsonDistribution.estimate_parameters(Z, weights=weights)
+
+    def test_estimate_parameters_rejects_rank_deficient_scatter(self):
+        Z = array([[1.0 + 0j, 0.0 + 0j], [1.0 + 0j, 0.0 + 0j]], dtype=complex128)
+
+        with self.assertRaisesRegex(ValueError, "positive"):
+            ComplexWatsonDistribution.estimate_parameters(Z)
+
+    def test_log_norm_rejects_invalid_inputs(self):
+        invalid_cases = [
+            (0, 1.0, "positive integer"),
+            (1.5, 1.0, "positive integer"),
+            (2, float("nan"), "finite"),
+            (2, [1.0, float("inf")], "finite"),
+        ]
+
+        for D, kappa, message in invalid_cases:
+            with self.subTest(D=D, kappa=kappa):
+                with self.assertRaisesRegex(ValueError, message):
+                    ComplexWatsonDistribution.log_norm(D, kappa)
 
 
 if __name__ == "__main__":

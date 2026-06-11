@@ -26,13 +26,20 @@ class StateSpaceSubdivisionDistribution:
             One distribution per grid point representing the conditional
             distribution of the linear state given that grid point.
         """
-        assert gd.n_grid_points == len(
-            linear_distributions
-        ), "Number of grid points in gd must match length of linear_distributions."
+        if gd.n_grid_points != len(linear_distributions):
+            raise ValueError(
+                "Number of grid points in gd must match length of "
+                "linear_distributions."
+            )
+        if not linear_distributions:
+            raise ValueError("linear_distributions must not be empty.")
+        first_dim = linear_distributions[0].dim
+        if any(ld.dim != first_dim for ld in linear_distributions):
+            raise ValueError("All linear_distributions must have the same dimension.")
         self.gd = copy.deepcopy(gd)
         self.linear_distributions = list(copy.deepcopy(linear_distributions))
         self.bound_dim = self.gd.dim
-        self.lin_dim = self.linear_distributions[0].dim
+        self.lin_dim = first_dim
 
     @property
     def bound_dim(self):
