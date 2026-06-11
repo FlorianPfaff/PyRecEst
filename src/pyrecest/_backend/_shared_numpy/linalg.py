@@ -110,12 +110,10 @@ def fractional_matrix_power(A, t):
 
 def polar(a, side="right"):
     """Polar decomposition of a square or rectangular matrix."""
-    signature = (
-        "(m,n)->(m,n),(m,m)" if side == "left" else "(m,n)->(m,n),(n,n)"
+    signature = "(m,n)->(m,n),(m,m)" if side == "left" else "(m,n)->(m,n),(n,n)"
+    return _np.vectorize(_scipy.linalg.polar, signature=signature, excluded=["side"])(
+        a, side=side
     )
-    return _np.vectorize(
-        _scipy.linalg.polar, signature=signature, excluded=["side"]
-    )(a, side=side)
 
 
 def solve(a, b):

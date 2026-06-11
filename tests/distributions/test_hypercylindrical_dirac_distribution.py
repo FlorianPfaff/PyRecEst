@@ -168,9 +168,7 @@ class TestHypercylindricalDiracDistribution(TestAbstractDiracDistribution):
         )
 
     def test_plot_rejects_unsupported_dimension(self):
-        dist = HypercylindricalDiracDistribution(
-            1, array([[0.1, 1.0, 2.0, 3.0]])
-        )
+        dist = HypercylindricalDiracDistribution(1, array([[0.1, 1.0, 2.0, 3.0]]))
 
         with self.assertRaisesRegex(ValueError, "Plotting"):
             dist.plot()

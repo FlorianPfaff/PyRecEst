@@ -121,7 +121,9 @@ class AbstractGridDistribution(AbstractDistributionType):
         if self.grid_type != other.grid_type:
             raise ValueError("Grid types must match before multiplication.")
         if (self.grid is None) != (other.grid is None):
-            raise ValueError("Both grid distributions must either store grids or omit them.")
+            raise ValueError(
+                "Both grid distributions must either store grids or omit them."
+            )
         if self.grid is not None and not allclose(self.grid, other.grid):
             raise ValueError("Grid coordinates must match before multiplication.")
         gd = copy.deepcopy(self)

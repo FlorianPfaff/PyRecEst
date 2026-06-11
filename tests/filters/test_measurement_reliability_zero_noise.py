@@ -1,12 +1,15 @@
 import numpy as np
-
-from pyrecest.filters.measurement_reliability import normalize_measurement_noise_covariances
+from pyrecest.filters.measurement_reliability import (
+    normalize_measurement_noise_covariances,
+)
 
 
 def _as_covariance_matrix(value, measurement_dim, name):
     covariance = np.asarray(value, dtype=float)
     if covariance.shape != (measurement_dim, measurement_dim):
-        raise ValueError(f"{name} must have shape ({measurement_dim}, {measurement_dim})")
+        raise ValueError(
+            f"{name} must have shape ({measurement_dim}, {measurement_dim})"
+        )
     return covariance
 
 

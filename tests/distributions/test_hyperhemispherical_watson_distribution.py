@@ -1,7 +1,6 @@
 import unittest
 
 import numpy.testing as npt
-
 from pyrecest.backend import array
 from pyrecest.distributions.hypersphere_subset.hyperhemispherical_watson_distribution import (
     HyperhemisphericalWatsonDistribution,

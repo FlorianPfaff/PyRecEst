@@ -3,7 +3,6 @@ import unittest
 from pyrecest.backend import array
 from pyrecest.distributions.abstract_grid_distribution import AbstractGridDistribution
 
-
 _DEFAULT_GRID = object()
 
 
@@ -62,9 +61,7 @@ class AbstractGridDistributionTest(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "enforce_pdf_nonnegative"):
             dist.multiply(
-                DummyGridDistribution(
-                    array([1.0, 1.0]), enforce_pdf_nonnegative=False
-                )
+                DummyGridDistribution(array([1.0, 1.0]), enforce_pdf_nonnegative=False)
             )
 
         with self.assertRaisesRegex(ValueError, "Grid value shapes"):
@@ -72,16 +69,12 @@ class AbstractGridDistributionTest(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "Grid types"):
             dist.multiply(
-                DummyGridDistribution(
-                    array([1.0, 1.0]), grid_type="cartesian_prod"
-                )
+                DummyGridDistribution(array([1.0, 1.0]), grid_type="cartesian_prod")
             )
 
         with self.assertRaisesRegex(ValueError, "Grid coordinates"):
             dist.multiply(
-                DummyGridDistribution(
-                    array([1.0, 1.0]), grid=array([[0.0], [2.0]])
-                )
+                DummyGridDistribution(array([1.0, 1.0]), grid=array([[0.0], [2.0]]))
             )
 
     def test_multiply_combines_compatible_values(self):
