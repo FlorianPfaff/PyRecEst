@@ -111,7 +111,7 @@ class AbstractLinearDistribution(AbstractManifoldSpecificDistribution):
                 )
             start_point = self.mean()
 
-        start_point = atleast_1d(start_point)
+        start_point = atleast_1d(array(start_point))
         if start_point.shape != (self.input_dim,):
             raise ValueError("Starting point must be a 1D array of correct dimension")
 
