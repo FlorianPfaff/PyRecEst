@@ -122,6 +122,7 @@ def normalize_measurement_noise_covariances(
         return zeros((0, measurement_dim, measurement_dim))
 
     noise = array(measurement_noise)
+    empty_shape = (0, measurement_dim, measurement_dim)
     if noise.ndim == 3:
         expected_shape = (n_measurements, measurement_dim, measurement_dim)
         if noise.shape != expected_shape:
@@ -130,6 +131,8 @@ def normalize_measurement_noise_covariances(
                 f"or ({n_measurements}, {measurement_dim}, {measurement_dim}) "
                 "for per-measurement covariances"
             )
+        if n_measurements == 0:
+            return zeros(empty_shape)
         return stack(
             [
                 as_covariance_matrix(
@@ -142,4 +145,6 @@ def normalize_measurement_noise_covariances(
         )
 
     shared_noise = as_covariance_matrix(noise, measurement_dim, name)
+    if n_measurements == 0:
+        return zeros(empty_shape)
     return stack([shared_noise for _ in range(n_measurements)])

@@ -124,7 +124,8 @@ class MardiaSuttonDistribution(AbstractHypercylindricalDistribution):
             p (...,): value of the pdf at each location
         """
         xs = atleast_2d(xs)
-        assert xs.shape[-1] == 2
+        if xs.shape[-1] != 2:
+            raise ValueError("xs must contain circular and linear coordinates.")
 
         circular = xs[..., 0]
         linear = xs[..., 1]

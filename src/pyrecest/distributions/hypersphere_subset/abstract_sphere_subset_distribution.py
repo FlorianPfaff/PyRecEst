@@ -47,7 +47,8 @@ class AbstractSphereSubsetDistribution(AbstractHypersphereSubsetDistribution):
           ``AbstractHypersphereSubsetDistribution.hypersph_to_cart`` and thus
           matches the integration convention used for S2.
         """
-        assert ndim(angles1) == 1 and ndim(angles2) == 1, "Inputs must be 1-dimensional"
+        if ndim(angles1) != 1 or ndim(angles2) != 1:
+            raise ValueError("Inputs must be 1-dimensional")
         if mode == "inclination":
             # This follows the legacy (azimuth, colatitude) S2 convention.
             x, y, z = AbstractSphereSubsetDistribution._sph_to_cart_inclination(
@@ -83,9 +84,8 @@ class AbstractSphereSubsetDistribution(AbstractHypersphereSubsetDistribution):
         Returns:
             tuple: Spherical coordinates.
         """
-        assert (
-            ndim(x) == 1 and ndim(y) == 1 and ndim(z) == 1
-        ), "Inputs must be 1-dimensional"
+        if ndim(x) != 1 or ndim(y) != 1 or ndim(z) != 1:
+            raise ValueError("Inputs must be 1-dimensional")
         if mode == "inclination":
             phi, theta = AbstractSphereSubsetDistribution._cart_to_sph_inclination(
                 x, y, z
@@ -111,9 +111,8 @@ class AbstractSphereSubsetDistribution(AbstractHypersphereSubsetDistribution):
     def _sph_to_cart_inclination(theta_inc, phi_az_right) -> tuple:
         # Conversion for the (r, θ_inc, φ_az,right) convention. Used by many textbooks.
         # Downside is that it does not generalize well to higher dimensions.
-        assert (
-            ndim(theta_inc) == 1 and ndim(phi_az_right) == 1
-        ), "Inputs must be 1-dimensional"
+        if ndim(theta_inc) != 1 or ndim(phi_az_right) != 1:
+            raise ValueError("Inputs must be 1-dimensional")
         x = sin(phi_az_right) * cos(theta_inc)
         y = sin(phi_az_right) * sin(theta_inc)
         z = cos(phi_az_right)
@@ -132,9 +131,8 @@ class AbstractSphereSubsetDistribution(AbstractHypersphereSubsetDistribution):
         Returns:
             tuple: Cartesian coordinates.
         """
-        assert (
-            ndim(azimuth) == 1 and ndim(elevation) == 1
-        ), "Inputs must be 1-dimensional"
+        if ndim(azimuth) != 1 or ndim(elevation) != 1:
+            raise ValueError("Inputs must be 1-dimensional")
         # elevation is π/2 - colatitude, so we calculate colatitude from elevation
         if map_to_inclination:
             inclination = pi / 2 - elevation
@@ -149,7 +147,8 @@ class AbstractSphereSubsetDistribution(AbstractHypersphereSubsetDistribution):
 
     @staticmethod
     def _cart_to_sph_inclination(x, y, z) -> tuple:
-        assert ndim(x) == 1 and ndim(y) == 1 and ndim(z) == 1
+        if ndim(x) != 1 or ndim(y) != 1 or ndim(z) != 1:
+            raise ValueError("Inputs must be 1-dimensional")
         azimuth = arctan2(y, x)
         azimuth = where(azimuth < 0, azimuth + 2 * pi, azimuth)
         colatitude = arccos(clip(z, -1.0, 1.0))
@@ -157,7 +156,8 @@ class AbstractSphereSubsetDistribution(AbstractHypersphereSubsetDistribution):
 
     @staticmethod
     def _cart_to_sph_elevation(x, y, z) -> tuple:
-        assert ndim(x) == 1 and ndim(y) == 1 and ndim(z) == 1
+        if ndim(x) != 1 or ndim(y) != 1 or ndim(z) != 1:
+            raise ValueError("Inputs must be 1-dimensional")
         azimuth = arctan2(y, x)
         azimuth = where(azimuth < 0, azimuth + 2 * pi, azimuth)
         elevation = pi / 2 - arccos(clip(z, -1.0, 1.0))

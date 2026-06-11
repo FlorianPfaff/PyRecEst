@@ -12,7 +12,11 @@ from .watson_distribution import WatsonDistribution
 
 class HyperhemisphericalWatsonDistribution(AbstractHyperhemisphericalDistribution):
     def __init__(self, mu, kappa):
-        assert mu[-1] >= 0
+        mu = array(mu)
+        if mu.ndim != 1:
+            raise ValueError("mu must be a 1-D vector")
+        if bool(mu[-1] < 0):
+            raise ValueError("mu must lie on the upper hyperhemisphere")
         self.dist_full_sphere = WatsonDistribution(mu, kappa)
         AbstractHyperhemisphericalDistribution.__init__(
             self, dim=self.dist_full_sphere.dim
@@ -22,7 +26,11 @@ class HyperhemisphericalWatsonDistribution(AbstractHyperhemisphericalDistributio
         return 2.0 * self.dist_full_sphere.pdf(xs)
 
     def set_mode(self, mu) -> "HyperhemisphericalWatsonDistribution":
-        assert mu.shape == self.mu.shape
+        mu = array(mu)
+        if mu.shape != self.mu.shape:
+            raise ValueError("mu must have the same shape as the current mode")
+        if bool(mu[-1] < 0):
+            raise ValueError("mu must lie on the upper hyperhemisphere")
         dist = copy.deepcopy(self)
         dist.mu = copy.deepcopy(mu)
         return dist
@@ -54,8 +62,9 @@ class HyperhemisphericalWatsonDistribution(AbstractHyperhemisphericalDistributio
 
     def shift(self, shift_by) -> "HyperhemisphericalWatsonDistribution":
         canonical_mu = concatenate((zeros(self.input_dim - 1), array([1.0])))
-        assert allclose(self.mu, canonical_mu), (
-            "There is no true shifting for the hyperhemisphere. This is a "
-            "function for compatibility and only works when mu is [0,0,...,1]."
-        )
+        if not bool(allclose(self.mu, canonical_mu)):
+            raise ValueError(
+                "There is no true shifting for the hyperhemisphere. This is a "
+                "function for compatibility and only works when mu is [0,0,...,1]."
+            )
         return self.set_mode(shift_by)

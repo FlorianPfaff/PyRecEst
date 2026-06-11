@@ -108,11 +108,12 @@ def fractional_matrix_power(A, t):
     return _np.stack([_scipy.linalg.fractional_matrix_power(A_, t) for A_ in A])
 
 
-def polar(*args, **kwargs):
-    """Polar decomposition of a matrix."""
-    return _np.vectorize(
-        _scipy.linalg.polar, signature="(n,n)->(n,n),(n,n)", excluded=["side"]
-    )(*args, **kwargs)
+def polar(a, side="right"):
+    """Polar decomposition of a square or rectangular matrix."""
+    signature = "(m,n)->(m,n),(m,m)" if side == "left" else "(m,n)->(m,n),(n,n)"
+    return _np.vectorize(_scipy.linalg.polar, signature=signature, excluded=["side"])(
+        a, side=side
+    )
 
 
 def solve(a, b):

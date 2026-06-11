@@ -50,9 +50,10 @@ def pareto_front_indices(
         objective remains and one comparable objective is strictly better.
     """
 
+    objective_names = _validate_objectives(objectives)
+    _require_table_columns(table, objective_names, "Pareto objective")
     if table.empty:
         return []
-    objective_names = _validate_objectives(objectives)
     direction_map = _directions_by_objective(objective_names, directions)
     candidates = (
         table.loc[_feasible_index(table, feasible_mask)]
@@ -235,6 +236,16 @@ def _validate_objectives(objectives: Sequence[str]) -> tuple[str, ...]:
     if len(set(names)) != len(names):
         raise ValueError("Pareto objectives must be unique.")
     return names
+
+
+def _require_table_columns(
+    table: pd.DataFrame,
+    columns: Sequence[str],
+    column_kind: str,
+) -> None:
+    missing = [column for column in columns if column not in table.columns]
+    if missing:
+        raise ValueError(f"{column_kind} columns are missing: {', '.join(missing)}.")
 
 
 def _directions_by_objective(

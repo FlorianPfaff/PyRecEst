@@ -49,7 +49,8 @@ class HypercylindricalDiracDistribution(
         return self.w @ S
 
     def plot(self, *args, **kwargs):
-        assert self.dim <= 3, "Plotting not supported for this dimension"
+        if self.dim > 3:
+            raise ValueError("Plotting not supported for this dimension")
         LinearDiracDistribution.plot(self, *args, **kwargs)
         if self.bound_dim >= 1:
             plt.xlim(0, 2 * pi)

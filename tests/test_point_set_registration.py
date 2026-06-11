@@ -1,4 +1,5 @@
 import unittest
+from unittest import mock
 
 import numpy.testing as npt
 import pyrecest.backend
@@ -51,6 +52,13 @@ class TestEstimateTransform(unittest.TestCase):
         npt.assert_allclose(estimated.matrix, true_rotation, atol=1e-10)
         npt.assert_allclose(estimated.offset, true_offset, atol=1e-10)
 
+    def test_estimate_transform_rejects_jax_backend_without_asserts(self):
+        source = array([[0.0, 0.0]])
+
+        with mock.patch.object(pyrecest.backend, "__backend_name__", "jax"):
+            with self.assertRaisesRegex(NotImplementedError, "JAX backend"):
+                estimate_transform(source, source, model="translation")
+
 
 class TestGatedAssignment(unittest.TestCase):
     @unittest.skipIf(
@@ -64,6 +72,13 @@ class TestGatedAssignment(unittest.TestCase):
 
 
 class TestJointRegistrationAssignment(unittest.TestCase):
+    def test_joint_registration_assignment_rejects_jax_backend_without_asserts(self):
+        points = array([[0.0, 0.0]])
+
+        with mock.patch.object(pyrecest.backend, "__backend_name__", "jax"):
+            with self.assertRaisesRegex(NotImplementedError, "JAX backend"):
+                joint_registration_assignment(points, points, model="translation")
+
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ == "jax",
         reason="Not supported on this backend",

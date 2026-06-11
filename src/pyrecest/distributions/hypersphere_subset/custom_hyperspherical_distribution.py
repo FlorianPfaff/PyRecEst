@@ -11,7 +11,8 @@ class CustomHypersphericalDistribution(
 
     @staticmethod
     def from_distribution(distribution):
-        assert isinstance(distribution, AbstractHypersphericalDistribution)
+        if not isinstance(distribution, AbstractHypersphericalDistribution):
+            raise ValueError("Input variable distribution is of the wrong class.")
 
         chd = CustomHypersphericalDistribution(distribution.pdf, distribution.dim)
         return chd

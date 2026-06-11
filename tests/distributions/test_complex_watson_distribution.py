@@ -276,9 +276,7 @@ class TestComplexWatsonDistribution(unittest.TestCase):
         self.assertIsInstance(cw_fit, ComplexWatsonDistribution)
 
     def test_estimate_parameters_rejects_invalid_inputs(self):
-        valid_Z = array(
-            [[1.0 + 0j, 0.0 + 0j], [0.0 + 0j, 1.0 + 0j]], dtype=complex128
-        )
+        valid_Z = array([[1.0 + 0j, 0.0 + 0j], [0.0 + 0j, 1.0 + 0j]], dtype=complex128)
         invalid_cases = [
             ([1.0 + 0j, 0.0 + 0j], None, "two-dimensional"),
             (array([[float("nan") + 0j, 0.0 + 0j]], dtype=complex128), None, "finite"),
