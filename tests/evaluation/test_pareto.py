@@ -58,10 +58,16 @@ def test_feasible_mask_treats_missing_nullable_values_as_infeasible() -> None:
     feasible_mask = pd.Series([True, pd.NA, True], dtype="boolean")
 
     indices = pareto_front_indices(
-        table, ["error", "runtime"], directions={"error": "min", "runtime": "min"}, feasible_mask=feasible_mask
+        table,
+        ["error", "runtime"],
+        directions={"error": "min", "runtime": "min"},
+        feasible_mask=feasible_mask,
     )
     mask = is_pareto_front(
-        table, ["error", "runtime"], directions={"error": "min", "runtime": "min"}, feasible_mask=feasible_mask
+        table,
+        ["error", "runtime"],
+        directions={"error": "min", "runtime": "min"},
+        feasible_mask=feasible_mask,
     )
 
     assert indices == [0, 2]

@@ -27,8 +27,6 @@ from torch import (  # The ones below are for pyrecest; For Riemannian score-bas
     dstack,
     empty,
     empty_like,
-)
-from torch import (  # The ones below are for pyrecest; For Riemannian score-based SDE
     erf,
     eye,
     flatten,
@@ -1310,7 +1308,9 @@ def array_from_sparse(indices, data, target_shape):
     if indices.numel() == 0:
         if data.numel() != 0:
             raise ValueError("data must be empty when indices are empty")
-        return _torch.zeros(_torch.Size(target_shape), dtype=data.dtype, device=data.device)
+        return _torch.zeros(
+            _torch.Size(target_shape), dtype=data.dtype, device=data.device
+        )
 
     return _torch.sparse_coo_tensor(
         indices.t(),

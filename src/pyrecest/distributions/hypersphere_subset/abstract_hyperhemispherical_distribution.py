@@ -181,9 +181,7 @@ class AbstractHyperhemisphericalDistribution(AbstractHypersphereSubsetDistributi
             )
 
         if self.dim != 2:
-            raise NotImplementedError(
-                "Currently only implemented for 2D hemispheres."
-            )
+            raise NotImplementedError("Currently only implemented for 2D hemispheres.")
 
         upper_bounds = self.__class__.get_full_integration_boundaries(self.dim)[:, 1]
         s0 = random.uniform(size=self.dim) * upper_bounds

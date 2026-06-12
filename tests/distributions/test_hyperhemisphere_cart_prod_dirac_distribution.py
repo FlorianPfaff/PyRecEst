@@ -1,7 +1,6 @@
 import unittest
 
 import numpy.testing as npt
-
 from pyrecest.backend import array
 from pyrecest.distributions.cart_prod.hyperhemisphere_cart_prod_dirac_distribution import (
     HyperhemisphereCartProdDiracDistribution,

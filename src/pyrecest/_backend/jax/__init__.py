@@ -576,9 +576,7 @@ def divide(a, b, ignore_div_zero=False):
         return _jnp.divide(a_arr, b_arr)
 
     nonzero_denominator = b_arr != 0
-    safe_denominator = _jnp.where(
-        nonzero_denominator, b_arr, _jnp.ones_like(b_arr)
-    )
+    safe_denominator = _jnp.where(nonzero_denominator, b_arr, _jnp.ones_like(b_arr))
     quotient = _jnp.divide(a_arr, safe_denominator)
     return _jnp.where(nonzero_denominator, quotient, _jnp.zeros_like(quotient))
 
