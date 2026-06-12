@@ -45,7 +45,9 @@ def test_pytorch_fftconvolve_same_crops_broadcast_non_convolved_axes():
     first = backend.asarray([[2.0]])
     second = backend.asarray([[1.0, 3.0, 5.0]])
 
-    actual = _as_numpy(backend.signal.fftconvolve(first, second, mode="same", axes=(0,)))
+    actual = _as_numpy(
+        backend.signal.fftconvolve(first, second, mode="same", axes=(0,))
+    )
     expected = scipy_fftconvolve(
         _as_numpy(first), _as_numpy(second), mode="same", axes=(0,)
     )
