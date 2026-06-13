@@ -8,8 +8,7 @@ from tests.support.backend_runner import run_backend_code
 @unittest.skipIf(importlib.util.find_spec("jax") is None, "JAX is not installed")
 class JaxChoiceProbabilityValidationTest(unittest.TestCase):
     def assert_choice_raises_value_error(self, call_source):
-        code = textwrap.dedent(
-            f"""
+        code = textwrap.dedent(f"""
             from pyrecest.backend import array, random
 
             try:
@@ -22,8 +21,7 @@ class JaxChoiceProbabilityValidationTest(unittest.TestCase):
                 ) from exc
             else:
                 raise AssertionError("expected ValueError")
-            """
-        )
+            """)
         result = run_backend_code("jax", code)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 

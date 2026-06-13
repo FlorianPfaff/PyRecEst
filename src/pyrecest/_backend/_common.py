@@ -56,8 +56,7 @@ def _normalize_reduction_axes(axis, ndim_value):
         axes = tuple(axis)
 
     normalized_axes = tuple(
-        axis_index + ndim_value if axis_index < 0 else axis_index
-        for axis_index in axes
+        axis_index + ndim_value if axis_index < 0 else axis_index for axis_index in axes
     )
     if len(set(normalized_axes)) != len(normalized_axes):
         raise ValueError("duplicate value in 'axis'")

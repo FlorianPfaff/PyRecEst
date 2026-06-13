@@ -527,11 +527,7 @@ def _fixed_lag_committed_step_cost(
             return float(
                 unary_cost
                 + config.missed_detection_cost
-                + (
-                    config.consecutive_miss_cost
-                    if committed_miss_streak > 0
-                    else 0.0
-                )
+                + (config.consecutive_miss_cost if committed_miss_streak > 0 else 0.0)
             )
         return float(unary_cost)
 
@@ -543,7 +539,9 @@ def _fixed_lag_committed_step_cost(
             config,
         )
     )
-    return float(unary_cost + transition(previous_committed, selected, committed_miss_streak))
+    return float(
+        unary_cost + transition(previous_committed, selected, committed_miss_streak)
+    )
 
 
 def _reconstruct_path(
@@ -591,12 +589,15 @@ def _motion_cost(
     else:
         predicted = (
             previous_position
-            + np.asarray(previous.velocity, dtype=float).reshape(previous_position.shape)
+            + np.asarray(previous.velocity, dtype=float).reshape(
+                previous_position.shape
+            )
             * dt_s
         )
     position_cost = float(
         np.sum(
-            ((current_position - predicted) / float(config.transition_position_std)) ** 2
+            ((current_position - predicted) / float(config.transition_position_std))
+            ** 2
         )
     )
     speed_cost = 0.0
@@ -614,7 +615,10 @@ def _motion_cost(
         )
         velocity_cost = float(
             np.sum(
-                ((velocity - displacement_velocity) / float(config.transition_velocity_std))
+                (
+                    (velocity - displacement_velocity)
+                    / float(config.transition_velocity_std)
+                )
                 ** 2
             )
         )

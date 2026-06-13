@@ -271,11 +271,7 @@ def _validate_choice_probabilities(p, population_size):
         raise ValueError("p must be 1-dimensional with one entry per population item")
 
     p_sum = p.sum()
-    if (
-        bool(_jnp.any(p < 0))
-        or not bool(_jnp.isfinite(p_sum))
-        or bool(p_sum <= 0)
-    ):
+    if bool(_jnp.any(p < 0)) or not bool(_jnp.isfinite(p_sum)) or bool(p_sum <= 0):
         raise ValueError("probabilities do not sum to a positive value")
     return p / p_sum
 

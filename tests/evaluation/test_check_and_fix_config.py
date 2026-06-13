@@ -1,5 +1,4 @@
 import pytest
-
 from pyrecest.evaluation.check_and_fix_config import (
     _expand_meas_per_step,
     _validate_measurement_counts,

@@ -182,7 +182,9 @@ def solve_sylvester(a, b, q):
     a = a.to(dtype=common_dtype)
     b = b.to(dtype=common_dtype)
     q = q.to(dtype=common_dtype)
-    is_shared_factor = a.shape == b.shape and _torch.allclose(a, b, atol=1e-6, rtol=1e-6)
+    is_shared_factor = a.shape == b.shape and _torch.allclose(
+        a, b, atol=1e-6, rtol=1e-6
+    )
     is_shared_hermitian_factor = is_shared_factor and _torch.all(
         _torch.abs(a - a.transpose(-2, -1).conj()) < 1e-6
     )

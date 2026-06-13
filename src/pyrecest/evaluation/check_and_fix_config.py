@@ -20,9 +20,9 @@ def _expand_meas_per_step(simulation_param):
 
 def _validate_measurement_counts(simulation_param):
     counts = simulation_param["n_meas_at_individual_time_step"]
-    assert len(counts) == simulation_param["n_timesteps"], (
-        "n_meas_at_individual_time_step must have one entry per time step"
-    )
+    assert (
+        len(counts) == simulation_param["n_timesteps"]
+    ), "n_meas_at_individual_time_step must have one entry per time step"
     assert all(
         x > 0 for x in counts
     ), "n_meas_at_individual_time_step must contain positive values"
