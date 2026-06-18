@@ -10,6 +10,7 @@ from pyrecest.distributions import (
     GaussianDistribution,
     HyperhemisphericalUniformDistribution,
 )
+from pyrecest.distributions.abstract_se3_distribution import AbstractSE3Distribution
 from pyrecest.distributions.se3_cart_prod_stacked_distribution import (
     SE3CartProdStackedDistribution,
 )
@@ -17,6 +18,13 @@ from pyrecest.distributions.se3_dirac_distribution import SE3DiracDistribution
 
 
 class SE3DiracDistributionTest(unittest.TestCase):
+    def test_plot_trajectory_rejects_mismatched_sample_counts(self):
+        periodic_states = array([[1.0, 0.0], [0.0, 1.0], [0.0, 0.0], [0.0, 0.0]])
+        lin_states = array([[0.0], [0.0], [0.0]])
+
+        with self.assertRaisesRegex(ValueError, "same number of samples"):
+            AbstractSE3Distribution.plot_trajectory(periodic_states, lin_states)
+
     def test_constructor(self):
         dSph = array(
             [
@@ -44,6 +52,12 @@ class SE3DiracDistributionTest(unittest.TestCase):
         npt.assert_allclose(dist.d, array(particles))
         npt.assert_allclose(dist.w, array(weights))
         self.assertEqual(dist.d.shape, (2, 7))
+
+    def test_constructor_rejects_non_unit_hypersphere_particles(self):
+        particles = array([[2.0, 0.0, 0.0, 0.0, 1.0, 2.0, 3.0]])
+
+        with self.assertRaisesRegex(ValueError, "normalized"):
+            SE3DiracDistribution(particles)
 
     def test_from_distribution(self):
         cpsd = SE3CartProdStackedDistribution(

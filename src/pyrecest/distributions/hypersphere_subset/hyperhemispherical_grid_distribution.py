@@ -35,12 +35,10 @@ class HyperhemisphericalGridDistribution(
 
     def __init__(self, grid, grid_values, enforce_pdf_nonnegative=True):
         # Do not test norm precisely, only quick test if any coordinate exceeds 1.
-        assert all(
-            abs(grid) <= 1 + 1e-12
-        ), "Grid points must not lie outside the unit cube."
-        assert all(
-            grid[:, -1] >= -1e-12
-        ), "Always using upper hemisphere (along last dimension)."
+        if not bool(all(abs(grid) <= 1 + 1e-12)):
+            raise ValueError("Grid points must not lie outside the unit cube.")
+        if not bool(all(grid[:, -1] >= -1e-12)):
+            raise ValueError("Always using upper hemisphere along the last dimension.")
 
         super().__init__(grid, grid_values, enforce_pdf_nonnegative)
 
@@ -71,11 +69,12 @@ class HyperhemisphericalGridDistribution(
         The grid is mirrored, and the values are halved to keep the resulting
         hyperspherical distribution normalized.
         """
-        assert method == "antipodal", (
-            "Currently only 'antipodal' method is supported for "
-            "converting hyperhemispherical grid distributions to "
-            "full-sphere grid distributions."
-        )
+        if method != "antipodal":
+            raise ValueError(
+                "Currently only 'antipodal' method is supported for "
+                "converting hyperhemispherical grid distributions to "
+                "full-sphere grid distributions."
+            )
         from .hyperspherical_grid_distribution import HypersphericalGridDistribution
 
         grid_full = vstack((self.grid, -self.grid))
@@ -246,10 +245,11 @@ class HyperhemisphericalGridDistribution(
         depends on (dim, no_of_grid_points, grid_type). For 'healpix',
         only dim == 3 is supported and `healpy` must be installed.
         """
-        assert grid_type in (
-            "leopardi_symm",
-            "healpix",
-        ), "For hyperhemispheres, use one of the symmetric grid types 'leopardi_symm' or 'healpix'."
+        if grid_type not in ("leopardi_symm", "healpix"):
+            raise ValueError(
+                "For hyperhemispheres, use one of the symmetric grid types "
+                "'leopardi_symm' or 'healpix'."
+            )
         grid, _ = get_grid_hyperhemisphere(grid_type, no_of_grid_points, dim=dim)
 
         grid_values = fun(grid)

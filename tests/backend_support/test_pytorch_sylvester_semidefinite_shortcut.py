@@ -1,9 +1,12 @@
 """Regression tests for PyTorch Sylvester solver shortcuts."""
 
+import pytest
+
 from tests.support.backend_runner import run_backend_code
 
 
 def test_pytorch_semidefinite_sylvester_shortcut_respects_nonzero_denominators():
+    pytest.importorskip("torch")
     code = """
 import torch
 from pyrecest.backend import linalg

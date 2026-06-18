@@ -24,6 +24,22 @@ class GaussianHypothesisMixtureTest(unittest.TestCase):
 
         self.assertTrue(np.allclose(weights, np.array([0.5, 0.0, 0.5])))
 
+    def test_nan_log_weights_are_rejected(self):
+        with self.assertRaisesRegex(ValueError, "NaN"):
+            normalize_log_weights(np.array([0.0, np.nan]))
+
+        with self.assertRaisesRegex(ValueError, "NaN"):
+            moment_match_gaussian_hypotheses(
+                [
+                    WeightedGaussianHypothesis(
+                        np.array([0.0]), np.array([[1.0]]), log_weight=0.0
+                    ),
+                    WeightedGaussianHypothesis(
+                        np.array([1.0]), np.array([[1.0]]), log_weight=np.nan
+                    ),
+                ]
+            )
+
     def test_moment_matching_respects_dominant_infinite_weight(self):
         mean, covariance, weights = moment_match_gaussian_hypotheses(
             [

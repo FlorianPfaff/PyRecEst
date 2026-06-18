@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 
 # pylint: disable=no-name-in-module,no-member
 import pyrecest.backend
@@ -12,6 +13,14 @@ from .test_goal_conditioned_replay_common import (
 
 
 class TestGoalConditionedReplayIMMFilter(unittest.TestCase):
+    def test_constructor_rejects_jax_backend(self):
+        with patch.object(pyrecest.backend, "__backend_name__", "jax"):
+            with self.assertRaisesRegex(NotImplementedError, "JAX backend"):
+                GoalConditionedReplayIMMFilter(
+                    initial_state=(array([0.0, 0.0]), 0.01 * eye(2)),
+                    candidate_goals=array([[1.0, 0.0]]),
+                )
+
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ == "jax",
         reason="Not supported on this backend",

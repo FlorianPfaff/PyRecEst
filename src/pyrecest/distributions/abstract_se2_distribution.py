@@ -44,9 +44,8 @@ class AbstractSE2Distribution(AbstractHypercylindricalDistribution):
 
     # pylint: disable=too-many-locals
     def plot_state(self, scaling_factor=1, circle_color=None, angle_color=None):
-        assert (
-            pyrecest.backend.__backend_name__ != "jax"
-        ), "plot_state is not supported for the JAX backend."
+        if pyrecest.backend.__backend_name__ == "jax":
+            raise NotImplementedError("plot_state is not supported for the JAX backend.")
 
         if circle_color is None:
             circle_color = array([0, 0.4470, 0.7410])

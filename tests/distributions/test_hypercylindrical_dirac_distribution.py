@@ -19,6 +19,7 @@ from pyrecest.backend import (
     sum,
     zeros_like,
 )
+from pyrecest.distributions import GaussianDistribution
 from pyrecest.distributions.cart_prod.hypercylindrical_dirac_distribution import (
     HypercylindricalDiracDistribution,
 )
@@ -134,6 +135,12 @@ class TestHypercylindricalDiracDistribution(TestAbstractDiracDistribution):
         hwn = PartiallyWrappedNormalDistribution(array([1.0, 2.0, 3.0, 4.0]), C, 2)
         hddist = HypercylindricalDiracDistribution.from_distribution(hwn, 200000)
         npt.assert_allclose(hddist.hybrid_mean(), hwn.hybrid_mean(), atol=0.2)
+
+    def test_from_distribution_rejects_wrong_source_type(self):
+        source = GaussianDistribution(array([0.0, 0.0]), eye(2))
+
+        with self.assertRaisesRegex(TypeError, "valid for conversion"):
+            HypercylindricalDiracDistribution.from_distribution(source, 3)
 
     # jscpd:ignore-start
     @parameterized.expand(

@@ -41,6 +41,11 @@ ObservationCostsInput = (
 )
 
 
+def _ensure_supported_backend(feature_name: str) -> None:
+    if __backend_name__ == "jax":
+        raise NotImplementedError(f"{feature_name} is not supported on the JAX backend.")
+
+
 @dataclass(frozen=True)
 class _ObservationCostTransform:
     session_positions: Mapping[int, int]
@@ -64,7 +69,7 @@ def solve_multisession_assignment_with_observation_costs(  # pylint: disable=R09
     cost_threshold: float | None = None,
 ) -> MultiSessionAssignmentResult:
     """Solve multi-session assignment with per-observation start/end costs."""
-    assert __backend_name__ != "jax", "Not supported on JAX backend"
+    _ensure_supported_backend("solve_multisession_assignment_with_observation_costs")
 
     _validate_scalar_cost("start_cost", start_cost)
     _validate_scalar_cost("end_cost", end_cost)

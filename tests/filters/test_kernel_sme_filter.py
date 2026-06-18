@@ -1,6 +1,7 @@
 import copy
 import math
 import unittest
+from unittest.mock import patch
 
 import numpy.testing as npt
 
@@ -142,6 +143,16 @@ class TestKernelSMEFilter(unittest.TestCase):
             )
             + eye(12),
         )
+
+    def test_predict_linear_rejects_inputs(self):
+        tracker = KernelSMEFilter(self.initial_priors)
+
+        with self.assertRaisesRegex(NotImplementedError, "Inputs"):
+            tracker.predict_linear(
+                self.system_matrix,
+                self.sys_noise_cov,
+                inputs=array([1.0, 0.0]),
+            )
 
     def testPredictLinearAllSameMatsNoInputs3DCV(self):
         tracker = KernelSMEFilter()
@@ -398,6 +409,43 @@ class TestKernelSMEFilter(unittest.TestCase):
         npt.assert_allclose(tracker.x, prior_x)
         npt.assert_allclose(tracker.C, prior_c)
         self.assertEqual(tracker.posterior_estimates_over_time.shape, (12, 1))
+
+    def test_update_rejects_gating_threshold_without_gating(self):
+        tracker = KernelSMEFilter(self.initial_priors)
+
+        with self.assertRaisesRegex(ValueError, "gating"):
+            tracker.update_linear(
+                self.measurements,
+                eye(2),
+                self.measurement_noise_cov,
+                enable_gating=False,
+                gating_threshold=1.0,
+            )
+
+    def test_gen_test_points_rejects_pytorch_backend(self):
+        with patch.object(pyrecest.backend, "__backend_name__", "pytorch"):
+            with self.assertRaisesRegex(NotImplementedError, "backend"):
+                KernelSMEFilter.gen_test_points(array([[0.0]]), 1.0)
+
+    def test_calc_pseudo_meas_rejects_jax_backend(self):
+        with patch.object(pyrecest.backend, "__backend_name__", "jax"):
+            with self.assertRaisesRegex(NotImplementedError, "backend"):
+                KernelSMEFilter.calc_pseudo_meas(
+                    array([[0.0]]), array([[0.0]]), 1.0
+                )
+
+    def test_calc_moments_rejects_bad_lambda_multimeas_length(self):
+        with self.assertRaisesRegex(ValueError, "lambdaMultimeas"):
+            KernelSMEFilter.calc_moments(
+                array([0.0, 0.0, 1.0, 1.0]),
+                eye(4),
+                eye(2),
+                eye(2),
+                array([[0.0], [0.0]]),
+                1.0,
+                2,
+                lambdaMultimeas=array([1.0, 2.0, 3.0]),
+            )
 
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ in ("pytorch", "jax"),

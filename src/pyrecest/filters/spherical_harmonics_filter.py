@@ -61,9 +61,10 @@ class SphericalHarmonicsFilter(AbstractFilter, HypersphericalFilterMixin):
 
     @filter_state.setter
     def filter_state(self, new_state):
-        assert isinstance(
-            new_state, SphericalHarmonicsDistributionComplex
-        ), "filter_state must be a SphericalHarmonicsDistributionComplex"
+        if not isinstance(new_state, SphericalHarmonicsDistributionComplex):
+            raise TypeError(
+                "filter_state must be a SphericalHarmonicsDistributionComplex."
+            )
         self._filter_state = copy.deepcopy(new_state)
 
     @property
@@ -77,9 +78,8 @@ class SphericalHarmonicsFilter(AbstractFilter, HypersphericalFilterMixin):
 
     def set_state(self, state):
         """Set the filter state with optional warnings about mismatches."""
-        assert isinstance(
-            state, SphericalHarmonicsDistributionComplex
-        ), "state must be a SphericalHarmonicsDistributionComplex"
+        if not isinstance(state, SphericalHarmonicsDistributionComplex):
+            raise TypeError("state must be a SphericalHarmonicsDistributionComplex.")
         if self._filter_state.transformation != state.transformation:
             warnings.warn(
                 "setState:transDiffer: New density is transformed differently.",
@@ -114,19 +114,21 @@ class SphericalHarmonicsFilter(AbstractFilter, HypersphericalFilterMixin):
             Must be a zonal distribution (rotationally symmetric around the
             z-axis) in the same transformation as the filter state.
         """
-        assert isinstance(
-            sys_noise, SphericalHarmonicsDistributionComplex
-        ), "sys_noise must be a SphericalHarmonicsDistributionComplex"
+        if not isinstance(sys_noise, SphericalHarmonicsDistributionComplex):
+            raise TypeError(
+                "sys_noise must be a SphericalHarmonicsDistributionComplex."
+            )
         if (
             self._filter_state.transformation == "sqrt"
             and sys_noise.transformation == "identity"
         ):
             state_degree = self._filter_state.coeff_mat.shape[0] - 1
             noise_degree = sys_noise.coeff_mat.shape[0] - 1
-            assert 2 * state_degree == noise_degree, (
-                "If the sqrt variant is used and sys_noise is given in "
-                "identity form, sys_noise should have degree 2 * state_degree."
-            )
+            if 2 * state_degree != noise_degree:
+                raise ValueError(
+                    "If the sqrt variant is used and sys_noise is given in "
+                    "identity form, sys_noise should have degree 2 * state_degree."
+                )
         self._filter_state = self._filter_state.convolve(sys_noise)
 
     # ------------------------------------------------------------------
@@ -147,9 +149,10 @@ class SphericalHarmonicsFilter(AbstractFilter, HypersphericalFilterMixin):
         z : array-like, shape (3,)
             Measurement direction on the unit sphere.
         """
-        assert isinstance(
-            meas_noise, SphericalHarmonicsDistributionComplex
-        ), "meas_noise must be a SphericalHarmonicsDistributionComplex"
+        if not isinstance(meas_noise, SphericalHarmonicsDistributionComplex):
+            raise TypeError(
+                "meas_noise must be a SphericalHarmonicsDistributionComplex."
+            )
         z = array(z, dtype=float).ravel()
         z_norm = linalg.norm(z)
         not_near_north_pole = (
@@ -192,9 +195,8 @@ class SphericalHarmonicsFilter(AbstractFilter, HypersphericalFilterMixin):
         measurements : list of array-like
             Corresponding measurements.
         """
-        assert len(likelihoods) == len(
-            measurements
-        ), "likelihoods and measurements must have the same length"
+        if len(likelihoods) != len(measurements):
+            raise ValueError("likelihoods and measurements must have the same length.")
         self._update_nonlinear_impl(likelihoods, measurements)
 
     # ------------------------------------------------------------------
