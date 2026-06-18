@@ -1,5 +1,6 @@
 import copy
 import unittest
+from unittest.mock import patch
 
 import numpy.testing as npt
 
@@ -18,6 +19,14 @@ from pyrecest.filters.gaussian_mixture_phd_filter import (
     reason="Currently only supported for the numpy backend",
 )
 class TestGaussianMixturePHDFilter(unittest.TestCase):
+    def test_constructor_rejects_unsupported_backend(self):
+        with patch.object(pyrecest.backend, "__backend_name__", "jax"):
+            with self.assertRaisesRegex(NotImplementedError, "numpy backend"):
+                GaussianMixturePHDFilter(
+                    log_prior_estimates=False,
+                    log_posterior_estimates=False,
+                )
+
     def test_filter_state_roundtrip(self):
         component = GaussianDistribution(array([0.0, 0.0]), eye(2))
         tracker = GaussianMixturePHDFilter(
@@ -57,6 +66,22 @@ class TestGaussianMixturePHDFilter(unittest.TestCase):
         npt.assert_allclose(state.dists[0].C, 1.1 * eye(2))
         npt.assert_allclose(state.dists[1].mu, array([5.0, 5.0]))
         npt.assert_allclose(state.dists[1].C, 2.0 * eye(2))
+
+    def test_predict_linear_rejects_nonzero_mean_gaussian_system_noise(self):
+        tracker = GaussianMixturePHDFilter(
+            initial_components=[
+                GaussianDistribution(array([0.0, 0.0]), eye(2)),
+            ],
+            initial_weights=array([0.8]),
+            log_prior_estimates=False,
+            log_posterior_estimates=False,
+        )
+
+        with self.assertRaisesRegex(ValueError, "zero mean"):
+            tracker.predict_linear(
+                eye(2),
+                GaussianDistribution(array([1.0, 0.0]), 0.1 * eye(2)),
+            )
 
     def test_update_linear_extracts_reasonable_point_estimate(self):
         tracker = GaussianMixturePHDFilter(

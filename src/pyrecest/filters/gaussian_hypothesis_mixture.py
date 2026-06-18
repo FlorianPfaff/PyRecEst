@@ -59,6 +59,8 @@ def normalize_log_weights(log_weights: list[float] | np.ndarray) -> np.ndarray:
     values = np.asarray(log_weights, dtype=float).reshape(-1)
     if values.size == 0:
         raise ValueError("log_weights must not be empty")
+    if np.any(np.isnan(values)):
+        raise ValueError("log_weights must not contain NaN values")
 
     positive_infinite = np.isposinf(values)
     if np.any(positive_infinite):

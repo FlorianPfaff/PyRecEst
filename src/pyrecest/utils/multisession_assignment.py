@@ -56,6 +56,11 @@ SessionSizesInput = Mapping[int, int] | Sequence[int]
 TrackInput = Mapping[int, int] | Sequence[Observation]
 
 
+def _ensure_supported_backend(feature_name: str) -> None:
+    if __backend_name__ == "jax":
+        raise NotImplementedError(f"{feature_name} is not supported on the JAX backend.")
+
+
 def _full_1d(size: int, fill_value: int | float, dtype: Any) -> Any:
     return full((int(size),), fill_value, dtype=dtype)
 
@@ -179,7 +184,7 @@ def solve_multisession_assignment(  # pylint: disable=too-many-locals
     its own dummy "unmatched" column.
     """
 
-    assert __backend_name__ != "jax", "Not supported on JAX backend"
+    _ensure_supported_backend("solve_multisession_assignment")
 
     _validate_scalar_cost("start_cost", start_cost)
     _validate_scalar_cost("end_cost", end_cost)
@@ -315,7 +320,7 @@ def tracks_to_session_labels(
         One integer array per session, indexed by session number.
     """
 
-    assert __backend_name__ != "jax", "Not supported on JAX backend"
+    _ensure_supported_backend("tracks_to_session_labels")
 
     inferred_sizes, max_session_index = _validate_track_session_sizes(
         tracks,

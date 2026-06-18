@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 
 import numpy.testing as npt
 
@@ -12,6 +13,17 @@ from pyrecest.smoothers import UnscentedRauchTungStriebelSmoother
 
 
 class UnscentedRauchTungStriebelSmootherTest(unittest.TestCase):
+    def test_unsupported_backend_guard_is_not_optimized_away(self):
+        smoother = UnscentedRauchTungStriebelSmoother()
+
+        for backend_name in ("pytorch", "jax"):
+            with self.subTest(backend=backend_name):
+                with patch.object(pyrecest.backend, "__backend_name__", backend_name):
+                    with self.assertRaisesRegex(
+                        NotImplementedError, f"{backend_name} backend"
+                    ):
+                        smoother.smooth([], [], [])
+
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
         reason="Not supported on this backend",

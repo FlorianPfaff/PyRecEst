@@ -111,7 +111,10 @@ class AbstractSE3Distribution(AbstractLinBoundedCartProdDistribution):
 
     @staticmethod
     def plot_trajectory(periodicStates, linStates, animate=False, delay=0.05):
-        assert periodicStates.shape[1] == linStates.shape[1]
+        if periodicStates.shape[1] != linStates.shape[1]:
+            raise ValueError(
+                "periodicStates and linStates must contain the same number of samples"
+            )
         h = []
         for i in range(periodicStates.shape[1]):
             h.append(

@@ -91,9 +91,11 @@ class GaussianMixturePHDFilter(
         log_prior_estimates: bool = True,
         log_posterior_estimates: bool = True,
     ):
-        assert (
-            pyrecest.backend.__backend_name__ == "numpy"
-        ), "Currently only supported for the numpy backend."
+        if pyrecest.backend.__backend_name__ != "numpy":
+            raise NotImplementedError(
+                "GaussianMixturePHDFilter is currently only supported for the "
+                "numpy backend."
+            )
 
         AbstractMultitargetTracker.__init__(
             self,
@@ -270,7 +272,8 @@ class GaussianMixturePHDFilter(
         survival_probability=None,
     ):
         if isinstance(sys_noise, GaussianDistribution):
-            assert all(sys_noise.mu == 0)
+            if not bool(all(sys_noise.mu == 0)):
+                raise ValueError("Gaussian system noise must have zero mean.")
             sys_noise_cov = sys_noise.C
         else:
             sys_noise_cov = sys_noise
