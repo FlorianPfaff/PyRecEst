@@ -430,9 +430,7 @@ class TestKernelSMEFilter(unittest.TestCase):
     def test_calc_pseudo_meas_rejects_jax_backend(self):
         with patch.object(pyrecest.backend, "__backend_name__", "jax"):
             with self.assertRaisesRegex(NotImplementedError, "backend"):
-                KernelSMEFilter.calc_pseudo_meas(
-                    array([[0.0]]), array([[0.0]]), 1.0
-                )
+                KernelSMEFilter.calc_pseudo_meas(array([[0.0]]), array([[0.0]]), 1.0)
 
     def test_calc_moments_rejects_bad_lambda_multimeas_length(self):
         with self.assertRaisesRegex(ValueError, "lambdaMultimeas"):

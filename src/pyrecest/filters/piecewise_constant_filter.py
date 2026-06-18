@@ -172,7 +172,9 @@ class PiecewiseConstantFilter(AbstractFilter, CircularFilterMixin):
 
         L = _validate_interval_count(L, "L")
         if not isinstance(noise_distribution, AbstractCircularDistribution):
-            raise TypeError("noise_distribution must be an AbstractCircularDistribution.")
+            raise TypeError(
+                "noise_distribution must be an AbstractCircularDistribution."
+            )
         if not callable(a):
             raise TypeError("a must be callable.")
 
@@ -225,7 +227,9 @@ class PiecewiseConstantFilter(AbstractFilter, CircularFilterMixin):
         L = _validate_interval_count(L, "L")
         l_meas = _validate_interval_count(l_meas, "l_meas")
         if not isinstance(noise_distribution, AbstractCircularDistribution):
-            raise TypeError("noise_distribution must be an AbstractCircularDistribution.")
+            raise TypeError(
+                "noise_distribution must be an AbstractCircularDistribution."
+            )
         if not callable(h):
             raise TypeError("h must be callable.")
 

@@ -1,7 +1,6 @@
 """Regression tests for PyTorch Sylvester solver shortcuts."""
 
 import pytest
-
 from tests.support.backend_runner import run_backend_code
 
 

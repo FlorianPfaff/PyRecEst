@@ -12,7 +12,10 @@ from pyrecest.backend import asarray, eye, ones, to_numpy
 from pyrecest.distributions.nonperiodic.linear_dirac_distribution import (
     LinearDiracDistribution,
 )
-from pyrecest.models import AdditiveNoiseMeasurementModel, LinearGaussianMeasurementModel
+from pyrecest.models import (
+    AdditiveNoiseMeasurementModel,
+    LinearGaussianMeasurementModel,
+)
 
 from .euclidean_particle_filter import EuclideanParticleFilter
 
@@ -254,14 +257,22 @@ class DaumHuangParticleFlowFilter(EuclideanParticleFilter):
         jitter: float = 1e-8,
     ):
         super().__init__(n_particles=n_particles, dim=dim)
-        self.flow_type = _validate_flow_type(self.flow_type if flow_type is None else flow_type)
+        self.flow_type = _validate_flow_type(
+            self.flow_type if flow_type is None else flow_type
+        )
         self.n_steps = _validate_positive_int(n_steps, "n_steps")
-        self.step_schedule = None if step_schedule is None else tuple(float(value) for value in step_schedule)
+        self.step_schedule = (
+            None
+            if step_schedule is None
+            else tuple(float(value) for value in step_schedule)
+        )
         self.jitter = _validate_nonnegative_float(jitter, "jitter")
 
     def update_identity(self, meas_noise, measurement, **kwargs):
         """Update with an identity measurement map."""
-        return self.update_linear(measurement, eye(self.filter_state.dim), meas_noise, **kwargs)
+        return self.update_linear(
+            measurement, eye(self.filter_state.dim), meas_noise, **kwargs
+        )
 
     def update_linear(self, measurement, measurement_matrix, meas_noise, **kwargs):
         """Update with a linear Gaussian measurement model."""
@@ -309,12 +320,16 @@ class DaumHuangParticleFlowFilter(EuclideanParticleFilter):
             measurement_noise_covariance=measurement_noise_covariance,
             weights=self.filter_state.w,
             n_steps=self.n_steps if n_steps is None else n_steps,
-            step_schedule=self.step_schedule if step_schedule is None else step_schedule,
+            step_schedule=(
+                self.step_schedule if step_schedule is None else step_schedule
+            ),
             jitter=self.jitter if jitter is None else jitter,
             return_info=True,
         )
         n_particles = self.filter_state.w.shape[0]
-        self._filter_state = LinearDiracDistribution(result, ones(n_particles) / n_particles)
+        self._filter_state = LinearDiracDistribution(
+            result, ones(n_particles) / n_particles
+        )
         return info if return_info else None
 
 
@@ -351,22 +366,34 @@ def _resolve_measurement_vector_np(model, measurement) -> np.ndarray:
     if measurement is None and hasattr(model, "y"):
         measurement = getattr(model, "y")
     if measurement is None:
-        raise ValueError("measurement must be supplied unless measurement_model exposes y.")
+        raise ValueError(
+            "measurement must be supplied unless measurement_model exposes y."
+        )
     return _as_vector_np(measurement, "measurement")
 
 
 def _resolve_noise_covariance_np(model, override, measurement_dim: int) -> np.ndarray:
     value = override
     if value is None:
-        for name in ("noise_covariance", "measurement_noise_cov", "measurement_noise_covariance", "meas_noise", "R"):
+        for name in (
+            "noise_covariance",
+            "measurement_noise_cov",
+            "measurement_noise_covariance",
+            "meas_noise",
+            "R",
+        ):
             if hasattr(model, name):
                 candidate = getattr(model, name)
                 value = candidate() if callable(candidate) else candidate
                 if value is not None:
                     break
     if value is None:
-        raise ValueError("measurement noise covariance must be supplied by argument or measurement_model.")
-    covariance = _as_matrix_np(value, "measurement_noise_covariance", scalar_dim=measurement_dim)
+        raise ValueError(
+            "measurement noise covariance must be supplied by argument or measurement_model."
+        )
+    covariance = _as_matrix_np(
+        value, "measurement_noise_covariance", scalar_dim=measurement_dim
+    )
     if covariance.shape != (measurement_dim, measurement_dim):
         raise ValueError("measurement noise covariance has incompatible shape.")
     return _regularize_cov_np(covariance, 0.0)
@@ -378,7 +405,9 @@ def _edh_step_np(X, weights, measurement_model, y, R, delta, jitter):
     H = _measurement_jacobians_np(measurement_model, x_ref)[0]
     h_ref = _measurement_values_np(measurement_model, x_ref)[0]
     y_linear = y - h_ref + H @ mean
-    return _gaussian_flow_affine_increment_np(X, mean, covariance, H, y_linear, R, delta, jitter=jitter)
+    return _gaussian_flow_affine_increment_np(
+        X, mean, covariance, H, y_linear, R, delta, jitter=jitter
+    )
 
 
 def _ledh_step_np(X, weights, measurement_model, y, R, delta, jitter):
@@ -407,12 +436,16 @@ def _ledh_step_np(X, weights, measurement_model, y, R, delta, jitter):
     return out
 
 
-def _gaussian_flow_affine_increment_np(X, mean, covariance, H, y, R, delta_lambda, *, jitter):
+def _gaussian_flow_affine_increment_np(
+    X, mean, covariance, H, y, R, delta_lambda, *, jitter
+):
     if delta_lambda < 0.0:
         raise ValueError("delta_lambda must be nonnegative.")
     if delta_lambda == 0.0:
         return X.copy()
-    next_mean, next_covariance = _gaussian_bridge_moments_np(mean, covariance, H, y, R, delta_lambda, jitter=jitter)
+    next_mean, next_covariance = _gaussian_bridge_moments_np(
+        mean, covariance, H, y, R, delta_lambda, jitter=jitter
+    )
     transport = _sym_sqrt_np(next_covariance) @ _sym_inv_sqrt_np(covariance)
     return next_mean[None, :] + (X - mean[None, :]) @ transport.T
 
@@ -435,7 +468,10 @@ def _measurement_values_np(model, particles):
     batch_values = _try_batch_measurement(function, X)
     if batch_values is not None:
         return batch_values
-    values = [_as_vector_np(function(asarray(particle)), "measurement value") for particle in X]
+    values = [
+        _as_vector_np(function(asarray(particle)), "measurement value")
+        for particle in X
+    ]
     return np.vstack(values)
 
 
@@ -448,7 +484,13 @@ def _measurement_jacobians_np(model, particles):
     batch_jacobians = _try_batch_jacobian(jacobian, X)
     if batch_jacobians is not None:
         return batch_jacobians
-    return np.stack([_as_matrix_np(jacobian(asarray(particle)), "measurement jacobian") for particle in X], axis=0)
+    return np.stack(
+        [
+            _as_matrix_np(jacobian(asarray(particle)), "measurement jacobian")
+            for particle in X
+        ],
+        axis=0,
+    )
 
 
 def _measurement_function(model):
@@ -460,7 +502,9 @@ def _measurement_function(model):
     matrix = _measurement_matrix(model)
     if matrix is not None:
         return lambda state: asarray(matrix @ _as_vector_np(state, "state"))
-    raise TypeError("measurement_model must expose h, measurement_function, evaluate, predict_measurement, or measurement_matrix.")
+    raise TypeError(
+        "measurement_model must expose h, measurement_function, evaluate, predict_measurement, or measurement_matrix."
+    )
 
 
 def _jacobian_function(model):
@@ -468,7 +512,9 @@ def _jacobian_function(model):
         jacobian = getattr(model, "jacobian")
         if callable(jacobian):
             return jacobian
-    raise TypeError("measurement_model must expose a jacobian callable or measurement_matrix.")
+    raise TypeError(
+        "measurement_model must expose a jacobian callable or measurement_matrix."
+    )
 
 
 def _measurement_matrix(model):
@@ -533,7 +579,11 @@ def _record_flow_state(info, X, weights):
 
 def _weighted_mean_cov_np(particles, weights, jitter):
     X = _as_particle_matrix_np(particles)
-    w = np.full(X.shape[0], 1.0 / float(X.shape[0])) if weights is None else _as_weights_np(weights, X.shape[0])
+    w = (
+        np.full(X.shape[0], 1.0 / float(X.shape[0]))
+        if weights is None
+        else _as_weights_np(weights, X.shape[0])
+    )
     mean = _weighted_mean_np(X, w)
     centered = X - mean[None, :]
     covariance = centered.T @ (centered * w[:, None])
@@ -542,7 +592,11 @@ def _weighted_mean_cov_np(particles, weights, jitter):
 
 def _weighted_mean_np(particles, weights):
     X = _as_particle_matrix_np(particles)
-    w = np.full(X.shape[0], 1.0 / float(X.shape[0])) if weights is None else _as_weights_np(weights, X.shape[0])
+    w = (
+        np.full(X.shape[0], 1.0 / float(X.shape[0]))
+        if weights is None
+        else _as_weights_np(weights, X.shape[0])
+    )
     return w @ X
 
 
@@ -621,7 +675,9 @@ def _regularize_cov_np(covariance, jitter):
     sign = np.linalg.slogdet(covariance)[0]
     if sign <= 0.0:
         scale = max(float(np.trace(covariance) / max(covariance.shape[0], 1)), 1.0)
-        covariance = covariance + max(float(jitter), 1e-10) * scale * np.eye(covariance.shape[0])
+        covariance = covariance + max(float(jitter), 1e-10) * scale * np.eye(
+            covariance.shape[0]
+        )
     return _symmetrize_np(covariance)
 
 

@@ -191,7 +191,9 @@ class CalibratedPairwiseAssociationModel:
             self.model.predict_proba(flattened_features), dtype=float64
         )
         if probabilities.ndim >= 2 and probabilities.shape[-1] == 2:
-            probabilities = probabilities[..., self._predict_proba_positive_class_index()]
+            probabilities = probabilities[
+                ..., self._predict_proba_positive_class_index()
+            ]
         elif probabilities.ndim != 1:
             raise ValueError(
                 "predict_proba must return probabilities with shape (n_samples,) or (n_samples, 2)"

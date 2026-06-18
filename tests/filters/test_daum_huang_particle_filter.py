@@ -67,7 +67,9 @@ class DaumHuangParticleFlowFilterTest(unittest.TestCase):
         actual_mean, actual_covariance = _mean_and_cov(transported)
 
         npt.assert_allclose(to_numpy(actual_mean), to_numpy(expected_mean), atol=1e-10)
-        npt.assert_allclose(to_numpy(actual_covariance), to_numpy(expected_covariance), atol=1e-10)
+        npt.assert_allclose(
+            to_numpy(actual_covariance), to_numpy(expected_covariance), atol=1e-10
+        )
 
     def test_edh_filter_linear_update_matches_bridge_moments(self):
         particles = array(
@@ -92,7 +94,12 @@ class DaumHuangParticleFlowFilterTest(unittest.TestCase):
             1.0,
             jitter=0.0,
         )
-        filt = EDHParticleFlowFilter(n_particles=particles.shape[0], dim=particles.shape[1], n_steps=4, jitter=0.0)
+        filt = EDHParticleFlowFilter(
+            n_particles=particles.shape[0],
+            dim=particles.shape[1],
+            n_steps=4,
+            jitter=0.0,
+        )
         filt.filter_state = LinearDiracDistribution(particles)
 
         info = filt.update_linear(
@@ -106,9 +113,14 @@ class DaumHuangParticleFlowFilterTest(unittest.TestCase):
 
         self.assertEqual(info.flow_type, "edh")
         self.assertEqual(info.n_steps, 4)
-        npt.assert_allclose(to_numpy(filt.filter_state.w), np.full(particles.shape[0], 1.0 / particles.shape[0]))
+        npt.assert_allclose(
+            to_numpy(filt.filter_state.w),
+            np.full(particles.shape[0], 1.0 / particles.shape[0]),
+        )
         npt.assert_allclose(to_numpy(actual_mean), to_numpy(expected_mean), atol=1e-10)
-        npt.assert_allclose(to_numpy(actual_covariance), to_numpy(expected_covariance), atol=1e-10)
+        npt.assert_allclose(
+            to_numpy(actual_covariance), to_numpy(expected_covariance), atol=1e-10
+        )
 
     def test_ledh_records_particlewise_linearization_points(self):
         particles = array([[-2.0], [-1.0], [1.0], [2.0]])

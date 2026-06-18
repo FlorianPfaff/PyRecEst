@@ -3,13 +3,13 @@ from unittest.mock import patch
 
 import numpy as np
 import numpy.testing as npt
+import pyrecest.sampling.euclidean_sampler as euclidean_sampler
 from pyrecest.backend import mean, ones, random, std, zeros
 from pyrecest.sampling import (
     FibonacciRejectionSampler as PublicFibonacciRejectionSampler,
 )
 from pyrecest.sampling import HaltonGridSampler as PublicHaltonGridSampler
 from pyrecest.sampling import SobolGridSampler as PublicSobolGridSampler
-import pyrecest.sampling.euclidean_sampler as euclidean_sampler
 from pyrecest.sampling.euclidean_sampler import (
     FibonacciGridSampler,
     FibonacciRejectionSampler,

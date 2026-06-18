@@ -37,7 +37,9 @@ from .multisession_assignment import (
 
 def _ensure_supported_backend(feature_name: str) -> None:
     if __backend_name__ == "jax":
-        raise NotImplementedError(f"{feature_name} is not supported on the JAX backend.")
+        raise NotImplementedError(
+            f"{feature_name} is not supported on the JAX backend."
+        )
 
 
 def _default_score_to_cost(scores: Any) -> Any:

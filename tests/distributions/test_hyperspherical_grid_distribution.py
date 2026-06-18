@@ -117,9 +117,7 @@ class HypersphericalGridDistributionTest(unittest.TestCase):
 
     def test_spherical_grid_from_function_rejects_non_s2_dimension(self):
         with self.assertRaisesRegex(ValueError, "dimensions other than 2"):
-            SphericalGridDistribution.from_function(
-                lambda xs: array([1.0]), 4, dim=3
-            )
+            SphericalGridDistribution.from_function(lambda xs: array([1.0]), 4, dim=3)
 
     # --------------------------------------------------------------
     # Approximation tests

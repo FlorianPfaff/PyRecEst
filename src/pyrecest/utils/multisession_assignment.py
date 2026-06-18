@@ -58,7 +58,9 @@ TrackInput = Mapping[int, int] | Sequence[Observation]
 
 def _ensure_supported_backend(feature_name: str) -> None:
     if __backend_name__ == "jax":
-        raise NotImplementedError(f"{feature_name} is not supported on the JAX backend.")
+        raise NotImplementedError(
+            f"{feature_name} is not supported on the JAX backend."
+        )
 
 
 def _full_1d(size: int, fill_value: int | float, dtype: Any) -> Any:

@@ -172,9 +172,7 @@ class AbstractManifoldSpecificDistribution(ABC):
         while i < total_samples:
             x_new = proposal(x)
             if x_new.shape != x.shape:
-                raise ValueError(
-                    "Proposal must return a vector of same shape as input"
-                )
+                raise ValueError("Proposal must return a vector of same shape as input")
             log_pdfx_new = _to_scalar(self.ln_pdf(x_new))
             log_acceptance_ratio = log_pdfx_new - log_pdfx
 
