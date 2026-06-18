@@ -1,7 +1,6 @@
 # pylint: disable=redefined-builtin,no-name-in-module,no-member,duplicate-code
 import warnings
 
-import pyrecest.backend
 from pyrecest.backend import (
     all,
     any,
@@ -261,17 +260,11 @@ class GlobalNearestNeighbor(AbstractNearestNeighborTracker):
         pairwise_cost_matrix=None,
     ):
         """Update the tracker with an optional additional association cost matrix."""
-        assert (
-            pyrecest.backend.__backend_name__ == "numpy"
-        ), "Only supported for numpy backend"
+        self._ensure_numpy_backend()
         if len(self.filter_bank) == 0:
             warnings.warn("Currently, there are zero targets")
             return
-        assert (
-            measurement_matrix.shape[0] == measurements.shape[0]
-            and measurement_matrix.shape[1]
-            == self.filter_bank[0].get_point_estimate().shape[0]
-        ), "Dimensions of measurement matrix must match state and measurement dimensions."
+        self._validate_measurement_matrix_shape(measurement_matrix, measurements)
         association = self.find_association(
             measurements,
             measurement_matrix,
