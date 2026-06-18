@@ -40,7 +40,10 @@ class StateSpaceSubdivisionFilter(AbstractFilter, HypercylindricalFilterMixin):
     """
 
     def __init__(self, initial_state: StateSpaceSubdivisionGaussianDistribution):
-        assert isinstance(initial_state, StateSpaceSubdivisionGaussianDistribution)
+        if not isinstance(initial_state, StateSpaceSubdivisionGaussianDistribution):
+            raise TypeError(
+                "initial_state must be a StateSpaceSubdivisionGaussianDistribution."
+            )
         HypercylindricalFilterMixin.__init__(self)
         AbstractFilter.__init__(self, initial_state)
 
@@ -54,9 +57,10 @@ class StateSpaceSubdivisionFilter(AbstractFilter, HypercylindricalFilterMixin):
 
     @filter_state.setter
     def filter_state(self, new_state: StateSpaceSubdivisionGaussianDistribution):
-        assert isinstance(
-            new_state, StateSpaceSubdivisionGaussianDistribution
-        ), "filter_state must be a StateSpaceSubdivisionGaussianDistribution."
+        if not isinstance(new_state, StateSpaceSubdivisionGaussianDistribution):
+            raise TypeError(
+                "filter_state must be a StateSpaceSubdivisionGaussianDistribution."
+            )
         if self._filter_state is not None and len(
             self._filter_state.linear_distributions
         ) != len(new_state.linear_distributions):
@@ -292,10 +296,8 @@ class StateSpaceSubdivisionFilter(AbstractFilter, HypercylindricalFilterMixin):
 
         if likelihoods_linear is not None:
             n_likelihoods = len(likelihoods_linear)
-            assert n_likelihoods in (
-                1,
-                n_areas,
-            ), "likelihoods_linear must have 1 or n_areas elements."
+            if n_likelihoods not in (1, n_areas):
+                raise ValueError("likelihoods_linear must have 1 or n_areas elements.")
 
             if n_likelihoods == 1:
                 self._update_single_linear_likelihood(likelihoods_linear[0])

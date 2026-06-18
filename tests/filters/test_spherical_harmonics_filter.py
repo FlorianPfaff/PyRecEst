@@ -20,6 +20,54 @@ _skip_non_numpy = unittest.skipIf(
 
 
 class SphericalHarmonicsFilterTest(unittest.TestCase):
+    @staticmethod
+    def _make_shd(degree, transformation="identity"):
+        coeff_mat = np.zeros((degree + 1, 2 * degree + 1), dtype=complex)
+        coeff_mat[0, 0] = 1.0
+        return SphericalHarmonicsDistributionComplex(coeff_mat, transformation)
+
+    @_skip_non_numpy
+    def test_filter_state_rejects_invalid_type(self):
+        sh_filter = SphericalHarmonicsFilter(1)
+
+        with self.assertRaisesRegex(TypeError, "SphericalHarmonicsDistributionComplex"):
+            sh_filter.filter_state = object()
+
+    @_skip_non_numpy
+    def test_set_state_rejects_invalid_type(self):
+        sh_filter = SphericalHarmonicsFilter(1)
+
+        with self.assertRaisesRegex(TypeError, "SphericalHarmonicsDistributionComplex"):
+            sh_filter.set_state(object())
+
+    @_skip_non_numpy
+    def test_predict_identity_rejects_invalid_noise_type(self):
+        sh_filter = SphericalHarmonicsFilter(1)
+
+        with self.assertRaisesRegex(TypeError, "SphericalHarmonicsDistributionComplex"):
+            sh_filter.predict_identity(object())
+
+    @_skip_non_numpy
+    def test_predict_identity_rejects_sqrt_identity_degree_mismatch(self):
+        sh_filter = SphericalHarmonicsFilter(2, "sqrt")
+        sys_noise = self._make_shd(3, "identity")
+
+        with self.assertRaisesRegex(ValueError, "2 \\* state_degree"):
+            sh_filter.predict_identity(sys_noise)
+
+    @_skip_non_numpy
+    def test_update_identity_rejects_invalid_noise_type(self):
+        sh_filter = SphericalHarmonicsFilter(1)
+
+        with self.assertRaisesRegex(TypeError, "SphericalHarmonicsDistributionComplex"):
+            sh_filter.update_identity(object(), array([0.0, 0.0, 1.0]))
+
+    @_skip_non_numpy
+    def test_update_nonlinear_multiple_rejects_count_mismatch(self):
+        sh_filter = SphericalHarmonicsFilter(1)
+
+        with self.assertRaisesRegex(ValueError, "same length"):
+            sh_filter.update_nonlinear_multiple([lambda z, x: x[0]], [])
 
     @_skip_non_numpy
     def test_update_identity(self):

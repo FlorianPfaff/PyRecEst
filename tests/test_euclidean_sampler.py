@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 
 import numpy as np
 import numpy.testing as npt
@@ -8,6 +9,7 @@ from pyrecest.sampling import (
 )
 from pyrecest.sampling import HaltonGridSampler as PublicHaltonGridSampler
 from pyrecest.sampling import SobolGridSampler as PublicSobolGridSampler
+import pyrecest.sampling.euclidean_sampler as euclidean_sampler
 from pyrecest.sampling.euclidean_sampler import (
     FibonacciGridSampler,
     FibonacciRejectionSampler,
@@ -213,6 +215,28 @@ class TestFibonacciGridSampler(unittest.TestCase):
             self.assertEqual(V.shape, (d, d))
             self.assertEqual(R.shape, (d,))
             npt.assert_allclose(V.T @ V, np.eye(d), atol=1e-12)
+
+    def test_fibonacci_grid_invariant_rejects_in_box_parity_mismatch(self):
+        bad_basis = np.array([[1.0, 10.0], [0.0, 1.0]])
+
+        with patch.object(
+            euclidean_sampler,
+            "_fibonacci_eigen",
+            return_value=(bad_basis, np.ones(2)),
+        ):
+            with self.assertRaisesRegex(RuntimeError, "Parity"):
+                self.sampler.get_uniform_samples(6, 2)
+
+    def test_fibonacci_grid_invariant_rejects_insufficient_grid_extent(self):
+        bad_basis = 10.0 * np.eye(2)
+
+        with patch.object(
+            euclidean_sampler,
+            "_fibonacci_eigen",
+            return_value=(bad_basis, np.ones(2)),
+        ):
+            with self.assertRaisesRegex(RuntimeError, "extra"):
+                self.sampler.get_uniform_samples(3, 2)
 
 
 class TestFibonacciRejectionSampler(unittest.TestCase):

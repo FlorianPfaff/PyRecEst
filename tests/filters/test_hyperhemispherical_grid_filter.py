@@ -136,12 +136,33 @@ class TestHyperhemisphericalGridFilter(unittest.TestCase):
         pyrecest.backend.__backend_name__ == "jax",  # pylint: disable=no-member
         reason="Not supported on JAX backend",
     )
+    def test_update_identity_rejects_wrong_measurement_shape(self):
+        f = HyperhemisphericalGridFilter(self.n_grid, self.dim)
+
+        with self.assertRaisesRegex(ValueError, "shape"):
+            f.update_identity(self.watson_meas, array([0.0, 1.0]))
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ == "jax",  # pylint: disable=no-member
+        reason="Not supported on JAX backend",
+    )
     def test_sys_noise_to_transition_density(self):
         f_trans = HyperhemisphericalGridFilter.sys_noise_to_transition_density(
             self.watson_sys, self.n_grid
         )
         self.assertIsInstance(f_trans, SdHalfCondSdHalfGridDistribution)
         self.assertEqual(f_trans.grid_values.shape, (self.n_grid, self.n_grid))
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ == "jax",  # pylint: disable=no-member
+        reason="Not supported on JAX backend",
+    )
+    def test_predict_identity_rejects_wrong_noise_dimension(self):
+        f = HyperhemisphericalGridFilter(self.n_grid, self.dim)
+        wrong_dim_noise = WatsonDistribution(array([0.0, 0.0, 0.0, 1.0]), 3.0)
+
+        with self.assertRaisesRegex(ValueError, "d_sys.dim"):
+            f.predict_identity(wrong_dim_noise)
 
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ == "jax",  # pylint: disable=no-member
@@ -158,6 +179,29 @@ class TestHyperhemisphericalGridFilter(unittest.TestCase):
         f.predict_nonlinear_via_transition_density(f_trans)
         p = f.get_point_estimate()
         self.assertAlmostEqual(float(linalg.norm(p)), 1.0, places=5)
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ == "jax",  # pylint: disable=no-member
+        reason="Not supported on JAX backend",
+    )
+    def test_predict_nonlinear_rejects_invalid_transition_density(self):
+        f = HyperhemisphericalGridFilter(self.n_grid, self.dim)
+
+        with self.assertRaisesRegex(TypeError, "SdHalfCondSdHalfGridDistribution"):
+            f.predict_nonlinear_via_transition_density(object())
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ == "jax",  # pylint: disable=no-member
+        reason="Not supported on JAX backend",
+    )
+    def test_predict_nonlinear_rejects_incompatible_transition_grid(self):
+        f = HyperhemisphericalGridFilter(self.n_grid, self.dim)
+        f_trans = HyperhemisphericalGridFilter.sys_noise_to_transition_density(
+            self.watson_sys, self.n_grid + 2
+        )
+
+        with self.assertRaisesRegex(ValueError, "incompatible grid"):
+            f.predict_nonlinear_via_transition_density(f_trans)
 
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ == "jax",  # pylint: disable=no-member

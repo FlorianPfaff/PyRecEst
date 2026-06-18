@@ -149,6 +149,22 @@ class MultiBernoulliTracker(AbstractMultitargetTracker):
         return min(max(float(probability), eps), 1.0 - eps)
 
     @staticmethod
+    def _ensure_numpy_backend():
+        if pyrecest.backend.__backend_name__ != "numpy":
+            raise NotImplementedError(
+                "Multi-Bernoulli trackers are only supported for the numpy backend."
+            )
+
+    @staticmethod
+    def _coerce_zero_mean_gaussian_noise(sys_noises):
+        if not isinstance(sys_noises, GaussianDistribution):
+            return sys_noises
+
+        if not bool(backend_all(sys_noises.mu == 0)):
+            raise ValueError("Gaussian system noise must have zero mean.")
+        return sys_noises.C
+
+    @staticmethod
     def _is_existence_state_tuple(component):
         return (
             isinstance(component, tuple)
@@ -621,9 +637,7 @@ class MultiBernoulliTracker(AbstractMultitargetTracker):
             Components appended after prediction instead of the tracker's stored
             birth components.
         """
-        if isinstance(sys_noises, GaussianDistribution):
-            assert backend_all(sys_noises.mu == 0)
-            sys_noises = sys_noises.C
+        sys_noises = self._coerce_zero_mean_gaussian_noise(sys_noises)
 
         for i, component in enumerate(self.bernoulli_components):
             current_system_matrix = system_matrices
@@ -673,9 +687,7 @@ class MultiBernoulliTracker(AbstractMultitargetTracker):
         cov_mats_meas : array-like, shape (m, m) or (m, m, num_measurements)
             Shared or per-measurement covariance matrices.
         """
-        assert (
-            pyrecest.backend.__backend_name__ == "numpy"
-        ), "Only supported for numpy backend"
+        self._ensure_numpy_backend()
 
         measurements = array(measurements)
         measurement_matrix = array(measurement_matrix)
@@ -718,9 +730,7 @@ class MultiBernoulliTracker(AbstractMultitargetTracker):
             Shared measurement-noise covariance or per-measurement covariance
             matrices.
         """
-        assert (
-            pyrecest.backend.__backend_name__ == "numpy"
-        ), "Only supported for numpy backend"
+        self._ensure_numpy_backend()
 
         measurements = array(measurements)
         measurement_matrix = array(measurement_matrix)

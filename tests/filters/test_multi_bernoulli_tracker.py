@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 
 import numpy.testing as npt
 import pyrecest.backend
@@ -90,6 +91,15 @@ class MultiBernoulliTrackerTest(unittest.TestCase):
             0.72,
         )
 
+    def test_predict_linear_rejects_nonzero_mean_gaussian_system_noise(self):
+        tracker = MultiBernoulliTracker(initial_prior=[self.initial_components[0]])
+
+        with self.assertRaisesRegex(ValueError, "zero mean"):
+            tracker.predict_linear(
+                self.system_matrix,
+                GaussianDistribution(array([1.0, 0.0, 0.0, 0.0]), eye(4)),
+            )
+
     def test_update_linear_with_measurement_reinforces_track(self):
         tracker = MultiBernoulliTracker(
             initial_prior=[self.initial_components[0]],
@@ -122,6 +132,28 @@ class MultiBernoulliTrackerTest(unittest.TestCase):
         self.assertTrue(updated_covariance[2, 2] < 1.0)
         self.assertAlmostEqual(updated_covariance[1, 1], 1.0)
         self.assertAlmostEqual(updated_covariance[3, 3], 1.0)
+
+    def test_find_association_rejects_unsupported_backend(self):
+        tracker = MultiBernoulliTracker(initial_prior=[self.initial_components[0]])
+
+        with patch.object(pyrecest.backend, "__backend_name__", "jax"):
+            with self.assertRaisesRegex(NotImplementedError, "numpy backend"):
+                tracker.find_association(
+                    array([[0.0], [0.0]]),
+                    self.measurement_matrix,
+                    eye(2),
+                )
+
+    def test_update_linear_rejects_unsupported_backend(self):
+        tracker = MultiBernoulliTracker(initial_prior=[self.initial_components[0]])
+
+        with patch.object(pyrecest.backend, "__backend_name__", "jax"):
+            with self.assertRaisesRegex(NotImplementedError, "numpy backend"):
+                tracker.update_linear(
+                    array([[0.0], [0.0]]),
+                    self.measurement_matrix,
+                    eye(2),
+                )
 
     def test_update_linear_without_measurements_reduces_existence(self):
         tracker = MultiBernoulliTracker(

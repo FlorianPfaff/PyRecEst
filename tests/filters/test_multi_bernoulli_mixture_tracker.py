@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 
 import numpy.testing as npt
 import pyrecest.backend
@@ -61,6 +62,32 @@ class MultiBernoulliMixtureTrackerTest(unittest.TestCase):
             filters_namespace.NearestNeighborMultiBernoulliTracker,
             MultiBernoulliTracker,
         )
+
+    def test_predict_linear_rejects_nonzero_mean_gaussian_system_noise(self):
+        tracker = MultiBernoulliMixtureTracker(
+            initial_prior=[self.initial_component],
+            tracker_param=self.tracker_param,
+        )
+
+        with self.assertRaisesRegex(ValueError, "zero mean"):
+            tracker.predict_linear(
+                eye(4),
+                GaussianDistribution(array([1.0, 0.0, 0.0, 0.0]), eye(4)),
+            )
+
+    def test_update_linear_rejects_unsupported_backend(self):
+        tracker = MultiBernoulliMixtureTracker(
+            initial_prior=[self.initial_component],
+            tracker_param=self.tracker_param,
+        )
+
+        with patch.object(pyrecest.backend, "__backend_name__", "jax"):
+            with self.assertRaisesRegex(NotImplementedError, "numpy backend"):
+                tracker.update_linear(
+                    array([[0.0], [0.0]]),
+                    self.measurement_matrix,
+                    eye(2),
+                )
 
     def test_exact_mbm_update_keeps_missed_and_detected_hypotheses(self):
         tracker = MultiBernoulliMixtureTracker(
