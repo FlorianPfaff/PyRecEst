@@ -43,12 +43,23 @@ class TestStateSpaceSubdivisionFilterInit(unittest.TestCase):
         f = StateSpaceSubdivisionFilter(state)
         self.assertIsInstance(f.filter_state, StateSpaceSubdivisionGaussianDistribution)
 
+    def test_init_rejects_invalid_state(self):
+        with self.assertRaisesRegex(TypeError, "StateSpaceSubdivisionGaussian"):
+            StateSpaceSubdivisionFilter(object())
+
     def test_set_state(self):
         state = _make_s1_x_r1_state()
         f = StateSpaceSubdivisionFilter(state)
         new_state = _make_s1_x_r1_state(mu_lin=array([3.0]))
         f.filter_state = new_state
         npt.assert_allclose(f.filter_state.linear_distributions[0].mu, array([3.0]))
+
+    def test_set_state_rejects_invalid_state(self):
+        state = _make_s1_x_r1_state()
+        f = StateSpaceSubdivisionFilter(state)
+
+        with self.assertRaisesRegex(TypeError, "StateSpaceSubdivisionGaussian"):
+            f.filter_state = object()
 
     def test_set_state_different_size_warns(self):
         state = _make_s1_x_r1_state(n=20)
@@ -194,6 +205,14 @@ class TestStateSpaceSubdivisionFilterUpdate(unittest.TestCase):
             self.assertLess(float(ld.C[0, 0]), float(C0[0, 0]))
             # Mean should be halfway between 0 and 2
             npt.assert_allclose(ld.mu, array([1.0]), atol=1e-10)
+
+    def test_update_rejects_invalid_linear_likelihood_count(self):
+        state = _make_s1_x_r1_state(n=5)
+        f = StateSpaceSubdivisionFilter(state)
+        likelihood = GaussianDistribution(array([2.0]), eye(1))
+
+        with self.assertRaisesRegex(ValueError, "1 or n_areas"):
+            f.update(likelihoods_linear=[likelihood, likelihood])
 
     def test_update_single_linear_likelihood_matches_per_cell_likelihoods(self):
         """The single-likelihood fast path should match the generic per-cell update."""

@@ -483,9 +483,8 @@ class FibonacciGridSampler(AbstractEuclideanSampler):
 
         # Identify points fully inside [-1/2, 1/2]^d
         ind = np.all((xy <= 0.5) & (xy >= -0.5), axis=0)
-        assert (
-            ind.sum() % 2 == n_points % 2
-        ), "Parity of in-box points does not match n_points"
+        if ind.sum() % 2 != n_points % 2:
+            raise RuntimeError("Parity of in-box points does not match n_points.")
 
         # Keep only points whose non-first coordinates are in [-1/2, 1/2]
         ind0 = np.all((xy[1:, :] <= 0.5) & (xy[1:, :] >= -0.5), axis=0)  # noqa: E203
@@ -495,9 +494,11 @@ class FibonacciGridSampler(AbstractEuclideanSampler):
         # Fine-tune the number of samples by adjusting the x_1 boundary
         n_current = int(ind.sum())
         diff = n_points - n_current
-        assert (
-            diff % 2 == 0
-        ), f"Sample count parity mismatch after slicing: expected difference to be even but got {diff}"
+        if diff % 2 != 0:
+            raise RuntimeError(
+                "Sample count parity mismatch after slicing: expected difference "
+                f"to be even but got {diff}."
+            )
         n_add = diff // 2
 
         sort_idx = np.argsort(xy[0, :], kind="stable")  # noqa: E203
@@ -526,10 +527,13 @@ class FibonacciGridSampler(AbstractEuclideanSampler):
         border_vec = np.ones(d) * 0.5
         border_vec[0] = border_x
         border_vec_rot = V.T @ border_vec
-        assert np.all(
-            np.abs(border_vec_rot) <= np.max(vec)
-        ), "Increase 'extra' variable"
-        assert int(ind.sum()) == n_points
+        if not np.all(np.abs(border_vec_rot) <= np.max(vec)):
+            raise RuntimeError("Increase 'extra' variable.")
+        if int(ind.sum()) != n_points:
+            raise RuntimeError(
+                f"Fibonacci grid selected {int(ind.sum())} samples, "
+                f"expected {n_points}."
+            )
 
         # Extract the selected points and center them
         xy = xy[:, ind]

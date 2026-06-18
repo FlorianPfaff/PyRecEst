@@ -2,10 +2,14 @@
 """Tests for observation-specific multi-session assignment costs."""
 
 import unittest
+from unittest.mock import patch
 
 from pyrecest.backend import (  # pylint: disable=no-name-in-module
     __backend_name__,
     array,
+)
+from pyrecest.utils import (
+    multisession_assignment_observation_costs as observation_costs_module,
 )
 from pyrecest.utils import (
     solve_multisession_assignment,
@@ -21,6 +25,13 @@ class TestMultiSessionAssignmentObservationCosts(unittest.TestCase):
     @staticmethod
     def _canonical_tracks(tracks):
         return sorted(tuple(sorted(track.items())) for track in tracks)
+
+    def test_observation_cost_wrapper_rejects_jax_backend(self):
+        with patch.object(observation_costs_module, "__backend_name__", "jax"):
+            with self.assertRaisesRegex(NotImplementedError, "JAX backend"):
+                solve_multisession_assignment_with_observation_costs(
+                    [array([[1.0]])],
+                )
 
     def test_matches_base_solver_when_costs_are_uniform(self):
         pairwise_costs = [

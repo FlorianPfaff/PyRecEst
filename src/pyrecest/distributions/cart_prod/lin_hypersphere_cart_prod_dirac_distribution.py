@@ -12,9 +12,11 @@ class LinHypersphereCartProdDiracDistribution(
 ):
     def __init__(self, bound_dim, d, w=None):
         d = asarray(d)
-        assert (
-            amax(abs(linalg.norm(d[:, : (bound_dim + 1)], None, -1) - 1), 0) < 1e-5
-        ), "The hypersphere ssubset part of d must be normalized"
+        if not bool(
+            amax(abs(linalg.norm(d[:, : (bound_dim + 1)], None, -1) - 1), 0)
+            < 1e-5
+        ):
+            raise ValueError("The hypersphere subset part of d must be normalized")
         AbstractSE3Distribution.__init__(self)
         LinBoundedCartProdDiracDistribution.__init__(self, d, w)
 

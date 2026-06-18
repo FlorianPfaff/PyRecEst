@@ -35,6 +35,11 @@ from .multisession_assignment import (
 )
 
 
+def _ensure_supported_backend(feature_name: str) -> None:
+    if __backend_name__ == "jax":
+        raise NotImplementedError(f"{feature_name} is not supported on the JAX backend.")
+
+
 def _default_score_to_cost(scores: Any) -> Any:
     return -asarray(scores, dtype=float)
 
@@ -73,7 +78,7 @@ def tracks_to_index_matrix(
     fill_value: int = -1,
 ):
     """Convert tracks to a dense ``track x session`` ROI-index matrix."""
-    assert __backend_name__ != "jax", "Not supported on JAX backend"
+    _ensure_supported_backend("tracks_to_index_matrix")
 
     _, max_session_index = _validate_track_session_sizes(
         tracks,
@@ -100,7 +105,7 @@ def solve_multisession_assignment_from_similarity(  # pylint: disable=R0913,R091
     score_to_cost: Callable[[Any], Any] | None = None,
 ) -> MultiSessionAssignmentResult:
     """Score-native wrapper around :func:`solve_multisession_assignment`."""
-    assert __backend_name__ != "jax", "Not supported on JAX backend"
+    _ensure_supported_backend("solve_multisession_assignment_from_similarity")
 
     if min_score is not None and not math.isfinite(min_score):
         raise ValueError("min_score must be finite.")

@@ -130,9 +130,10 @@ class HyperhemisphericalGridFilter(AbstractGridFilter, HyperhemisphericalFilterM
         d_sys : AbstractDistribution
             System noise distribution with the same ``dim`` as the filter.
         """
-        assert (
-            d_sys.dim == self.dim
-        ), f"d_sys.dim ({d_sys.dim}) must equal filter manifold dim ({self.dim})"
+        if d_sys.dim != self.dim:
+            raise ValueError(
+                f"d_sys.dim ({d_sys.dim}) must equal filter manifold dim ({self.dim})."
+            )
         warnings.warn(
             "PredictIdentity:Inefficient: Using inefficient prediction. Consider "
             "precalculating the SdHalfCondSdHalfGridDistribution and using "
@@ -157,15 +158,17 @@ class HyperhemisphericalGridFilter(AbstractGridFilter, HyperhemisphericalFilterM
             SdHalfCondSdHalfGridDistribution,
         )
 
-        assert isinstance(
-            f_trans, SdHalfCondSdHalfGridDistribution
-        ), "f_trans must be a SdHalfCondSdHalfGridDistribution"
-        assert allclose(
-            self._filter_state.get_grid(), f_trans.get_grid(), atol=1e-10
-        ), (
-            "predictNonlinearViaTransitionDensity:gridDiffers: "
-            "f_trans is using an incompatible grid."
-        )
+        if not isinstance(f_trans, SdHalfCondSdHalfGridDistribution):
+            raise TypeError("f_trans must be a SdHalfCondSdHalfGridDistribution.")
+        filter_grid = self._filter_state.get_grid()
+        transition_grid = f_trans.get_grid()
+        if filter_grid.shape != transition_grid.shape or not allclose(
+            filter_grid, transition_grid, atol=1e-10
+        ):
+            raise ValueError(
+                "predictNonlinearViaTransitionDensity:gridDiffers: "
+                "f_trans is using an incompatible grid."
+            )
 
         self._filter_state = self._filter_state.normalize()
         n_grid = self._filter_state.grid_values.shape[0]
@@ -199,7 +202,10 @@ class HyperhemisphericalGridFilter(AbstractGridFilter, HyperhemisphericalFilterM
         z : array, shape (dim + 1,)
             Measurement on the hemisphere.
         """
-        assert z.shape[0] == self.filter_state.input_dim
+        z = array(z)
+        expected_shape = (self.filter_state.input_dim,)
+        if z.shape != expected_shape:
+            raise ValueError(f"z must have shape {expected_shape}, got {z.shape}.")
 
         if isinstance(meas_noise, HyperhemisphericalWatsonDistribution):
             meas_noise = meas_noise.set_mode(z)

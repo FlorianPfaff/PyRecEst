@@ -11,6 +11,9 @@ from pyrecest.backend import (  # pylint: disable=no-name-in-module
 )
 from pyrecest.utils import multisession_assignment as multisession_assignment_module
 from pyrecest.utils import (
+    multisession_assignment_score as multisession_assignment_score_module,
+)
+from pyrecest.utils import (
     solve_multisession_assignment,
     solve_multisession_assignment_from_similarity,
     tracks_to_session_labels,
@@ -21,6 +24,34 @@ class TestMultiSessionAssignment(unittest.TestCase):
     @staticmethod
     def _canonical_tracks(tracks):
         return sorted(tuple(sorted(track.items())) for track in tracks)
+
+    def test_solve_multisession_assignment_rejects_jax_backend(self):
+        with patch.object(multisession_assignment_module, "__backend_name__", "jax"):
+            with self.assertRaisesRegex(NotImplementedError, "JAX backend"):
+                solve_multisession_assignment({}, session_sizes=[1])
+
+    def test_tracks_to_session_labels_rejects_jax_backend(self):
+        with patch.object(multisession_assignment_module, "__backend_name__", "jax"):
+            with self.assertRaisesRegex(NotImplementedError, "JAX backend"):
+                tracks_to_session_labels([{0: 0}])
+
+    def test_similarity_wrapper_rejects_jax_backend(self):
+        with patch.object(
+            multisession_assignment_score_module,
+            "__backend_name__",
+            "jax",
+        ):
+            with self.assertRaisesRegex(NotImplementedError, "JAX backend"):
+                solve_multisession_assignment_from_similarity([array([[1.0]])])
+
+    def test_tracks_to_index_matrix_rejects_jax_backend(self):
+        with patch.object(
+            multisession_assignment_score_module,
+            "__backend_name__",
+            "jax",
+        ):
+            with self.assertRaisesRegex(NotImplementedError, "JAX backend"):
+                multisession_assignment_score_module.tracks_to_index_matrix([{0: 0}])
 
     @unittest.skipIf(
         __backend_name__ == "jax",

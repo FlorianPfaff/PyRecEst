@@ -50,10 +50,11 @@ class UnscentedRauchTungStriebelSmoother(AbstractSmoother):
         backend_name: str = getattr(
             pyrecest.backend, "__backend_name__", ""
         )  # pylint: disable=no-member
-        assert backend_name not in (
-            "pytorch",
-            "jax",
-        ), "Not supported on this backend"
+        if backend_name in ("pytorch", "jax"):
+            raise NotImplementedError(
+                "UnscentedRauchTungStriebelSmoother is not supported on the "
+                f"{backend_name} backend."
+            )
 
     @staticmethod
     def _normalize_callable_sequence(

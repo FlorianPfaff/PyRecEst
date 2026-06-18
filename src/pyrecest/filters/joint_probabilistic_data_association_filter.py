@@ -74,6 +74,11 @@ class JointProbabilisticDataAssociationFilter(AbstractNearestNeighborTracker):
             self.filter_state = initial_prior
 
     @staticmethod
+    def _ensure_numpy_backend():
+        if pyrecest.backend.__backend_name__ != "numpy":
+            raise NotImplementedError("JPDAF is only supported for the numpy backend.")
+
+    @staticmethod
     def _get_measurement_covariance(cov_mats_meas, measurement_index):
         if cov_mats_meas.ndim == 2:
             return cov_mats_meas
@@ -154,9 +159,7 @@ class JointProbabilisticDataAssociationFilter(AbstractNearestNeighborTracker):
                 missed detection. The second entry is the most likely joint event,
                 encoded as measurement indices and ``-1`` for missed detections.
         """
-        assert (
-            pyrecest.backend.__backend_name__ == "numpy"
-        ), "Only supported for numpy backend"
+        self._ensure_numpy_backend()
 
         n_targets = self.get_number_of_targets()
         if n_targets == 0:
@@ -346,9 +349,7 @@ class JointProbabilisticDataAssociationFilter(AbstractNearestNeighborTracker):
         covMatsMeas,
         pairwise_cost_matrix=None,
     ):
-        assert (
-            pyrecest.backend.__backend_name__ == "numpy"
-        ), "Only supported for numpy backend"
+        self._ensure_numpy_backend()
         if pairwise_cost_matrix is not None:
             raise NotImplementedError("JPDAF does not support pairwise_cost_matrix.")
 
