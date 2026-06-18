@@ -1,5 +1,4 @@
 import pytest
-
 from pyrecest.evaluation.simulation_database import simulation_database
 
 

@@ -139,8 +139,6 @@ def check_and_fix_config(simulation_param):
     if not isinstance(
         simulation_param["initial_prior"], AbstractManifoldSpecificDistribution
     ):
-        raise TypeError(
-            "initial_prior must be an AbstractManifoldSpecificDistribution"
-        )
+        raise TypeError("initial_prior must be an AbstractManifoldSpecificDistribution")
 
     return simulation_param

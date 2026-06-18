@@ -138,7 +138,7 @@ class AbstractNearestNeighborTracker(AbstractMultitargetTracker):
             raise ValueError(
                 "system_matrices may be a single (dimSingleState, dimSingleState) "
                 "matrix or a (dimSingleState, dimSingleState, noTargets) tensor."
-        )
+            )
 
         if isinstance(sys_noises, GaussianDistribution):
             if bool(backend_any(sys_noises.mu != 0)):

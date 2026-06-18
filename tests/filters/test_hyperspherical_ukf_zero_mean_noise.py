@@ -36,9 +36,7 @@ class HypersphericalUKFZeroMeanNoiseTest(unittest.TestCase):
         )
 
         with self.assertRaisesRegex(ValueError, "gauss_meas.*zero mean"):
-            self.ukf.update_identity(
-                nonzero_measurement_noise, array([1.0, 0.0, 0.0])
-            )
+            self.ukf.update_identity(nonzero_measurement_noise, array([1.0, 0.0, 0.0]))
 
     def test_zero_mean_gaussian_noise_still_runs(self):
         zero_mean_noise = GaussianDistribution(

@@ -1,7 +1,6 @@
 import importlib.util
 
 import numpy as np
-
 from pyrecest._backend import numpy as numpy_backend
 
 pytorch_backend = None

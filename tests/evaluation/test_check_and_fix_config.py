@@ -2,9 +2,9 @@ import pytest
 from pyrecest.backend import eye, zeros
 from pyrecest.distributions import GaussianDistribution
 from pyrecest.evaluation.check_and_fix_config import (
-    check_and_fix_config,
     _expand_meas_per_step,
     _validate_measurement_counts,
+    check_and_fix_config,
 )
 
 

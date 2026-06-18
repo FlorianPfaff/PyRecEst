@@ -3,8 +3,8 @@ from unittest.mock import patch
 
 import matplotlib.pyplot as plt
 import numpy.testing as npt
-from parameterized import parameterized
 import pyrecest.backend
+from parameterized import parameterized
 from pyrecest.backend import arange, column_stack, linspace, mod, pi, random
 from pyrecest.distributions.abstract_se2_distribution import AbstractSE2Distribution
 

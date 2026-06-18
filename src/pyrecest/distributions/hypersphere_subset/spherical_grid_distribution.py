@@ -71,7 +71,9 @@ class SphericalGridDistribution(
         use_harmonics = True -> spherical harmonics interpolation (currently unsupported).
         """
         if use_harmonics:
-            raise NotImplementedError("Using spherical harmonics is currently unsupported")
+            raise NotImplementedError(
+                "Using spherical harmonics is currently unsupported"
+            )
         chd = CustomHypersphericalDistribution(
             lambda x: self.pdf(x, use_harmonics=False),
             self.dim,
@@ -109,7 +111,9 @@ class SphericalGridDistribution(
             raise ValueError("xs must be 1D or 2D array.")
 
         if use_harmonics:
-            raise NotImplementedError("Using spherical harmonics is currently unsupported")
+            raise NotImplementedError(
+                "Using spherical harmonics is currently unsupported"
+            )
 
         dots = self.grid @ xs.T
         max_index = argmax(dots, axis=0)
@@ -130,7 +134,9 @@ class SphericalGridDistribution(
         Construct a SphericalGridDistribution from an AbstractHypersphericalDistribution.
         """
         if distribution.dim != 2:
-            raise ValueError("SphericalGridDistribution requires a two-dimensional source")
+            raise ValueError(
+                "SphericalGridDistribution requires a two-dimensional source"
+            )
         return SphericalGridDistribution.from_function(
             distribution.pdf,
             no_of_grid_points,
