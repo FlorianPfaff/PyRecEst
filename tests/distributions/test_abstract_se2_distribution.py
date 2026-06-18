@@ -1,13 +1,32 @@
 import unittest
+from unittest.mock import patch
 
 import matplotlib.pyplot as plt
 import numpy.testing as npt
 from parameterized import parameterized
+import pyrecest.backend
 from pyrecest.backend import arange, column_stack, linspace, mod, pi, random
 from pyrecest.distributions.abstract_se2_distribution import AbstractSE2Distribution
 
 
+class _ConcreteSE2Distribution(AbstractSE2Distribution):
+    def marginalize_linear(self):
+        return None
+
+    def marginalize_periodic(self):
+        return None
+
+    def pdf(self, _):
+        return None
+
+
 class AbstractSE2DistributionTest(unittest.TestCase):
+    def test_plot_state_rejects_jax_backend(self):
+        dist = _ConcreteSE2Distribution()
+
+        with patch.object(pyrecest.backend, "__backend_name__", "jax"):
+            with self.assertRaisesRegex(NotImplementedError, "JAX backend"):
+                dist.plot_state()
 
     @parameterized.expand(
         [

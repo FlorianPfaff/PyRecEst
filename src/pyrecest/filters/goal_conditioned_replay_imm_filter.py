@@ -142,9 +142,10 @@ class GoalConditionedReplayIMMFilter(  # pylint: disable=too-many-instance-attri
         weight_floor: float = 1e-300,
         finite_difference_epsilon: float = 1e-5,
     ):
-        assert (
-            pyrecest.backend.__backend_name__ != "jax"
-        ), "GoalConditionedReplayIMMFilter is not supported on the JAX backend"
+        if pyrecest.backend.__backend_name__ == "jax":
+            raise NotImplementedError(
+                "GoalConditionedReplayIMMFilter is not supported on the JAX backend"
+            )
         raw_mean, raw_cov = self._extract_mean_and_cov(initial_state)
         raw_state_dim = raw_mean.shape[0]
 

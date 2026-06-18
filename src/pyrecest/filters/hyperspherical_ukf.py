@@ -118,6 +118,15 @@ class HypersphericalUKF(AbstractFilter, HypersphericalFilterMixin):
             raise ValueError("Mean is zero; normalization failed.")
         return x / n
 
+    @staticmethod
+    def _validate_zero_mean_noise(noise: GaussianDistribution, parameter_name: str):
+        noise_mean = reshape(asarray(noise.mu, dtype=float64), (-1,))
+        if not all(noise_mean == 0.0):
+            raise ValueError(
+                f"{parameter_name} must have zero mean; HypersphericalUKF "
+                "uses only the covariance of Gaussian additive noise."
+            )
+
     # ------------------------------------------------------------------
     # Prediction
     # ------------------------------------------------------------------
@@ -132,12 +141,14 @@ class HypersphericalUKF(AbstractFilter, HypersphericalFilterMixin):
         f:
             Function from S^(d-1) to S^(d-1).
         gauss_sys:
-            Distribution of additive system noise (mean is ignored).
+            Distribution of additive system noise. It must have zero mean; only
+            the covariance is applied.
         """
         _assert_supported_backend("pytorch", "jax")
 
         if not isinstance(gauss_sys, GaussianDistribution):
             gauss_sys = GaussianDistribution.from_distribution(gauss_sys)
+        self._validate_zero_mean_noise(gauss_sys, "gauss_sys")
 
         Q = asarray(gauss_sys.C, dtype=float64)
         dim_x = self._filter_state.dim
@@ -239,7 +250,8 @@ class HypersphericalUKF(AbstractFilter, HypersphericalFilterMixin):
         Parameters
         ----------
         gauss_sys:
-            Distribution of additive system noise (mean is ignored).
+            Distribution of additive system noise. It must have zero mean; only
+            the covariance is applied.
         """
         self.predict_nonlinear(lambda x: x, gauss_sys)
 
@@ -257,7 +269,8 @@ class HypersphericalUKF(AbstractFilter, HypersphericalFilterMixin):
         f:
             Measurement function from S^(d-1) to R^m.
         gauss_meas:
-            Distribution of additive measurement noise (mean is ignored).
+            Distribution of additive measurement noise. It must have zero mean;
+            only the covariance is applied.
         z:
             Measurement vector of shape (m,) or scalar.
         """
@@ -265,6 +278,7 @@ class HypersphericalUKF(AbstractFilter, HypersphericalFilterMixin):
 
         if not isinstance(gauss_meas, GaussianDistribution):
             gauss_meas = GaussianDistribution.from_distribution(gauss_meas)
+        self._validate_zero_mean_noise(gauss_meas, "gauss_meas")
 
         z_arr = reshape(asarray(z, dtype=float64), (-1,))
         dim_z = z_arr.shape[0]
@@ -294,7 +308,8 @@ class HypersphericalUKF(AbstractFilter, HypersphericalFilterMixin):
         Parameters
         ----------
         gauss_meas:
-            Distribution of additive measurement noise (mean is ignored).
+            Distribution of additive measurement noise. It must have zero mean;
+            only the covariance is applied.
         z:
             Measurement vector on S^(d-1).
         """

@@ -91,9 +91,10 @@ class KernelSMEFilter(AbstractMultitargetTracker):
         sys_noise,
         inputs=None,
     ):
-        assert (
-            inputs is None
-        ), "Inputs are currently not supported for the Kernel SME filter"
+        if inputs is not None:
+            raise NotImplementedError(
+                "Inputs are currently not supported for the Kernel SME filter."
+            )
         if isinstance(sys_noise, GaussianDistribution):
             sys_noise_cov = sys_noise.C
         else:
@@ -152,9 +153,11 @@ class KernelSMEFilter(AbstractMultitargetTracker):
             chi2,
         )
 
-        assert (
-            not gating_threshold or enable_gating
-        ), "Changed gating threshold without enabling gating, this does not make sense."
+        if gating_threshold is not None and not enable_gating:
+            raise ValueError(
+                "Changed gating threshold without enabling gating, "
+                "this does not make sense."
+            )
         if gating_threshold is None:
             gating_threshold = chi2.ppf(0.99, len(measurements))
         n_meas = measurements.shape[1]
@@ -234,9 +237,8 @@ class KernelSMEFilter(AbstractMultitargetTracker):
 
     @staticmethod
     def gen_test_points(measurements, kernel_width):
-        assert (
-            pyrecest.backend.__backend_name__ != "pytorch"
-        ), "Not supported on this backend"
+        if pyrecest.backend.__backend_name__ == "pytorch":
+            raise NotImplementedError("Not supported on this backend.")
         meas_dim = measurements.shape[0]
         n_meas = measurements.shape[1]
 
@@ -252,9 +254,8 @@ class KernelSMEFilter(AbstractMultitargetTracker):
 
     @staticmethod
     def calc_pseudo_meas(testPoints, measurements, kernel_width):
-        assert (
-            pyrecest.backend.__backend_name__ != "jax"
-        ), "Not supported on this backend"
+        if pyrecest.backend.__backend_name__ == "jax":
+            raise NotImplementedError("Not supported on this backend.")
         n_meas = measurements.shape[1]
         meas_dim = measurements.shape[0]
         n_test_points = testPoints.shape[1]
@@ -301,9 +302,8 @@ class KernelSMEFilter(AbstractMultitargetTracker):
             lambda_vec = float(lambdaMultimeas) * ones(n_targets)
         else:
             lambda_vec = array(lambdaMultimeas).reshape(-1)
-            assert (
-                lambda_vec.shape[0] == n_targets
-            ), "lambdaMultimeas must be scalar or length n_targets"
+            if lambda_vec.shape[0] != n_targets:
+                raise ValueError("lambdaMultimeas must be scalar or length n_targets.")
 
         lam_c = float(falseAlarmRate)
 
