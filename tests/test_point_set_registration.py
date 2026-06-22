@@ -70,6 +70,17 @@ class TestGatedAssignment(unittest.TestCase):
         assignment = solve_gated_assignment(cost_matrix, max_cost=1.0)
         npt.assert_array_equal(assignment, array([0, -1]))
 
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ == "jax",
+        reason="Not supported on this backend",
+    )
+    def test_solve_gated_assignment_can_leave_square_row_unmatched_for_lower_cost_match(self):
+        cost_matrix = array([[4.0, 43.0], [1.0, 27.0]])
+
+        assignment = solve_gated_assignment(cost_matrix, max_cost=10.0)
+
+        npt.assert_array_equal(assignment, array([-1, 0]))
+
 
 class TestJointRegistrationAssignment(unittest.TestCase):
     def test_joint_registration_assignment_rejects_jax_backend_without_asserts(self):
