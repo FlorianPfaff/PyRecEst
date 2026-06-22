@@ -5,23 +5,23 @@ def get_axis_label(manifold_name):
     elif "circle" in manifold_name or "hypertorus" in manifold_name:
         error_label = "Error in radian"
 
-    elif "hypersphere" in manifold_name:
-        error_label = "Error (orthodromic distance) in radian"
-
     elif "hypersphereSymmetric" in manifold_name:
         error_label = "Angular error in radian"
 
-    elif "se2" in manifold_name or "se2linear" in manifold_name:
-        error_label = "Error in meters"
+    elif "hypersphere" in manifold_name:
+        error_label = "Error (orthodromic distance) in radian"
 
     elif "se2bounded" in manifold_name:
         error_label = "Error in radian"
 
-    elif "se3" in manifold_name or "se3linear" in manifold_name:
+    elif "se2" in manifold_name or "se2linear" in manifold_name:
         error_label = "Error in meters"
 
     elif "se3bounded" in manifold_name:
         error_label = "Error in radian"
+
+    elif "se3" in manifold_name or "se3linear" in manifold_name:
+        error_label = "Error in meters"
 
     elif (
         "euclidean" in manifold_name or "Euclidean" in manifold_name
