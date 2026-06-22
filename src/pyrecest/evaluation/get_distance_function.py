@@ -82,6 +82,21 @@ def _as_target_matrix(value) -> np.ndarray:
     return value
 
 
+def _validate_mtt_cutoff_distance(value: Any) -> float:
+    value_array = np.asarray(to_numpy(value))
+    if value_array.shape != () or np.issubdtype(value_array.dtype, np.bool_):
+        raise ValueError("cutoff_distance must be a finite nonnegative scalar")
+    try:
+        cutoff_distance = float(value_array.item())
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(
+            "cutoff_distance must be a finite nonnegative scalar"
+        ) from exc
+    if not np.isfinite(cutoff_distance) or cutoff_distance < 0.0:
+        raise ValueError("cutoff_distance must be a finite nonnegative scalar")
+    return cutoff_distance
+
+
 def _euclidean_mtt_distance(x1, x2, *, cutoff_distance: float) -> float:
     first = _as_target_matrix(x1)
     second = _as_target_matrix(x2)
@@ -168,7 +183,9 @@ def get_distance_function(
 
     elif "euclidean" in normalized_name and "mtt" in normalized_name:
         params = additional_params or {}
-        cutoff_distance = float(params.get("cutoff_distance", 1000000.0))
+        cutoff_distance = _validate_mtt_cutoff_distance(
+            params.get("cutoff_distance", 1000000.0)
+        )
 
         def distance_function(x1, x2):
             return _euclidean_mtt_distance(
