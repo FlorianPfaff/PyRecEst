@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from numbers import Integral
 from typing import Any
 
 from pyrecest.backend import int64
@@ -17,6 +18,15 @@ from .multisession_assignment import (  # pylint: disable=protected-access
 )
 
 
+def _normalize_fill_value(fill_value: Any, track_count: int) -> int:
+    if isinstance(fill_value, bool) or not isinstance(fill_value, Integral):
+        raise ValueError("fill_value must be an integer.")
+    fill_value = int(fill_value)
+    if 0 <= fill_value < int(track_count):
+        raise ValueError("fill_value must not collide with track labels.")
+    return fill_value
+
+
 def tracks_to_session_labels(
     tracks: Sequence[TrackInput],
     session_sizes: SessionSizesInput | None = None,
@@ -25,6 +35,7 @@ def tracks_to_session_labels(
 ) -> tuple[Any, ...]:
     """Convert explicit tracks to dense per-session label arrays."""
     _ensure_supported_backend("tracks_to_session_labels")
+    fill_value = _normalize_fill_value(fill_value, len(tracks))
 
     inferred_sizes, max_session_index = _validate_track_session_sizes(
         tracks,
