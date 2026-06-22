@@ -1,6 +1,8 @@
 # pylint: disable=no-name-in-module,no-member,redefined-outer-name
 """Backend-native linear-Gaussian predict/update primitives."""
 
+import math
+
 from pyrecest.backend import (
     asarray,
     atleast_1d,
@@ -30,9 +32,12 @@ def _as_matrix(x, name):
 
 
 def _as_positive_float(x, name):
-    x = float(x)
-    if x <= 0.0:
-        raise ValueError(f"{name} must be positive")
+    try:
+        x = float(x)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{name} must be finite and positive") from exc
+    if not math.isfinite(x) or x <= 0.0:
+        raise ValueError(f"{name} must be finite and positive")
     return x
 
 
@@ -70,9 +75,7 @@ def huber_covariance_scale(  # pylint: disable=redefined-outer-name
     huber_threshold : float, optional
         Huber threshold ``k`` in Mahalanobis-norm units. Must be positive.
     """
-    huber_threshold = float(huber_threshold)
-    if huber_threshold <= 0.0:
-        raise ValueError("huber_threshold must be positive")
+    huber_threshold = _as_positive_float(huber_threshold, "huber_threshold")
 
     nis = asarray(normalized_innovation_squared, dtype=float64)
     return maximum(1.0, sqrt(nis) / huber_threshold)
@@ -114,12 +117,12 @@ def student_t_covariance_scale(  # pylint: disable=redefined-outer-name
         raise ValueError("measurement_dim must be positive")
 
     dof = float(dof)
-    if dof <= 2.0:
-        raise ValueError("dof must be greater than 2")
+    if not math.isfinite(dof) or dof <= 2.0:
+        raise ValueError("dof must be finite and greater than 2")
 
     min_scale = float(min_scale)
-    if min_scale < 0.0:
-        raise ValueError("min_scale must be nonnegative")
+    if not math.isfinite(min_scale) or min_scale < 0.0:
+        raise ValueError("min_scale must be finite and nonnegative")
 
     nis = asarray(normalized_innovation_squared, dtype=float64)
     scale = (dof + nis) / (dof + measurement_dim)
@@ -271,9 +274,7 @@ def linear_gaussian_update(
     if meas_noise.shape != (meas_dim, meas_dim):
         raise ValueError("meas_noise must have shape (meas_dim, meas_dim)")
 
-    scale = float(scale)
-    if scale <= 0.0:
-        raise ValueError("scale must be positive")
+    scale = _as_positive_float(scale, "scale")
 
     innovation = measurement - measurement_matrix @ mean
     nominal_innovation_cov = (
