@@ -1131,35 +1131,35 @@ files = [
 
 [[package]]
 name = "jax"
-version = "0.10.1"
+version = "0.10.2"
 description = "Differentiate, compile, and transform Numpy code."
 optional = true
 python-versions = ">=3.11"
 groups = ["main"]
 markers = "extra == \"all-support\" or extra == \"jax-support\""
 files = [
-    {file = "jax-0.10.1-py3-none-any.whl", hash = "sha256:47f3192c76e9e3358de1b106a8af5e943fccb10510903f25d96ea53652729134"},
-    {file = "jax-0.10.1.tar.gz", hash = "sha256:11672410faf8752429eb9a131de203dc488a2a3a012d509baa2b39878008810d"},
+    {file = "jax-0.10.2-py3-none-any.whl", hash = "sha256:724d73c4678d8b06f6a6ab4db1b8a2fea8cd4f1e2c2564f99601634ec7b8d1c6"},
+    {file = "jax-0.10.2.tar.gz", hash = "sha256:bf77428a8c2e6904c4f46d5ab12aa5cfc6cad2179f07f7e4c0fc75ac86ef0639"},
 ]
 
 [package.dependencies]
-jaxlib = "0.10.1"
+jaxlib = ">=0.10.1,<=0.10.2"
 ml_dtypes = ">=0.5.0"
 numpy = ">=2.0"
 opt_einsum = "*"
 scipy = ">=1.14"
 
 [package.extras]
-ci = ["jaxlib (==0.10.0)"]
-cuda = ["jax-cuda12-plugin[with-cuda] (==0.10.1)", "jaxlib (==0.10.1)"]
-cuda12 = ["jax-cuda12-plugin[with-cuda] (==0.10.1)", "jaxlib (==0.10.1)"]
-cuda12-local = ["jax-cuda12-plugin (==0.10.1)", "jaxlib (==0.10.1)"]
-cuda13 = ["jax-cuda13-plugin[with-cuda] (==0.10.1)", "jaxlib (==0.10.1)"]
-cuda13-local = ["jax-cuda13-plugin (==0.10.1)", "jaxlib (==0.10.1)"]
+ci = ["jaxlib (==0.10.1)"]
+cuda = ["jax-cuda12-plugin[with-cuda] (==0.10.2)", "jaxlib (==0.10.2)"]
+cuda12 = ["jax-cuda12-plugin[with-cuda] (==0.10.2)", "jaxlib (==0.10.2)"]
+cuda12-local = ["jax-cuda12-plugin (==0.10.2)", "jaxlib (==0.10.2)"]
+cuda13 = ["jax-cuda13-plugin[with-cuda] (==0.10.2)", "jaxlib (==0.10.2)"]
+cuda13-local = ["jax-cuda13-plugin (==0.10.2)", "jaxlib (==0.10.2)"]
 k8s = ["kubernetes"]
 minimum-jaxlib = ["jaxlib (==0.10.1)"]
-rocm7-local = ["jax-rocm7-plugin (==0.10.1.*)", "jaxlib (==0.10.1)"]
-tpu = ["jaxlib (==0.10.1)", "libtpu (==0.0.41.*)", "requests"]
+rocm7-local = ["jax-rocm7-plugin (==0.10.2.*)", "jaxlib (==0.10.2)"]
+tpu = ["jaxlib (==0.10.2)", "libtpu (==0.0.42.*)", "requests"]
 xprof = ["xprof"]
 
 [[package]]
