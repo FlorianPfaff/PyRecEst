@@ -41,25 +41,35 @@ class CandidatePruningConfig:
             object.__setattr__(self, name, parsed)
 
         if self.probability_threshold is not None:
-            threshold = float(self.probability_threshold)
-            if not 0.0 <= threshold <= 1.0:
-                raise ValueError("probability_threshold must lie in [0, 1]")
+            threshold = _normalize_bounded_scalar(
+                self.probability_threshold,
+                lower=0.0,
+                upper=1.0,
+                message="probability_threshold must lie in [0, 1]",
+            )
             object.__setattr__(self, "probability_threshold", threshold)
 
         if self.max_cost is not None:
-            max_cost = float(self.max_cost)
-            if not np.isfinite(max_cost):
-                raise ValueError("max_cost must be finite or None")
+            max_cost = _normalize_finite_scalar(
+                self.max_cost,
+                message="max_cost must be finite or None",
+            )
             object.__setattr__(self, "max_cost", max_cost)
 
         if self.max_cost_percentile is not None:
-            percentile = float(self.max_cost_percentile)
-            if not 0.0 <= percentile <= 100.0:
-                raise ValueError("max_cost_percentile must lie in [0, 100]")
+            percentile = _normalize_bounded_scalar(
+                self.max_cost_percentile,
+                lower=0.0,
+                upper=100.0,
+                message="max_cost_percentile must lie in [0, 100]",
+            )
             object.__setattr__(self, "max_cost_percentile", percentile)
 
-        large_cost = float(self.large_cost)
-        if not np.isfinite(large_cost) or large_cost <= 0.0:
+        large_cost = _normalize_finite_scalar(
+            self.large_cost,
+            message="large_cost must be finite and positive",
+        )
+        if large_cost <= 0.0:
             raise ValueError("large_cost must be finite and positive")
         object.__setattr__(self, "large_cost", large_cost)
 
@@ -97,6 +107,36 @@ def _normalize_positive_integer(value: Any, name: str) -> int:
         parsed = int(scalar_float)
 
     if parsed <= 0:
+        raise ValueError(message)
+    return parsed
+
+
+def _normalize_finite_scalar(value: Any, *, message: str) -> float:
+    value_array = np.asarray(value)
+    if value_array.shape != () or value_array.dtype == np.bool_:
+        raise ValueError(message)
+
+    scalar = value_array.item()
+    if isinstance(scalar, (bool, np.bool_)):
+        raise ValueError(message)
+    try:
+        parsed = float(scalar)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(message) from exc
+    if not np.isfinite(parsed):
+        raise ValueError(message)
+    return parsed
+
+
+def _normalize_bounded_scalar(
+    value: Any,
+    *,
+    lower: float,
+    upper: float,
+    message: str,
+) -> float:
+    parsed = _normalize_finite_scalar(value, message=message)
+    if not lower <= parsed <= upper:
         raise ValueError(message)
     return parsed
 
@@ -165,9 +205,16 @@ def prune_pairwise_cost_matrix(
     if cfg is None:
         return costs
 
-    penalty = cfg.large_cost if large_cost is None else float(large_cost)
-    if not np.isfinite(penalty) or penalty <= 0.0:
+    if large_cost is None:
+        penalty = cfg.large_cost
+    else:
+        penalty = _normalize_finite_scalar(
+            large_cost,
+            message="large_cost must be finite and positive",
+        )
+    if penalty <= 0.0:
         raise ValueError("large_cost must be finite and positive")
+    penalty = _effective_large_cost(costs, penalty)
 
     mask = candidate_mask_from_costs(
         costs,
@@ -215,6 +262,21 @@ def _finite_percentile(costs: np.ndarray, percentile: float) -> float | None:
     return float(np.percentile(finite, float(percentile)))
 
 
+def _effective_large_cost(costs: np.ndarray, penalty: float) -> float:
+    finite = costs[np.isfinite(costs)]
+    if finite.size == 0:
+        return penalty
+
+    max_finite = float(np.max(finite))
+    if penalty > max_finite:
+        return penalty
+
+    adjusted_penalty = float(np.nextafter(max_finite, np.inf))
+    if not np.isfinite(adjusted_penalty):
+        raise ValueError("large_cost is too small to exceed finite costs")
+    return adjusted_penalty
+
+
 def _as_cost_matrix(cost_matrix: Any) -> np.ndarray:
     costs = np.asarray(cost_matrix, dtype=float)
     if costs.ndim != 2:
@@ -229,6 +291,9 @@ def _as_probability_matrix(
     probabilities = np.asarray(probability_matrix, dtype=float)
     if probabilities.shape != shape:
         raise ValueError("probability_matrix must match cost_matrix shape")
+    finite = np.isfinite(probabilities)
+    if np.any(finite & ((probabilities < 0.0) | (probabilities > 1.0))):
+        raise ValueError("finite probability_matrix entries must lie in [0, 1]")
     return probabilities
 
 

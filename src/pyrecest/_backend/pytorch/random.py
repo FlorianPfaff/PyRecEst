@@ -190,7 +190,7 @@ def _integer_population_size(a):
     return None
 
 
-def _choice_indices(population_size, size, num_samples, replace, p, device):
+def _choice_indices(population_size, size, num_samples, replace, p, device, *, shuffle=True):
     if population_size <= 0:
         if num_samples == 0:
             return _torch.empty(size or (0,), dtype=_torch.long, device=device)
@@ -230,6 +230,8 @@ def _choice_indices(population_size, size, num_samples, replace, p, device):
         )
 
     indices = _torch.randperm(population_size, device=device)[:num_samples]
+    if not bool(shuffle):
+        indices = _torch.sort(indices).values
     if size is None:
         return indices[0]
     return indices.reshape(size)
@@ -255,13 +257,13 @@ def _take_choice(a, indices, axis):
 
 
 def choice(a, size=None, replace=True, p=None, axis=0, shuffle=True):
-    del shuffle
-
     size, num_samples = _choice_size(size)
     population_size = _integer_population_size(a)
     if population_size is not None:
         device = p.device if _torch.is_tensor(p) else None
-        return _choice_indices(population_size, size, num_samples, replace, p, device)
+        return _choice_indices(
+            population_size, size, num_samples, replace, p, device, shuffle=shuffle
+        )
 
     if not _torch.is_tensor(a):
         a = _torch.as_tensor(a)
@@ -271,7 +273,9 @@ def choice(a, size=None, replace=True, p=None, axis=0, shuffle=True):
         )
 
     axis = _normalize_axis(axis, a.ndim)
-    indices = _choice_indices(a.shape[axis], size, num_samples, replace, p, a.device)
+    indices = _choice_indices(
+        a.shape[axis], size, num_samples, replace, p, a.device, shuffle=shuffle
+    )
     return _take_choice(a, indices, axis)
 
 

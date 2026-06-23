@@ -16,6 +16,14 @@ import numpy as np
 EvidenceComputationKind = Literal["full_smoothing", "evidence_only"]
 
 
+def _coerce_bool_flag(value: bool, name: str) -> bool:
+    """Return a bool flag without treating arbitrary truthy objects as true."""
+
+    if isinstance(value, (bool, np.bool_)):
+        return bool(value)
+    raise ValueError(f"{name} must be a bool")
+
+
 @dataclass(frozen=True, slots=True)
 class EvidenceComputationMode:
     """Declare whether an evidence computation should also smooth posteriors.
@@ -43,10 +51,16 @@ class EvidenceComputationMode:
     def __post_init__(self) -> None:
         if self.mode not in {"full_smoothing", "evidence_only"}:
             raise ValueError(f"unknown evidence computation mode {self.mode!r}")
-        if self.mode == "evidence_only" and self.return_smoothed:
+        return_smoothed = _coerce_bool_flag(self.return_smoothed, "return_smoothed")
+        terminal_posterior = _coerce_bool_flag(
+            self.terminal_posterior, "terminal_posterior"
+        )
+        if self.mode == "evidence_only" and return_smoothed:
             raise ValueError("evidence_only mode cannot return smoothed posteriors")
-        if self.mode == "full_smoothing" and not self.return_smoothed:
+        if self.mode == "full_smoothing" and not return_smoothed:
             raise ValueError("full_smoothing mode must return smoothed posteriors")
+        object.__setattr__(self, "return_smoothed", return_smoothed)
+        object.__setattr__(self, "terminal_posterior", terminal_posterior)
         object.__setattr__(self, "metadata", dict(self.metadata))
 
     @classmethod
@@ -79,10 +93,10 @@ class EvidenceComputationMode:
     def from_return_smoothed(cls, return_smoothed: bool) -> "EvidenceComputationMode":
         """Build a mode from the common Boolean smoothing flag."""
 
-        return_smoothed = _coerce_return_smoothed(return_smoothed)
-        if return_smoothed is None:
+        parsed = _coerce_return_smoothed(return_smoothed)
+        if parsed is None:
             raise ValueError("return_smoothed must be a bool")
-        return cls.full_smoothing() if return_smoothed else cls.evidence_only()
+        return cls.full_smoothing() if parsed else cls.evidence_only()
 
     @property
     def evidence_only_requested(self) -> bool:

@@ -52,9 +52,9 @@ def pareto_front_indices(
 
     objective_names = _validate_objectives(objectives)
     _require_table_columns(table, objective_names, "Pareto objective")
+    direction_map = _directions_by_objective(objective_names, directions)
     if table.empty:
         return []
-    direction_map = _directions_by_objective(objective_names, directions)
     candidates = (
         table.loc[_feasible_index(table, feasible_mask)]
         if feasible_mask is not None
@@ -345,7 +345,10 @@ def _coerce_numeric(value: Any) -> float:
 
 
 def _is_missing(value: Any) -> bool:
-    return bool(pd.isna(value))
+    missing = pd.isna(value)
+    if isinstance(missing, (bool, np.bool_)):
+        return bool(missing)
+    return False
 
 
 def _parse_constraint_spec(spec: ConstraintSpec | Mapping[str, Any]) -> ConstraintSpec:

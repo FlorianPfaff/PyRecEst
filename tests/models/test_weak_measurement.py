@@ -28,6 +28,14 @@ def test_block_diag_measurement_covariance_preserves_named_order() -> None:
     assert np.allclose(covariance, np.diag([1.0, 4.0, 10000.0]))
 
 
+def test_block_diag_measurement_covariance_rejects_duplicate_dimension_order() -> None:
+    with pytest.raises(ValueError, match="dimension_order"):
+        block_diag_measurement_covariance(
+            trusted_std={"x": 1.0, "y": 2.0},
+            dimension_order=["x", "x"],
+        )
+
+
 def test_selection_matrix_selects_state_components() -> None:
     matrix = selection_matrix(6, [0, 2, 5])
 

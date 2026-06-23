@@ -122,10 +122,18 @@ def sparse_second_order_grid_evidence(
     prev = np.asarray(prev, dtype=int)
     curr = np.asarray(curr, dtype=int)
     alpha = np.asarray(alpha, dtype=float)
-    if prev.shape != curr.shape or prev.shape != alpha.shape:
+    if (
+        prev.ndim != 1
+        or curr.ndim != 1
+        or alpha.ndim != 1
+        or prev.shape != curr.shape
+        or prev.shape != alpha.shape
+    ):
         raise ValueError(
             "initial pair arrays must have matching one-dimensional shapes"
         )
+    if np.any(~np.isfinite(alpha)) or np.any(alpha < 0.0):
+        raise ValueError("initial pair weights must be finite and nonnegative")
     if (
         np.any(prev < 0)
         or np.any(prev >= n_states)

@@ -54,13 +54,18 @@ def deterministic_subsample(
     """
 
     point_array = as_point_set(points)
-    if max_points is None or max_points <= 0 or point_array.shape[0] <= max_points:
+    max_points_int = _normalize_optional_integer(max_points, "max_points")
+    if (
+        max_points_int is None
+        or max_points_int <= 0
+        or point_array.shape[0] <= max_points_int
+    ):
         indices = np.arange(point_array.shape[0], dtype=np.int64)
         return point_array, indices
 
     rng = np.random.default_rng(seed)
     indices = np.sort(
-        rng.choice(point_array.shape[0], size=max_points, replace=False)
+        rng.choice(point_array.shape[0], size=max_points_int, replace=False)
     ).astype(np.int64)
     return point_array[indices], indices
 
@@ -81,7 +86,7 @@ def nearest_neighbor_distances(
     query_array = as_point_set(query, name="query")
     reference_array = as_point_set(reference, name="reference")
     _validate_matching_dimension(query_array, reference_array)
-    _validate_chunk_size(query_chunk_size)
+    query_chunk_size = _validate_chunk_size(query_chunk_size)
 
     tree_result = _nearest_neighbor_distances_ckdtree(
         query_array,
@@ -344,9 +349,48 @@ def _validate_matching_dimension(query: np.ndarray, reference: np.ndarray) -> No
         )
 
 
-def _validate_chunk_size(query_chunk_size: int) -> None:
-    if query_chunk_size < 1:
-        raise ValueError("query_chunk_size must be positive.")
+def _validate_chunk_size(query_chunk_size: int) -> int:
+    array = np.asarray(query_chunk_size)
+    if array.shape != () or array.dtype == np.bool_:
+        raise ValueError("query_chunk_size must be a positive integer.")
+    scalar = array.item()
+    if isinstance(scalar, (bool, np.bool_)):
+        raise ValueError("query_chunk_size must be a positive integer.")
+    try:
+        chunk_size_float = float(scalar)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("query_chunk_size must be a positive integer.") from exc
+    if (
+        not np.isfinite(chunk_size_float)
+        or not chunk_size_float.is_integer()
+        or chunk_size_float < 1.0
+    ):
+        raise ValueError("query_chunk_size must be a positive integer.")
+    return int(chunk_size_float)
+
+
+def _normalize_optional_integer(value: Any, name: str) -> int | None:
+    if value is None:
+        return None
+
+    value_array = np.asarray(value)
+    message = f"{name} must be None or an integer."
+    if value_array.shape != () or value_array.dtype == np.bool_:
+        raise ValueError(message)
+
+    scalar = value_array.item()
+    if isinstance(scalar, (bool, np.bool_)):
+        raise ValueError(message)
+    if isinstance(scalar, (int, np.integer)):
+        return int(scalar)
+
+    try:
+        scalar_float = float(scalar)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(message) from exc
+    if not np.isfinite(scalar_float) or not scalar_float.is_integer():
+        raise ValueError(message)
+    return int(scalar_float)
 
 
 def _validate_threshold(threshold: float) -> float:

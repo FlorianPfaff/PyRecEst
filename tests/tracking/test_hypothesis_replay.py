@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 from pyrecest.tracking import (
     HypothesisReplay,
     InnovationConsistencyScoreConfig,
@@ -64,6 +65,28 @@ def test_hypothesis_replay_accepts_tracking_record_objects() -> None:
     assert score.finite_nis_count == 1
     assert score.finite_residual_count == 1
     assert score.robust_sum_residual == 5.0 / 100.0
+
+
+def test_score_config_rejects_invalid_scalar_controls() -> None:
+    invalid_cases = (
+        ("residual_weight", np.inf, "residual_weight must be finite"),
+        ("coverage_reward", True, "coverage_reward must be finite"),
+        ("nis_clip", -1.0, "nis_clip must be nonnegative"),
+        ("residual_clip", np.array([1.0]), "residual_clip must be finite"),
+        ("residual_normalizer", 0.0, "residual_normalizer must be positive"),
+    )
+
+    for field_name, value, message in invalid_cases:
+        with pytest.raises(ValueError, match=message):
+            InnovationConsistencyScoreConfig(**{field_name: value})
+
+
+def test_hypothesis_replay_rejects_fractional_count_fields() -> None:
+    with pytest.raises(
+        ValueError,
+        match="track_switches must be a nonnegative integer",
+    ):
+        HypothesisReplay(hypothesis_id="bad-count", records=[], track_switches=1.5)
 
 
 def test_rank_replayed_hypotheses_calls_replay_function() -> None:

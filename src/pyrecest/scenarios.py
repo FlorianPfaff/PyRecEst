@@ -127,6 +127,18 @@ def _normalized_particle_weights(raw_weights: Any, particle_count: int, backend)
     )
 
 
+def _positive_integer_config_value(value: Any, name: str) -> int:
+    if isinstance(value, bool):
+        raise ValueError(f"{name} must be a positive integer")
+    try:
+        scalar = float(value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{name} must be a positive integer") from exc
+    if not math.isfinite(scalar) or scalar <= 0.0 or not scalar.is_integer():
+        raise ValueError(f"{name} must be a positive integer")
+    return int(scalar)
+
+
 @scenario_runner("linear_gaussian")
 def run_linear_gaussian_scenario(path: str | Path) -> ScenarioResult:
     """Run a constant-size linear Gaussian Kalman filtering scenario.
@@ -228,7 +240,10 @@ def run_particle_resampling_scenario(path: str | Path) -> ScenarioResult:
         int(particles.shape[0]),
         be,
     )
-    num_samples = int(data.get("num_samples", int(particles.shape[0])))
+    num_samples = _positive_integer_config_value(
+        data.get("num_samples", int(particles.shape[0])),
+        "num_samples",
+    )
 
     indices = be.random.choice(
         be.arange(int(particles.shape[0])),
