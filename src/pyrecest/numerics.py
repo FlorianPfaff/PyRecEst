@@ -68,6 +68,15 @@ def _validate_nonnegative_integer(name: str, value: int) -> int:
     return value
 
 
+def _is_finite_matrix(matrix: np.ndarray) -> bool:
+    return bool(np.all(np.isfinite(matrix)))
+
+
+def _raise_if_nonfinite_matrix(matrix: np.ndarray, name: str) -> None:
+    if not _is_finite_matrix(matrix):
+        raise NumericalStabilityError(f"{name} must contain only finite values.")
+
+
 def symmetrize_matrix(matrix):
     """Return ``0.5 * (matrix + matrix.T)`` in the active backend representation."""
     arr = _to_numpy_array(matrix)
@@ -83,6 +92,7 @@ def is_symmetric(matrix, *, atol: float = 1e-10) -> bool:
     return bool(
         arr.ndim == 2
         and arr.shape[0] == arr.shape[1]
+        and _is_finite_matrix(arr)
         and np.allclose(arr, arr.T, atol=atol, rtol=0.0)
     )
 
@@ -94,6 +104,7 @@ def is_positive_semidefinite(matrix, *, atol: float = 1e-10) -> bool:
     if (
         arr.ndim != 2
         or arr.shape[0] != arr.shape[1]
+        or not _is_finite_matrix(arr)
         or not is_symmetric(arr, atol=atol)
     ):
         return False
@@ -112,6 +123,7 @@ def nearest_symmetric_psd(matrix, *, min_eigenvalue: float = 0.0):
     arr = _to_numpy_array(matrix)
     if arr.ndim != 2 or arr.shape[0] != arr.shape[1]:
         raise ShapeError(f"Expected a square matrix, got shape {arr.shape}.")
+    _raise_if_nonfinite_matrix(arr, "matrix")
     sym = 0.5 * (arr + arr.T)
     eigvals, eigvecs = np.linalg.eigh(sym)
     clipped = np.maximum(eigvals, min_eigenvalue)
@@ -132,6 +144,7 @@ def jittered_cholesky(matrix, *, initial_jitter: float = 1e-12, max_attempts: in
     arr = _to_numpy_array(matrix)
     if arr.ndim != 2 or arr.shape[0] != arr.shape[1]:
         raise ShapeError(f"Expected a square matrix, got shape {arr.shape}.")
+    _raise_if_nonfinite_matrix(arr, "matrix")
     sym = 0.5 * (arr + arr.T)
     eye = np.eye(sym.shape[0])
     jitter = 0.0
@@ -158,6 +171,7 @@ def assert_covariance_matrix(
         raise DimensionMismatchError(
             f"{name} dimension {arr.shape[0]} does not match expected dimension {dim}."
         )
+    _raise_if_nonfinite_matrix(arr, name)
     if not is_symmetric(arr, atol=atol):
         raise NumericalStabilityError(f"{name} must be symmetric within atol={atol}.")
     if not is_positive_semidefinite(arr, atol=atol):
