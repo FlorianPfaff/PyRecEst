@@ -46,6 +46,24 @@ def _default_score_to_cost(scores: Any) -> Any:
     return -asarray(scores, dtype=float)
 
 
+def _normalize_min_score(min_score: Any) -> float:
+    min_score_array = np.asarray(min_score)
+    if min_score_array.shape != () or min_score_array.dtype == np.bool_:
+        raise ValueError("min_score must be a finite scalar.")
+
+    min_score_value = min_score_array.item()
+    if isinstance(min_score_value, (bool, np.bool_)):
+        raise ValueError("min_score must be a finite scalar.")
+
+    try:
+        min_score_float = float(min_score_value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("min_score must be a finite scalar.") from exc
+    if not math.isfinite(min_score_float):
+        raise ValueError("min_score must be a finite scalar.")
+    return min_score_float
+
+
 def _normalize_max_gap(max_gap: Any) -> int:
     max_gap_array = np.asarray(max_gap)
     if max_gap_array.shape != () or max_gap_array.dtype == np.bool_:
@@ -109,8 +127,8 @@ def solve_multisession_assignment_from_similarity(  # pylint: disable=R0913,R091
     """Score-native wrapper around :func:`solve_multisession_assignment`."""
     _ensure_supported_backend("solve_multisession_assignment_from_similarity")
 
-    if min_score is not None and not math.isfinite(min_score):
-        raise ValueError("min_score must be finite.")
+    if min_score is not None:
+        min_score = _normalize_min_score(min_score)
     if max_gap is not None:
         max_gap = _normalize_max_gap(max_gap)
 
@@ -136,7 +154,7 @@ def solve_multisession_assignment_from_similarity(  # pylint: disable=R0913,R091
         score_finite_mask = isfinite(score_matrix_array)
         admissible_mask = backend_copy(score_finite_mask)
         if min_score is not None:
-            admissible_mask &= score_matrix_array >= float(min_score)
+            admissible_mask &= score_matrix_array >= min_score
 
         safe_scores = where(score_finite_mask, score_matrix_array, 0.0)
         cost_matrix = asarray(score_to_cost(safe_scores), dtype=float)

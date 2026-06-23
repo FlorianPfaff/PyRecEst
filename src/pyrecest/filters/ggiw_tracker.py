@@ -152,6 +152,8 @@ class GGIWTracker(
     def _normalize_measurements(self, measurements):
         measurements = array(measurements)
         if measurements.ndim == 1:
+            if measurements.shape[0] == 0:
+                return zeros((self.measurement_dim, 0))
             if measurements.shape[0] != self.measurement_dim:
                 raise ValueError(
                     "A single measurement vector must match the measurement dimension"

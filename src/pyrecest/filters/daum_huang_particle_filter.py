@@ -357,8 +357,8 @@ def _validate_positive_int(value, name: str) -> int:
 
 def _validate_nonnegative_float(value, name: str) -> float:
     value = float(value)
-    if value < 0.0:
-        raise ValueError(f"{name} must be nonnegative.")
+    if not np.isfinite(value) or value < 0.0:
+        raise ValueError(f"{name} must be finite and nonnegative.")
     return value
 
 

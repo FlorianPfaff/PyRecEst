@@ -33,6 +33,15 @@ def test_tracking_event_validates_measurement_covariance_shape() -> None:
         )
 
 
+def test_tracking_event_requires_square_covariance_without_measurement() -> None:
+    with pytest.raises(ValueError, match="covariance must be a square matrix"):
+        TrackingEvent(
+            time=0.0,
+            source="rf",
+            covariance=np.ones((2, 3)),
+        )
+
+
 def test_record_from_update_preserves_prior_posterior_and_legacy_aliases() -> None:
     event = event_from_measurement(
         time=2.0,
@@ -63,6 +72,20 @@ def test_record_from_update_preserves_prior_posterior_and_legacy_aliases() -> No
     assert np.allclose(as_dict["prior_mean"], prior_mean)
     assert as_dict["event_metadata"] == {"sensor": "keysight"}
     json.dumps(as_dict)
+
+
+def test_tracking_record_rejects_rectangular_innovation_cov_without_innovation() -> None:
+    event = event_from_measurement(time=0.0, source="imu", action="coast")
+
+    with pytest.raises(ValueError, match="innovation_cov must be a square matrix"):
+        record_from_update(
+            event=event,
+            prior_mean=[0.0, 0.0],
+            prior_cov=np.eye(2),
+            posterior_mean=[0.0, 0.0],
+            posterior_cov=np.eye(2),
+            innovation_cov=np.ones((2, 3)),
+        )
 
 
 def test_records_to_dicts_matrix_and_action_counts() -> None:

@@ -185,8 +185,8 @@ def get_plot_style_for_filter(filter_name):
 
     Returns:
         color (str or list): Color for the plot.
-        style_marker (str): Marker style for the plot.
-        style_line (str): Line style for the plot.
+        style_marker (str): Marker style.
+        style_line (str): Line style.
     """
 
     switcher = {
@@ -263,6 +263,8 @@ def get_min_max_param(results_summarized):
     valid_parameters = [
         res["parameter"] for res in results_summarized if res["parameter"] is not None
     ]
+    if not valid_parameters:
+        return 0.0, 1.0
     # Finding min and max values
     min_parameter = min(valid_parameters)
     max_parameter = max(valid_parameters)

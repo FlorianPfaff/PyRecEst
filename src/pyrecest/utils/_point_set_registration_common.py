@@ -146,6 +146,19 @@ def evaluate_registration_costs(transform, reference, moving, association_cost):
     return transformed_reference, current_costs
 
 
+def _validate_max_cost(max_cost) -> float:
+    max_cost_array = asarray(max_cost)
+    if max_cost_array.shape != ():
+        raise ValueError("max_cost must be a scalar.")
+    try:
+        max_cost_value = float(max_cost_array)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("max_cost must be a scalar numeric value.") from exc
+    if math.isnan(max_cost_value) or max_cost_value < 0.0:
+        raise ValueError("max_cost must be non-negative or infinity.")
+    return max_cost_value
+
+
 def solve_gated_assignment(cost_matrix, *, max_cost: float = float("inf")):
     """Solve one-to-one assignment with optional gating."""
     costs = asarray(cost_matrix)
@@ -156,28 +169,46 @@ def solve_gated_assignment(cost_matrix, *, max_cost: float = float("inf")):
     if costs.shape[1] == 0:
         return zeros((costs.shape[0],), dtype=int64) - 1
 
+    max_cost_value = _validate_max_cost(max_cost)
     finite_mask = isfinite(costs)
-    finite_costs = costs[finite_mask]
-    if finite_costs.shape[0] == 0:
+    valid_cost_mask = finite_mask
+    if math.isfinite(max_cost_value):
+        valid_cost_mask = finite_mask & (costs <= max_cost_value)
+    valid_costs = costs[valid_cost_mask]
+    if valid_costs.shape[0] == 0:
         return zeros((costs.shape[0],), dtype=int64) - 1
 
-    dummy_cost = (
-        float(max_cost) if math.isfinite(max_cost) else float(finite_costs.max() + 1.0)
+    highest_valid_cost = float(valid_costs.max())
+    unassigned_cost = (
+        max_cost_value
+        if math.isfinite(max_cost_value)
+        else highest_valid_cost + 1.0
     )
-    padded_size = max(costs.shape[0], costs.shape[1])
-    sanitized_costs = where(finite_mask, costs, dummy_cost)
-    padded_costs = full((padded_size, padded_size), dummy_cost)
-    padded_costs[: costs.shape[0], : costs.shape[1]] = sanitized_costs
-    row_indices, col_indices = linear_sum_assignment(padded_costs)
+    cost_scale = max(abs(highest_valid_cost), abs(unassigned_cost), 1.0)
+    invalid_cost = max(highest_valid_cost, 2.0 * unassigned_cost) + cost_scale
 
-    assignment = zeros((costs.shape[0],), dtype=int64) - 1
+    n_reference, n_moving = costs.shape
+    augmented_size = n_reference + n_moving
+    augmented_costs = full((augmented_size, augmented_size), invalid_cost)
+    augmented_costs[:n_reference, :n_moving] = where(
+        valid_cost_mask,
+        costs,
+        invalid_cost,
+    )
+
+    for reference_index in range(n_reference):
+        augmented_costs[reference_index, n_moving + reference_index] = unassigned_cost
+    for moving_index in range(n_moving):
+        augmented_costs[n_reference + moving_index, moving_index] = unassigned_cost
+    augmented_costs[n_reference:, n_moving:] = 0.0
+
+    row_indices, col_indices = linear_sum_assignment(augmented_costs)
+
+    assignment = zeros((n_reference,), dtype=int64) - 1
     for row_index, col_index in zip(row_indices, col_indices):
-        if row_index >= costs.shape[0] or col_index >= costs.shape[1]:
+        if row_index >= n_reference or col_index >= n_moving:
             continue
-        if (
-            isfinite(costs[row_index, col_index])
-            and costs[row_index, col_index] <= max_cost
-        ):
+        if bool(valid_cost_mask[row_index, col_index]):
             assignment[row_index] = int(col_index)
     return assignment
 

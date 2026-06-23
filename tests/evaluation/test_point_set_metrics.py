@@ -102,6 +102,22 @@ def test_deterministic_subsample_returns_sorted_indices_and_is_reproducible():
     assert np.all(indices_a[:-1] <= indices_a[1:])
 
 
+def test_deterministic_subsample_validates_max_points_integrality():
+    points = np.arange(30.0).reshape(10, 3)
+
+    subset, indices = deterministic_subsample(points, max_points=4.0, seed=7)
+    assert subset.shape == (4, 3)
+    assert indices.shape == (4,)
+
+    all_points, all_indices = deterministic_subsample(points, max_points=-1)
+    np.testing.assert_array_equal(all_points, points)
+    np.testing.assert_array_equal(all_indices, np.arange(points.shape[0]))
+
+    for max_points in (True, 1.5, np.nan, np.array([3])):
+        with pytest.raises(ValueError, match="max_points"):
+            deterministic_subsample(points, max_points=max_points)
+
+
 def test_invalid_point_sets_raise_clear_errors():
     with pytest.raises(ValueError, match="shape"):
         nearest_neighbor_distances(np.array([0.0, 1.0]), np.array([[0.0], [1.0]]))

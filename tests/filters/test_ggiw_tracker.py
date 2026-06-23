@@ -91,6 +91,27 @@ class TestGGIWTracker(unittest.TestCase):
         self.assertLess(self.tracker.covariance[0, 0], prior_covariance[0, 0])
         self.assertTrue(isfinite(self.tracker.latest_log_likelihood))
 
+    def test_update_accepts_empty_scan(self):
+        prior_kinematic_state = self.tracker.kinematic_state.copy()
+        prior_covariance = self.tracker.covariance.copy()
+        prior_extent = self.tracker.get_point_estimate_extent().copy()
+        prior_degrees_of_freedom = self.tracker.extent_degrees_of_freedom
+        prior_shape = self.tracker.gamma_shape
+        prior_rate = self.tracker.gamma_rate
+
+        self.tracker.update([])
+
+        npt.assert_allclose(self.tracker.kinematic_state, prior_kinematic_state)
+        npt.assert_allclose(self.tracker.covariance, prior_covariance)
+        npt.assert_allclose(self.tracker.get_point_estimate_extent(), prior_extent)
+        self.assertAlmostEqual(
+            self.tracker.extent_degrees_of_freedom,
+            prior_degrees_of_freedom,
+        )
+        self.assertAlmostEqual(self.tracker.gamma_shape, prior_shape)
+        self.assertAlmostEqual(self.tracker.gamma_rate, prior_rate + 1.0)
+        self.assertTrue(isfinite(self.tracker.latest_log_likelihood))
+
     def test_update_accepts_transposed_measurement_layout(self):
         measurements_by_row = array(
             [

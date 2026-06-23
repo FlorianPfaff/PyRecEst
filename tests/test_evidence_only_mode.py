@@ -7,6 +7,7 @@ from pyrecest.filters import sparse_second_order_grid_evidence
 def test_evidence_computation_mode_resolves_boolean_and_string_aliases():
     full = resolve_evidence_computation_mode(return_smoothed=True)
     fast = resolve_evidence_computation_mode("evidence-only")
+    string_fast = resolve_evidence_computation_mode(return_smoothed="false")
 
     assert full.mode == "full_smoothing"
     assert full.return_smoothed
@@ -14,7 +15,17 @@ def test_evidence_computation_mode_resolves_boolean_and_string_aliases():
     assert fast.mode == "evidence_only"
     assert not fast.return_smoothed
     assert fast.evidence_only_requested
+    assert string_fast.mode == "evidence_only"
+    assert not string_fast.return_smoothed
+    assert string_fast.evidence_only_requested
     assert fast.to_diagnostics()["evidence_computation_mode"] == "evidence_only"
+
+
+def test_evidence_computation_mode_rejects_invalid_boolean_strings():
+    with pytest.raises(ValueError, match="return_smoothed"):
+        resolve_evidence_computation_mode(return_smoothed="definitely")
+    with pytest.raises(ValueError, match="return_smoothed"):
+        resolve_evidence_computation_mode("full_smoothing", return_smoothed="false")
 
 
 def test_evidence_computation_mode_rejects_inconsistent_flags():
