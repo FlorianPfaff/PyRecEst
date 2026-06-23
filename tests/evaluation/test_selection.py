@@ -7,6 +7,7 @@ from pyrecest.evaluation.selection import (
     quantile_tail_mask,
     quantile_tail_threshold,
     retained_count_from_fraction,
+    sanitized_score_vector,
     tail_rescue_quota_count,
     tail_rescue_topk_mask,
     top_count_mask,
@@ -35,6 +36,22 @@ def test_top_count_mask_rejects_invalid_retained_count_scalars() -> None:
 
     with pytest.raises(ValueError, match="retained_count"):
         top_count_mask([1.0, 2.0], 3)
+
+
+def test_top_count_mask_rejects_non_boolean_largest_flag() -> None:
+    for largest in ("False", 1, np.array([True])):
+        with pytest.raises(ValueError, match="largest"):
+            top_count_mask([1.0, 2.0], 1, largest=largest)
+
+
+def test_selection_helpers_reject_non_boolean_sanitize_flags() -> None:
+    for nonnegative in ("False", 1, np.array([True])):
+        with pytest.raises(ValueError, match="nonnegative"):
+            sanitized_score_vector([-1.0, 2.0], nonnegative=nonnegative)
+
+    for sanitize_nonnegative in ("False", 1, np.array([True])):
+        with pytest.raises(ValueError, match="sanitize_nonnegative"):
+            top_count_mask([-1.0, 2.0], 1, sanitize_nonnegative=sanitize_nonnegative)
 
 
 def test_top_fraction_mask_uses_ceil_retained_count() -> None:
@@ -78,8 +95,9 @@ def test_quantile_tail_mask_validates_empty_inputs_before_empty_return() -> None
         with pytest.raises(ValueError, match="quantile"):
             quantile_tail_mask([], bad_quantile)
 
-    with pytest.raises(ValueError, match="tail"):
-        quantile_tail_mask([], 0.5, tail="middle")
+    for bad_tail in ("middle", np.array("lower")):
+        with pytest.raises(ValueError, match="tail"):
+            quantile_tail_mask([], 0.5, tail=bad_tail)
 
 
 def test_protected_tail_topk_mask_preserves_proportional_tail_capacity() -> None:
