@@ -203,6 +203,31 @@ class MurtyAssignmentTest(unittest.TestCase):
                         col_non_assignment_costs=np.array([invalid_cost]),
                     )
 
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ == "jax",  # pylint: disable=no-member
+        reason="Not supported on the JAX backend",
+    )
+    def test_boolean_non_assignment_costs_are_rejected(self):
+        cost_matrix = np.array([[1.0]])
+
+        for invalid_cost in (True, np.array(True), np.array([True])):
+            with self.subTest(kind="row", invalid_cost=invalid_cost):
+                with self.assertRaisesRegex(
+                    ValueError, "row_non_assignment_costs must be numeric and finite"
+                ):
+                    murty_k_best_assignments(
+                        cost_matrix,
+                        row_non_assignment_costs=invalid_cost,
+                    )
+            with self.subTest(kind="column", invalid_cost=invalid_cost):
+                with self.assertRaisesRegex(
+                    ValueError, "col_non_assignment_costs must be numeric and finite"
+                ):
+                    murty_k_best_assignments(
+                        cost_matrix,
+                        col_non_assignment_costs=invalid_cost,
+                    )
+
     def test_non_positive_k_returns_empty_list(self):
         self.assertEqual(murty_k_best_assignments(np.eye(2), k=0), [])
 
