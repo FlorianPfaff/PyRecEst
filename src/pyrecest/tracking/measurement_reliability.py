@@ -76,7 +76,7 @@ class MeasurementReliabilityResult:
             _positive_scalar(self.covariance_scale, "covariance_scale"),
         )
         object.__setattr__(self, "covariance", covariance)
-        object.__setattr__(self, "accepted", bool(self.accepted))
+        object.__setattr__(self, "accepted", _bool_scalar(self.accepted, "accepted"))
         object.__setattr__(self, "action", str(self.action))
         object.__setattr__(self, "mode", str(self.mode))
 
@@ -277,6 +277,13 @@ def _finite_scalar(value: float, name: str) -> float:
     if not np.isfinite(parsed):
         raise ValueError(f"{name} must be finite")
     return parsed
+
+
+def _bool_scalar(value: Any, name: str) -> bool:
+    array = np.asarray(value)
+    if array.shape != () or array.dtype != np.bool_:
+        raise ValueError(f"{name} must be a boolean")
+    return bool(array.item())
 
 
 def _covariance_matrix(value: Any, *, dim: int | None = None) -> np.ndarray:
