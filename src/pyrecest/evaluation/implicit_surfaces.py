@@ -77,9 +77,20 @@ def surface_band_probability_from_signed_distance(
 
 
 def _positive_float(name: str, value: float) -> float:
-    parsed = float(value)
+    message = f"{name} must be finite and positive."
+    value_array = np.asarray(value)
+    if value_array.shape != () or value_array.dtype == np.bool_:
+        raise ValueError(message)
+
+    scalar = value_array.item()
+    if isinstance(scalar, (bool, np.bool_)):
+        raise ValueError(message)
+    try:
+        parsed = float(scalar)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(message) from exc
     if not np.isfinite(parsed) or parsed <= 0.0:
-        raise ValueError(f"{name} must be finite and positive.")
+        raise ValueError(message)
     return parsed
 
 
