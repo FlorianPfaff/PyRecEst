@@ -13,11 +13,20 @@ Record = Mapping[str, Any]
 
 
 def _as_scalar_float(value: Any, name: str) -> float:
-    value_array = np.asarray(value)
-    if value_array.shape != () or value_array.dtype == np.bool_:
+    try:
+        value_array = np.asarray(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{name} must be a scalar number") from exc
+    if value_array.shape != ():
         raise ValueError(f"{name} must be a scalar number")
     try:
-        scalar = float(value_array.item())
+        scalar_value = value_array.item()
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{name} must be a scalar number") from exc
+    if isinstance(scalar_value, (bool, np.bool_, str, bytes, np.str_, np.bytes_)):
+        raise ValueError(f"{name} must be a scalar number")
+    try:
+        scalar = float(scalar_value)
     except (TypeError, ValueError, OverflowError) as exc:
         raise ValueError(f"{name} must be a scalar number") from exc
     if not math.isfinite(scalar):
