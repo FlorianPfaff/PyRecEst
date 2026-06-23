@@ -1,6 +1,8 @@
 from collections.abc import Callable
 from typing import Any
 
+import numpy as np
+
 from pyrecest.filters import (
     EuclideanParticleFilter,
     HypertoroidalParticleFilter,
@@ -33,13 +35,23 @@ def get_registered_filter_factory(filter_name: str) -> FilterFactory | None:
     return _FILTER_FACTORIES.get(filter_name)
 
 
+def _as_bool_scalar(value: Any, name: str) -> bool:
+    if isinstance(value, bool):
+        return value
+    value_array = np.asarray(value)
+    if value_array.shape == () and value_array.dtype == np.bool_:
+        return bool(value_array.item())
+    raise ValueError(f"{name} must be a boolean scalar")
+
+
 def _gen_next_state_with_noise_is_vectorized(scenario_config) -> bool:
-    return bool(
-        scenario_config.get(
-            "gen_next_state_with_noise_is_vectorized",
-            scenario_config.get("genNextStateWithNoiseIsVectorized", False),
-        )
-    )
+    snake_case_key = "gen_next_state_with_noise_is_vectorized"
+    camel_case_key = "genNextStateWithNoiseIsVectorized"
+    if snake_case_key in scenario_config:
+        return _as_bool_scalar(scenario_config[snake_case_key], snake_case_key)
+    if camel_case_key in scenario_config:
+        return _as_bool_scalar(scenario_config[camel_case_key], camel_case_key)
+    return False
 
 
 # pylint: disable=too-many-branches
