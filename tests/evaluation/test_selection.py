@@ -74,7 +74,7 @@ def test_quantile_tail_mask_selects_upper_tail() -> None:
 
 
 def test_quantile_tail_mask_validates_empty_inputs_before_empty_return() -> None:
-    for bad_quantile in (0.0, 1.0, np.nan):
+    for bad_quantile in (0.0, 1.0, np.nan, True, np.array([0.5])):
         with pytest.raises(ValueError, match="quantile"):
             quantile_tail_mask([], bad_quantile)
 
