@@ -69,7 +69,7 @@ def surface_band_probability_from_signed_distance(
     min_std = _positive_float("min_std", min_std)
     cdf = ndtr if normal_cdf is None else normal_cdf
     distance = _as_numeric_field(distance)
-    distance_std = _as_numeric_field(distance_std)
+    distance_std = _nonnegative_finite_numeric_field(distance_std, "distance_std")
     std = _maximum(distance_std, min_std)
     upper = (epsilon - distance) / std
     lower = (-epsilon - distance) / std
@@ -87,6 +87,24 @@ def _as_numeric_field(values: Any) -> Any:
     if hasattr(values, "clamp"):
         return values
     return np.asarray(values, dtype=np.float64)
+
+
+def _nonnegative_finite_numeric_field(values: Any, name: str) -> Any:
+    if hasattr(values, "clamp"):
+        if hasattr(values, "isfinite"):
+            finite = values.isfinite()
+            if bool((~finite).any()):
+                raise ValueError(f"{name} must contain only finite values.")
+        if bool((values < 0.0).any()):
+            raise ValueError(f"{name} must be non-negative.")
+        return values
+
+    array = np.asarray(values, dtype=np.float64)
+    if np.any(~np.isfinite(array)):
+        raise ValueError(f"{name} must contain only finite values.")
+    if np.any(array < 0.0):
+        raise ValueError(f"{name} must be non-negative.")
+    return array
 
 
 def _maximum(values: Any, minimum: float) -> Any:
