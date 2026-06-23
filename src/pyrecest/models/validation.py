@@ -11,6 +11,8 @@ from __future__ import annotations
 from numbers import Integral
 from typing import Any
 
+import numpy as np
+
 from pyrecest import backend
 
 # pylint: disable=too-many-arguments
@@ -31,6 +33,12 @@ def _shape_tuple(value: Any) -> tuple[int, ...]:
 
 def _format_shape(shape: tuple[int, ...]) -> str:
     return str(shape)
+
+
+def _validate_bool_flag(value: Any, name: str) -> bool:
+    if isinstance(value, (bool, np.bool_)):
+        return bool(value)
+    raise TypeError(f"{name} must be a boolean.")
 
 
 def _validate_expected_dim(
@@ -82,6 +90,7 @@ def validate_vector(
     backend array
         The validated vector as a backend array.
     """
+    allow_scalar = _validate_bool_flag(allow_scalar, "allow_scalar")
     vector = _as_backend_array(vector, name)
     vector_ndim = backend.ndim(vector)
 
@@ -177,6 +186,8 @@ def validate_covariance_matrix(
     dependent.  Concrete distributions may still perform stronger validity
     checks when needed.
     """
+    allow_scalar = _validate_bool_flag(allow_scalar, "allow_scalar")
+    check_symmetric = _validate_bool_flag(check_symmetric, "check_symmetric")
     covariance = _as_backend_array(covariance, name)
 
     if backend.ndim(covariance) == 0 and allow_scalar:
@@ -274,6 +285,7 @@ def infer_state_dim_from_distribution(
     ``mean()``/``covariance()`` are allowed by default but can be disabled with
     ``allow_methods=False`` to avoid expensive numerical fallbacks.
     """
+    allow_methods = _validate_bool_flag(allow_methods, "allow_methods")
     for attr_name in ("dim", "input_dim"):
         if hasattr(distribution, attr_name):
             try:
