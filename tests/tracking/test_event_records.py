@@ -42,6 +42,24 @@ def test_tracking_event_requires_square_covariance_without_measurement() -> None
         )
 
 
+def test_accepted_flags_must_be_boolean_or_none() -> None:
+    event = event_from_measurement(time=0.0, source="rf", accepted=np.bool_(False))
+    assert event.accepted is False
+
+    with pytest.raises(ValueError, match="accepted must be a boolean or None"):
+        TrackingEvent(time=0.0, source="rf", accepted="False")
+
+    with pytest.raises(ValueError, match="accepted must be a boolean or None"):
+        record_from_update(
+            event=event,
+            prior_mean=[0.0, 0.0],
+            prior_cov=np.eye(2),
+            posterior_mean=[0.0, 0.0],
+            posterior_cov=np.eye(2),
+            accepted="False",
+        )
+
+
 def test_record_from_update_preserves_prior_posterior_and_legacy_aliases() -> None:
     event = event_from_measurement(
         time=2.0,
