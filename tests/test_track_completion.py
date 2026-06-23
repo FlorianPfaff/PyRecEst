@@ -149,6 +149,42 @@ class TestTrackCompletion(unittest.TestCase):
 
         self.assertEqual(paths, [])
 
+    def test_rejects_invalid_path_limit_scalars(self) -> None:
+        tracks = [[7, None]]
+
+        def provider(session: int, observation: int, target_session: int):
+            del session, observation, target_session
+            return []
+
+        invalid_limits = (0, -1, True, 1.5, np.nan, np.inf, np.array([1]))
+        for invalid_limit in invalid_limits:
+            with self.subTest(max_path_length=invalid_limit):
+                with self.assertRaisesRegex(ValueError, "max_path_length"):
+                    enumerate_fragment_completion_paths(
+                        tracks,
+                        max_path_length=invalid_limit,
+                        direction="suffix",
+                        candidate_provider=provider,
+                    )
+
+    def test_rejects_invalid_max_paths_per_fragment_scalars(self) -> None:
+        tracks = [[7, None]]
+
+        def provider(session: int, observation: int, target_session: int):
+            del session, observation, target_session
+            return []
+
+        invalid_limits = (0, -1, True, 1.5, np.nan, np.inf, np.array([1]))
+        for invalid_limit in invalid_limits:
+            with self.subTest(max_paths_per_fragment=invalid_limit):
+                with self.assertRaisesRegex(ValueError, "max_paths_per_fragment"):
+                    enumerate_fragment_completion_paths(
+                        tracks,
+                        direction="suffix",
+                        candidate_provider=provider,
+                        max_paths_per_fragment=invalid_limit,
+                    )
+
 
 if __name__ == "__main__":
     unittest.main()
