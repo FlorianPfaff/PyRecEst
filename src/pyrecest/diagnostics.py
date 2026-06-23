@@ -72,7 +72,7 @@ def _coerce_numeric_values(values: Any) -> list[float]:
     except TypeError:
         try:
             return [float(values)]
-        except (TypeError, ValueError):
+        except (TypeError, ValueError, OverflowError):
             return []
     for value in iterator:
         out.extend(_coerce_numeric_values(value))
