@@ -3,7 +3,6 @@ from unittest.mock import patch
 
 import numpy as np
 import pyrecest.backend
-
 from pyrecest.backend import array
 from pyrecest.distributions.hypersphere_subset.spherical_harmonics_distribution_complex import (
     SphericalHarmonicsDistributionComplex,

@@ -1,7 +1,6 @@
 import unittest
 
 import numpy as np
-
 from pyrecest.models.validation import validate_covariance_matrix
 
 

@@ -24,10 +24,17 @@ class SO3ConversionValidationTest(unittest.TestCase):
         )
         particles = SO3DiracDistribution(rotations, array([0.5, 0.5]))
 
-        for covariance_regularization in (True, -1.0e-6, float("nan"), float("inf"), "1e-3"):
+        for covariance_regularization in (
+            True,
+            -1.0e-6,
+            float("nan"),
+            float("inf"),
+            "1e-3",
+        ):
             with self.subTest(covariance_regularization=covariance_regularization):
                 with self.assertRaisesRegex(
-                    ValueError, "covariance_regularization must be a nonnegative finite scalar"
+                    ValueError,
+                    "covariance_regularization must be a nonnegative finite scalar",
                 ):
                     convert_distribution(
                         particles,
@@ -35,7 +42,9 @@ class SO3ConversionValidationTest(unittest.TestCase):
                         covariance_regularization=covariance_regularization,
                     )
 
-    def test_so3_product_tangent_gaussian_rejects_invalid_covariance_regularization(self):
+    def test_so3_product_tangent_gaussian_rejects_invalid_covariance_regularization(
+        self,
+    ):
         mean = array([[0.0, 0.0, 0.0, 1.0], [0.0, 0.0, 0.0, 1.0]])
         rotations = SO3ProductTangentGaussianDistribution.exp_map(
             array(
@@ -49,10 +58,17 @@ class SO3ConversionValidationTest(unittest.TestCase):
         )
         particles = SO3ProductDiracDistribution(rotations, array([0.5, 0.5]))
 
-        for covariance_regularization in (True, -1.0e-6, float("nan"), float("inf"), "1e-3"):
+        for covariance_regularization in (
+            True,
+            -1.0e-6,
+            float("nan"),
+            float("inf"),
+            "1e-3",
+        ):
             with self.subTest(covariance_regularization=covariance_regularization):
                 with self.assertRaisesRegex(
-                    ValueError, "covariance_regularization must be a nonnegative finite scalar"
+                    ValueError,
+                    "covariance_regularization must be a nonnegative finite scalar",
                 ):
                     convert_distribution(
                         particles,

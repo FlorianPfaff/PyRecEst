@@ -259,9 +259,7 @@ class HypertoroidalFourierDistributionTest(unittest.TestCase):
             array([1.0, 2.0]), diag(array([0.5, 0.5]))
         )
 
-        hfd = HypertoroidalFourierDistribution.from_distribution(
-            dist, 5, "identity"
-        )
+        hfd = HypertoroidalFourierDistribution.from_distribution(dist, 5, "identity")
 
         self.assertEqual(hfd.coeff_mat.shape, (5, 5))
 

@@ -1,7 +1,6 @@
 import unittest
 
 import pyrecest.backend
-
 from pyrecest.distributions.hypersphere_subset.hyperspherical_uniform_distribution import (
     HypersphericalUniformDistribution,
 )

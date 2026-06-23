@@ -1,6 +1,10 @@
 import numpy as np
 import pytest
-from pyrecest.exceptions import DimensionMismatchError, NumericalStabilityError, ShapeError
+from pyrecest.exceptions import (
+    DimensionMismatchError,
+    NumericalStabilityError,
+    ShapeError,
+)
 from pyrecest.numerics import (
     assert_covariance_matrix,
     is_positive_semidefinite,
@@ -92,7 +96,9 @@ def test_jittered_cholesky_accepts_numpy_integer_retry_count():
 def test_assert_covariance_matrix_validates_dimension_argument():
     matrix = np.eye(2)
 
-    np.testing.assert_array_equal(np.asarray(assert_covariance_matrix(matrix, dim=2)), matrix)
+    np.testing.assert_array_equal(
+        np.asarray(assert_covariance_matrix(matrix, dim=2)), matrix
+    )
 
     with pytest.raises(DimensionMismatchError, match="dimension 2"):
         assert_covariance_matrix(matrix, dim=3)

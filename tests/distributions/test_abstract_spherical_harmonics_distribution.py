@@ -1,7 +1,6 @@
 import unittest
 
 import pyrecest.backend
-
 from pyrecest.backend import array
 from pyrecest.distributions.hypersphere_subset.spherical_harmonics_distribution_complex import (
     SphericalHarmonicsDistributionComplex,
@@ -22,7 +21,9 @@ class AbstractSphericalHarmonicsDistributionTest(unittest.TestCase):
 
     def test_constructor_rejects_complex_integral(self):
         with self.assertRaisesRegex(ValueError, "imaginary"):
-            SphericalHarmonicsDistributionComplex(array([[1.0 + 1.0j]]), assert_real=False)
+            SphericalHarmonicsDistributionComplex(
+                array([[1.0 + 1.0j]]), assert_real=False
+            )
 
 
 if __name__ == "__main__":

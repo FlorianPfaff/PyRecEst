@@ -420,7 +420,9 @@ def _nearest_grid_values(
         replacement = (
             float(np.min(finite_values)) if finite_values.size else float(log_zero)
         )
-        nearest_values = np.where(np.isfinite(nearest_values), nearest_values, replacement)
+        nearest_values = np.where(
+            np.isfinite(nearest_values), nearest_values, replacement
+        )
     output[finite_positions] = nearest_values
     return output
 

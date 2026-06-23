@@ -140,9 +140,7 @@ class TestBayesianComplexWatsonMixtureModelConstructor(unittest.TestCase):
         B = zeros((2, 2, 1), dtype=complex)
 
         with self.assertRaisesRegex(ValueError, "B.shape"):
-            BayesianComplexWatsonMixtureModel(
-                B, array([1.0, 1.0]), array([1.0, 1.0])
-            )
+            BayesianComplexWatsonMixtureModel(B, array([1.0, 1.0]), array([1.0, 1.0]))
 
     def test_constructor_rejects_concentration_count_mismatch(self):
         B = zeros((2, 2, 1), dtype=complex)

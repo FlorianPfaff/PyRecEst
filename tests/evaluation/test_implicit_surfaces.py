@@ -80,7 +80,9 @@ def test_surface_band_mask_and_inside_outside_classification() -> None:
 def test_classify_inside_outside_accepts_numpy_boolean_scalar() -> None:
     values = np.asarray([-0.2, 0.0, 0.3])
 
-    assert classify_inside_outside(values, negative_inside=np.bool_(False)).tolist() == [
+    assert classify_inside_outside(
+        values, negative_inside=np.bool_(False)
+    ).tolist() == [
         1,
         0,
         -1,

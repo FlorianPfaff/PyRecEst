@@ -1,7 +1,6 @@
 import unittest
 
 import pyrecest.backend
-
 from pyrecest.backend import array, pi, sqrt
 from pyrecest.distributions.hypersphere_subset.spherical_harmonics_distribution_complex import (
     SphericalHarmonicsDistributionComplex,

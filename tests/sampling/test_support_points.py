@@ -100,7 +100,9 @@ def test_ellipsoid_sigma_points_reject_nonfinite_radii(bad_radius: float) -> Non
 @pytest.mark.parametrize("bad_radius", [np.nan, np.inf, -np.inf])
 def test_mahalanobis_support_points_reject_nonfinite_radius(bad_radius: float) -> None:
     with pytest.raises(ValueError, match="finite"):
-        mahalanobis_support_points([0.0, 0.0], np.eye(2), [[1.0, 0.0]], radius=bad_radius)
+        mahalanobis_support_points(
+            [0.0, 0.0], np.eye(2), [[1.0, 0.0]], radius=bad_radius
+        )
 
 
 def test_support_points_reject_shape_mismatch() -> None:

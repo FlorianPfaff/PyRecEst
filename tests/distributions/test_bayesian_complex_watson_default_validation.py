@@ -1,7 +1,6 @@
 import unittest
 
 import pyrecest.backend
-
 from pyrecest.backend import zeros
 from pyrecest.distributions.hypersphere_subset.bayesian_complex_watson_mixture_model import (
     BayesianComplexWatsonMixtureModel,

@@ -58,9 +58,7 @@ def test_sparse_second_order_grid_rejects_non_integral_transition_destinations(
     with pytest.raises(
         ValueError, match="transition row destination indices must be integer-valued"
     ):
-        sparse_second_order_grid_evidence(
-            _log_likelihood(), _valid_initial_pairs, row
-        )
+        sparse_second_order_grid_evidence(_log_likelihood(), _valid_initial_pairs, row)
 
 
 def test_sparse_second_order_grid_preserves_integer_valued_float_indices():

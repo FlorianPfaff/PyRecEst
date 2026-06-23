@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.utils.track_completion import enumerate_fragment_completion_paths
 
 

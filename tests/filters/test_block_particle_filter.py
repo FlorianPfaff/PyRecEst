@@ -95,9 +95,7 @@ class BlockParticleFilterTest(unittest.TestCase):
         )
 
         for invalid_index in (True, 0.5, "0", [0]):
-            with self.subTest(block_index=invalid_index), self.assertRaises(
-                ValueError
-            ):
+            with self.subTest(block_index=invalid_index), self.assertRaises(ValueError):
                 filt.resample_block_systematic(invalid_index)
             with self.subTest(block_indices=invalid_index), self.assertRaises(
                 ValueError
