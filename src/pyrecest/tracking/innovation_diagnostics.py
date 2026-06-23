@@ -212,9 +212,10 @@ def diagnostic_from_record(
     if measurement_dim_value is None:
         residual = record.get("residual")
         if residual is not None:
-            measurement_dim_value = int(np.asarray(residual).reshape(-1).size)
+            measurement_dim_value = np.asarray(residual).reshape(-1).size
         else:
             measurement_dim_value = 0
+    measurement_dim = _nonnegative_integer(measurement_dim_value, measurement_dim_key)
     accepted = record.get(accepted_key)
     excluded = {
         source_key,
@@ -227,7 +228,7 @@ def diagnostic_from_record(
         gate_threshold_key,
     }
     return InnovationDiagnostic(
-        measurement_dim=int(measurement_dim_value),
+        measurement_dim=measurement_dim,
         nis=_optional_float(record.get(nis_key)),
         residual_norm=_optional_float(record.get(residual_norm_key)),
         gate_threshold=_optional_float(record.get(gate_threshold_key)),
@@ -342,6 +343,31 @@ def _optional_float(value: Any) -> float | None:
     except (TypeError, ValueError):
         return None
     return parsed if np.isfinite(parsed) else None
+
+
+def _nonnegative_integer(value: Any, name: str) -> int:
+    try:
+        value_array = np.asarray(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{name} must be a non-negative integer") from exc
+    if value_array.shape != () or value_array.dtype == np.bool_:
+        raise ValueError(f"{name} must be a non-negative integer")
+    scalar = value_array.item()
+    if isinstance(scalar, (bool, np.bool_)):
+        raise ValueError(f"{name} must be a non-negative integer")
+    if isinstance(scalar, (int, np.integer)):
+        parsed = int(scalar)
+    else:
+        try:
+            scalar_float = float(scalar)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError(f"{name} must be a non-negative integer") from exc
+        if not np.isfinite(scalar_float) or not scalar_float.is_integer():
+            raise ValueError(f"{name} must be a non-negative integer")
+        parsed = int(scalar_float)
+    if parsed < 0:
+        raise ValueError(f"{name} must be a non-negative integer")
+    return parsed
 
 
 def _optional_bool(value: Any) -> bool | None:

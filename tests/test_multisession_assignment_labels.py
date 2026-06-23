@@ -9,13 +9,9 @@ import pyrecest.utils.multisession_assignment as multisession_assignment_module
 
 
 class TestMultiSessionAssignmentLabels(unittest.TestCase):
-    @unittest.skipIf(
-        __backend_name__ == "jax",
-        reason="Not supported on this backend",
-    )
-    def test_duplicate_detection_rejected_when_fill_value_matches_track_label(self):
-        tracks = [{0: 0}, {0: 0}]
-        converters = (
+    @staticmethod
+    def _converters():
+        return (
             ("public", tracks_to_session_labels),
             ("module", multisession_assignment_module.tracks_to_session_labels),
             (
@@ -28,13 +24,35 @@ class TestMultiSessionAssignmentLabels(unittest.TestCase):
             ),
         )
 
-        for name, converter in converters:
+    @unittest.skipIf(
+        __backend_name__ == "jax",
+        reason="Not supported on this backend",
+    )
+    def test_duplicate_detection_rejected_when_fill_value_matches_track_label(self):
+        tracks = [{0: 0}, {0: 0}]
+
+        for name, converter in self._converters():
             with self.subTest(converter=name):
                 with self.assertRaisesRegex(
                     ValueError,
                     "Each detection can only belong to a single track",
                 ):
-                    converter(tracks, session_sizes=[1], fill_value=0)
+                    converter(tracks, session_sizes=[1], fill_value=-99)
+
+    @unittest.skipIf(
+        __backend_name__ == "jax",
+        reason="Not supported on this backend",
+    )
+    def test_fill_value_cannot_collide_with_track_labels(self):
+        tracks = [{0: 0}, {0: 1}]
+
+        for name, converter in self._converters():
+            with self.subTest(converter=name):
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "fill_value must not collide with track labels",
+                ):
+                    converter(tracks, session_sizes=[3], fill_value=0)
 
 
 if __name__ == "__main__":

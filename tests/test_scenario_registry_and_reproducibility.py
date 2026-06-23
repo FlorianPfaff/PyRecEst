@@ -4,7 +4,7 @@ import pytest
 from pyrecest.scenarios import available_scenario_types, run_scenario
 
 
-def _write_particle_scenario(path: Path, weights: str) -> None:
+def _write_particle_scenario(path: Path, weights: str, num_samples: str = "4") -> None:
     path.write_text(
         f"""
 [scenario]
@@ -15,7 +15,7 @@ seed = 7
 [data]
 particles = [[0.0, 0.0], [1.0, 0.0]]
 weights = {weights}
-num_samples = 4
+num_samples = {num_samples}
 """.strip(),
         encoding="utf-8",
     )
@@ -48,6 +48,17 @@ num_samples = 8
         == second.diagnostics["metadata"]["indices"]
     )
     assert first.metrics["effective_sample_size"] > 0.0
+
+
+@pytest.mark.parametrize("num_samples", ["0", "-1", "1.5", "true"])
+def test_particle_resampling_scenario_rejects_invalid_num_samples(
+    tmp_path: Path, num_samples: str
+):
+    scenario = tmp_path / "invalid_num_samples.toml"
+    _write_particle_scenario(scenario, "[0.5, 0.5]", num_samples=num_samples)
+
+    with pytest.raises(ValueError, match="num_samples must be a positive integer"):
+        run_scenario(scenario)
 
 
 def test_particle_resampling_scenario_rejects_zero_weight_mass(tmp_path: Path):
