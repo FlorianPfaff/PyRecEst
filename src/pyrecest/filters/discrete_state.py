@@ -585,9 +585,15 @@ def _coerce_valid_state_mask(
         raise ValueError("n_states must be positive")
     if valid_state_mask is None:
         return None
-    mask = np.asarray(valid_state_mask, dtype=bool)
-    if mask.shape != (n_states,):
+    raw_mask = np.asarray(valid_state_mask)
+    if raw_mask.shape != (n_states,):
         raise ValueError("valid_state_mask must contain one boolean value per state")
+    if not np.issubdtype(raw_mask.dtype, np.bool_):
+        if raw_mask.dtype != object or not all(
+            isinstance(value, (bool, np.bool_)) for value in raw_mask.ravel()
+        ):
+            raise ValueError("valid_state_mask must contain boolean values")
+    mask = raw_mask.astype(bool, copy=False)
     if not np.any(mask):
         raise ValueError("valid_state_mask must contain at least one valid state")
     return mask
