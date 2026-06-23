@@ -52,6 +52,21 @@ class TestEstimateTransform(unittest.TestCase):
         npt.assert_allclose(estimated.matrix, true_rotation, atol=1e-10)
         npt.assert_allclose(estimated.offset, true_offset, atol=1e-10)
 
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ == "jax",
+        reason="Not supported on this backend",
+    )
+    def test_estimate_transform_rejects_nonfinite_points(self):
+        target = array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
+
+        for invalid_value in (float("nan"), float("inf"), -float("inf")):
+            with self.subTest(invalid_value=invalid_value):
+                source = array(
+                    [[0.0, 0.0], [1.0, invalid_value], [0.0, 1.0]],
+                )
+                with self.assertRaisesRegex(ValueError, "finite"):
+                    estimate_transform(source, target, model="affine")
+
     def test_estimate_transform_rejects_jax_backend_without_asserts(self):
         source = array([[0.0, 0.0]])
 
