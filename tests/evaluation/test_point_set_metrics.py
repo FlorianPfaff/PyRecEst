@@ -142,3 +142,7 @@ def test_nonfinite_thresholds_raise_clear_errors():
             precision_recall_curve(points, points, (threshold,))
         with pytest.raises(ValueError, match="finite and non-negative"):
             point_set_geometry_summary(points, points, thresholds=(threshold,))
+
+    with pytest.raises(ValueError, match="finite and non-negative"):
+        precision_recall_curve(points, points, (0.25, np.nan))
+

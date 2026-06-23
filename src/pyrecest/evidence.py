@@ -11,21 +11,17 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
+import numpy as np
+
 EvidenceComputationKind = Literal["full_smoothing", "evidence_only"]
 
 
-def _coerce_bool_flag(value: bool | str, name: str) -> bool:
+def _coerce_bool_flag(value: bool, name: str) -> bool:
     """Return a bool flag without treating arbitrary truthy objects as true."""
 
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, str):
-        normalized = value.strip().lower()
-        if normalized in {"1", "true", "t", "yes", "y", "on"}:
-            return True
-        if normalized in {"0", "false", "f", "no", "n", "off"}:
-            return False
-    raise ValueError(f"{name} must be a boolean or boolean-like string")
+    if isinstance(value, (bool, np.bool_)):
+        return bool(value)
+    raise ValueError(f"{name} must be a bool")
 
 
 @dataclass(frozen=True, slots=True)
@@ -94,16 +90,13 @@ class EvidenceComputationMode:
         )
 
     @classmethod
-    def from_return_smoothed(
-        cls, return_smoothed: bool | str
-    ) -> "EvidenceComputationMode":
+    def from_return_smoothed(cls, return_smoothed: bool) -> "EvidenceComputationMode":
         """Build a mode from the common Boolean smoothing flag."""
 
-        return (
-            cls.full_smoothing()
-            if _coerce_bool_flag(return_smoothed, "return_smoothed")
-            else cls.evidence_only()
-        )
+        parsed = _coerce_return_smoothed(return_smoothed)
+        if parsed is None:
+            raise ValueError("return_smoothed must be a bool")
+        return cls.full_smoothing() if parsed else cls.evidence_only()
 
     @property
     def evidence_only_requested(self) -> bool:
@@ -126,14 +119,25 @@ class EvidenceComputationMode:
         return diagnostics
 
 
+def _coerce_return_smoothed(return_smoothed: bool | None) -> bool | None:
+    """Return an explicit Boolean smoothing flag without truthiness coercion."""
+
+    if return_smoothed is None:
+        return None
+    if isinstance(return_smoothed, (bool, np.bool_)):
+        return bool(return_smoothed)
+    raise ValueError("return_smoothed must be a bool or None")
+
+
 def _require_return_smoothed_agreement(
-    mode: EvidenceComputationMode, return_smoothed: bool | str | None
+    mode: EvidenceComputationMode, return_smoothed: bool | None
 ) -> EvidenceComputationMode:
     """Reject contradictory explicit mode and compatibility flag requests."""
 
+    return_smoothed = _coerce_return_smoothed(return_smoothed)
     if return_smoothed is None:
         return mode
-    if _coerce_bool_flag(return_smoothed, "return_smoothed") != mode.return_smoothed:
+    if return_smoothed != mode.return_smoothed:
         raise ValueError("mode and return_smoothed request inconsistent smoothing")
     return mode
 
@@ -141,10 +145,11 @@ def _require_return_smoothed_agreement(
 def resolve_evidence_computation_mode(
     mode: EvidenceComputationMode | str | None = None,
     *,
-    return_smoothed: bool | str | None = None,
+    return_smoothed: bool | None = None,
 ) -> EvidenceComputationMode:
     """Resolve a string/Boolean compatibility mode into a typed object."""
 
+    return_smoothed = _coerce_return_smoothed(return_smoothed)
     if isinstance(mode, EvidenceComputationMode):
         return _require_return_smoothed_agreement(mode, return_smoothed)
     if mode is None:

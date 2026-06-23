@@ -77,11 +77,15 @@ def _raise_if_nonfinite_matrix(matrix: np.ndarray, name: str) -> None:
         raise NumericalStabilityError(f"{name} must contain only finite values.")
 
 
+def _raise_if_not_square_matrix(matrix: np.ndarray, name: str = "matrix") -> None:
+    if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1]:
+        raise ShapeError(f"Expected a square matrix, got shape {matrix.shape}.")
+
+
 def symmetrize_matrix(matrix):
     """Return ``0.5 * (matrix + matrix.T)`` in the active backend representation."""
     arr = _to_numpy_array(matrix)
-    if arr.ndim != 2:
-        raise ShapeError(f"Expected a matrix, got shape {arr.shape}.")
+    _raise_if_not_square_matrix(arr)
     return _from_numpy_array(0.5 * (arr + arr.T))
 
 
@@ -121,8 +125,7 @@ def nearest_symmetric_psd(matrix, *, min_eigenvalue: float = 0.0):
     min_eigenvalue = _validate_nonnegative_finite("min_eigenvalue", min_eigenvalue)
 
     arr = _to_numpy_array(matrix)
-    if arr.ndim != 2 or arr.shape[0] != arr.shape[1]:
-        raise ShapeError(f"Expected a square matrix, got shape {arr.shape}.")
+    _raise_if_not_square_matrix(arr)
     _raise_if_nonfinite_matrix(arr, "matrix")
     sym = 0.5 * (arr + arr.T)
     eigvals, eigvecs = np.linalg.eigh(sym)
@@ -142,8 +145,7 @@ def jittered_cholesky(matrix, *, initial_jitter: float = 1e-12, max_attempts: in
     max_attempts = _validate_nonnegative_integer("max_attempts", max_attempts)
 
     arr = _to_numpy_array(matrix)
-    if arr.ndim != 2 or arr.shape[0] != arr.shape[1]:
-        raise ShapeError(f"Expected a square matrix, got shape {arr.shape}.")
+    _raise_if_not_square_matrix(arr)
     _raise_if_nonfinite_matrix(arr, "matrix")
     sym = 0.5 * (arr + arr.T)
     eye = np.eye(sym.shape[0])

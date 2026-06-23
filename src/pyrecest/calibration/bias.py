@@ -8,7 +8,7 @@ from typing import Any
 
 import numpy as np
 
-from .time_offset import nearest_time_indices
+from .time_offset import _as_nonnegative_time_delta, nearest_time_indices
 
 _FEATURE_ROW_COUNT_ERROR = (
     "features rows must match requested row count; "
@@ -47,12 +47,8 @@ class SensorBiasCorrectionModel:
     metadata: Mapping[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        target_dim = int(self.target_dim)
-        feature_dim = int(self.feature_dim)
-        if target_dim <= 0:
-            raise ValueError("target_dim must be positive")
-        if feature_dim < 0:
-            raise ValueError("feature_dim must be nonnegative")
+        target_dim = _as_positive_int(self.target_dim, "target_dim")
+        feature_dim = _as_nonnegative_int(self.feature_dim, "feature_dim")
         intercept = np.asarray(self.intercept, dtype=float).reshape(target_dim)
         coefficients = np.asarray(self.coefficients, dtype=float).reshape(
             feature_dim, target_dim
@@ -70,8 +66,16 @@ class SensorBiasCorrectionModel:
         object.__setattr__(self, "feature_mean", feature_mean)
         object.__setattr__(self, "feature_scale", feature_scale)
         object.__setattr__(self, "residual_std", residual_std)
-        object.__setattr__(self, "training_count", int(self.training_count))
-        object.__setattr__(self, "ridge_alpha", float(self.ridge_alpha))
+        object.__setattr__(
+            self,
+            "training_count",
+            _as_nonnegative_int(self.training_count, "training_count"),
+        )
+        object.__setattr__(
+            self,
+            "ridge_alpha",
+            _as_nonnegative_finite_float(self.ridge_alpha, "ridge_alpha"),
+        )
         object.__setattr__(self, "metadata", dict(self.metadata))
 
     def predict(
@@ -145,15 +149,15 @@ class SensorBiasCorrectionModel:
         """Deserialize a model produced by :meth:`to_dict`."""
 
         return cls(
-            target_dim=int(payload["target_dim"]),
-            feature_dim=int(payload["feature_dim"]),
+            target_dim=payload["target_dim"],
+            feature_dim=payload["feature_dim"],
             intercept=np.asarray(payload["intercept"], dtype=float),
             coefficients=np.asarray(payload["coefficients"], dtype=float),
             feature_mean=np.asarray(payload["feature_mean"], dtype=float),
             feature_scale=np.asarray(payload["feature_scale"], dtype=float),
             residual_std=np.asarray(payload["residual_std"], dtype=float),
-            training_count=int(payload["training_count"]),
-            ridge_alpha=float(payload.get("ridge_alpha", 0.0)),
+            training_count=payload["training_count"],
+            ridge_alpha=payload.get("ridge_alpha", 0.0),
             metadata=payload.get("metadata", {}),
         )
 
@@ -169,9 +173,7 @@ def make_bias_training_examples(
 ) -> BiasTrainingExamples:
     """Match measurements to nearest reference values and compute residual bias."""
 
-    max_time_delta = float(max_time_delta_s)
-    if max_time_delta < 0.0 or np.isnan(max_time_delta):
-        raise ValueError("max_time_delta_s must be nonnegative")
+    max_time_delta = _as_nonnegative_time_delta(max_time_delta_s, "max_time_delta_s")
     measurement_times = np.asarray(measurement_times_s, dtype=float).reshape(-1)
     measurements = _as_2d(measurement_values, "measurement_values")
     reference_times = np.asarray(reference_times_s, dtype=float).reshape(-1)

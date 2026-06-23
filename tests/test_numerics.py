@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from pyrecest.exceptions import NumericalStabilityError
+from pyrecest.exceptions import NumericalStabilityError, ShapeError
 from pyrecest.numerics import (
     assert_covariance_matrix,
     is_positive_semidefinite,
@@ -32,6 +32,17 @@ def test_covariance_helpers_reject_nonfinite_matrices():
     with pytest.raises(NumericalStabilityError, match="finite"):
         nearest_symmetric_psd(matrix)
     with pytest.raises(NumericalStabilityError, match="finite"):
+        jittered_cholesky(matrix)
+
+
+def test_matrix_repair_helpers_reject_non_square_matrices_with_shape_error():
+    matrix = np.ones((2, 3))
+
+    with pytest.raises(ShapeError, match="square matrix"):
+        symmetrize_matrix(matrix)
+    with pytest.raises(ShapeError, match="square matrix"):
+        nearest_symmetric_psd(matrix)
+    with pytest.raises(ShapeError, match="square matrix"):
         jittered_cholesky(matrix)
 
 

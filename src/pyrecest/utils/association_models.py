@@ -58,6 +58,69 @@ class _BinaryClassWeights:
         return asarray(where(labels == 1, self.positive, self.negative), dtype=float64)
 
 
+def _normalize_finite_scalar(value: Any, message: str) -> float:
+    value_array = _numpy.asarray(value)
+    if value_array.shape != () or value_array.dtype == _numpy.bool_:
+        raise ValueError(message)
+
+    scalar = value_array.item()
+    if isinstance(scalar, (bool, _numpy.bool_)):
+        raise ValueError(message)
+    try:
+        parsed = float(scalar)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(message) from exc
+    if not _numpy.isfinite(parsed):
+        raise ValueError(message)
+    return parsed
+
+
+def _normalize_nonnegative_scalar(value: Any, message: str) -> float:
+    parsed = _normalize_finite_scalar(value, message)
+    if parsed < 0.0:
+        raise ValueError(message)
+    return parsed
+
+
+def _normalize_positive_scalar(value: Any, message: str) -> float:
+    parsed = _normalize_finite_scalar(value, message)
+    if parsed <= 0.0:
+        raise ValueError(message)
+    return parsed
+
+
+def _normalize_probability_clip(value: Any) -> float:
+    message = "probability_clip must lie in (0, 0.5)"
+    parsed = _normalize_finite_scalar(value, message)
+    if not 0.0 < parsed < 0.5:
+        raise ValueError(message)
+    return parsed
+
+
+def _normalize_positive_integer(value: Any, message: str) -> int:
+    value_array = _numpy.asarray(value)
+    if value_array.shape != () or value_array.dtype == _numpy.bool_:
+        raise ValueError(message)
+
+    scalar = value_array.item()
+    if isinstance(scalar, (bool, _numpy.bool_)):
+        raise ValueError(message)
+    if isinstance(scalar, (int, _numpy.integer)):
+        parsed = int(scalar)
+    else:
+        try:
+            scalar_float = float(scalar)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError(message) from exc
+        if not _numpy.isfinite(scalar_float) or not scalar_float.is_integer():
+            raise ValueError(message)
+        parsed = int(scalar_float)
+
+    if parsed <= 0:
+        raise ValueError(message)
+    return parsed
+
+
 class LogisticPairwiseAssociationModel:  # pylint: disable=too-many-instance-attributes
     """Learn pairwise match probabilities from arbitrary association features.
 
@@ -110,14 +173,16 @@ class LogisticPairwiseAssociationModel:  # pylint: disable=too-many-instance-att
         class_weight: str | dict[int, float] | None = "balanced",
         probability_clip: float = 1.0e-12,
     ) -> None:
-        if l2_regularization < 0.0:
-            raise ValueError("l2_regularization must be non-negative")
-        if max_iterations <= 0:
-            raise ValueError("max_iterations must be positive")
-        if tolerance <= 0.0:
-            raise ValueError("tolerance must be positive")
-        if not 0.0 < probability_clip < 0.5:
-            raise ValueError("probability_clip must lie in (0, 0.5)")
+        l2_regularization = _normalize_nonnegative_scalar(
+            l2_regularization,
+            "l2_regularization must be non-negative",
+        )
+        max_iterations = _normalize_positive_integer(
+            max_iterations,
+            "max_iterations must be positive",
+        )
+        tolerance = _normalize_positive_scalar(tolerance, "tolerance must be positive")
+        probability_clip = _normalize_probability_clip(probability_clip)
         if (
             class_weight != "balanced"
             and class_weight is not None
@@ -128,12 +193,12 @@ class LogisticPairwiseAssociationModel:  # pylint: disable=too-many-instance-att
             )
 
         self.fit_intercept = fit_intercept
-        self.l2_regularization = float(l2_regularization)
-        self.max_iterations = int(max_iterations)
-        self.tolerance = float(tolerance)
+        self.l2_regularization = l2_regularization
+        self.max_iterations = max_iterations
+        self.tolerance = tolerance
         self.standardize = bool(standardize)
         self.class_weight = class_weight
-        self.probability_clip = float(probability_clip)
+        self.probability_clip = probability_clip
 
         self.n_features_in_: int | None = None
         self.feature_mean_: Any | None = None
@@ -228,15 +293,12 @@ class LogisticPairwiseAssociationModel:  # pylint: disable=too-many-instance-att
             raise ValueError(
                 "class_weight dictionaries must contain entries for both 0 and 1"
             )
-        negative_weight = float(self.class_weight[0])
-        positive_weight = float(self.class_weight[1])
-        if (
-            not _numpy.isfinite(negative_weight)
-            or not _numpy.isfinite(positive_weight)
-            or negative_weight <= 0.0
-            or positive_weight <= 0.0
-        ):
-            raise ValueError("class weights must be finite and positive")
+        negative_weight = _normalize_positive_scalar(
+            self.class_weight[0], "class weights must be finite and positive"
+        )
+        positive_weight = _normalize_positive_scalar(
+            self.class_weight[1], "class weights must be finite and positive"
+        )
         return _BinaryClassWeights(negative=negative_weight, positive=positive_weight)
 
     @staticmethod

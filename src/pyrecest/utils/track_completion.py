@@ -139,13 +139,11 @@ def enumerate_fragment_completion_paths(
         high-branching production trackers should pre-prune in the provider.
     """
 
-    max_path_length = _normalize_positive_integer(
-        max_path_length, "max_path_length"
-    )
+    max_path_length = _as_positive_int(max_path_length, "max_path_length")
     if direction not in {"prefix", "suffix", "both"}:
         raise ValueError("direction must be 'prefix', 'suffix', or 'both'")
     if max_paths_per_fragment is not None:
-        max_paths_per_fragment = _normalize_positive_integer(
+        max_paths_per_fragment = _as_positive_int(
             max_paths_per_fragment, "max_paths_per_fragment"
         )
 
@@ -341,24 +339,6 @@ def _candidate_sessions(
     return tuple(dict.fromkeys(sessions))
 
 
-def _normalize_positive_integer(value: Any, name: str) -> int:
-    value_array = np.asarray(value)
-    if value_array.shape != () or np.issubdtype(value_array.dtype, np.bool_):
-        raise ValueError(f"{name} must be a positive integer")
-    if np.issubdtype(value_array.dtype, np.integer):
-        parsed = int(value_array.item())
-    elif np.issubdtype(value_array.dtype, np.floating):
-        scalar = float(value_array.item())
-        if not np.isfinite(scalar) or not scalar.is_integer():
-            raise ValueError(f"{name} must be a positive integer")
-        parsed = int(scalar)
-    else:
-        raise ValueError(f"{name} must be a positive integer")
-    if parsed < 1:
-        raise ValueError(f"{name} must be a positive integer")
-    return parsed
-
-
 def _coerce_candidate_session(value: Any) -> int | None:
     if isinstance(value, (bool, np.bool_)):
         return None
@@ -442,3 +422,28 @@ def _normalize_candidate_observation(value: Any) -> int:
     if observation < 0:
         raise ValueError("candidate observations must be non-negative integers")
     return observation
+
+
+def _as_positive_int(value: Any, name: str) -> int:
+    value_array = np.asarray(value)
+    message = f"{name} must be a positive integer"
+    if value_array.shape != () or value_array.dtype == np.bool_:
+        raise ValueError(message)
+
+    scalar = value_array.item()
+    if isinstance(scalar, (bool, np.bool_)):
+        raise ValueError(message)
+    if isinstance(scalar, (int, np.integer)):
+        parsed = int(scalar)
+    elif (
+        isinstance(scalar, (float, np.floating))
+        and np.isfinite(scalar)
+        and float(scalar).is_integer()
+    ):
+        parsed = int(scalar)
+    else:
+        raise ValueError(message)
+
+    if parsed <= 0:
+        raise ValueError(message)
+    return parsed
