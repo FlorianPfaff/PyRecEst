@@ -103,7 +103,7 @@ def make_offset_grid(min_s: float, max_s: float, step_s: float) -> np.ndarray:
 def apply_time_offset(times_s: np.ndarray, offset_s: float | None) -> np.ndarray:
     """Return a copy of ``times_s`` shifted by ``offset_s`` seconds."""
 
-    offset = 0.0 if offset_s is None else float(offset_s)
+    offset = 0.0 if offset_s is None else _as_finite_float(offset_s, "offset_s")
     return np.asarray(times_s, dtype=float) + offset
 
 
