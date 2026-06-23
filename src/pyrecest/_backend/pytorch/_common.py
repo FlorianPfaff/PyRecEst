@@ -2,6 +2,13 @@ import numpy as _np
 import torch as _torch
 
 _TORCH_DTYPE_BY_NAME = {
+    "bool": _torch.bool,
+    "uint8": _torch.uint8,
+    "int8": _torch.int8,
+    "int16": _torch.int16,
+    "int32": _torch.int32,
+    "int64": _torch.int64,
+    "float16": _torch.float16,
     "float32": _torch.float32,
     "float64": _torch.float64,
     "complex64": _torch.complex64,

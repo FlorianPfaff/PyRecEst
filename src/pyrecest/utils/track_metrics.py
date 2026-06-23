@@ -328,6 +328,8 @@ def _session_times(
         raise ValueError(
             "session_times must have length equal to the number of sessions"
         )
+    if not np.all(np.isfinite(times)):
+        raise ValueError("session_times must contain only finite values")
     return times
 
 

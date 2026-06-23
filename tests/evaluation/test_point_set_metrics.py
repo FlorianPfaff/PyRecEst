@@ -102,6 +102,22 @@ def test_deterministic_subsample_returns_sorted_indices_and_is_reproducible():
     assert np.all(indices_a[:-1] <= indices_a[1:])
 
 
+def test_deterministic_subsample_validates_max_points_integrality():
+    points = np.arange(30.0).reshape(10, 3)
+
+    subset, indices = deterministic_subsample(points, max_points=4.0, seed=7)
+    assert subset.shape == (4, 3)
+    assert indices.shape == (4,)
+
+    all_points, all_indices = deterministic_subsample(points, max_points=-1)
+    np.testing.assert_array_equal(all_points, points)
+    np.testing.assert_array_equal(all_indices, np.arange(points.shape[0]))
+
+    for max_points in (True, 1.5, np.nan, np.array([3])):
+        with pytest.raises(ValueError, match="max_points"):
+            deterministic_subsample(points, max_points=max_points)
+
+
 def test_invalid_point_sets_raise_clear_errors():
     with pytest.raises(ValueError, match="shape"):
         nearest_neighbor_distances(np.array([0.0, 1.0]), np.array([[0.0], [1.0]]))
@@ -116,16 +132,17 @@ def test_invalid_point_sets_raise_clear_errors():
         precision_recall_fscore(np.array([[0.0]]), np.array([[0.0]]), -1.0)
 
 
-def test_nonfinite_distance_thresholds_raise_clear_errors():
-    estimate = np.array([[0.0]])
-    reference = np.array([[0.0]])
+def test_nonfinite_thresholds_raise_clear_errors():
+    points = np.array([[0.0]])
 
     for threshold in (np.nan, np.inf, -np.inf):
         with pytest.raises(ValueError, match="finite and non-negative"):
-            precision_recall_fscore(estimate, reference, threshold)
+            precision_recall_fscore(points, points, threshold)
+        with pytest.raises(ValueError, match="finite and non-negative"):
+            precision_recall_curve(points, points, (threshold,))
+        with pytest.raises(ValueError, match="finite and non-negative"):
+            point_set_geometry_summary(points, points, thresholds=(threshold,))
 
     with pytest.raises(ValueError, match="finite and non-negative"):
-        precision_recall_curve(estimate, reference, (0.25, np.nan))
+        precision_recall_curve(points, points, (0.25, np.nan))
 
-    with pytest.raises(ValueError, match="finite and non-negative"):
-        point_set_geometry_summary(estimate, reference, thresholds=(np.inf,))

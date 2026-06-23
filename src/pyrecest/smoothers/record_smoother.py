@@ -164,7 +164,10 @@ def _smooth_records_with_config(
         return []
 
     copied = [_copy_record(record) for record in records]
+    metadata = {} if config.metadata is None else dict(config.metadata)
     if config.method == "none":
+        for item in copied:
+            item.update(metadata)
         return copied
 
     times, filtered_states, filtered_covariances = _record_arrays(
@@ -194,7 +197,6 @@ def _smooth_records_with_config(
         )
 
     out: list[dict[str, Any]] = []
-    metadata = {} if config.metadata is None else dict(config.metadata)
     for idx, record in enumerate(copied):
         item = _copy_record(record)
         item[config.filtered_state_key] = filtered_states[idx].copy()

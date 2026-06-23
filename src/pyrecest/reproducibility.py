@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import copy
+import math
 from collections.abc import Iterator
 from contextlib import contextmanager
+from numbers import Integral
 from typing import Any
 
 
@@ -14,6 +16,40 @@ def _random_backend() -> Any:
     return random
 
 
+def _normalize_seed(seed: int | None) -> int | None:
+    """Return a validated backend seed or ``None``."""
+
+    if seed is None:
+        return None
+
+    message = "seed must be a non-negative integer or None"
+
+    if hasattr(seed, "shape") and tuple(seed.shape) != ():
+        raise ValueError(message)
+
+    try:
+        scalar = seed.item() if hasattr(seed, "item") else seed
+    except (TypeError, ValueError, RuntimeError) as exc:
+        raise ValueError(message) from exc
+
+    if isinstance(scalar, bool):
+        raise ValueError(message)
+    if isinstance(scalar, Integral):
+        normalized_seed = int(scalar)
+    else:
+        try:
+            scalar_float = float(scalar)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError(message) from exc
+        if not math.isfinite(scalar_float) or not scalar_float.is_integer():
+            raise ValueError(message)
+        normalized_seed = int(scalar_float)
+
+    if normalized_seed < 0:
+        raise ValueError(message)
+    return normalized_seed
+
+
 def seed_all(seed: int | None) -> int | None:
     """Seed the active backend random module and return the normalized seed.
 
@@ -21,9 +57,9 @@ def seed_all(seed: int | None) -> int | None:
     scenario runners and tests one explicit entry point instead of relying on
     ad-hoc calls to ``pyrecest.backend.random.seed``.
     """
-    if seed is None:
+    normalized_seed = _normalize_seed(seed)
+    if normalized_seed is None:
         return None
-    normalized_seed = int(seed)
     _random_backend().seed(normalized_seed)
     return normalized_seed
 

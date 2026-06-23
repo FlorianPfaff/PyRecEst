@@ -28,13 +28,40 @@ def _as_shapely_scalar(value):
     return float(np.asarray(value).reshape(-1)[0])
 
 
+def _as_nonnegative_measurement_count(value, name="measurement count") -> int:
+    value_array = np.asarray(value)
+    if value_array.shape != () or value_array.dtype == np.bool_:
+        raise ValueError(f"{name} must be a non-negative integer.")
+
+    scalar = value_array.item()
+    if isinstance(scalar, (bool, np.bool_)):
+        raise ValueError(f"{name} must be a non-negative integer.")
+    if isinstance(scalar, (int, np.integer)):
+        count = int(scalar)
+    else:
+        try:
+            scalar_float = float(scalar)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError(f"{name} must be a non-negative integer.") from exc
+        if not np.isfinite(scalar_float) or not scalar_float.is_integer():
+            raise ValueError(f"{name} must be a non-negative integer.")
+        count = int(scalar_float)
+
+    if count < 0:
+        raise ValueError(f"{name} must be a non-negative integer.")
+    return count
+
+
 def _mtt_state_at(groundtruth, t, target_no, n_targets):
     """Return one target state from dense or per-step object ground truth."""
     state_at_t = np.asarray(groundtruth[t])
-    if n_targets == 1 and state_at_t.ndim == 1:
+    if n_targets == 1:
         if target_no != 0:
             raise IndexError("target_no out of bounds for single-target ground truth")
-        return state_at_t
+        if state_at_t.ndim == 0:
+            return state_at_t.reshape(1)
+        if state_at_t.ndim == 1:
+            return state_at_t
     if state_at_t.ndim != 2:
         raise ValueError(
             "MTT groundtruth entries must have shape (n_targets, dim); "
@@ -120,7 +147,10 @@ def generate_measurements(groundtruth, simulation_config):
                         "Cannot use both intensity_lambda and "
                         "n_meas_at_individual_time_step."
                     )
-                n_meas_curr = simulation_config["n_meas_at_individual_time_step"][t]
+                n_meas_curr = _as_nonnegative_measurement_count(
+                    simulation_config["n_meas_at_individual_time_step"][t],
+                    name=f"n_meas_at_individual_time_step[{t}]",
+                )
             else:
                 if eot_sampling_style == "boundary":
                     n_meas_curr = generate_n_measurements_PPP(
@@ -192,22 +222,23 @@ def generate_measurements(groundtruth, simulation_config):
                 "Scenarios based on a 'measGenerator' are currently not supported."
             )
         for t in range(simulation_config["n_timesteps"]):
-            n_meas = simulation_config["n_meas_at_individual_time_step"][t]
+            n_meas = _as_nonnegative_measurement_count(
+                simulation_config["n_meas_at_individual_time_step"][t],
+                name=f"n_meas_at_individual_time_step[{t}]",
+            )
             meas_noise = simulation_config["meas_noise"]
 
             if isinstance(meas_noise, AbstractHypertoroidalDistribution):
                 noise_samples = meas_noise.sample(n_meas)
                 measurements[t] = mod(
-                    squeeze(
-                        tile(
-                            groundtruth[t],
-                            (
-                                n_meas,
-                                1,
-                            ),
-                        )
-                        + noise_samples
-                    ),
+                    tile(
+                        groundtruth[t],
+                        (
+                            n_meas,
+                            1,
+                        ),
+                    )
+                    + noise_samples,
                     2.0 * pi,
                 )
 
@@ -217,18 +248,19 @@ def generate_measurements(groundtruth, simulation_config):
                 curr_dist = copy.deepcopy(meas_noise)
                 curr_dist.mu = groundtruth[t]
                 measurements[t] = curr_dist.sample(n_meas)
-
             elif isinstance(meas_noise, GaussianDistribution):
                 noise_samples = meas_noise.sample(n_meas)
-                measurements[t] = squeeze(
-                    tile(
-                        groundtruth[t],
-                        (
-                            n_meas,
-                            1,
-                        ),
-                    )
-                    + noise_samples
+                measurements[t] = tile(
+                    groundtruth[t],
+                    (
+                        n_meas,
+                        1,
+                    ),
+                ) + noise_samples
+            else:
+                raise TypeError(
+                    "meas_noise must be a supported PyRecEst distribution; "
+                    f"got {type(meas_noise).__name__}."
                 )
 
     return measurements

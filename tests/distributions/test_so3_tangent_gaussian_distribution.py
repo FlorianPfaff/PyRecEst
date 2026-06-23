@@ -23,6 +23,21 @@ class SO3TangentGaussianDistributionTest(unittest.TestCase):
         npt.assert_allclose(dist.covariance(), covariance, atol=ATOL)
         self.assertTrue(dist.is_valid())
 
+    def test_constructor_accepts_singleton_batched_mean(self):
+        covariance = diag(array([0.1, 0.2, 0.3]))
+        dist = SO3TangentGaussianDistribution(
+            array([[0.0, 0.0, 0.0, -2.0]]), covariance
+        )
+
+        npt.assert_allclose(dist.mean(), array([0.0, 0.0, 0.0, 1.0]), atol=ATOL)
+
+    def test_constructor_rejects_batched_mean(self):
+        covariance = diag(array([0.1, 0.2, 0.3]))
+        means = array([[0.0, 0.0, 0.0, 1.0], [0.0, 0.0, 1.0, 0.0]])
+
+        with self.assertRaisesRegex(ValueError, "single SO\\(3\\) quaternion"):
+            SO3TangentGaussianDistribution(means, covariance)
+
     def test_constructor_rejects_invalid_covariance(self):
         mean = array([0.0, 0.0, 0.0, 1.0])
 

@@ -41,6 +41,28 @@ class TestGenerateMeasurementsMtt(unittest.TestCase):
         self.assertEqual(measurements[1].shape, (1, 2))
 
     @pytest.mark.skipif(
+        IS_JAX_BACKEND, reason="MTT measurement generation is unsupported with JAX."
+    )
+    def test_mtt_accepts_scalar_single_target_groundtruth_entries(self):
+        simulation_param = check_and_fix_config(
+            {
+                "mtt": True,
+                "eot": False,
+                "n_timesteps": 2,
+                "n_targets": 1,
+                "initial_prior": GaussianDistribution(array([0.0]), eye(1)),
+                "meas_matrix_for_each_target": eye(1),
+                "meas_noise": GaussianDistribution(array([0.0]), 1.0e-12 * eye(1)),
+            }
+        )
+        groundtruth = np.array([1.0, 3.0])
+
+        measurements = generate_measurements(groundtruth, simulation_param)
+
+        self.assertEqual(measurements[0].shape, (1, 1))
+        self.assertEqual(measurements[1].shape, (1, 1))
+
+    @pytest.mark.skipif(
         not IS_JAX_BACKEND, reason="JAX-only guard for MTT measurement generation."
     )
     def test_mtt_measurement_generation_raises_for_jax_backend(self):

@@ -31,6 +31,7 @@ from .multisession_assignment import (
     SessionSizesInput,
     _infer_and_validate_session_sizes,
     _normalize_pairwise_costs,
+    _normalize_session_index,
     _normalize_session_sizes,
     solve_multisession_assignment,
 )
@@ -202,9 +203,10 @@ def _normalize_observation_costs(
     if observation_costs is None:
         raw_entries: dict[int, ObservationCostValue] = {}
     elif isinstance(observation_costs, Mapping):
-        raw_entries = {
-            int(session_idx): value for session_idx, value in observation_costs.items()
-        }
+        raw_entries = {}
+        for session_idx, value in observation_costs.items():
+            normalized_session_idx = _normalize_session_index(session_idx)
+            raw_entries[normalized_session_idx] = value
     else:
         raw_entries = dict(enumerate(observation_costs))
 

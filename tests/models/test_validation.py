@@ -114,6 +114,20 @@ class TestModelValidation(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Could not infer"):
             infer_state_dim_from_distribution(DistributionWithBooleanDim())
 
+    def test_infer_state_dim_skips_disabled_callable_dim_attribute(self):
+        class DistributionWithCallableDimAndMean:
+            mu = array([0.0, 1.0])
+
+            def dim(self):
+                raise AssertionError("dim() must not be called when methods are disabled")
+
+        self.assertEqual(
+            infer_state_dim_from_distribution(
+                DistributionWithCallableDimAndMean(), allow_methods=False
+            ),
+            2,
+        )
+
     def test_infer_state_dim_from_mean_attribute(self):
         class DistributionWithMean:
             mu = array([0.0, 1.0, 2.0])

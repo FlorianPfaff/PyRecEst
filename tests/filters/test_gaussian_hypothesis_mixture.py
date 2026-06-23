@@ -53,6 +53,18 @@ class GaussianHypothesisMixtureTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "covariance"):
             WeightedGaussianHypothesis(np.array([0.0]), np.array([[np.inf]]))
 
+    def test_moment_matching_rejects_mixed_state_dimensions(self):
+        with self.assertRaisesRegex(ValueError, "same dimension"):
+            moment_match_gaussian_hypotheses(
+                [
+                    WeightedGaussianHypothesis(np.array([0.0]), np.array([[1.0]])),
+                    WeightedGaussianHypothesis(
+                        np.array([1.0, 2.0]),
+                        np.eye(2),
+                    ),
+                ]
+            )
+
     def test_moment_matching_respects_dominant_infinite_weight(self):
         mean, covariance, weights = moment_match_gaussian_hypotheses(
             [

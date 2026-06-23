@@ -15,6 +15,7 @@ from collections import defaultdict
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, replace
 from math import log, pi
+from numbers import Integral
 from typing import Any, Literal
 
 import numpy as np
@@ -100,12 +101,48 @@ class AssociationHypothesis:
         return replace(self, accepted=bool(accepted), reason=reason)
 
 
+def _nonnegative_index(value: Any, name: str) -> int:
+    """Return ``value`` as a nonnegative Python index without NumPy wraparound."""
+    if isinstance(value, bool):
+        raise ValueError(f"{name} must be a nonnegative integer")
+    if isinstance(value, Integral):
+        index = int(value)
+    else:
+        value_array = np.asarray(value)
+        if value_array.shape != () or value_array.dtype == np.bool_:
+            raise ValueError(f"{name} must be a nonnegative integer")
+        scalar = value_array.item()
+        if isinstance(scalar, (bool, np.bool_)):
+            raise ValueError(f"{name} must be a nonnegative integer")
+        if isinstance(scalar, (int, np.integer)):
+            index = int(scalar)
+        elif (
+            isinstance(scalar, (float, np.floating))
+            and np.isfinite(scalar)
+            and float(scalar).is_integer()
+        ):
+            index = int(scalar)
+        else:
+            raise ValueError(f"{name} must be a nonnegative integer")
+    if index < 0:
+        raise ValueError(f"{name} must be a nonnegative integer")
+    return index
+
+
+def _track_index(hypothesis: AssociationHypothesis) -> int:
+    """Return the concrete track index for a hypothesis."""
+    return _nonnegative_index(hypothesis.track_index, "hypothesis.track_index")
+
+
 def _measurement_index(hypothesis: AssociationHypothesis) -> int:
     """Return the concrete measurement index for a non-missed hypothesis."""
     measurement_index = hypothesis.measurement_index
     if measurement_index is None:
         raise ValueError("missed-detection hypotheses do not have a measurement index")
-    return int(measurement_index)
+    return _nonnegative_index(
+        measurement_index,
+        "hypothesis.measurement_index",
+    )
 
 
 def missed_detection_hypothesis(
@@ -119,7 +156,7 @@ def missed_detection_hypothesis(
 ) -> AssociationHypothesis:
     """Create a missed-detection hypothesis for one track."""
     return AssociationHypothesis(
-        track_index=int(track_index),
+        track_index=_nonnegative_index(track_index, "track_index"),
         measurement_index=None,
         cost=cost,
         log_likelihood=log_likelihood,
@@ -286,7 +323,7 @@ class TopKGate:
                 missed.append(hypothesis)
                 continue
             key = (
-                hypothesis.track_index
+                _track_index(hypothesis)
                 if self.mode == "track"
                 else _measurement_index(hypothesis)
             )
@@ -300,9 +337,7 @@ class TopKGate:
                 ),
             )
             for hypothesis in sorted_group[: self.k]:
-                accepted_keys.add(
-                    (hypothesis.track_index, hypothesis.measurement_index)
-                )
+                accepted_keys.add((_track_index(hypothesis), _measurement_index(hypothesis)))
 
         result = []
         for hypothesis in hypotheses:
@@ -310,8 +345,8 @@ class TopKGate:
                 result.append(hypothesis)
                 continue
             accepted = (
-                hypothesis.track_index,
-                hypothesis.measurement_index,
+                _track_index(hypothesis),
+                _measurement_index(hypothesis),
             ) in accepted_keys
             result.append(
                 hypothesis.with_acceptance(
@@ -515,7 +550,7 @@ def hypotheses_to_cost_matrix(
         cost = hypothesis_cost(hypothesis, missing_cost=missing_cost)
         if not hypothesis.accepted:
             cost = float(rejected_cost)
-        matrix[hypothesis.track_index, _measurement_index(hypothesis)] = cost
+        matrix[_track_index(hypothesis), _measurement_index(hypothesis)] = cost
     return matrix
 
 
@@ -545,7 +580,7 @@ def hypotheses_to_log_likelihood_matrix(
             value = log(float(hypothesis.probability))
         else:
             value = -hypothesis_cost(hypothesis)
-        matrix[hypothesis.track_index, _measurement_index(hypothesis)] = value
+        matrix[_track_index(hypothesis), _measurement_index(hypothesis)] = value
     return matrix
 
 
@@ -575,7 +610,7 @@ def hypotheses_to_probability_matrix(
             value = float(np.exp(hypothesis.log_likelihood))
         else:
             value = float(np.exp(-hypothesis_cost(hypothesis)))
-        matrix[hypothesis.track_index, _measurement_index(hypothesis)] = value
+        matrix[_track_index(hypothesis), _measurement_index(hypothesis)] = value
     return matrix
 
 
@@ -664,10 +699,12 @@ def infer_hypothesis_shape(
     num_measurements: int | None = None,
 ) -> tuple[int, int]:
     """Infer cost-matrix shape from hypotheses unless explicit sizes are given."""
+    track_indices = [_track_index(hypothesis) for hypothesis in hypotheses]
     if num_tracks is None:
-        num_tracks = 0
-        if hypotheses:
-            num_tracks = max(hypothesis.track_index for hypothesis in hypotheses) + 1
+        num_tracks = max(track_indices) + 1 if track_indices else 0
+    else:
+        num_tracks = _nonnegative_index(num_tracks, "num_tracks")
+
     if num_measurements is None:
         measurement_indices = [
             _measurement_index(hypothesis)
@@ -675,8 +712,8 @@ def infer_hypothesis_shape(
             if hypothesis.measurement_index is not None
         ]
         num_measurements = max(measurement_indices) + 1 if measurement_indices else 0
-    if int(num_tracks) < 0 or int(num_measurements) < 0:
-        raise ValueError("num_tracks and num_measurements must be nonnegative")
+    else:
+        num_measurements = _nonnegative_index(num_measurements, "num_measurements")
     return int(num_tracks), int(num_measurements)
 
 

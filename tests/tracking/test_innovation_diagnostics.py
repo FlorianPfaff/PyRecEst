@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 from pyrecest.tracking import (
     diagnostic_from_record,
     diagnostics_from_records,
@@ -39,6 +40,18 @@ def test_innovation_diagnostic_rejects_when_over_gate() -> None:
 
     assert diagnostic.nis == 100.0
     assert diagnostic.accepted is False
+
+
+def test_innovation_diagnostic_rejects_invalid_explicit_gate_threshold() -> None:
+    invalid_thresholds = (0.0, -1.0, np.nan, np.inf, True, np.array([1.0]))
+
+    for threshold in invalid_thresholds:
+        with pytest.raises(ValueError, match="gate_threshold"):
+            innovation_diagnostic(
+                np.array([1.0]),
+                np.eye(1),
+                gate_threshold=threshold,
+            )
 
 
 def test_normalized_innovation_squared_reexport() -> None:

@@ -286,7 +286,7 @@ def _apply_remove_link(matrix: np.ndarray, edit: TrackEdit) -> TrackEditApplicat
             (output[:, session_a] == source) & (output[:, session_b] == target)
         )
     )
-    if occurrence_index >= len(matching_rows):
+    if occurrence_index < 0 or occurrence_index >= len(matching_rows):
         return TrackEditApplication(edit, output, False, "reject", "edge_not_found")
     row_index = matching_rows[occurrence_index]
     left = output[row_index].copy()

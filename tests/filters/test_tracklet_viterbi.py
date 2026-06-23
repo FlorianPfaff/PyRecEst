@@ -71,6 +71,14 @@ def test_missed_detection_branch_is_selected_when_candidates_are_expensive():
     assert result.missed_detection_count == 1
 
 
+def test_fixed_lag_solver_rejects_invalid_lag():
+    frames = [[TrackletAssociationCandidate("a0")]]
+
+    for lag_s in (0.0, -1.0, np.nan, np.inf, True, np.array([1.0])):
+        with pytest.raises(ValueError, match="lag_s"):
+            solve_fixed_lag_tracklet_viterbi(frames, lag_s=lag_s)
+
+
 def test_fixed_lag_solver_uses_prefix_memory():
     frames = [
         [TrackletAssociationCandidate("a0", unary_cost=0.0, track_id="A", time_s=0.0)],

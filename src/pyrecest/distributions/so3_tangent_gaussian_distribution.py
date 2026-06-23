@@ -84,7 +84,10 @@ class SO3TangentGaussianDistribution(AbstractBoundedDomainDistribution):
 
     def __init__(self, mu, C, check_validity=True):
         super().__init__(dim=3)
-        self.mu = self._normalize_quaternions(mu)[0]
+        normalized_mu = self._normalize_quaternions(mu)
+        if normalized_mu.shape[0] != 1:
+            raise ValueError("mu must be a single SO(3) quaternion.")
+        self.mu = normalized_mu[0]
 
         C = array(C, dtype=float)
         if ndim(C) != 2 or C.shape != (3, 3):

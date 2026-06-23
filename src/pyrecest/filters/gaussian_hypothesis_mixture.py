@@ -44,18 +44,19 @@ def moment_match_gaussian_hypotheses(
     """Return moment-matched mean/covariance and normalized weights."""
     if not hypotheses:
         raise ValueError("hypotheses must not be empty")
+
+    dim = hypotheses[0].mean.size
+    if any(hypothesis.mean.size != dim for hypothesis in hypotheses):
+        raise ValueError("all hypothesis means must have the same dimension")
+
     weights = normalize_log_weights(
         [hypothesis.log_weight for hypothesis in hypotheses]
     )
     means = np.stack([hypothesis.mean for hypothesis in hypotheses], axis=0)
-    if not all(mean.size == means.shape[1] for mean in means):
-        raise ValueError("all hypothesis means must have the same dimension")
 
     mean = weights @ means
     covariance = np.zeros((mean.size, mean.size), dtype=float)
     for weight, hypothesis in zip(weights, hypotheses):
-        if hypothesis.mean.size != mean.size:
-            raise ValueError("all hypothesis means must have the same dimension")
         diff = hypothesis.mean - mean
         covariance += float(weight) * (hypothesis.covariance + np.outer(diff, diff))
     return mean, _symmetrized(covariance), weights

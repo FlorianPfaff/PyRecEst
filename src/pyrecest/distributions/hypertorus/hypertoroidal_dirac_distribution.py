@@ -95,6 +95,15 @@ class HypertoroidalDiracDistribution(
             raise ValueError("n_particles must be a positive integer.")
         return int(n_particles)
 
+    @staticmethod
+    def _validate_dimension_index(dimension, dim: int) -> int:
+        if isinstance(dimension, bool) or not isinstance(dimension, Integral):
+            raise ValueError("dimension must be an integer.")
+        dimension = int(dimension)
+        if dimension < 0 or dimension >= dim:
+            raise ValueError(f"dimension must be in [0, {dim - 1}].")
+        return dimension
+
     def plot(self, resolution=128, **kwargs):
         _ = resolution
         if self.dim > 3:
@@ -154,26 +163,32 @@ class HypertoroidalDiracDistribution(
     def marginalize_to_1D(self, dimension: Union[int, int32, int64]):
         from ..circle.circular_dirac_distribution import CircularDiracDistribution
 
+        dimension = self._validate_dimension_index(dimension, self.dim)
         return CircularDiracDistribution(self.d[:, dimension], self.w)
 
     def marginalize_out(self, dimensions: int | list[int]):
         from ..circle.circular_dirac_distribution import CircularDiracDistribution
 
-        if isinstance(dimensions, int):
+        if isinstance(dimensions, bool):
+            raise ValueError("dimensions must contain integer indices.")
+        if isinstance(dimensions, Integral):
             dimensions = [dimensions]
         else:
-            dimensions = list(dimensions)
+            try:
+                dimensions = list(dimensions)
+            except TypeError as exc:
+                raise ValueError(
+                    "dimensions must be an integer or an iterable of integers."
+                ) from exc
 
-        dimensions = [int(dim) for dim in dimensions]
+        dimensions = [
+            self._validate_dimension_index(dimension, self.dim)
+            for dimension in dimensions
+        ]
         dimensions_to_remove = set(dimensions)
 
         if len(dimensions) != len(dimensions_to_remove):
             raise ValueError("dimensions must not contain duplicates.")
-
-        if any(dim < 0 or dim >= self.dim for dim in dimensions_to_remove):
-            raise ValueError(
-                f"All marginalized-out dimensions must be in [0, {self.dim - 1}]."
-            )
 
         if len(dimensions_to_remove) == 0:
             return copy.deepcopy(self)

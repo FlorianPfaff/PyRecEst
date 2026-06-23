@@ -22,3 +22,23 @@ def test_rand_keeps_numpy_positional_dimensions():
 def test_rand_rejects_ambiguous_positional_and_size_arguments():
     with pytest.raises(TypeError, match="positional dimensions or size"):
         random.rand(2, size=(3,))
+
+
+def test_choice_without_replacement_shuffle_false_preserves_order():
+    values = np.array([10, 20, 30, 40, 50])
+    matrix = np.array([[10, 20, 30], [40, 50, 60]])
+
+    random.seed(0)
+    samples = random.choice(
+        values, size=values.shape[0], replace=False, shuffle=False
+    )
+    column_samples = random.choice(
+        matrix,
+        size=matrix.shape[1],
+        replace=False,
+        axis=1,
+        shuffle=False,
+    )
+
+    np.testing.assert_array_equal(samples, values)
+    np.testing.assert_array_equal(column_samples, matrix)
