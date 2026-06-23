@@ -72,6 +72,8 @@ def _symmetric_distance_function(
 def _as_target_matrix(value) -> np.ndarray:
     value = np.asarray(to_numpy(value), dtype=float)
     if value.size == 0:
+        if value.ndim == 2:
+            return value
         return value.reshape(0, 0)
     if value.ndim == 1:
         return value.reshape(1, -1)
@@ -98,6 +100,16 @@ def _validate_mtt_cutoff_distance(value: Any) -> float:
 
 
 def _euclidean_mtt_distance(x1, x2, *, cutoff_distance: float) -> float:
+    raw_first = np.asarray(to_numpy(x1), dtype=float)
+    raw_second = np.asarray(to_numpy(x2), dtype=float)
+    if raw_first.size == 0 and raw_first.ndim == 2 and raw_second.ndim == 2:
+        if raw_first.shape[1] != raw_second.shape[1]:
+            raise ValueError("MTT state sets must use the same target dimension")
+        return float(cutoff_distance * raw_second.shape[0])
+    if raw_second.size == 0 and raw_second.ndim == 2 and raw_first.ndim == 2:
+        if raw_first.shape[1] != raw_second.shape[1]:
+            raise ValueError("MTT state sets must use the same target dimension")
+        return float(cutoff_distance * raw_first.shape[0])
     first = _as_target_matrix(x1)
     second = _as_target_matrix(x2)
     if first.shape[0] == 0 or second.shape[0] == 0:
