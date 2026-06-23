@@ -189,6 +189,18 @@ class TestDiscreteStateUtilities(unittest.TestCase):
 
         np.testing.assert_allclose(probs, np.array([0.0, 0.5, 0.5, 0.0]))
 
+    def test_valid_state_mask_rejects_numeric_inputs(self):
+        invalid_masks = (
+            [1.0, 0.0, 1.0],
+            np.array([1, 0, 1]),
+            np.array([1.0, 2.0, 3.0]),
+        )
+
+        for invalid_mask in invalid_masks:
+            with self.subTest(invalid_mask=invalid_mask):
+                with self.assertRaisesRegex(ValueError, "boolean"):
+                    uniform_probabilities(3, invalid_mask)
+
 
 if __name__ == "__main__":
     unittest.main()
