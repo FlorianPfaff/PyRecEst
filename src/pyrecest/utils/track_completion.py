@@ -139,12 +139,15 @@ def enumerate_fragment_completion_paths(
         high-branching production trackers should pre-prune in the provider.
     """
 
-    if max_path_length < 1:
-        raise ValueError("max_path_length must be positive")
+    max_path_length = _normalize_positive_integer(max_path_length, "max_path_length")
     if direction not in {"prefix", "suffix", "both"}:
         raise ValueError("direction must be 'prefix', 'suffix', or 'both'")
-    if max_paths_per_fragment is not None and int(max_paths_per_fragment) < 1:
-        raise ValueError("max_paths_per_fragment must be positive or None")
+    if max_paths_per_fragment is not None:
+        max_paths_per_fragment = _normalize_positive_integer(
+            max_paths_per_fragment,
+            "max_paths_per_fragment",
+            none_allowed=True,
+        )
 
     matrix = normalize_track_matrix(track_matrix)
     occupied = occupied_observations_by_session(matrix)
@@ -178,7 +181,7 @@ def enumerate_fragment_completion_paths(
                 steps=(),
                 seen={(int(endpoint_session), endpoint_observation)},
                 occupied=occupied,
-                max_path_length=int(max_path_length),
+                max_path_length=max_path_length,
                 candidate_provider=candidate_provider,
                 candidate_session_provider=candidate_session_provider,
                 allow_duplicate_source=bool(allow_duplicate_source),
@@ -194,7 +197,7 @@ def enumerate_fragment_completion_paths(
                         path.path_length,
                         path_observations(path),
                     ),
-                )[: int(max_paths_per_fragment)]
+                )[:max_paths_per_fragment]
             paths.extend(fragment_paths)
     return paths
 
@@ -225,6 +228,35 @@ def path_observations(path: CompletionPath[Any]) -> tuple[int, ...]:
         path.steps[0].from_observation,
         *(step.to_observation for step in path.steps),
     )
+
+
+def _normalize_positive_integer(
+    value: Any,
+    name: str,
+    *,
+    none_allowed: bool = False,
+) -> int:
+    message = f"{name} must be positive" + (" or None" if none_allowed else "")
+    value_array = np.asarray(value)
+    if value_array.shape != () or value_array.dtype == np.bool_:
+        raise ValueError(message)
+
+    scalar = value_array.item()
+    if isinstance(scalar, (bool, np.bool_)):
+        raise ValueError(message)
+    if isinstance(scalar, (int, np.integer)):
+        parsed = int(scalar)
+    else:
+        try:
+            scalar_float = float(scalar)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError(message) from exc
+        if not np.isfinite(scalar_float) or not scalar_float.is_integer():
+            raise ValueError(message)
+        parsed = int(scalar_float)
+    if parsed < 1:
+        raise ValueError(message)
+    return parsed
 
 
 def _extend_completion_path(
