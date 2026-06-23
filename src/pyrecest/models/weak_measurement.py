@@ -58,6 +58,8 @@ def block_diag_measurement_covariance(
             ]
         else:
             order = list(dimension_order)
+            if len(set(order)) != len(order):
+                raise ValueError("dimension_order must not contain duplicate entries")
         missing = [
             key for key in order if key not in trusted_map and key not in weak_map
         ]
