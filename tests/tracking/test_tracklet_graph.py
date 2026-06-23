@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 from pyrecest.tracking.tracklet_graph import (
     Tracklet,
     TrackletGraphConfig,
@@ -136,3 +137,59 @@ def test_tracklet_validation_rejects_bad_state() -> None:
         assert "end_time" in str(exc)
     else:  # pragma: no cover
         raise AssertionError("expected ValueError")
+
+
+def test_tracklet_graph_config_validates_numeric_controls() -> None:
+    cfg = TrackletGraphConfig(
+        top_k=np.array(2.0),
+        beam_width=3.0,
+        max_gap=np.array(4.0),
+        diversity_weight=np.array(0.5),
+        candidate_multiplier=5.0,
+    )
+
+    assert cfg.top_k == 2
+    assert cfg.beam_width == 3
+    assert cfg.max_gap == 4.0
+    assert cfg.diversity_weight == 0.5
+    assert cfg.candidate_multiplier == 5
+
+    invalid_configs = (
+        {"top_k": True},
+        {"top_k": 1.5},
+        {"top_k": np.array([1])},
+        {"beam_width": True},
+        {"beam_width": 1.5},
+        {"beam_width": np.array([1])},
+        {"max_gap": True},
+        {"max_gap": np.nan},
+        {"max_gap": -1.0},
+        {"diversity_weight": True},
+        {"diversity_weight": np.inf},
+        {"diversity_weight": -1.0},
+        {"candidate_multiplier": True},
+        {"candidate_multiplier": 2.5},
+        {"candidate_multiplier": np.array([2])},
+    )
+
+    for kwargs in invalid_configs:
+        with pytest.raises(ValueError):
+            TrackletGraphConfig(**kwargs)
+
+
+def test_constant_velocity_edge_cost_validates_numeric_controls() -> None:
+    invalid_kwargs = (
+        {"max_gap": True},
+        {"max_gap": np.nan},
+        {"max_gap": -1.0},
+        {"max_speed": True},
+        {"max_speed": np.inf},
+        {"max_speed": 0.0},
+        {"gap_weight": True},
+        {"speed_weight": np.array([1.0])},
+        {"switch_penalty": np.nan},
+    )
+
+    for kwargs in invalid_kwargs:
+        with pytest.raises(ValueError):
+            constant_velocity_edge_cost(**kwargs)
