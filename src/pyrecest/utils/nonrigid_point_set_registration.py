@@ -155,6 +155,31 @@ def _validate_regularization(regularization: float) -> float:
     return regularization_value
 
 
+def _validate_positive_integer(value, name: str, *, minimum: int = 1) -> int:
+    value_array = asarray(value)
+    if value_array.shape != ():
+        raise ValueError(f"{name} must be a scalar integer.")
+
+    value_scalar = value_array.item()
+    if isinstance(value_scalar, bool):
+        raise ValueError(f"{name} must be a scalar integer.")
+
+    try:
+        value_float = float(value_scalar)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{name} must be a scalar integer.") from exc
+
+    if not math.isfinite(value_float) or not value_float.is_integer():
+        raise ValueError(f"{name} must be a scalar integer.")
+
+    value_int = int(value_float)
+    if value_int < minimum:
+        if minimum == 1:
+            raise ValueError(f"{name} must be positive.")
+        raise ValueError(f"{name} must be at least {minimum}.")
+    return value_int
+
+
 def estimate_thin_plate_spline(
     source_points,
     target_points,
@@ -263,6 +288,9 @@ def joint_tps_registration_assignment(  # pylint: disable=too-many-arguments,too
             "joint_tps_registration_assignment is not supported on the JAX backend."
         )
 
+    max_iterations = _validate_positive_integer(max_iterations, "max_iterations")
+    min_matches = _validate_positive_integer(min_matches, "min_matches", minimum=3)
+
     reference = _as_point_array(
         reference_points,
         expected_dim=2,
@@ -273,11 +301,6 @@ def joint_tps_registration_assignment(  # pylint: disable=too-many-arguments,too
         expected_dim=2,
         expected_dim_error="Only 2D point sets are currently supported.",
     )
-
-    if max_iterations <= 0:
-        raise ValueError("max_iterations must be positive.")
-    if min_matches < 3:
-        raise ValueError("min_matches must be at least 3 for TPS fitting.")
 
     if initial_transform is None:
         translation = quantile(moving, 0.5, axis=0) - quantile(reference, 0.5, axis=0)
