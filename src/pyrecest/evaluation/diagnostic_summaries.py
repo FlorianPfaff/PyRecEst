@@ -295,7 +295,7 @@ def _optional_float(value: Any) -> float | None:
         return None
     try:
         out = float(value)
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         return None
     return out if math.isfinite(out) else None
 
@@ -303,6 +303,8 @@ def _optional_float(value: Any) -> float | None:
 def _is_nan(value: Any) -> bool:
     try:
         return bool(math.isnan(float(value)))
+    except OverflowError:
+        return True
     except (TypeError, ValueError):
         return False
 
