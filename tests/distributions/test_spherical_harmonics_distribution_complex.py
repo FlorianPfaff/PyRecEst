@@ -68,6 +68,18 @@ class SphericalHarmonicsDistributionComplexTest(unittest.TestCase):
     def test_mormalization_error(self):
         self.assertRaises(ValueError, SphericalHarmonicsDistributionComplex, array(0.0))
 
+    def test_value_sph_rejects_complex_values_when_real_requested(self):
+        coeff_mat = array(
+            [
+                [1.0 / sqrt(4.0 * pi), float("NaN"), float("NaN")],
+                [1j, 0.0, 0.0],
+            ]
+        )
+        shd = SphericalHarmonicsDistributionComplex(coeff_mat)
+
+        with self.assertRaisesRegex(ValueError, "real function"):
+            shd.value_sph(array([0.0]), array([pi / 2.0]))
+
     def test_normalization(self):
         with self.assertWarns(Warning):
             shd = SphericalHarmonicsDistributionComplex(self.unnormalized_coeffs)
