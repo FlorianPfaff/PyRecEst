@@ -423,7 +423,16 @@ def _nearest_bin_indices(positions: np.ndarray, bin_tree: cKDTree) -> np.ndarray
 
 
 def _validate_probability(probability: float, name: str) -> float:
-    value = float(probability)
+    probability_array = np.asarray(probability)
+    if probability_array.shape != ():
+        raise ValueError(f"{name} must be a scalar probability in [0, 1]")
+    probability_scalar = probability_array.item()
+    if isinstance(probability_scalar, (bool, np.bool_)):
+        raise ValueError(f"{name} must be a scalar probability in [0, 1]")
+    try:
+        value = float(probability_scalar)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{name} must be a scalar probability in [0, 1]") from exc
     if not np.isfinite(value) or not 0.0 <= value <= 1.0:
         raise ValueError(f"{name} must lie in [0, 1]")
     return value
