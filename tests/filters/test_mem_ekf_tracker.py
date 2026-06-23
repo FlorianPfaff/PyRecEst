@@ -43,6 +43,19 @@ class TestMEMEKFTracker(unittest.TestCase):
         )
         self.assertEqual(self.tracker.get_point_estimate().shape[0], 7)
 
+    def test_rejects_nonfinite_covariance_regularization(self):
+        for bad_value in (float("nan"), float("inf"), -float("inf")):
+            with self.subTest(covariance_regularization=bad_value):
+                with self.assertRaisesRegex(ValueError, "finite"):
+                    MEMEKFTracker(
+                        self.kinematic_state,
+                        self.covariance,
+                        self.shape_state,
+                        self.shape_covariance,
+                        measurement_matrix=self.measurement_matrix,
+                        covariance_regularization=bad_value,
+                    )
+
     def test_extent_respects_orientation(self):
         tracker = MEMEKFTracker(
             self.kinematic_state,
