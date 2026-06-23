@@ -68,6 +68,12 @@ def _validate_nonnegative_integer(name: str, value: int) -> int:
     return value
 
 
+def _validate_optional_dimension(name: str, value: int | None) -> int | None:
+    if value is None:
+        return None
+    return _validate_nonnegative_integer(name, value)
+
+
 def _is_finite_matrix(matrix: np.ndarray) -> bool:
     return bool(np.all(np.isfinite(matrix)))
 
@@ -112,6 +118,8 @@ def is_positive_semidefinite(matrix, *, atol: float = 1e-10) -> bool:
         or not is_symmetric(arr, atol=atol)
     ):
         return False
+    if arr.shape[0] == 0:
+        return True
     return bool(np.min(np.linalg.eigvalsh(arr)) >= -atol)
 
 
@@ -166,6 +174,7 @@ def assert_covariance_matrix(
 ):
     """Validate a covariance matrix and return it in the active backend representation."""
     atol = _validate_nonnegative_finite("atol", atol)
+    dim = _validate_optional_dimension("dim", dim)
     arr = _to_numpy_array(matrix)
     if arr.ndim != 2 or arr.shape[0] != arr.shape[1]:
         raise ShapeError(f"{name} must be a square matrix, got shape {arr.shape}.")
