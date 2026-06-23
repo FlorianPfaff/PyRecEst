@@ -107,12 +107,23 @@ def apply_time_offset(times_s: np.ndarray, offset_s: float | None) -> np.ndarray
     return np.asarray(times_s, dtype=float) + offset
 
 
-def _validate_max_time_delta(max_time_delta_s: float | None) -> None:
+def _validate_max_time_delta(max_time_delta_s: float | None) -> float | None:
     if max_time_delta_s is None:
-        return
-    max_time_delta = float(max_time_delta_s)
+        return None
+    value_array = np.asarray(max_time_delta_s)
+    if value_array.shape != () or value_array.dtype == np.bool_:
+        raise ValueError("max_time_delta_s must be nonnegative")
+
+    scalar = value_array.item()
+    if isinstance(scalar, (bool, np.bool_)):
+        raise ValueError("max_time_delta_s must be nonnegative")
+    try:
+        max_time_delta = float(scalar)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("max_time_delta_s must be nonnegative") from exc
     if max_time_delta < 0.0 or np.isnan(max_time_delta):
         raise ValueError("max_time_delta_s must be nonnegative")
+    return max_time_delta
 
 
 def _finite_reference_rows(
@@ -163,7 +174,7 @@ def interpolate_reference_values(
 ) -> tuple[np.ndarray, np.ndarray]:
     """Interpolate reference values at query times and return a validity mask."""
 
-    _validate_max_time_delta(max_time_delta_s)
+    max_time_delta = _validate_max_time_delta(max_time_delta_s)
     reference_times = np.asarray(reference_times_s, dtype=float).reshape(-1)
     reference_values = np.asarray(reference_values, dtype=float)
     query_times = np.asarray(query_times_s, dtype=float).reshape(-1)
@@ -195,11 +206,9 @@ def interpolate_reference_values(
         & (query_times >= reference_times[0])
         & (query_times <= reference_times[-1])
     )
-    if max_time_delta_s is not None:
+    if max_time_delta is not None:
         nearest = nearest_time_indices(reference_times, query_times)
-        valid &= np.abs(reference_times[nearest] - query_times) <= float(
-            max_time_delta_s
-        )
+        valid &= np.abs(reference_times[nearest] - query_times) <= max_time_delta
     valid &= np.isfinite(interpolated).all(axis=1)
     return interpolated, valid
 
