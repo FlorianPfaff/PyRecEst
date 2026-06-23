@@ -292,11 +292,11 @@ def solve_fixed_lag_tracklet_viterbi(
 ) -> TrackletViterbiResult:
     """Commit Viterbi decisions using at most ``lag_s`` future context.
 
-    Each frame is solved on a local look-ahead window. The previous non-missed
-    committed candidate is prepended as a zero-cost prefix candidate. The
-    committed missed-detection streak is carried into that synthetic prefix so
-    the local window scores another miss the same way the full Viterbi table
-    would score it.
+    Each frame is solved on a local look-ahead window. Either the previous
+    non-missed committed candidate or a zero-cost synthetic prefix for a pending
+    gap is prepended. The committed missed-detection streak is carried into that
+    prefix so the local window scores another miss the same way the full Viterbi
+    table would score it.
     """
 
     lag_s = _as_positive_float(lag_s, "lag_s")
@@ -317,11 +317,17 @@ def solve_fixed_lag_tracklet_viterbi(
             window_end += 1
         window_frames = [list(frame) for frame in frames[frame_index : window_end + 1]]
         prefix_candidate: TrackletAssociationCandidate | None = None
-        prefix_added = previous_committed is not None
+        prefix_added = previous_committed is not None or committed_miss_streak > 0
         local_transition_cost = transition_cost
         if prefix_added:
-            assert previous_committed is not None
-            prefix_candidate = replace(previous_committed, unary_cost=0.0)
+            if previous_committed is None:
+                prefix_candidate = TrackletAssociationCandidate(
+                    ("__pyrecest_prefix_context__", frame_index),
+                    unary_cost=0.0,
+                    time_s=start_time,
+                )
+            else:
+                prefix_candidate = replace(previous_committed, unary_cost=0.0)
             window_frames.insert(0, [prefix_candidate])
             local_transition_cost = _transition_with_prefix_miss_streak(
                 transition_cost,

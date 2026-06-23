@@ -74,16 +74,38 @@ class SequenceAssociationTest(unittest.TestCase):
         self.assertEqual([path.candidate_indices for path in paths], [(0, 0), (1, 1)])
         self.assertLessEqual(paths[0].total_cost, paths[1].total_cost)
 
+    def test_top_k_accepts_integer_like_scalar(self):
+        frames = [
+            [_node(0, 0, "A", 0.0), _node(0, 1, "B", 0.4)],
+            [_node(1, 0, "A", 0.0), _node(1, 1, "B", 0.4)],
+        ]
+
+        paths = solve_top_k_viterbi_sequence_associations(
+            frames,
+            lambda _previous, _current, _context: 0.0,
+            top_k_terminal_paths=np.array(1.0),
+        )
+
+        self.assertEqual(len(paths), 1)
+        self.assertEqual(paths[0].payloads, ("A", "A"))
+
     def test_validation_rejects_empty_frames_and_invalid_top_k(self):
         with self.assertRaises(ValueError):
             solve_viterbi_sequence_association([], lambda _a, _b, _c: 0.0)
 
-        with self.assertRaises(ValueError):
-            solve_top_k_viterbi_sequence_associations(
-                [[_node(0, 0, "A", 0.0)]],
-                lambda _a, _b, _c: 0.0,
-                top_k_terminal_paths=0,
-            )
+        frames = [[_node(0, 0, "A", 0.0)]]
+        invalid_top_k_values = (0, -1, 1.5, np.nan, np.inf, True, "2", np.array([1]))
+        for invalid_top_k in invalid_top_k_values:
+            with self.subTest(top_k_terminal_paths=invalid_top_k):
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "top_k_terminal_paths must be a positive integer",
+                ):
+                    solve_top_k_viterbi_sequence_associations(
+                        frames,
+                        lambda _a, _b, _c: 0.0,
+                        top_k_terminal_paths=invalid_top_k,
+                    )
 
         with self.assertRaises(ValueError):
             SequenceAssociationNode(0, None)

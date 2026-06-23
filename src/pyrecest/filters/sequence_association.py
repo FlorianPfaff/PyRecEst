@@ -157,9 +157,10 @@ def solve_top_k_viterbi_sequence_associations(
     Yen-style k-shortest-path enumeration.
     """
     normalized_frames = _validate_frames(frames)
-    top_k_terminal_paths = int(top_k_terminal_paths)
-    if top_k_terminal_paths < 1:
-        raise ValueError("top_k_terminal_paths must be positive")
+    top_k_terminal_paths = _validate_positive_integer(
+        top_k_terminal_paths,
+        "top_k_terminal_paths",
+    )
 
     costs: list[np.ndarray] = [
         np.array([float(node.unary_cost) for node in normalized_frames[0]])
@@ -287,3 +288,28 @@ def _validate_cost(value: object, name: str) -> float:
     if not np.isfinite(cost):
         raise ValueError(f"{name} must be finite")
     return cost
+
+
+def _validate_positive_integer(value: object, name: str) -> int:
+    message = f"{name} must be a positive integer"
+    value_array = np.asarray(value)
+    if value_array.ndim != 0 or value_array.dtype == np.bool_:
+        raise ValueError(message)
+
+    scalar = value_array.item()
+    if isinstance(scalar, (bool, np.bool_)):
+        raise ValueError(message)
+    if isinstance(scalar, (int, np.integer)):
+        result = int(scalar)
+    elif (
+        isinstance(scalar, (float, np.floating))
+        and np.isfinite(scalar)
+        and float(scalar).is_integer()
+    ):
+        result = int(scalar)
+    else:
+        raise ValueError(message)
+
+    if result < 1:
+        raise ValueError(message)
+    return result

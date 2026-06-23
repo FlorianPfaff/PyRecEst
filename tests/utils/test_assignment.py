@@ -182,6 +182,22 @@ class MurtyAssignmentTest(unittest.TestCase):
         pyrecest.backend.__backend_name__ == "jax",  # pylint: disable=no-member
         reason="Not supported on the JAX backend",
     )
+    def test_scalar_array_assignment_count_is_accepted(self):
+        solutions = murty_k_best_assignments(
+            np.array([[1.0, 100.0], [100.0, 1.0]]),
+            k=np.array(1.0),
+            row_non_assignment_costs=5.0,
+            col_non_assignment_costs=5.0,
+        )
+
+        self.assertEqual(len(solutions), 1)
+        npt.assert_array_equal(solutions[0]["assignment"], np.array([0, 1]))
+        self.assertAlmostEqual(solutions[0]["cost"], 2.0)
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ == "jax",  # pylint: disable=no-member
+        reason="Not supported on the JAX backend",
+    )
     def test_nonfinite_non_assignment_costs_are_rejected(self):
         cost_matrix = np.array([[1.0]])
 
@@ -203,11 +219,45 @@ class MurtyAssignmentTest(unittest.TestCase):
                         col_non_assignment_costs=np.array([invalid_cost]),
                     )
 
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ == "jax",  # pylint: disable=no-member
+        reason="Not supported on the JAX backend",
+    )
+    def test_boolean_non_assignment_costs_are_rejected(self):
+        cost_matrix = np.array([[1.0]])
+
+        for invalid_cost in (True, np.array(True), np.array([True])):
+            with self.subTest(kind="row", invalid_cost=invalid_cost):
+                with self.assertRaisesRegex(
+                    ValueError, "row_non_assignment_costs must be numeric and finite"
+                ):
+                    murty_k_best_assignments(
+                        cost_matrix,
+                        row_non_assignment_costs=invalid_cost,
+                    )
+            with self.subTest(kind="column", invalid_cost=invalid_cost):
+                with self.assertRaisesRegex(
+                    ValueError, "col_non_assignment_costs must be numeric and finite"
+                ):
+                    murty_k_best_assignments(
+                        cost_matrix,
+                        col_non_assignment_costs=invalid_cost,
+                    )
+
     def test_non_positive_k_returns_empty_list(self):
         self.assertEqual(murty_k_best_assignments(np.eye(2), k=0), [])
 
     def test_non_integer_k_is_rejected(self):
-        for invalid_k in (True, False, 1.5):
+        for invalid_k in (
+            True,
+            False,
+            1.5,
+            np.nan,
+            np.inf,
+            np.array(True),
+            np.array(1.5),
+            np.array([1]),
+        ):
             with self.subTest(invalid_k=invalid_k):
                 with self.assertRaisesRegex(ValueError, "k must be an integer"):
                     murty_k_best_assignments(np.eye(2), k=invalid_k)

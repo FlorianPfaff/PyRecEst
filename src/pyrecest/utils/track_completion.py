@@ -398,16 +398,26 @@ def _coerce_candidate(
 
 
 def _normalize_candidate_observation(value: Any) -> int:
-    if isinstance(value, (bool, np.bool_)):
+    value_array = np.asarray(value)
+    if value_array.shape != () or value_array.dtype == np.bool_:
         raise ValueError("candidate observations must be non-negative integers")
-    if isinstance(value, (float, np.floating)) and not float(value).is_integer():
+
+    scalar = value_array.item()
+    if isinstance(scalar, (bool, np.bool_)):
         raise ValueError("candidate observations must be non-negative integers")
-    try:
-        observation = int(value)
-    except (TypeError, ValueError) as exc:
-        raise ValueError(
-            "candidate observations must be non-negative integers"
-        ) from exc
+    if isinstance(scalar, (int, np.integer)):
+        observation = int(scalar)
+    elif isinstance(scalar, (float, np.floating)):
+        if not np.isfinite(scalar) or not float(scalar).is_integer():
+            raise ValueError("candidate observations must be non-negative integers")
+        observation = int(scalar)
+    else:
+        try:
+            observation = int(scalar)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError(
+                "candidate observations must be non-negative integers"
+            ) from exc
     if observation < 0:
         raise ValueError("candidate observations must be non-negative integers")
     return observation

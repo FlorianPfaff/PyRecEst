@@ -83,13 +83,30 @@ def from_numpy(x):
     return x
 
 
+def _normalize_squeeze_axes(axis):
+    if isinstance(axis, (int, _np.integer)):
+        return (int(axis),)
+    return tuple(axis)
+
+
 def squeeze(x, axis=None):
     x = _np.asarray(x)
     if axis is None:
         return _np.squeeze(x)
-    if x.shape[axis] != 1:
+
+    axes = _normalize_squeeze_axes(axis)
+    if not axes:
         return x
-    return _np.squeeze(x, axis=axis)
+
+    normalized_axes = tuple(
+        one_axis + x.ndim if one_axis < 0 else one_axis for one_axis in axes
+    )
+    if len(set(normalized_axes)) != len(normalized_axes):
+        raise ValueError("duplicate value in 'axis'")
+    if any(x.shape[one_axis] != 1 for one_axis in normalized_axes):
+        return x
+    squeeze_axis = normalized_axes[0] if len(normalized_axes) == 1 else normalized_axes
+    return _np.squeeze(x, axis=squeeze_axis)
 
 
 def flatten(x):

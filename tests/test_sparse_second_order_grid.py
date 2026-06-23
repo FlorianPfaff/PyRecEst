@@ -118,6 +118,59 @@ def test_sparse_second_order_grid_validates_transition_rows():
         raise AssertionError("bad transition row should fail")
 
 
+def test_sparse_second_order_grid_validates_initial_pair_weights_and_shape():
+    log_likelihood = np.zeros((3, 2), dtype=float)
+
+    def row(prev, curr, transition_index):
+        del prev, curr, transition_index
+        return np.array([0]), np.array([1.0])
+
+    def negative_weight_init(scaled):
+        del scaled
+        return np.array([0, 1]), np.array([0, 1]), np.array([2.0, -1.0]), [1, 1]
+
+    _assert_raises_value_error_containing(
+        "initial pair weights",
+        lambda: sparse_second_order_grid_evidence(
+            log_likelihood, negative_weight_init, row
+        ),
+    )
+
+    def nonfinite_weight_init(scaled):
+        del scaled
+        return np.array([0, 1]), np.array([0, 1]), np.array([1.0, np.nan]), [1, 1]
+
+    _assert_raises_value_error_containing(
+        "initial pair weights",
+        lambda: sparse_second_order_grid_evidence(
+            log_likelihood, nonfinite_weight_init, row
+        ),
+    )
+
+    def nonvector_init(scaled):
+        del scaled
+        return (
+            np.array([[0], [1]]),
+            np.array([[0], [1]]),
+            np.array([[0.5], [0.5]]),
+            [1, 1],
+        )
+
+    _assert_raises_value_error_containing(
+        "one-dimensional",
+        lambda: sparse_second_order_grid_evidence(log_likelihood, nonvector_init, row),
+    )
+
+
+def _assert_raises_value_error_containing(expected_message, callback):
+    try:
+        callback()
+    except ValueError as exc:
+        assert expected_message in str(exc)
+    else:  # pragma: no cover
+        raise AssertionError(f"expected ValueError containing {expected_message!r}")
+
+
 def _dense_second_order_log_evidence(log_likelihood, initial_transition, transition):
     likelihood = np.exp(log_likelihood)
     n_time, n_states = likelihood.shape

@@ -72,17 +72,46 @@ def _symmetric_distance_function(
 def _as_target_matrix(value) -> np.ndarray:
     value = np.asarray(to_numpy(value), dtype=float)
     if value.size == 0:
+        if value.ndim == 2:
+            return value
         return value.reshape(0, 0)
     if value.ndim == 1:
         return value.reshape(1, -1)
     # Common MTT layouts are either (num_targets, dim) or (dim, num_targets).
-    # Prefer rows as targets when the orientation is ambiguous.
-    if value.shape[0] <= 4 and value.shape[1] > value.shape[0]:
+    # Prefer rows as targets when the orientation is ambiguous; only transpose
+    # dim-first layouts when the trailing axis is too large to be a common
+    # Euclidean target dimension.
+    if value.shape[0] <= 4 < value.shape[1]:
         return value.T
     return value
 
 
+def _validate_mtt_cutoff_distance(value: Any) -> float:
+    value_array = np.asarray(to_numpy(value))
+    if value_array.shape != () or np.issubdtype(value_array.dtype, np.bool_):
+        raise ValueError("cutoff_distance must be a finite nonnegative scalar")
+    try:
+        cutoff_distance = float(value_array.item())
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(
+            "cutoff_distance must be a finite nonnegative scalar"
+        ) from exc
+    if not np.isfinite(cutoff_distance) or cutoff_distance < 0.0:
+        raise ValueError("cutoff_distance must be a finite nonnegative scalar")
+    return cutoff_distance
+
+
 def _euclidean_mtt_distance(x1, x2, *, cutoff_distance: float) -> float:
+    raw_first = np.asarray(to_numpy(x1), dtype=float)
+    raw_second = np.asarray(to_numpy(x2), dtype=float)
+    if raw_first.size == 0 and raw_first.ndim == 2 and raw_second.ndim == 2:
+        if raw_first.shape[1] != raw_second.shape[1]:
+            raise ValueError("MTT state sets must use the same target dimension")
+        return float(cutoff_distance * raw_second.shape[0])
+    if raw_second.size == 0 and raw_second.ndim == 2 and raw_first.ndim == 2:
+        if raw_first.shape[1] != raw_second.shape[1]:
+            raise ValueError("MTT state sets must use the same target dimension")
+        return float(cutoff_distance * raw_first.shape[0])
     first = _as_target_matrix(x1)
     second = _as_target_matrix(x2)
     if first.shape[0] == 0 or second.shape[0] == 0:
@@ -168,7 +197,9 @@ def get_distance_function(
 
     elif "euclidean" in normalized_name and "mtt" in normalized_name:
         params = additional_params or {}
-        cutoff_distance = float(params.get("cutoff_distance", 1000000.0))
+        cutoff_distance = _validate_mtt_cutoff_distance(
+            params.get("cutoff_distance", 1000000.0)
+        )
 
         def distance_function(x1, x2):
             return _euclidean_mtt_distance(

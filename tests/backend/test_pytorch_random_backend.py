@@ -117,3 +117,23 @@ def test_zero_sized_choice_still_works_for_empty_population():
     sample = random.choice(0, size=(0,))
 
     assert sample.shape == (0,)
+
+
+def test_choice_without_replacement_shuffle_false_preserves_order():
+    values = torch.tensor([10, 20, 30, 40, 50])
+    matrix = torch.tensor([[10, 20, 30], [40, 50, 60]])
+
+    random.seed(0)
+    samples = random.choice(
+        values, size=values.shape[0], replace=False, shuffle=False
+    )
+    column_samples = random.choice(
+        matrix,
+        size=matrix.shape[1],
+        replace=False,
+        axis=1,
+        shuffle=False,
+    )
+
+    assert torch.equal(samples, values)
+    assert torch.equal(column_samples, matrix)
