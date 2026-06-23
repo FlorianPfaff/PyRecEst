@@ -53,6 +53,7 @@ def pareto_front_indices(
     objective_names = _validate_objectives(objectives)
     _require_table_columns(table, objective_names, "Pareto objective")
     direction_map = _directions_by_objective(objective_names, directions)
+    eps = _validate_eps(eps)
     if table.empty:
         return []
     candidates = (
@@ -87,6 +88,7 @@ def is_pareto_front(
     objective_names = _validate_objectives(objectives)
     _require_table_columns(table, objective_names, "Pareto objective")
     direction_map = _directions_by_objective(objective_names, directions)
+    eps = _validate_eps(eps)
     if feasible_mask is None:
         candidate_mask = pd.Series(True, index=table.index, dtype=bool)
     else:
@@ -123,6 +125,7 @@ def record_dominates(
 
     objective_names = _validate_objectives(objectives)
     direction_map = _directions_by_objective(objective_names, directions)
+    eps = _validate_eps(eps)
     weak: list[bool] = []
     strict: list[bool] = []
     for objective in objective_names:
@@ -153,6 +156,7 @@ def constraint_mask(
     ``{"op": "<=", "value": value}`` keys.
     """
 
+    eps = _validate_eps(eps)
     mask = pd.Series(True, index=table.index, dtype=bool)
     for column, spec in constraints.items():
         op, threshold = _parse_constraint_spec(spec)
@@ -192,6 +196,7 @@ def select_under_constraints(
 ) -> pd.DataFrame:
     """Return feasible rows sorted by one objective plus optional tie-breakers."""
 
+    eps = _validate_eps(eps)
     if objective not in table.columns:
         raise ValueError(f"objective column {objective!r} is not present.")
     direction = _validate_direction(direction, f"objective {objective!r}")
@@ -342,6 +347,19 @@ def _coerce_numeric(value: Any) -> float:
         return float(value)
     except (TypeError, ValueError, OverflowError):
         return float("nan")
+
+
+def _validate_eps(eps: Any) -> float:
+    value_array = np.asarray(eps)
+    if value_array.shape != () or value_array.dtype == np.bool_:
+        raise ValueError("eps must be a finite non-negative scalar.")
+    try:
+        value = float(value_array.item())
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("eps must be a finite non-negative scalar.") from exc
+    if not np.isfinite(value) or value < 0.0:
+        raise ValueError("eps must be a finite non-negative scalar.")
+    return value
 
 
 def _is_missing(value: Any) -> bool:
