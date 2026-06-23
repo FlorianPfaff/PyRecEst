@@ -110,21 +110,35 @@ class TrackletGraphConfig:
     candidate_multiplier: int = 5
 
     def __post_init__(self) -> None:
-        top_k = int(self.top_k)
-        if top_k <= 0:
-            raise ValueError("top_k must be positive")
-        beam_width = None if self.beam_width is None else int(self.beam_width)
-        if beam_width is not None and beam_width <= 0:
-            raise ValueError("beam_width must be positive when supplied")
-        max_gap = None if self.max_gap is None else float(self.max_gap)
-        if max_gap is not None and max_gap < 0.0:
-            raise ValueError("max_gap must be nonnegative when supplied")
-        diversity_weight = float(self.diversity_weight)
-        if diversity_weight < 0.0:
-            raise ValueError("diversity_weight must be nonnegative")
-        candidate_multiplier = int(self.candidate_multiplier)
-        if candidate_multiplier <= 0:
-            raise ValueError("candidate_multiplier must be positive")
+        top_k = _positive_integer(self.top_k, "top_k", "top_k must be positive")
+        beam_width = (
+            None
+            if self.beam_width is None
+            else _positive_integer(
+                self.beam_width,
+                "beam_width",
+                "beam_width must be positive when supplied",
+            )
+        )
+        max_gap = (
+            None
+            if self.max_gap is None
+            else _nonnegative_finite_float(
+                self.max_gap,
+                "max_gap",
+                "max_gap must be nonnegative when supplied",
+            )
+        )
+        diversity_weight = _nonnegative_finite_float(
+            self.diversity_weight,
+            "diversity_weight",
+            "diversity_weight must be nonnegative",
+        )
+        candidate_multiplier = _positive_integer(
+            self.candidate_multiplier,
+            "candidate_multiplier",
+            "candidate_multiplier must be positive",
+        )
         object.__setattr__(self, "top_k", top_k)
         object.__setattr__(self, "beam_width", beam_width)
         object.__setattr__(self, "max_gap", max_gap)
@@ -144,12 +158,27 @@ def constant_velocity_edge_cost(
 ) -> EdgeCostFn:
     """Build a generic constant-velocity feasibility/cost function."""
 
-    max_gap_value = None if max_gap is None else float(max_gap)
-    max_speed_value = None if max_speed is None else float(max_speed)
-    if max_gap_value is not None and max_gap_value < 0.0:
-        raise ValueError("max_gap must be nonnegative when supplied")
-    if max_speed_value is not None and max_speed_value <= 0.0:
-        raise ValueError("max_speed must be positive when supplied")
+    max_gap_value = (
+        None
+        if max_gap is None
+        else _nonnegative_finite_float(
+            max_gap,
+            "max_gap",
+            "max_gap must be nonnegative when supplied",
+        )
+    )
+    max_speed_value = (
+        None
+        if max_speed is None
+        else _positive_finite_float(
+            max_speed,
+            "max_speed",
+            "max_speed must be positive when supplied",
+        )
+    )
+    gap_weight_value = _finite_float(gap_weight, "gap_weight")
+    speed_weight_value = _finite_float(speed_weight, "speed_weight")
+    switch_penalty_value = _finite_float(switch_penalty, "switch_penalty")
 
     def edge_cost(left: Tracklet, right: Tracklet) -> float:
         gap = float(right.start_time - left.end_time)
@@ -171,8 +200,8 @@ def constant_velocity_edge_cost(
             if left.metadata.get(switch_metadata_key) != right.metadata.get(
                 switch_metadata_key
             ):
-                switch = float(switch_penalty)
-        return float(float(gap_weight) * gap + float(speed_weight) * speed + switch)
+                switch = switch_penalty_value
+        return float(gap_weight_value * gap + speed_weight_value * speed + switch)
 
     return edge_cost
 
@@ -188,7 +217,15 @@ def build_tracklet_adjacency(
 
     ordered = sort_tracklets(tracklets)
     _require_unique_tracklet_ids(ordered)
-    max_gap_value = None if max_gap is None else float(max_gap)
+    max_gap_value = (
+        None
+        if max_gap is None
+        else _nonnegative_finite_float(
+            max_gap,
+            "max_gap",
+            "max_gap must be nonnegative when supplied",
+        )
+    )
     adjacency: dict[Hashable, list[tuple[Hashable, float]]] = {
         item.id: [] for item in ordered
     }
@@ -427,7 +464,7 @@ def _node_cost(tracklet: Tracklet, node_cost_fn: CostFn | None) -> float:
 
 
 def _finite_cost(value: float) -> float:
-    value = float(value)
+    value = _finite_float(value, "cost")
     if not np.isfinite(value):
         raise ValueError("cost functions must return finite costs")
     return value
@@ -450,9 +487,51 @@ def _state_vector(value: Any, name: str) -> np.ndarray:
     return vector.copy()
 
 
+def _positive_integer(value: Any, name: str, message: str) -> int:
+    value_array = np.asarray(value)
+    if value_array.shape != () or value_array.dtype == np.bool_:
+        raise ValueError(message)
+    scalar = value_array.item()
+    if isinstance(scalar, (bool, np.bool_)):
+        raise ValueError(message)
+    if isinstance(scalar, (int, np.integer)):
+        parsed = int(scalar)
+    else:
+        try:
+            scalar_float = float(scalar)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError(message) from exc
+        if not np.isfinite(scalar_float) or not scalar_float.is_integer():
+            raise ValueError(message)
+        parsed = int(scalar_float)
+    if parsed <= 0:
+        raise ValueError(message)
+    return parsed
+
+
+def _nonnegative_finite_float(value: Any, name: str, message: str) -> float:
+    parsed = _finite_float(value, name)
+    if parsed < 0.0:
+        raise ValueError(message)
+    return parsed
+
+
+def _positive_finite_float(value: Any, name: str, message: str) -> float:
+    parsed = _finite_float(value, name)
+    if parsed <= 0.0:
+        raise ValueError(message)
+    return parsed
+
+
 def _finite_float(value: Any, name: str) -> float:
+    value_array = np.asarray(value)
+    if value_array.shape != () or value_array.dtype == np.bool_:
+        raise ValueError(f"{name} must be finite")
+    scalar = value_array.item()
+    if isinstance(scalar, (bool, np.bool_)):
+        raise ValueError(f"{name} must be finite")
     try:
-        parsed = float(value)
+        parsed = float(scalar)
     except (TypeError, ValueError, OverflowError) as exc:
         raise ValueError(f"{name} must be finite") from exc
     if not np.isfinite(parsed):
