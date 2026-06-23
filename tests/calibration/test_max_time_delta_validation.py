@@ -1,14 +1,15 @@
 import unittest
 
 import numpy as np
-
 from pyrecest.calibration.bias import make_bias_training_examples
 from pyrecest.calibration.time_offset import interpolate_reference_values
 
 
 class MaxTimeDeltaValidationTest(unittest.TestCase):
-    def test_interpolation_rejects_bool_and_non_scalar_max_time_delta(self):
-        for max_time_delta_s in (True, np.array([1.0])):
+    def test_interpolation_rejects_boolean_and_non_scalar_max_time_delta(self):
+        invalid_values = (True, np.array([1.0]))
+
+        for max_time_delta_s in invalid_values:
             with self.subTest(max_time_delta_s=max_time_delta_s):
                 with self.assertRaisesRegex(
                     ValueError,
@@ -21,8 +22,10 @@ class MaxTimeDeltaValidationTest(unittest.TestCase):
                         max_time_delta_s=max_time_delta_s,
                     )
 
-    def test_bias_training_examples_rejects_bool_and_non_scalar_max_time_delta(self):
-        for max_time_delta_s in (True, np.array([1.0])):
+    def test_bias_examples_reject_boolean_and_non_scalar_max_time_delta(self):
+        invalid_values = (True, np.array([1.0]))
+
+        for max_time_delta_s in invalid_values:
             with self.subTest(max_time_delta_s=max_time_delta_s):
                 with self.assertRaisesRegex(
                     ValueError,

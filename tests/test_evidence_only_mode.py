@@ -7,7 +7,6 @@ from pyrecest.filters import sparse_second_order_grid_evidence
 def test_evidence_computation_mode_resolves_boolean_and_string_aliases():
     full = resolve_evidence_computation_mode(return_smoothed=True)
     fast = resolve_evidence_computation_mode("evidence-only")
-    string_fast = resolve_evidence_computation_mode(return_smoothed="false")
 
     assert full.mode == "full_smoothing"
     assert full.return_smoothed
@@ -15,10 +14,15 @@ def test_evidence_computation_mode_resolves_boolean_and_string_aliases():
     assert fast.mode == "evidence_only"
     assert not fast.return_smoothed
     assert fast.evidence_only_requested
-    assert string_fast.mode == "evidence_only"
-    assert not string_fast.return_smoothed
-    assert string_fast.evidence_only_requested
     assert fast.to_diagnostics()["evidence_computation_mode"] == "evidence_only"
+
+
+def test_evidence_computation_mode_accepts_numpy_bool_flags():
+    full = resolve_evidence_computation_mode(return_smoothed=np.bool_(True))
+    fast = resolve_evidence_computation_mode(return_smoothed=np.bool_(False))
+
+    assert full.mode == "full_smoothing"
+    assert fast.mode == "evidence_only"
 
 
 def test_evidence_computation_mode_rejects_invalid_boolean_strings():
@@ -35,6 +39,12 @@ def test_evidence_computation_mode_rejects_inconsistent_flags():
         EvidenceComputationMode(mode="full_smoothing", return_smoothed=False)
     with pytest.raises(ValueError, match="unknown"):
         resolve_evidence_computation_mode("posterior-only")
+
+
+def test_evidence_computation_mode_rejects_truthy_non_bool_return_smoothed():
+    for return_smoothed in ("false", "true", 0, 1, np.array([False])):
+        with pytest.raises(ValueError, match="return_smoothed must be a bool"):
+            resolve_evidence_computation_mode(return_smoothed=return_smoothed)
 
 
 def test_resolver_rejects_conflicting_explicit_mode_and_boolean_flag():

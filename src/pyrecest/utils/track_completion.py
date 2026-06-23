@@ -139,12 +139,13 @@ def enumerate_fragment_completion_paths(
         high-branching production trackers should pre-prune in the provider.
     """
 
-    if max_path_length < 1:
-        raise ValueError("max_path_length must be positive")
+    max_path_length = _as_positive_int(max_path_length, "max_path_length")
     if direction not in {"prefix", "suffix", "both"}:
         raise ValueError("direction must be 'prefix', 'suffix', or 'both'")
-    if max_paths_per_fragment is not None and int(max_paths_per_fragment) < 1:
-        raise ValueError("max_paths_per_fragment must be positive or None")
+    if max_paths_per_fragment is not None:
+        max_paths_per_fragment = _as_positive_int(
+            max_paths_per_fragment, "max_paths_per_fragment"
+        )
 
     matrix = normalize_track_matrix(track_matrix)
     occupied = occupied_observations_by_session(matrix)
@@ -178,7 +179,7 @@ def enumerate_fragment_completion_paths(
                 steps=(),
                 seen={(int(endpoint_session), endpoint_observation)},
                 occupied=occupied,
-                max_path_length=int(max_path_length),
+                max_path_length=max_path_length,
                 candidate_provider=candidate_provider,
                 candidate_session_provider=candidate_session_provider,
                 allow_duplicate_source=bool(allow_duplicate_source),
@@ -194,7 +195,7 @@ def enumerate_fragment_completion_paths(
                         path.path_length,
                         path_observations(path),
                     ),
-                )[: int(max_paths_per_fragment)]
+                )[:max_paths_per_fragment]
             paths.extend(fragment_paths)
     return paths
 
@@ -421,3 +422,28 @@ def _normalize_candidate_observation(value: Any) -> int:
     if observation < 0:
         raise ValueError("candidate observations must be non-negative integers")
     return observation
+
+
+def _as_positive_int(value: Any, name: str) -> int:
+    value_array = np.asarray(value)
+    message = f"{name} must be a positive integer"
+    if value_array.shape != () or value_array.dtype == np.bool_:
+        raise ValueError(message)
+
+    scalar = value_array.item()
+    if isinstance(scalar, (bool, np.bool_)):
+        raise ValueError(message)
+    if isinstance(scalar, (int, np.integer)):
+        parsed = int(scalar)
+    elif (
+        isinstance(scalar, (float, np.floating))
+        and np.isfinite(scalar)
+        and float(scalar).is_integer()
+    ):
+        parsed = int(scalar)
+    else:
+        raise ValueError(message)
+
+    if parsed <= 0:
+        raise ValueError(message)
+    return parsed

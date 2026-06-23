@@ -29,7 +29,7 @@ def _normalize_seed(seed: int | None) -> int | None:
 
     try:
         scalar = seed.item() if hasattr(seed, "item") else seed
-    except (TypeError, ValueError, RuntimeError) as exc:
+    except (TypeError, ValueError, RuntimeError, OverflowError) as exc:
         raise ValueError(message) from exc
 
     if isinstance(scalar, bool):

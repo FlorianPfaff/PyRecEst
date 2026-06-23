@@ -128,6 +128,27 @@ class TestTrackCompletion(unittest.TestCase):
         self.assertEqual(calls[0], (0, 7, "suffix"))
         self.assertEqual(calls[1], (2, 9, "suffix"))
 
+    def test_rejects_fractional_integer_controls(self) -> None:
+        tracks = [[0, None, None]]
+
+        def provider(session: int, observation: int, target_session: int):
+            del session, observation, target_session
+            return [1]
+
+        invalid_kwargs = (
+            {"max_path_length": 1.5},
+            {"max_paths_per_fragment": 1.5},
+        )
+        for kwargs in invalid_kwargs:
+            with self.subTest(kwargs=kwargs):
+                with self.assertRaisesRegex(ValueError, "must be a positive integer"):
+                    enumerate_fragment_completion_paths(
+                        tracks,
+                        direction="suffix",
+                        candidate_provider=provider,
+                        **kwargs,
+                    )
+
     def test_custom_candidate_sessions_do_not_truncate_invalid_scalars(self) -> None:
         tracks = [[7, None, None]]
 
@@ -152,3 +173,4 @@ class TestTrackCompletion(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

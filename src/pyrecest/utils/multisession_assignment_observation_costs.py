@@ -8,6 +8,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
+import numpy as np
 from pyrecest.backend import (
     __backend_name__,
 )
@@ -74,11 +75,11 @@ def solve_multisession_assignment_with_observation_costs(  # pylint: disable=R09
     """Solve multi-session assignment with per-observation start/end costs."""
     _ensure_supported_backend("solve_multisession_assignment_with_observation_costs")
 
-    _validate_scalar_cost("start_cost", start_cost)
-    _validate_scalar_cost("end_cost", end_cost)
-    _validate_scalar_cost("gap_penalty", gap_penalty)
+    start_cost = _normalize_scalar_cost("start_cost", start_cost)
+    end_cost = _normalize_scalar_cost("end_cost", end_cost)
+    gap_penalty = _normalize_scalar_cost("gap_penalty", gap_penalty)
     if cost_threshold is not None:
-        _validate_scalar_cost("cost_threshold", cost_threshold)
+        cost_threshold = _normalize_scalar_cost("cost_threshold", cost_threshold)
 
     normalized_pairwise = _normalize_pairwise_costs(pairwise_costs)
     normalized_sizes = _normalize_session_sizes(session_sizes)
@@ -165,9 +166,22 @@ def solve_multisession_assignment_with_observation_costs(  # pylint: disable=R09
     )
 
 
-def _validate_scalar_cost(name: str, value: float) -> None:
-    if not math.isfinite(value):
-        raise ValueError(f"{name} must be finite.")
+def _normalize_scalar_cost(name: str, value: float) -> float:
+    value_array = np.asarray(value)
+    if value_array.shape != () or value_array.dtype == np.bool_:
+        raise ValueError(f"{name} must be a finite scalar.")
+
+    scalar = value_array.item()
+    if isinstance(scalar, (bool, np.bool_)):
+        raise ValueError(f"{name} must be a finite scalar.")
+
+    try:
+        parsed = float(scalar)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{name} must be a finite scalar.") from exc
+    if not math.isfinite(parsed):
+        raise ValueError(f"{name} must be a finite scalar.")
+    return parsed
 
 
 def _array_length(values: Any) -> int:
