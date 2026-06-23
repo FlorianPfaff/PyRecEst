@@ -87,7 +87,17 @@ class DiagnosticSummariesTest(unittest.TestCase):
         self.assertEqual(summary["covariance_inflation"]["count"], 2)
 
     def test_summary_rejects_invalid_top_n(self):
-        for top_n in (0, 1.5, math.nan, math.inf, True, np.array([1])):
+        for top_n in (
+            0,
+            1.5,
+            math.nan,
+            math.inf,
+            True,
+            "2",
+            b"2",
+            np.array("2"),
+            np.array([1]),
+        ):
             with self.subTest(top_n=top_n):
                 with self.assertRaisesRegex(ValueError, "top_n"):
                     build_diagnostic_summary(self.records, top_n=top_n)
@@ -101,7 +111,17 @@ class DiagnosticSummariesTest(unittest.TestCase):
                     worst_time_windows(self.records, top_n=top_n)
 
     def test_summary_rejects_invalid_window_s(self):
-        for window_s in (0.0, -1.0, math.nan, math.inf, True, np.array([1.0])):
+        for window_s in (
+            0.0,
+            -1.0,
+            math.nan,
+            math.inf,
+            True,
+            "5.0",
+            b"5.0",
+            np.array("5.0"),
+            np.array([1.0]),
+        ):
             with self.subTest(window_s=window_s):
                 with self.assertRaisesRegex(ValueError, "window_s"):
                     build_diagnostic_summary(self.records, window_s=window_s)
