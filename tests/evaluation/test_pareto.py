@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
 import pytest
 from pyrecest.evaluation import (
@@ -241,3 +242,47 @@ def test_equal_quality_selection_returns_best_compression_row() -> None:
     )
 
     assert selected.iloc[0]["name"] == "safe_small"
+
+
+def test_pareto_helpers_reject_invalid_eps_values() -> None:
+    table = pd.DataFrame(
+        [
+            {"name": "a", "error": 1.0, "runtime": 2.0},
+            {"name": "b", "error": 2.0, "runtime": 1.0},
+        ]
+    )
+    invalid_eps_values = (-1e-12, float("nan"), float("inf"), True, np.array([1e-12]))
+
+    for eps in invalid_eps_values:
+        with pytest.raises(ValueError, match="eps"):
+            pareto_front_indices(
+                table,
+                ["error", "runtime"],
+                directions={"error": "min", "runtime": "min"},
+                eps=eps,
+            )
+        with pytest.raises(ValueError, match="eps"):
+            is_pareto_front(
+                table,
+                ["error", "runtime"],
+                directions={"error": "min", "runtime": "min"},
+                eps=eps,
+            )
+        with pytest.raises(ValueError, match="eps"):
+            record_dominates(
+                table.iloc[0],
+                table.iloc[1],
+                ["error", "runtime"],
+                directions={"error": "min", "runtime": "min"},
+                eps=eps,
+            )
+        with pytest.raises(ValueError, match="eps"):
+            constraint_mask(table, {"error": ("<=", 2.0)}, eps=eps)
+        with pytest.raises(ValueError, match="eps"):
+            select_under_constraints(
+                table,
+                constraints={"error": ("<=", 2.0)},
+                objective="runtime",
+                direction="min",
+                eps=eps,
+            )
