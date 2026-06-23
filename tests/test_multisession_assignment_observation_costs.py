@@ -170,6 +170,22 @@ class TestMultiSessionAssignmentObservationCosts(unittest.TestCase):
                         **cost_kwargs,
                     )
 
+    def test_rejects_boolean_scalar_cost_parameters(self):
+        invalid_cost_kwargs = (
+            {"start_cost": True},
+            {"end_cost": True},
+            {"gap_penalty": True},
+            {"cost_threshold": True},
+        )
+
+        for cost_kwargs in invalid_cost_kwargs:
+            with self.subTest(cost_kwargs=cost_kwargs):
+                with self.assertRaisesRegex(ValueError, "must be a finite scalar"):
+                    solve_multisession_assignment_with_observation_costs(
+                        [array([[1.0]], dtype=float)],
+                        **cost_kwargs,
+                    )
+
     def test_rejects_mismatched_lengths(self):
         with self.assertRaises(ValueError):
             solve_multisession_assignment_with_observation_costs(
