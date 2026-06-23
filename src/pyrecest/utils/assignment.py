@@ -36,6 +36,8 @@ def _validate_assignment_count(k: int) -> int:
         raise ValueError("k must be an integer")
     if isinstance(k, Integral):
         return int(k)
+    if not (hasattr(k, "ndim") or hasattr(k, "shape") or hasattr(k, "item")):
+        raise ValueError("k must be an integer")
 
     try:
         k_array = _asarray(k)
