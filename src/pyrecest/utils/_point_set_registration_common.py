@@ -8,6 +8,7 @@ from typing import Any, Callable
 
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import (
+    all as backend_all,
     array_equal,
     asarray,
     cast,
@@ -92,6 +93,8 @@ def as_point_array(
         raise ValueError("points must have shape (n_points, dim).")
     if point_array.shape[0] == 0:
         raise ValueError("At least one point is required.")
+    if not bool(backend_all(isfinite(point_array))):
+        raise ValueError("points must contain only finite values.")
     if expected_dim is None:
         if point_array.shape[1] == 0:
             raise ValueError("Point dimension must be positive.")
