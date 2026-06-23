@@ -71,6 +71,17 @@ def test_masked_linear_measurement_model_updates_only_observed_dimensions() -> N
     assert estimate[2] > 15.0
 
 
+def test_masked_linear_measurement_model_preserves_generator_observed_dims() -> None:
+    model = MaskedLinearMeasurementModel(
+        state_dim=3,
+        observed_dims=(dim for dim in [0, 2]),
+        stds=[1.0, 2.0],
+    )
+
+    assert model.observed_dims == (0, 2)
+    assert np.allclose(model.matrix, selection_matrix(3, [0, 2]))
+
+
 def test_weak_dimension_measurement_model_keeps_weak_dimension_nearly_untrusted() -> (
     None
 ):
