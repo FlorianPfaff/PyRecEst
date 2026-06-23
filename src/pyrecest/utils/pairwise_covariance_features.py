@@ -79,8 +79,11 @@ def pairwise_mahalanobis_distances(
         Matrix with shape ``(n_a, n_b)``.
     """
 
-    if not math.isfinite(float(regularization)) or regularization < 0.0:
-        raise ValueError("regularization must be finite and non-negative")
+    regularization = _validate_control_scalar(
+        regularization,
+        "regularization",
+        allow_zero=True,
+    )
 
     means_a, covariances_a = _validate_mean_covariance_stack(
         "means_a", means_a, "covariances_a", covariances_a
@@ -103,9 +106,7 @@ def pairwise_mahalanobis_distances(
         moved_covariances_a[:, None, :, :] + moved_covariances_b[None, :, :, :]
     )
     if regularization > 0.0:
-        covariance_sums = (
-            covariance_sums + float(regularization) * eye(dim)[None, None, :, :]
-        )
+        covariance_sums = covariance_sums + regularization * eye(dim)[None, None, :, :]
 
     mean_differences = transpose(means_a)[:, None, :] - transpose(means_b)[None, :, :]
     flat_differences = reshape(mean_differences, (n_a * n_b, dim))
@@ -144,8 +145,7 @@ def pairwise_covariance_shape_components(
         Three matrices with shape ``(n_a, n_b)``.
     """
 
-    if not math.isfinite(float(epsilon)) or epsilon <= 0.0:
-        raise ValueError("epsilon must be finite and strictly positive")
+    epsilon = _validate_control_scalar(epsilon, "epsilon", allow_zero=False)
 
     covariances_a = _validate_covariance_stack("covariances_a", covariances_a)
     covariances_b = _validate_covariance_stack("covariances_b", covariances_b)
@@ -180,6 +180,32 @@ def pairwise_covariance_shape_components(
     determinants_b = _positive_floor(linalg.det(moved_covariances_b), epsilon)
     logdet_cost = abs(log(determinants_a[:, None] / determinants_b[None, :]))
     return shape_cost, logdet_cost, shape_similarity
+
+
+def _validate_control_scalar(value: Any, name: str, *, allow_zero: bool) -> float:
+    value_array = asarray(value)
+    if value_array.shape != ():
+        raise ValueError(f"{name} must be a scalar")
+
+    try:
+        scalar_value = value_array.item() if hasattr(value_array, "item") else value_array
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{name} must be a scalar") from exc
+
+    if isinstance(scalar_value, bool):
+        raise ValueError(f"{name} must be numeric, not boolean")
+
+    try:
+        value_float = float(scalar_value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{name} must be numeric") from exc
+
+    if not math.isfinite(value_float):
+        raise ValueError(f"{name} must be finite")
+    if value_float < 0.0 or (not allow_zero and value_float == 0.0):
+        qualifier = "non-negative" if allow_zero else "strictly positive"
+        raise ValueError(f"{name} must be {qualifier}")
+    return value_float
 
 
 def _validate_mean_covariance_stack(
@@ -226,7 +252,7 @@ def _batch_trace(matrices: Any) -> Any:
 
 def _positive_floor(values: Any, epsilon: float) -> Any:
     values = asarray(values, dtype=float64)
-    return where(values > float(epsilon), values, float(epsilon))
+    return where(values > epsilon, values, epsilon)
 
 
 __all__ = [
