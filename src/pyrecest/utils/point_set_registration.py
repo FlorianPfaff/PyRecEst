@@ -164,6 +164,31 @@ def _minimum_required_matches(model: TransformModel, dim: int) -> int:
     raise ValueError(f"Unsupported transform model: {model}")
 
 
+def _validate_positive_integer(value, name: str, *, minimum: int = 1) -> int:
+    value_array = asarray(value)
+    if value_array.shape != ():
+        raise ValueError(f"{name} must be a scalar integer.")
+
+    value_scalar = value_array.item()
+    if isinstance(value_scalar, bool):
+        raise ValueError(f"{name} must be a scalar integer.")
+
+    try:
+        value_float = float(value_scalar)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{name} must be a scalar integer.") from exc
+
+    if not bool(isfinite(value_float)) or not value_float.is_integer():
+        raise ValueError(f"{name} must be a scalar integer.")
+
+    value_int = int(value_float)
+    if value_int < minimum:
+        if minimum == 1:
+            raise ValueError(f"{name} must be positive.")
+        raise ValueError(f"{name} must be at least {minimum}.")
+    return value_int
+
+
 def estimate_transform(  # pylint: disable=too-many-locals
     source_points,
     target_points,
@@ -288,20 +313,19 @@ def joint_registration_assignment(  # pylint: disable=too-many-arguments,too-man
             "joint_registration_assignment is not supported on the JAX backend."
         )
 
+    max_iterations = _validate_positive_integer(max_iterations, "max_iterations")
+
     reference = _as_point_array(reference_points)
     moving = _as_point_array(moving_points)
     if reference.shape[1] != moving.shape[1]:
         raise ValueError(
             "reference_points and moving_points must have the same dimension."
         )
-    if max_iterations <= 0:
-        raise ValueError("max_iterations must be positive.")
 
     dim = reference.shape[1]
     if min_matches is None:
         min_matches = _minimum_required_matches(model, dim)
-    if min_matches <= 0:
-        raise ValueError("min_matches must be positive.")
+    min_matches = _validate_positive_integer(min_matches, "min_matches")
 
     if initial_transform is None:
         reference_location = quantile(reference, 0.5, axis=0)
