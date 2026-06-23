@@ -76,8 +76,10 @@ def _as_target_matrix(value) -> np.ndarray:
     if value.ndim == 1:
         return value.reshape(1, -1)
     # Common MTT layouts are either (num_targets, dim) or (dim, num_targets).
-    # Prefer rows as targets when the orientation is ambiguous.
-    if value.shape[0] <= 4 and value.shape[1] > value.shape[0]:
+    # Prefer rows as targets when the orientation is ambiguous; only transpose
+    # dim-first layouts when the trailing axis is too large to be a common
+    # Euclidean target dimension.
+    if value.shape[0] <= 4 < value.shape[1]:
         return value.T
     return value
 
