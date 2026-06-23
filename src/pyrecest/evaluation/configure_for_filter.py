@@ -2,7 +2,6 @@ from collections.abc import Callable
 from typing import Any
 
 import numpy as np
-
 from pyrecest.filters import (
     EuclideanParticleFilter,
     HypertoroidalParticleFilter,

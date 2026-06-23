@@ -1,7 +1,6 @@
 import unittest
 
 import numpy as np
-
 from pyrecest.filters import adaptive_position_proposal_probability
 
 

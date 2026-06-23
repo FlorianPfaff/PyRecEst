@@ -145,4 +145,3 @@ def test_nonfinite_thresholds_raise_clear_errors():
 
     with pytest.raises(ValueError, match="finite and non-negative"):
         precision_recall_curve(points, points, (0.25, np.nan))
-

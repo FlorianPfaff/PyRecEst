@@ -2,7 +2,9 @@ import unittest
 
 import pyrecest.backend
 from pyrecest.backend import array
-from pyrecest.utils.nonrigid_point_set_registration import joint_tps_registration_assignment
+from pyrecest.utils.nonrigid_point_set_registration import (
+    joint_tps_registration_assignment,
+)
 from pyrecest.utils.point_set_registration import joint_registration_assignment
 
 

@@ -88,7 +88,9 @@ class MEMEKFTracker(AbstractExtendedObjectTracker):
             not math.isfinite(self.covariance_regularization)
             or self.covariance_regularization < 0.0
         ):
-            raise ValueError("covariance_regularization must be finite and non-negative")
+            raise ValueError(
+                "covariance_regularization must be finite and non-negative"
+            )
 
     @staticmethod
     def _symmetrize(matrix):

@@ -102,7 +102,9 @@ class TrackingEvent:
         object.__setattr__(self, "action", str(self.action))
         object.__setattr__(self, "measurement", measurement)
         object.__setattr__(self, "covariance", covariance)
-        object.__setattr__(self, "accepted", _optional_bool(self.accepted, name="accepted"))
+        object.__setattr__(
+            self, "accepted", _optional_bool(self.accepted, name="accepted")
+        )
         object.__setattr__(self, "metadata", dict(self.metadata))
 
     @property
@@ -180,7 +182,9 @@ class TrackingRecord:
         object.__setattr__(self, "innovation", innovation)
         object.__setattr__(self, "innovation_cov", innovation_cov)
         object.__setattr__(self, "nis", nis)
-        object.__setattr__(self, "accepted", _optional_bool(self.accepted, name="accepted"))
+        object.__setattr__(
+            self, "accepted", _optional_bool(self.accepted, name="accepted")
+        )
         object.__setattr__(self, "measurement", measurement)
         object.__setattr__(self, "event_metadata", dict(self.event_metadata))
         object.__setattr__(self, "metadata", dict(self.metadata))

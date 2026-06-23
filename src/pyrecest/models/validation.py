@@ -12,7 +12,6 @@ from numbers import Integral
 from typing import Any
 
 import numpy as np
-
 from pyrecest import backend
 
 # pylint: disable=too-many-arguments

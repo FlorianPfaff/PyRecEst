@@ -188,7 +188,9 @@ def _validate_control_scalar(value: Any, name: str, *, allow_zero: bool) -> floa
         raise ValueError(f"{name} must be a scalar")
 
     try:
-        scalar_value = value_array.item() if hasattr(value_array, "item") else value_array
+        scalar_value = (
+            value_array.item() if hasattr(value_array, "item") else value_array
+        )
     except (TypeError, ValueError) as exc:
         raise ValueError(f"{name} must be a scalar") from exc
 
