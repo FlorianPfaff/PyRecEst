@@ -8,7 +8,7 @@ from typing import Any
 
 import numpy as np
 
-from .time_offset import nearest_time_indices
+from .time_offset import _as_nonnegative_time_delta, nearest_time_indices
 
 _FEATURE_ROW_COUNT_ERROR = (
     "features rows must match requested row count; "
@@ -169,9 +169,7 @@ def make_bias_training_examples(
 ) -> BiasTrainingExamples:
     """Match measurements to nearest reference values and compute residual bias."""
 
-    max_time_delta = float(max_time_delta_s)
-    if max_time_delta < 0.0 or np.isnan(max_time_delta):
-        raise ValueError("max_time_delta_s must be nonnegative")
+    max_time_delta = _as_nonnegative_time_delta(max_time_delta_s, "max_time_delta_s")
     measurement_times = np.asarray(measurement_times_s, dtype=float).reshape(-1)
     measurements = _as_2d(measurement_values, "measurement_values")
     reference_times = np.asarray(reference_times_s, dtype=float).reshape(-1)
