@@ -4,6 +4,11 @@ from pyrecest.backend import array
 from pyrecest.diagnostics import ParticleFilterResult
 
 
+class _OverflowFloat:
+    def __float__(self):
+        raise OverflowError("simulated overflow")
+
+
 class ParticleFilterResultTest(unittest.TestCase):
     def test_mapping_compatibility_and_aliases(self):
         result = ParticleFilterResult(
@@ -52,6 +57,20 @@ class ParticleFilterResultTest(unittest.TestCase):
 
         self.assertEqual(result.resampling_count, 0)
         self.assertEqual(result.resampling_fraction, 0.0)
+        self.assertAlmostEqual(summary["mean_effective_sample_size"], 3.0)
+        self.assertAlmostEqual(summary["final_effective_sample_size"], 4.0)
+        self.assertAlmostEqual(summary["mean_particle_spread"], 0.5)
+
+    def test_summary_statistics_ignore_overflowing_numeric_values(self):
+        result = ParticleFilterResult(
+            estimates=[],
+            effective_sample_size=[_OverflowFloat(), [2.0, 4.0]],
+            resampled=[],
+            particle_spread=[_OverflowFloat(), 0.5],
+        )
+
+        summary = result.summary_statistics()
+
         self.assertAlmostEqual(summary["mean_effective_sample_size"], 3.0)
         self.assertAlmostEqual(summary["final_effective_sample_size"], 4.0)
         self.assertAlmostEqual(summary["mean_particle_spread"], 0.5)
