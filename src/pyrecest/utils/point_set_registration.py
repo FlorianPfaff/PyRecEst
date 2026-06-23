@@ -25,6 +25,7 @@ from pyrecest.backend import (
     concatenate,
     eye,
     full,
+    isfinite,
     linalg,
     ones,
     quantile,
@@ -143,6 +144,8 @@ def _normalize_weights(weights, n_points):
     weights_array = asarray(weights).reshape(-1)
     if weights_array.shape[0] != n_points:
         raise ValueError("weights must have length n_points.")
+    if any(~isfinite(weights_array)):
+        raise ValueError("weights must be finite.")
     if any(weights_array < 0.0):
         raise ValueError("weights must be non-negative.")
     weight_sum = float(weights_array.sum())

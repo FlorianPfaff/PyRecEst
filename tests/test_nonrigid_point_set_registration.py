@@ -63,6 +63,28 @@ class TestThinPlateSplineEstimation(unittest.TestCase):
             estimated.apply(query), true_transform.apply(query), atol=1e-8
         )
 
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ == "jax",
+        reason="Not supported on this backend",
+    )
+    def test_estimate_thin_plate_spline_rejects_invalid_regularization(self):
+        source = array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
+        target = source + array([0.5, -0.25])
+
+        for bad_regularization in (
+            float("nan"),
+            float("inf"),
+            -float("inf"),
+            array([1e-3]),
+        ):
+            with self.subTest(bad_regularization=bad_regularization):
+                with self.assertRaisesRegex(ValueError, "regularization"):
+                    estimate_thin_plate_spline(
+                        source,
+                        target,
+                        regularization=bad_regularization,
+                    )
+
 
 class TestJointThinPlateSplineRegistrationAssignment(unittest.TestCase):
     @unittest.skipIf(

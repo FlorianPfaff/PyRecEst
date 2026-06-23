@@ -81,7 +81,11 @@ class TrackingEvent:
         if not np.isfinite(time):
             raise ValueError("time must be finite")
         measurement = _array_or_none(self.measurement, name="measurement", ndim=1)
-        covariance = _array_or_none(self.covariance, name="covariance", ndim=2)
+        covariance = (
+            None
+            if self.covariance is None
+            else _square_matrix(self.covariance, name="covariance")
+        )
         if measurement is not None and covariance is not None:
             if covariance.shape != (measurement.size, measurement.size):
                 raise ValueError("covariance must match measurement dimension")
@@ -148,12 +152,15 @@ class TrackingRecord:
             self.posterior_cov, name="posterior_cov", dim=prior_mean.size
         )
         innovation = _array_or_none(self.innovation, name="innovation", ndim=1)
-        innovation_cov = _array_or_none(
-            self.innovation_cov, name="innovation_cov", ndim=2
+        innovation_cov = (
+            None
+            if self.innovation_cov is None
+            else _square_matrix(
+                self.innovation_cov,
+                name="innovation_cov",
+                dim=None if innovation is None else int(innovation.size),
+            )
         )
-        if innovation is not None and innovation_cov is not None:
-            if innovation_cov.shape != (innovation.size, innovation.size):
-                raise ValueError("innovation_cov must match innovation dimension")
         measurement = _array_or_none(self.measurement, name="measurement", ndim=1)
         nis = None if self.nis is None else float(self.nis)
         if nis is not None and (not np.isfinite(nis) or nis < 0.0):

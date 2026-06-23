@@ -257,6 +257,11 @@ def generate_measurements(groundtruth, simulation_config):
                         1,
                     ),
                 ) + noise_samples
+            else:
+                raise TypeError(
+                    "meas_noise must be a supported PyRecEst distribution; "
+                    f"got {type(meas_noise).__name__}."
+                )
 
     return measurements
 

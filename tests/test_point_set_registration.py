@@ -36,6 +36,22 @@ class TestEstimateTransform(unittest.TestCase):
         pyrecest.backend.__backend_name__ == "jax",
         reason="Not supported on this backend",
     )
+    def test_estimate_transform_rejects_nonfinite_weights(self):
+        source = array([[0.0, 0.0], [1.0, 0.0]])
+        target = source + array([2.0, -0.5])
+
+        with self.assertRaisesRegex(ValueError, "weights must be finite"):
+            estimate_transform(
+                source,
+                target,
+                model="translation",
+                weights=array([1.0, float("nan")]),
+            )
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ == "jax",
+        reason="Not supported on this backend",
+    )
     def test_estimate_rigid_transform_recovers_rotation_and_translation(self):
         source = array(
             [[0.0, 0.0], [1.0, 0.2], [0.4, 1.1], [1.3, 1.6], [2.1, -0.3]],
@@ -51,6 +67,21 @@ class TestEstimateTransform(unittest.TestCase):
 
         npt.assert_allclose(estimated.matrix, true_rotation, atol=1e-10)
         npt.assert_allclose(estimated.offset, true_offset, atol=1e-10)
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ == "jax",
+        reason="Not supported on this backend",
+    )
+    def test_estimate_transform_rejects_nonfinite_points(self):
+        target = array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
+
+        for invalid_value in (float("nan"), float("inf"), -float("inf")):
+            with self.subTest(invalid_value=invalid_value):
+                source = array(
+                    [[0.0, 0.0], [1.0, invalid_value], [0.0, 1.0]],
+                )
+                with self.assertRaisesRegex(ValueError, "finite"):
+                    estimate_transform(source, target, model="affine")
 
     def test_estimate_transform_rejects_jax_backend_without_asserts(self):
         source = array([[0.0, 0.0]])
@@ -69,6 +100,17 @@ class TestGatedAssignment(unittest.TestCase):
         cost_matrix = array([[0.1, 10.0], [10.0, 10.0]])
         assignment = solve_gated_assignment(cost_matrix, max_cost=1.0)
         npt.assert_array_equal(assignment, array([0, -1]))
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ == "jax",
+        reason="Not supported on this backend",
+    )
+    def test_solve_gated_assignment_can_leave_square_row_unmatched_for_lower_cost_match(self):
+        cost_matrix = array([[4.0, 43.0], [1.0, 27.0]])
+
+        assignment = solve_gated_assignment(cost_matrix, max_cost=10.0)
+
+        npt.assert_array_equal(assignment, array([-1, 0]))
 
 
 class TestJointRegistrationAssignment(unittest.TestCase):

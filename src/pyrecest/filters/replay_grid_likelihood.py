@@ -320,8 +320,13 @@ def _coerce_bin_centers(bin_centers) -> np.ndarray:
 
 def _coerce_positions(positions, expected_dim: int, name: str) -> np.ndarray:
     positions = np.asarray(positions, dtype=float)
-    if positions.ndim == 1:
-        positions = positions.reshape(1, -1)
+    if positions.ndim == 0:
+        positions = positions.reshape(1, 1)
+    elif positions.ndim == 1:
+        if expected_dim == 1:
+            positions = positions.reshape(-1, 1)
+        else:
+            positions = positions.reshape(1, -1)
     if positions.ndim != 2 or positions.shape[1] != expected_dim:
         raise ValueError(f"{name} must have shape (n_positions, {expected_dim})")
     return positions
