@@ -46,12 +46,29 @@ def _without_symmetry_suffix(manifold_name: str) -> str:
     )
 
 
+def _validate_symmetry_count(nSymm: Any) -> int:
+    count_array = np.asarray(to_numpy(nSymm))
+    if count_array.shape != () or np.issubdtype(count_array.dtype, np.bool_):
+        raise ValueError("nSymm must be a finite positive integer")
+    try:
+        count = float(count_array.item())
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("nSymm must be a finite positive integer") from exc
+    if not np.isfinite(count) or not count.is_integer() or count <= 0:
+        raise ValueError("nSymm must be a finite positive integer")
+    return int(count)
+
+
 def _symmetry_offsets(nSymm, symmetryOffsets):
     if symmetryOffsets is not None:
-        return list(asarray(symmetryOffsets))
+        offsets = np.asarray(to_numpy(symmetryOffsets), dtype=float).reshape(-1)
+        if not np.all(np.isfinite(offsets)):
+            raise ValueError("symmetryOffsets must be finite")
+        return [float(offset) for offset in offsets]
     if nSymm is None:
         return []
-    return [2.0 * pi * index / int(nSymm) for index in range(int(nSymm))]
+    count = _validate_symmetry_count(nSymm)
+    return [2.0 * pi * index / count for index in range(count)]
 
 
 def _symmetric_distance_function(
