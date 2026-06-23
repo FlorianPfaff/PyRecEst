@@ -11,6 +11,11 @@ from pyrecest.evaluation.diagnostic_summaries import (
 )
 
 
+class _OverflowFloat:
+    def __float__(self):
+        raise OverflowError("simulated overflow")
+
+
 class DiagnosticSummariesTest(unittest.TestCase):
     def setUp(self):
         self.records = [
@@ -112,6 +117,29 @@ class DiagnosticSummariesTest(unittest.TestCase):
 
         self.assertEqual(summary["top_n"], 2)
         self.assertEqual(summary["window_s"], 5.0)
+
+    def test_summary_treats_overflowing_optional_scalars_as_missing(self):
+        records = [
+            {
+                "time_s": _OverflowFloat(),
+                "track_id": _OverflowFloat(),
+                "source": "rf",
+                "residual_norm": _OverflowFloat(),
+                "covariance_scale": _OverflowFloat(),
+                "error": _OverflowFloat(),
+            }
+        ]
+
+        self.assertEqual(top_residuals(records), [])
+        self.assertEqual(track_switch_summary(records)["updates_with_track_id"], 0)
+        self.assertEqual(covariance_inflation_summary(records)["count"], 0)
+        self.assertEqual(worst_time_windows(records), [])
+
+        summary = build_diagnostic_summary(records, top_n=2, window_s=5.0)
+        self.assertEqual(summary["top_residuals"], [])
+        self.assertEqual(summary["track_switches"]["updates_with_track_id"], 0)
+        self.assertEqual(summary["covariance_inflation"]["count"], 0)
+        self.assertEqual(summary["worst_time_windows"], [])
 
 
 if __name__ == "__main__":
