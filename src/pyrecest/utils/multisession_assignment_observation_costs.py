@@ -258,7 +258,12 @@ def _normalize_observation_cost_entry(
     session_idx: int,
     name: str,
 ) -> Any:
-    values = asarray(value, dtype=float64)
+    raw_values = np.asarray(value)
+    if raw_values.dtype == np.bool_:
+        raise ValueError(
+            f"{name} entry for session {session_idx} must be numeric, not boolean."
+        )
+    values = asarray(raw_values, dtype=float64)
     if values.ndim == 0:
         return full((session_size,), float(values), dtype=float64)
     if values.ndim != 1:
