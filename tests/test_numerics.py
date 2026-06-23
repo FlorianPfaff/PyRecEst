@@ -21,6 +21,20 @@ def test_symmetrize_matrix_and_psd_projection():
     assert is_positive_semidefinite(repaired)
 
 
+def test_covariance_helpers_reject_nonfinite_matrices():
+    matrix = np.array([[np.inf, 0.0], [0.0, 1.0]])
+
+    assert not is_symmetric(matrix)
+    assert not is_positive_semidefinite(matrix)
+
+    with pytest.raises(NumericalStabilityError, match="finite"):
+        assert_covariance_matrix(matrix)
+    with pytest.raises(NumericalStabilityError, match="finite"):
+        nearest_symmetric_psd(matrix)
+    with pytest.raises(NumericalStabilityError, match="finite"):
+        jittered_cholesky(matrix)
+
+
 def test_nearest_symmetric_psd_rejects_invalid_min_eigenvalue():
     matrix = np.eye(2)
 
