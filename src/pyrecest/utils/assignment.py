@@ -37,11 +37,23 @@ def _validate_assignment_count(k: int) -> int:
     return int(k)
 
 
+def _has_boolean_dtype(value) -> bool:
+    dtype = getattr(value, "dtype", None)
+    return dtype is not None and str(dtype).lower() in {"bool", "bool_", "torch.bool"}
+
+
 def _coerce_non_assignment_costs(costs, size: int, name: str):
     if costs is None:
         return _zeros(size, dtype=float)
 
-    costs_array = _asarray(costs, dtype=float)
+    raw_costs_array = _asarray(costs)
+    if _has_boolean_dtype(raw_costs_array):
+        raise ValueError(f"{name} must be numeric and finite")
+
+    try:
+        costs_array = _asarray(raw_costs_array, dtype=float)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{name} must be numeric and finite") from exc
     if costs_array.ndim == 0:
         cost = float(costs_array)
         if not _is_scalar_finite(cost):
