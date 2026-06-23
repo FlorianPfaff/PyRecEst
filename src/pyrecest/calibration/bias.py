@@ -149,15 +149,15 @@ class SensorBiasCorrectionModel:
         """Deserialize a model produced by :meth:`to_dict`."""
 
         return cls(
-            target_dim=int(payload["target_dim"]),
-            feature_dim=int(payload["feature_dim"]),
+            target_dim=payload["target_dim"],
+            feature_dim=payload["feature_dim"],
             intercept=np.asarray(payload["intercept"], dtype=float),
             coefficients=np.asarray(payload["coefficients"], dtype=float),
             feature_mean=np.asarray(payload["feature_mean"], dtype=float),
             feature_scale=np.asarray(payload["feature_scale"], dtype=float),
             residual_std=np.asarray(payload["residual_std"], dtype=float),
-            training_count=int(payload["training_count"]),
-            ridge_alpha=float(payload.get("ridge_alpha", 0.0)),
+            training_count=payload["training_count"],
+            ridge_alpha=payload.get("ridge_alpha", 0.0),
             metadata=payload.get("metadata", {}),
         )
 
