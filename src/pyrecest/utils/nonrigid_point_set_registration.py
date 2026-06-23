@@ -8,6 +8,7 @@ tracking, where ROI centroids can undergo local distortions between sessions.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from typing import Any, Callable
 
@@ -149,7 +150,7 @@ def _validate_regularization(regularization: float) -> float:
     if regularization_array.shape != ():
         raise ValueError("regularization must be a finite non-negative scalar.")
     regularization_value = float(regularization_array)
-    if not bool(isfinite(regularization_value)) or regularization_value < 0.0:
+    if not math.isfinite(regularization_value) or regularization_value < 0.0:
         raise ValueError("regularization must be a finite non-negative scalar.")
     return regularization_value
 
