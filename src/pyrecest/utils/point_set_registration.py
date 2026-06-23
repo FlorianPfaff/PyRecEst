@@ -13,6 +13,7 @@ rotation, or affine deformation must be estimated before data association.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from typing import Any, Callable, Literal
 
@@ -178,7 +179,7 @@ def _validate_positive_integer(value, name: str, *, minimum: int = 1) -> int:
     except (TypeError, ValueError, OverflowError) as exc:
         raise ValueError(f"{name} must be a scalar integer.") from exc
 
-    if not bool(isfinite(value_float)) or not value_float.is_integer():
+    if not math.isfinite(value_float) or not value_float.is_integer():
         raise ValueError(f"{name} must be a scalar integer.")
 
     value_int = int(value_float)
