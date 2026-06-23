@@ -51,6 +51,14 @@ def _square_matrix(value: Any, *, name: str, dim: int | None = None) -> np.ndarr
     return matrix.copy()
 
 
+def _optional_bool(value: Any, *, name: str) -> bool | None:
+    if value is None:
+        return None
+    if isinstance(value, (bool, np.bool_)):
+        return bool(value)
+    raise ValueError(f"{name} must be a boolean or None")
+
+
 def _jsonable(value: Any) -> Any:
     if isinstance(value, np.ndarray):
         return value.tolist()
@@ -81,11 +89,7 @@ class TrackingEvent:
         if not np.isfinite(time):
             raise ValueError("time must be finite")
         measurement = _array_or_none(self.measurement, name="measurement", ndim=1)
-        covariance = (
-            None
-            if self.covariance is None
-            else _square_matrix(self.covariance, name="covariance")
-        )
+        covariance = _array_or_none(self.covariance, name="covariance", ndim=2)
         if measurement is not None and covariance is not None:
             if covariance.shape != (measurement.size, measurement.size):
                 raise ValueError("covariance must match measurement dimension")
@@ -94,9 +98,7 @@ class TrackingEvent:
         object.__setattr__(self, "action", str(self.action))
         object.__setattr__(self, "measurement", measurement)
         object.__setattr__(self, "covariance", covariance)
-        object.__setattr__(
-            self, "accepted", None if self.accepted is None else bool(self.accepted)
-        )
+        object.__setattr__(self, "accepted", _optional_bool(self.accepted, name="accepted"))
         object.__setattr__(self, "metadata", dict(self.metadata))
 
     @property
@@ -152,15 +154,12 @@ class TrackingRecord:
             self.posterior_cov, name="posterior_cov", dim=prior_mean.size
         )
         innovation = _array_or_none(self.innovation, name="innovation", ndim=1)
-        innovation_cov = (
-            None
-            if self.innovation_cov is None
-            else _square_matrix(
-                self.innovation_cov,
-                name="innovation_cov",
-                dim=None if innovation is None else int(innovation.size),
-            )
+        innovation_cov = _array_or_none(
+            self.innovation_cov, name="innovation_cov", ndim=2
         )
+        if innovation is not None and innovation_cov is not None:
+            if innovation_cov.shape != (innovation.size, innovation.size):
+                raise ValueError("innovation_cov must match innovation dimension")
         measurement = _array_or_none(self.measurement, name="measurement", ndim=1)
         nis = None if self.nis is None else float(self.nis)
         if nis is not None and (not np.isfinite(nis) or nis < 0.0):
@@ -175,9 +174,7 @@ class TrackingRecord:
         object.__setattr__(self, "innovation", innovation)
         object.__setattr__(self, "innovation_cov", innovation_cov)
         object.__setattr__(self, "nis", nis)
-        object.__setattr__(
-            self, "accepted", None if self.accepted is None else bool(self.accepted)
-        )
+        object.__setattr__(self, "accepted", _optional_bool(self.accepted, name="accepted"))
         object.__setattr__(self, "measurement", measurement)
         object.__setattr__(self, "event_metadata", dict(self.event_metadata))
         object.__setattr__(self, "metadata", dict(self.metadata))
