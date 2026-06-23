@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from pyrecest.exceptions import NumericalStabilityError, ShapeError
+from pyrecest.exceptions import DimensionMismatchError, NumericalStabilityError, ShapeError
 from pyrecest.numerics import (
     assert_covariance_matrix,
     is_positive_semidefinite,
@@ -19,6 +19,15 @@ def test_symmetrize_matrix_and_psd_projection():
     repaired = np.asarray(nearest_symmetric_psd(matrix))
     assert is_symmetric(repaired)
     assert is_positive_semidefinite(repaired)
+
+
+def test_empty_square_matrix_is_symmetric_psd_covariance():
+    matrix = np.empty((0, 0))
+
+    assert is_symmetric(matrix)
+    assert is_positive_semidefinite(matrix)
+    validated = np.asarray(assert_covariance_matrix(matrix, dim=0))
+    assert validated.shape == (0, 0)
 
 
 def test_covariance_helpers_reject_nonfinite_matrices():
@@ -78,6 +87,19 @@ def test_jittered_cholesky_accepts_numpy_integer_retry_count():
     _, jitter = jittered_cholesky(matrix, max_attempts=np.int64(3))
 
     assert jitter > 0.0
+
+
+def test_assert_covariance_matrix_validates_dimension_argument():
+    matrix = np.eye(2)
+
+    np.testing.assert_array_equal(np.asarray(assert_covariance_matrix(matrix, dim=2)), matrix)
+
+    with pytest.raises(DimensionMismatchError, match="dimension 2"):
+        assert_covariance_matrix(matrix, dim=3)
+
+    for invalid_dim in (-1, 2.0, True, np.array([2])):
+        with pytest.raises(ValueError, match="dim"):
+            assert_covariance_matrix(matrix, dim=invalid_dim)
 
 
 def test_assert_covariance_matrix_rejects_non_psd():
