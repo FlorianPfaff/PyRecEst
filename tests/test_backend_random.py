@@ -80,6 +80,18 @@ class TestBackendRandom(unittest.TestCase):
         self.assertTrue(set(sample_np[0].tolist()).issubset({0, 1, 2}))
         self.assertTrue(set(sample_np[1].tolist()).issubset({3, 4, 5}))
 
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ != "numpy",
+        "NumPy-specific choice axis validation",
+    )
+    def test_numpy_choice_rejects_invalid_multidimensional_axis(self):
+        values = pyrecest.backend.array([[0, 1], [2, 3]])
+
+        for axis in (2, -3, 1.5, True):
+            with self.subTest(axis=axis):
+                with self.assertRaises((TypeError, ValueError)):
+                    random.choice(values, size=1, axis=axis)
+
     def test_multivariate_normal_accepts_python_sequences(self):
         samples = random.multivariate_normal(
             [0.0, 0.0], [[1.0, 0.0], [0.0, 1.0]], size=(6,)

@@ -40,6 +40,34 @@ class InnovationConsistencyScoreConfig:
     residual_clip: float = 500.0
     residual_normalizer: float = 100.0
 
+    def __post_init__(self) -> None:
+        for name in (
+            "graph_cost_weight",
+            "nis_weight",
+            "residual_weight",
+            "switch_weight",
+            "missed_detection_weight",
+            "rejected_weight",
+            "coast_weight",
+            "unsupported_measurement_weight",
+            "hard_quarantine_weight",
+            "tail_duration_weight",
+            "coverage_reward",
+        ):
+            object.__setattr__(self, name, _finite_float(getattr(self, name), name))
+
+        for name in ("nis_clip", "residual_clip"):
+            object.__setattr__(
+                self,
+                name,
+                _nonnegative_float(getattr(self, name), name),
+            )
+        object.__setattr__(
+            self,
+            "residual_normalizer",
+            _positive_float(self.residual_normalizer, "residual_normalizer"),
+        )
+
 
 @dataclass(frozen=True)
 class HypothesisReplay:
@@ -328,7 +356,16 @@ def _record_value(record: Any, keys: tuple[str, ...]) -> Any | None:
 
 
 def _finite_float(value: Any, name: str) -> float:
-    parsed = float(value)
+    value_array = np.asarray(value)
+    if value_array.shape != () or value_array.dtype == np.bool_:
+        raise ValueError(f"{name} must be finite")
+    scalar = value_array.item()
+    if isinstance(scalar, (bool, np.bool_)):
+        raise ValueError(f"{name} must be finite")
+    try:
+        parsed = float(scalar)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{name} must be finite") from exc
     if not np.isfinite(parsed):
         raise ValueError(f"{name} must be finite")
     return parsed
@@ -341,8 +378,30 @@ def _nonnegative_float(value: Any, name: str) -> float:
     return parsed
 
 
+def _positive_float(value: Any, name: str) -> float:
+    parsed = _finite_float(value, name)
+    if parsed <= 0.0:
+        raise ValueError(f"{name} must be positive")
+    return parsed
+
+
 def _nonnegative_int(value: Any, name: str) -> int:
-    parsed = int(value)
+    value_array = np.asarray(value)
+    if value_array.shape != () or value_array.dtype == np.bool_:
+        raise ValueError(f"{name} must be a nonnegative integer")
+    scalar = value_array.item()
+    if isinstance(scalar, (bool, np.bool_)):
+        raise ValueError(f"{name} must be a nonnegative integer")
+    if isinstance(scalar, (int, np.integer)):
+        parsed = int(scalar)
+    else:
+        try:
+            scalar_float = float(scalar)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError(f"{name} must be a nonnegative integer") from exc
+        if not np.isfinite(scalar_float) or not scalar_float.is_integer():
+            raise ValueError(f"{name} must be a nonnegative integer")
+        parsed = int(scalar_float)
     if parsed < 0:
         raise ValueError(f"{name} must be nonnegative")
     return parsed

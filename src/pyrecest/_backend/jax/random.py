@@ -6,6 +6,7 @@ who says he was in inspired by https://github.com/wesselb/lab/blob/master/lab/ja
 """
 
 import sys
+from operator import index as _operator_index
 
 import jax
 import jax.numpy as _jnp
@@ -249,6 +250,18 @@ def _integer_population_size(a):
     return None
 
 
+def _normalize_choice_axis(axis, ndim):
+    if isinstance(axis, (bool, _np.bool_)):
+        raise TypeError("axis must be an integer")
+    try:
+        axis = _operator_index(axis)
+    except TypeError as exc:
+        raise TypeError("axis must be an integer") from exc
+    if axis < -ndim or axis >= ndim:
+        raise ValueError(f"axis {axis} is out of bounds for array of dimension {ndim}")
+    return axis % ndim
+
+
 def _choice_population_size(a, kwargs):
     population_size = _integer_population_size(a)
     if population_size is not None:
@@ -259,10 +272,10 @@ def _choice_population_size(a, kwargs):
             "a must be a positive integer or an array with at least one dimension"
         )
 
-    axis = kwargs.get("axis", 0)
-    if not _looks_like_integer_dimension(axis):
-        raise TypeError("axis must be an integer")
-    return a.shape[int(axis) % a.ndim]
+    axis = _normalize_choice_axis(kwargs.get("axis", 0), a.ndim)
+    if "axis" in kwargs:
+        kwargs["axis"] = axis
+    return a.shape[axis]
 
 
 def _validate_choice_probabilities(p, population_size):
@@ -279,8 +292,9 @@ def _validate_choice_probabilities(p, population_size):
 def _choice(state, a, size=None, replace=True, p=None, *args, **kwargs):
     state, key = jax.random.split(state)
     a = _jnp.asarray(a)
+    population_size = _choice_population_size(a, kwargs)
     if p is not None:
-        p = _validate_choice_probabilities(p, _choice_population_size(a, kwargs))
+        p = _validate_choice_probabilities(p, population_size)
     res = jax.random.choice(
         key,
         a,

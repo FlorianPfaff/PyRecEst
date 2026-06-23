@@ -276,9 +276,12 @@ def infer_state_dim_from_distribution(
     """
     for attr_name in ("dim", "input_dim"):
         if hasattr(distribution, attr_name):
-            attr_value = _maybe_call(
-                getattr(distribution, attr_name), allow_methods=allow_methods
-            )
+            try:
+                attr_value = _maybe_call(
+                    getattr(distribution, attr_name), allow_methods=allow_methods
+                )
+            except (TypeError, ValueError):
+                continue
             inferred_dim = _positive_int_or_none(attr_value)
             if inferred_dim is not None:
                 return inferred_dim

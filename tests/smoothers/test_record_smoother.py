@@ -80,16 +80,18 @@ def test_rts_and_fixed_lag_match_when_lag_covers_all_future_records() -> None:
     assert np.allclose(full[0]["covariance"], lagged[0]["covariance"])
 
 
-def test_none_returns_copied_records() -> None:
+def test_none_returns_copied_records_with_metadata() -> None:
     records = _records()
     out = smooth_records(
         records,
         method="none",
         transition_model=_transition,
         process_noise_model=_process_noise,
+        metadata={"smoother_method": "none"},
     )
 
     assert out[0]["source"] == records[0]["source"]
+    assert out[0]["smoother_method"] == "none"
     assert out is not records
     assert out[0] is not records[0]
     out[0]["state"][0] = 99.0

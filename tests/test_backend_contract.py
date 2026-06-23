@@ -16,6 +16,19 @@ class BackendContractTest(unittest.TestCase):
                 )
                 self.assertEqual(duplicates, [])
 
+    @unittest.skipUnless(
+        backend.__backend_name__ == "pytorch",
+        reason="PyTorch-specific NumPy dtype normalization regression test",
+    )
+    def test_pytorch_array_accepts_numpy_integer_and_bool_dtypes(self):
+        int_values = array([1, 2, 3], dtype=np.int64)
+        bool_values = array([1, 0, 1], dtype=np.bool_)
+
+        self.assertEqual(to_numpy(int_values).dtype, np.dtype("int64"))
+        self.assertEqual(to_numpy(bool_values).dtype, np.dtype("bool"))
+        npt.assert_array_equal(to_numpy(int_values), np.array([1, 2, 3]))
+        npt.assert_array_equal(to_numpy(bool_values), np.array([True, False, True]))
+
     def test_convert_to_wider_dtype_preserves_matching_boolean_dtype(self):
         if backend.__backend_name__ not in {"autograd", "numpy"}:
             self.skipTest("shared NumPy dtype promotion regression test")

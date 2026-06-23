@@ -22,11 +22,15 @@ def _type_name(obj: object) -> str:
 
 def _normalise_shape(shape: Iterable[int], value_name: str) -> tuple[int, ...]:
     try:
-        return tuple(int(axis) for axis in shape)
+        axes = tuple(shape)
     except TypeError as exc:
         raise ProtocolAssertionError(
             f"{value_name} must be an iterable shape."
         ) from exc
+    return tuple(
+        _nonnegative_integer(axis, f"{value_name}[{axis_index}]")
+        for axis_index, axis in enumerate(axes)
+    )
 
 
 def _shape_of(value: object, value_name: str) -> tuple[int, ...]:

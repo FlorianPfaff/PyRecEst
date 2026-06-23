@@ -1,10 +1,4 @@
-"""Innovation and normalized-innovation-squared diagnostics.
-
-The utilities in this module are filter-independent and reusable across
-tracking applications.  They convert raw innovation pairs or linear-Gaussian
-measurement setups into serializable diagnostics for gates, replay ranking,
-health checks, and regression tests.
-"""
+"""Innovation and normalized-innovation-squared diagnostics."""
 
 from __future__ import annotations
 
@@ -109,11 +103,7 @@ def innovation_diagnostic(
     time: float | None = None,
     metadata: Mapping[str, Any] | None = None,
 ) -> InnovationDiagnostic:
-    """Compute NIS and residual diagnostics from one innovation.
-
-    If ``accepted`` is omitted and a gate threshold/probability is supplied, the
-    accepted flag is inferred from the NIS gate. Otherwise it remains ``None``.
-    """
+    """Compute NIS and residual diagnostics from one innovation."""
 
     residual_array = np.asarray(residual, dtype=float).reshape(-1)
     innovation_covariance_array = np.asarray(innovation_covariance, dtype=float)
@@ -124,7 +114,10 @@ def innovation_diagnostic(
         or not np.isfinite(innovation_covariance_array).all()
     ):
         raise ValueError("innovation inputs must be finite")
-    resolved_threshold = gate_threshold
+    resolved_threshold = _validate_optional_positive_scalar(
+        gate_threshold,
+        "gate_threshold",
+    )
     if resolved_threshold is None:
         resolved_threshold = innovation_gate_threshold(
             gate_probability, residual_array.size
@@ -219,9 +212,10 @@ def diagnostic_from_record(
     if measurement_dim_value is None:
         residual = record.get("residual")
         if residual is not None:
-            measurement_dim_value = int(np.asarray(residual).reshape(-1).size)
+            measurement_dim_value = np.asarray(residual).reshape(-1).size
         else:
             measurement_dim_value = 0
+    measurement_dim = _nonnegative_integer(measurement_dim_value, measurement_dim_key)
     accepted = record.get(accepted_key)
     excluded = {
         source_key,
@@ -234,11 +228,11 @@ def diagnostic_from_record(
         gate_threshold_key,
     }
     return InnovationDiagnostic(
-        measurement_dim=int(measurement_dim_value),
+        measurement_dim=measurement_dim,
         nis=_optional_float(record.get(nis_key)),
         residual_norm=_optional_float(record.get(residual_norm_key)),
         gate_threshold=_optional_float(record.get(gate_threshold_key)),
-        accepted=None if accepted is None else bool(accepted),
+        accepted=_optional_bool(accepted),
         action=None if record.get(action_key) is None else str(record.get(action_key)),
         source=None if record.get(source_key) is None else str(record.get(source_key)),
         time=_optional_float(record.get(time_key)),
@@ -349,6 +343,89 @@ def _optional_float(value: Any) -> float | None:
     except (TypeError, ValueError):
         return None
     return parsed if np.isfinite(parsed) else None
+
+
+def _nonnegative_integer(value: Any, name: str) -> int:
+    try:
+        value_array = np.asarray(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{name} must be a non-negative integer") from exc
+    if value_array.shape != () or value_array.dtype == np.bool_:
+        raise ValueError(f"{name} must be a non-negative integer")
+    scalar = value_array.item()
+    if isinstance(scalar, (bool, np.bool_)):
+        raise ValueError(f"{name} must be a non-negative integer")
+    if isinstance(scalar, (int, np.integer)):
+        parsed = int(scalar)
+    else:
+        try:
+            scalar_float = float(scalar)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError(f"{name} must be a non-negative integer") from exc
+        if not np.isfinite(scalar_float) or not scalar_float.is_integer():
+            raise ValueError(f"{name} must be a non-negative integer")
+        parsed = int(scalar_float)
+    if parsed < 0:
+        raise ValueError(f"{name} must be a non-negative integer")
+    return parsed
+
+
+def _optional_bool(value: Any) -> bool | None:
+    if value is None:
+        return None
+    if isinstance(value, (bool, np.bool_)):
+        return bool(value)
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"", "nan", "none", "null"}:
+            return None
+        if normalized in {"1", "true", "t", "yes", "y"}:
+            return True
+        if normalized in {"0", "false", "f", "no", "n"}:
+            return False
+        raise ValueError("accepted must be a boolean-like value")
+
+    try:
+        value_array = np.asarray(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("accepted must be a boolean-like value") from exc
+    if value_array.shape != ():
+        raise ValueError("accepted must be a scalar boolean-like value")
+    scalar = value_array.item()
+    if isinstance(scalar, (bool, np.bool_)):
+        return bool(scalar)
+    try:
+        parsed = float(scalar)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("accepted must be a boolean-like value") from exc
+    if not np.isfinite(parsed):
+        return None
+    if parsed == 0.0:
+        return False
+    if parsed == 1.0:
+        return True
+    raise ValueError("accepted must be a boolean-like value")
+
+
+def _validate_optional_positive_scalar(value: Any, name: str) -> float | None:
+    if value is None:
+        return None
+    try:
+        value_array = np.asarray(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{name} must be a finite positive scalar") from exc
+    if value_array.shape != () or value_array.dtype == np.bool_:
+        raise ValueError(f"{name} must be a finite positive scalar")
+    scalar = value_array.item()
+    if isinstance(scalar, (bool, np.bool_)):
+        raise ValueError(f"{name} must be a finite positive scalar")
+    try:
+        parsed = float(scalar)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{name} must be a finite positive scalar") from exc
+    if not np.isfinite(parsed) or parsed <= 0.0:
+        raise ValueError(f"{name} must be a finite positive scalar")
+    return parsed
 
 
 def _mean_or_none(values: np.ndarray) -> float | None:

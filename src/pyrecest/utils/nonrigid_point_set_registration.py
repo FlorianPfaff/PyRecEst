@@ -8,6 +8,7 @@ tracking, where ROI centroids can undergo local distortions between sessions.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from typing import Any, Callable
 
@@ -18,6 +19,7 @@ from pyrecest.backend import (
     asarray,
     concatenate,
     eye,
+    isfinite,
     linalg,
     log,
     maximum,
@@ -143,6 +145,16 @@ def _tps_kernel_from_distances(distances, epsilon: float = 1e-12):
     return where(squared_distances > 0.0, kernel, 0.0)
 
 
+def _validate_regularization(regularization: float) -> float:
+    regularization_array = asarray(regularization)
+    if regularization_array.shape != ():
+        raise ValueError("regularization must be a finite non-negative scalar.")
+    regularization_value = float(regularization_array)
+    if not math.isfinite(regularization_value) or regularization_value < 0.0:
+        raise ValueError("regularization must be a finite non-negative scalar.")
+    return regularization_value
+
+
 def estimate_thin_plate_spline(
     source_points,
     target_points,
@@ -163,8 +175,7 @@ def estimate_thin_plate_spline(
             "estimate_thin_plate_spline is not supported on the JAX backend."
         )
 
-    if regularization < 0.0:
-        raise ValueError("regularization must be non-negative.")
+    regularization = _validate_regularization(regularization)
 
     source, target = _validate_pair(
         source_points,

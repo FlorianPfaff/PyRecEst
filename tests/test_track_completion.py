@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import unittest
 
+import numpy as np
+
 from pyrecest.utils.track_completion import (
     CompletionCandidate,
     enumerate_fragment_completion_paths,
@@ -60,6 +62,26 @@ class TestTrackCompletion(unittest.TestCase):
             allow_duplicate_target=True,
         )
         self.assertEqual(len(allowed), 1)
+
+    def test_rejects_negative_candidate_observations(self) -> None:
+        tracks = [[0, None]]
+        invalid_candidates = (-1, CompletionCandidate(-1))
+
+        for invalid_candidate in invalid_candidates:
+            with self.subTest(invalid_candidate=invalid_candidate):
+                def provider(session: int, observation: int, target_session: int):
+                    del session, observation, target_session
+                    return [invalid_candidate]
+
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "candidate observations must be non-negative integers",
+                ):
+                    enumerate_fragment_completion_paths(
+                        tracks,
+                        direction="suffix",
+                        candidate_provider=provider,
+                    )
 
     def test_enumerates_prefix_paths(self) -> None:
         tracks = [[None, 5, 6]]
@@ -127,6 +149,28 @@ class TestTrackCompletion(unittest.TestCase):
                         **kwargs,
                     )
 
+    def test_custom_candidate_sessions_do_not_truncate_invalid_scalars(self) -> None:
+        tracks = [[7, None, None]]
+
+        def candidate_sessions(session: int, observation: int, direction: str):
+            del session, observation, direction
+            return [True, np.bool_(True), 1.5, np.float64(1.5)]
+
+        def provider(session: int, observation: int, target_session: int):
+            if (session, observation, target_session) == (0, 7, 1):
+                return [8]
+            return []
+
+        paths = enumerate_fragment_completion_paths(
+            tracks,
+            direction="suffix",
+            candidate_provider=provider,
+            candidate_session_provider=candidate_sessions,
+        )
+
+        self.assertEqual(paths, [])
+
 
 if __name__ == "__main__":
     unittest.main()
+

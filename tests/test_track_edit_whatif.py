@@ -121,6 +121,25 @@ def test_duplicate_sensitive_scoring_counts_duplicate_false_positive() -> None:
     assert multiset_delta.pairwise_fp_delta == -1
 
 
+def test_remove_link_rejects_negative_occurrence_index() -> None:
+    predicted = [[1, 2], [1, 2]]
+    edit = TrackEdit(
+        kind="remove_link",
+        session_a=0,
+        session_b=1,
+        source_observation=1,
+        target_observation=2,
+        metadata={"occurrence_index": -1},
+    )
+
+    application = apply_track_edit(predicted, edit)
+
+    assert not application.applied
+    assert application.action == "reject"
+    assert application.reason == "edge_not_found"
+    assert application.track_matrix.tolist() == predicted
+
+
 def test_rank_track_edits_prefers_complete_track_improvement() -> None:
     predicted = [[1, 2, None], [8, 9, 10]]
     reference = [[1, 2, 3], [8, 9, 10]]

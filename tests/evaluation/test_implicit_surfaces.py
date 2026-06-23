@@ -88,6 +88,20 @@ def test_surface_band_probability_from_signed_distance() -> None:
     assert 0.0 <= probability[1] < probability[0]
 
 
+def test_surface_band_probability_accepts_zero_std_floor() -> None:
+    probability = surface_band_probability_from_signed_distance(
+        np.asarray([0.0, 2.0], dtype=np.float64),
+        np.asarray([0.0, 0.5], dtype=np.float64),
+        1.0,
+        min_std=0.1,
+    )
+
+    assert probability.shape == (2,)
+    assert np.all(np.isfinite(probability))
+    assert np.all((0.0 <= probability) & (probability <= 1.0))
+    assert probability[0] > probability[1]
+
+
 def test_surface_band_probability_rejects_invalid_scales() -> None:
     with pytest.raises(ValueError, match="threshold"):
         surface_band_mask(np.asarray([0.0]), 0.0)
@@ -104,3 +118,19 @@ def test_surface_band_probability_rejects_invalid_scales() -> None:
             0.1,
             min_std=0.0,
         )
+    with pytest.raises(ValueError, match="distance_std must be non-negative"):
+        surface_band_probability_from_signed_distance(
+            np.asarray([0.0]),
+            np.asarray([-1.0]),
+            0.1,
+        )
+    for invalid_std in (np.nan, np.inf, -np.inf):
+        with pytest.raises(
+            ValueError,
+            match="distance_std must contain only finite values",
+        ):
+            surface_band_probability_from_signed_distance(
+                np.asarray([0.0]),
+                np.asarray([invalid_std]),
+                0.1,
+            )

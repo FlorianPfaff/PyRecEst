@@ -36,3 +36,23 @@ else:
     result = run_backend_code("pytorch", code)
 
     assert result.returncode == 0, result.stderr
+
+
+def test_pytorch_choice_rejects_out_of_bounds_axis():
+    pytest.importorskip("torch")
+
+    code = """
+import pyrecest.backend as backend
+
+values = [[1, 2, 3], [4, 5, 6]]
+for axis in (2, -3):
+    try:
+        backend.random.choice(values, axis=axis)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError(f"choice accepted out-of-bounds axis {axis}")
+"""
+    result = run_backend_code("pytorch", code)
+
+    assert result.returncode == 0, result.stderr

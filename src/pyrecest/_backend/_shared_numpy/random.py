@@ -1,3 +1,5 @@
+import operator as _operator
+
 from ._dispatch import _common
 from ._dispatch import numpy as _np
 
@@ -49,6 +51,28 @@ multivariate_normal = _modify_func_default_dtype(
 )
 
 
+def _normalize_choice_axis(axis, ndim):
+    if isinstance(axis, (bool, _np.bool_)):
+        raise TypeError("axis must be an integer")
+    try:
+        axis = _operator.index(axis)
+    except TypeError as exc:
+        raise TypeError("axis must be an integer") from exc
+    if axis < -ndim or axis >= ndim:
+        raise ValueError(f"axis {axis} is out of bounds for array of dimension {ndim}")
+    return axis % ndim
+
+
+def _maybe_preserve_choice_order(indices, *, replace, p, shuffle, size):
+    if replace or p is not None or bool(shuffle) or size is None:
+        return indices
+
+    index_array = _np.asarray(indices)
+    if index_array.ndim == 0:
+        return indices
+    return _np.sort(index_array.reshape(-1)).reshape(index_array.shape)
+
+
 def choice(a, size=None, replace=True, p=None, axis=0, shuffle=True):
     """Draw samples using NumPy's seeded global random state.
 
@@ -58,18 +82,36 @@ def choice(a, size=None, replace=True, p=None, axis=0, shuffle=True):
     ``numpy.random``, so this wrapper samples indices through the seeded legacy RNG
     and then gathers along ``axis`` for multidimensional inputs.
     """
-    del shuffle  # ``numpy.random.choice`` has no equivalent shuffle argument.
 
     a_array = _np.asarray(a)
     if a_array.ndim == 0:
-        return _np.random.choice(a, size=size, replace=replace, p=p)
+        return _maybe_preserve_choice_order(
+            _np.random.choice(a, size=size, replace=replace, p=p),
+            replace=replace,
+            p=p,
+            shuffle=shuffle,
+            size=size,
+        )
 
-    axis = axis % a_array.ndim
+    axis = _normalize_choice_axis(axis, a_array.ndim)
     if a_array.ndim == 1 and axis == 0:
-        return _np.random.choice(a_array, size=size, replace=replace, p=p)
+        return _maybe_preserve_choice_order(
+            _np.random.choice(a_array, size=size, replace=replace, p=p),
+            replace=replace,
+            p=p,
+            shuffle=shuffle,
+            size=size,
+        )
 
     if p is not None:
         p = _np.asarray(p)
 
     indices = _np.random.choice(a_array.shape[axis], size=size, replace=replace, p=p)
+    indices = _maybe_preserve_choice_order(
+        indices,
+        replace=replace,
+        p=p,
+        shuffle=shuffle,
+        size=size,
+    )
     return _np.take(a_array, indices, axis=axis)

@@ -114,6 +114,10 @@ class GlobalNearestNeighbor(AbstractNearestNeighborTracker):
             ``(n_targets, n_meas)``. These costs are added to the geometric cost
             matrix before running the Hungarian algorithm.
         """
+        measurements = asarray(measurements, dtype=float)
+        measurement_matrix = asarray(measurement_matrix, dtype=float)
+        cov_mats_meas = asarray(cov_mats_meas, dtype=float)
+
         n_targets = len(self.filter_bank)
         n_meas = measurements.shape[1]
 
@@ -264,6 +268,11 @@ class GlobalNearestNeighbor(AbstractNearestNeighborTracker):
         if len(self.filter_bank) == 0:
             warnings.warn("Currently, there are zero targets")
             return
+
+        measurements = asarray(measurements, dtype=float)
+        measurement_matrix = asarray(measurement_matrix, dtype=float)
+        covMatsMeas = asarray(covMatsMeas, dtype=float)
+
         self._validate_measurement_update_inputs(
             measurements,
             measurement_matrix,

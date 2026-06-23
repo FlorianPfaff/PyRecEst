@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 from pyrecest.filters import KalmanFilter
 from pyrecest.models import (
     MaskedLinearMeasurementModel,
@@ -27,6 +28,14 @@ def test_block_diag_measurement_covariance_preserves_named_order() -> None:
     assert np.allclose(covariance, np.diag([1.0, 4.0, 10000.0]))
 
 
+def test_block_diag_measurement_covariance_rejects_duplicate_dimension_order() -> None:
+    with pytest.raises(ValueError, match="dimension_order"):
+        block_diag_measurement_covariance(
+            trusted_std={"x": 1.0, "y": 2.0},
+            dimension_order=["x", "x"],
+        )
+
+
 def test_selection_matrix_selects_state_components() -> None:
     matrix = selection_matrix(6, [0, 2, 5])
 
@@ -34,6 +43,18 @@ def test_selection_matrix_selects_state_components() -> None:
     assert np.allclose(
         matrix @ np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0]), [1.0, 3.0, 6.0]
     )
+
+
+def test_selection_matrix_rejects_bool_and_vector_indices() -> None:
+    invalid_cases = (
+        (True, [0], "state_dim"),
+        (3, [False], "observed_dims"),
+        (3, [np.array([1])], "observed_dims"),
+    )
+
+    for state_dim, observed_dims, message in invalid_cases:
+        with pytest.raises(ValueError, match=message):
+            selection_matrix(state_dim, observed_dims)
 
 
 def test_masked_linear_measurement_model_updates_only_observed_dimensions() -> None:

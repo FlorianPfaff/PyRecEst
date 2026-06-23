@@ -62,6 +62,34 @@ class TestTrackMetrics(unittest.TestCase):
         self.assertEqual(scores["false_tracks"], 1)
         npt.assert_allclose(scores["observation_weighted_track_purity"], 6.0 / 7.0)
 
+    def test_track_latency_rejects_nonfinite_session_times(self):
+        invalid_session_times = (
+            [0.0, np.nan, 2.0],
+            [0.0, np.inf, 2.0],
+            [0.0, -np.inf, 2.0],
+        )
+
+        for session_times in invalid_session_times:
+            with self.subTest(session_times=session_times):
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "session_times must contain only finite values",
+                ):
+                    track_latencies(
+                        self.predicted,
+                        self.reference,
+                        session_times=session_times,
+                    )
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "session_times must contain only finite values",
+                ):
+                    score_track_latency(
+                        self.predicted,
+                        self.reference,
+                        session_times=session_times,
+                    )
+
     def test_min_length_limits_false_track_observation_rate_denominator(self):
         predicted = [
             [99, None, None],
