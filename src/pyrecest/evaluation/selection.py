@@ -198,9 +198,14 @@ def quantile_tail_threshold(
         reliability_scores,
         nonnegative=sanitize_nonnegative,
     )
-    q = float(quantile)
-    if not np.isfinite(q) or not 0.0 < q < 1.0:
-        raise ValueError("quantile must be finite and in (0, 1).")
+    q = _normalize_bounded_fraction(
+        quantile,
+        lower=0.0,
+        upper=1.0,
+        include_lower=False,
+        include_upper=False,
+        message="quantile must be finite and in (0, 1).",
+    )
     if tail not in {"lower", "upper"}:
         raise ValueError("tail must be 'lower' or 'upper'.")
     if scores.size == 0:
