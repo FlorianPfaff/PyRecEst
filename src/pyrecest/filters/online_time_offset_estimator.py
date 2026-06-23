@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 
@@ -17,6 +18,14 @@ class OnlineTimeOffsetEstimator:
     min_speed: float = 1.0
 
     def __post_init__(self) -> None:
+        self.offset = _as_finite_scalar(self.offset, "offset")
+        self.variance = _as_finite_scalar(self.variance, "variance")
+        self.process_variance = _as_finite_scalar(
+            self.process_variance,
+            "process_variance",
+        )
+        self.min_speed = _as_finite_scalar(self.min_speed, "min_speed")
+
         if self.variance <= 0.0:
             raise ValueError("variance must be positive")
         if self.process_variance < 0.0:
@@ -41,6 +50,15 @@ class OnlineTimeOffsetEstimator:
         velocity = np.asarray(velocity, dtype=float).reshape(-1)
         if residual.size != velocity.size:
             raise ValueError("residual and velocity must have the same dimension")
+        if not np.isfinite(residual).all() or not np.isfinite(velocity).all():
+            raise ValueError("residual and velocity must be finite")
+        measurement_variance = _as_finite_scalar(
+            measurement_variance,
+            "measurement_variance",
+        )
+        if measurement_variance < 0.0:
+            raise ValueError("measurement_variance must be nonnegative")
+
         speed2 = float(velocity @ velocity)
         if speed2 < float(self.min_speed) ** 2:
             return float("nan")
@@ -57,3 +75,19 @@ class OnlineTimeOffsetEstimator:
     def std(self) -> float:
         """Return the posterior offset standard deviation."""
         return float(np.sqrt(max(self.variance, 0.0)))
+
+
+def _as_finite_scalar(value: Any, name: str) -> float:
+    value_array = np.asarray(value)
+    if value_array.shape != () or value_array.dtype == np.bool_:
+        raise ValueError(f"{name} must be a finite scalar")
+    scalar = value_array.item()
+    if isinstance(scalar, (bool, np.bool_)):
+        raise ValueError(f"{name} must be a finite scalar")
+    try:
+        parsed = float(scalar)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{name} must be a finite scalar") from exc
+    if not np.isfinite(parsed):
+        raise ValueError(f"{name} must be a finite scalar")
+    return parsed
