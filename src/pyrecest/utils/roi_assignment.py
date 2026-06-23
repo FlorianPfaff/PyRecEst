@@ -123,9 +123,40 @@ def _setdiff_indices(size: int, selected_indices):
     return array([index for index in range(size) if index not in selected], dtype=int64)
 
 
+def _as_nonnegative_integer(value, name: str) -> int:
+    value_array = asarray(value)
+    if value_array.shape != ():
+        raise ValueError(f"{name} must be a non-negative integer.")
+
+    scalar = value_array.item() if hasattr(value_array, "item") else value_array
+    if isinstance(scalar, bool):
+        raise ValueError(f"{name} must be a non-negative integer.")
+
+    if isinstance(scalar, int):
+        integer_value = int(scalar)
+    else:
+        try:
+            scalar_float = float(scalar)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError(f"{name} must be a non-negative integer.") from exc
+        if not math.isfinite(scalar_float) or not scalar_float.is_integer():
+            raise ValueError(f"{name} must be a non-negative integer.")
+        integer_value = int(scalar_float)
+
+    if integer_value < 0:
+        raise ValueError(f"{name} must be a non-negative integer.")
+    return integer_value
+
+
+def _as_positive_integer(value, name: str) -> int:
+    integer_value = _as_nonnegative_integer(value, name)
+    if integer_value <= 0:
+        raise ValueError(f"{name} must be a positive integer.")
+    return integer_value
+
+
 def _histogram(values, *, bins: int, value_min: float, value_max: float):
-    if bins <= 0:
-        raise ValueError("nbins must be positive.")
+    bins = _as_positive_integer(bins, "nbins")
 
     bin_edges = linspace(value_min, value_max, bins + 1)
     scale = bins / (value_max - value_min)
@@ -544,8 +575,8 @@ def assign_by_similarity_matrix(
 
     if num_dummy is None:
         num_dummy = max(n_rows, n_cols)
-    if num_dummy < 0:
-        raise ValueError("num_dummy must be non-negative.")
+    else:
+        num_dummy = _as_nonnegative_integer(num_dummy, "num_dummy")
 
     max_similarity = float(amax(similarities[finite_mask]))
     threshold_cost = max_similarity - min_similarity
@@ -559,7 +590,7 @@ def assign_by_similarity_matrix(
     cost_matrix = full_like(similarities, dummy_cost)
     cost_matrix[valid_mask] = max_similarity - similarities[valid_mask]
 
-    padded_size = max(n_rows, n_cols) + int(num_dummy)
+    padded_size = max(n_rows, n_cols) + num_dummy
     padded_cost = full((padded_size, padded_size), dummy_cost, dtype=float64)
     padded_cost[:n_rows, :n_cols] = cost_matrix
 
