@@ -47,12 +47,8 @@ class SensorBiasCorrectionModel:
     metadata: Mapping[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        target_dim = int(self.target_dim)
-        feature_dim = int(self.feature_dim)
-        if target_dim <= 0:
-            raise ValueError("target_dim must be positive")
-        if feature_dim < 0:
-            raise ValueError("feature_dim must be nonnegative")
+        target_dim = _as_positive_int(self.target_dim, "target_dim")
+        feature_dim = _as_nonnegative_int(self.feature_dim, "feature_dim")
         intercept = np.asarray(self.intercept, dtype=float).reshape(target_dim)
         coefficients = np.asarray(self.coefficients, dtype=float).reshape(
             feature_dim, target_dim
@@ -70,8 +66,16 @@ class SensorBiasCorrectionModel:
         object.__setattr__(self, "feature_mean", feature_mean)
         object.__setattr__(self, "feature_scale", feature_scale)
         object.__setattr__(self, "residual_std", residual_std)
-        object.__setattr__(self, "training_count", int(self.training_count))
-        object.__setattr__(self, "ridge_alpha", float(self.ridge_alpha))
+        object.__setattr__(
+            self,
+            "training_count",
+            _as_nonnegative_int(self.training_count, "training_count"),
+        )
+        object.__setattr__(
+            self,
+            "ridge_alpha",
+            _as_nonnegative_finite_float(self.ridge_alpha, "ridge_alpha"),
+        )
         object.__setattr__(self, "metadata", dict(self.metadata))
 
     def predict(
