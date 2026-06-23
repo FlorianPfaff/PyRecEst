@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import math
+
 # pylint: disable=no-name-in-module,no-member,too-many-instance-attributes,duplicate-code
 from pyrecest.backend import (
     array,
@@ -82,8 +84,11 @@ class MEMEKFTracker(AbstractExtendedObjectTracker):
             self._validate_measurement_matrix(self.measurement_matrix)
 
         self.covariance_regularization = float(covariance_regularization)
-        if self.covariance_regularization < 0.0:
-            raise ValueError("covariance_regularization must be non-negative")
+        if (
+            not math.isfinite(self.covariance_regularization)
+            or self.covariance_regularization < 0.0
+        ):
+            raise ValueError("covariance_regularization must be finite and non-negative")
 
     @staticmethod
     def _symmetrize(matrix):
