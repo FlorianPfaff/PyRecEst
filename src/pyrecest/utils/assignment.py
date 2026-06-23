@@ -32,9 +32,32 @@ class _MurtySubproblem:
 
 
 def _validate_assignment_count(k: int) -> int:
-    if isinstance(k, bool) or not isinstance(k, Integral):
+    if isinstance(k, bool):
         raise ValueError("k must be an integer")
-    return int(k)
+    if isinstance(k, Integral):
+        return int(k)
+
+    try:
+        k_array = _asarray(k)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("k must be an integer") from exc
+    if k_array.ndim != 0:
+        raise ValueError("k must be an integer")
+
+    try:
+        scalar = k_array.item()
+    except AttributeError:
+        scalar = k_array
+    if isinstance(scalar, bool):
+        raise ValueError("k must be an integer")
+
+    try:
+        scalar_float = float(scalar)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("k must be an integer") from exc
+    if not _is_scalar_finite(scalar_float) or not scalar_float.is_integer():
+        raise ValueError("k must be an integer")
+    return int(scalar_float)
 
 
 def _coerce_non_assignment_costs(costs, size: int, name: str):
