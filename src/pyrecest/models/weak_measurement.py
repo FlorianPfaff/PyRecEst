@@ -119,14 +119,17 @@ class MaskedLinearMeasurementModel(LinearGaussianMeasurementModel):
     ) -> None:
         if (measurement_noise_cov is None) == (stds is None):
             raise ValueError("provide exactly one of measurement_noise_cov or stds")
-        matrix = selection_matrix(state_dim, observed_dims)
+        observed_dims_tuple = tuple(observed_dims)
+        matrix = selection_matrix(state_dim, observed_dims_tuple)
         covariance = (
             diagonal_measurement_covariance(stds)
             if stds is not None
             else np.asarray(measurement_noise_cov, dtype=float)
         )
         super().__init__(matrix, covariance)
-        self.observed_dims = tuple(int(dim) for dim in observed_dims)
+        self.observed_dims = tuple(
+            _nonnegative_int(dim, "observed_dims") for dim in observed_dims_tuple
+        )
 
 
 class WeakDimensionMeasurementModel(LinearGaussianMeasurementModel):
