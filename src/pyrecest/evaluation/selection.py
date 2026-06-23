@@ -9,7 +9,7 @@ and point-set or extended-object evaluation pipelines.
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Literal, cast
 
 import numpy as np
 
@@ -40,6 +40,16 @@ def _normalize_nonnegative_integer(value, name: str) -> int:
     return integer
 
 
+def _normalize_bool_flag(value, name: str) -> bool:
+    value_array = np.asarray(value)
+    if value_array.shape != ():
+        raise ValueError(f"{name} must be a boolean.")
+    scalar = value_array.item()
+    if not isinstance(scalar, (bool, np.bool_)):
+        raise ValueError(f"{name} must be a boolean.")
+    return bool(scalar)
+
+
 def _normalize_finite_scalar(value, message: str) -> float:
     value_array = np.asarray(value)
     if value_array.shape != () or value_array.dtype == np.bool_:
@@ -55,6 +65,12 @@ def _normalize_finite_scalar(value, message: str) -> float:
     if not np.isfinite(result):
         raise ValueError(message)
     return result
+
+
+def _normalize_tail_side(tail) -> TailSide:
+    if not isinstance(tail, str) or tail not in {"lower", "upper"}:
+        raise ValueError("tail must be 'lower' or 'upper'.")
+    return cast(TailSide, tail)
 
 
 def _normalize_bounded_fraction(
@@ -81,6 +97,7 @@ def sanitized_score_vector(values, *, nonnegative: bool = True) -> np.ndarray:
     clipped to zero, matching the common interpretation of scores as confidence,
     reliability, probability, or non-negative utility.
     """
+    nonnegative = _normalize_bool_flag(nonnegative, "nonnegative")
     clean = np.asarray(values, dtype=np.float64).reshape(-1).copy()
     clean[~np.isfinite(clean)] = 0.0
     if nonnegative:
@@ -128,6 +145,8 @@ def top_count_mask(
     Ties are resolved by the optional ``tie_break_scores`` and then by increasing
     original index, making the selection reproducible across NumPy versions.
     """
+    largest = _normalize_bool_flag(largest, "largest")
+    sanitize_nonnegative = _normalize_bool_flag(sanitize_nonnegative, "sanitize_nonnegative")
     primary = sanitized_score_vector(scores, nonnegative=sanitize_nonnegative)
     count = int(primary.shape[0])
     retained = _normalize_nonnegative_integer(retained_count, "retained_count")
@@ -171,6 +190,8 @@ def top_fraction_mask(
     sanitize_nonnegative: bool = True,
 ) -> np.ndarray:
     """Return a top-k mask whose size is derived from a retention fraction."""
+    largest = _normalize_bool_flag(largest, "largest")
+    sanitize_nonnegative = _normalize_bool_flag(sanitize_nonnegative, "sanitize_nonnegative")
     primary = sanitized_score_vector(scores, nonnegative=sanitize_nonnegative)
     retained = retained_count_from_fraction(
         int(primary.shape[0]),
@@ -194,6 +215,8 @@ def quantile_tail_threshold(
     sanitize_nonnegative: bool = True,
 ) -> float:
     """Return the threshold separating a reliability-score quantile tail."""
+    tail = _normalize_tail_side(tail)
+    sanitize_nonnegative = _normalize_bool_flag(sanitize_nonnegative, "sanitize_nonnegative")
     scores = sanitized_score_vector(
         reliability_scores,
         nonnegative=sanitize_nonnegative,
@@ -206,8 +229,6 @@ def quantile_tail_threshold(
         include_upper=False,
         message="quantile must be finite and in (0, 1).",
     )
-    if tail not in {"lower", "upper"}:
-        raise ValueError("tail must be 'lower' or 'upper'.")
     if scores.size == 0:
         return float("nan")
     return float(np.quantile(scores, q if tail == "lower" else 1.0 - q))
@@ -221,6 +242,8 @@ def quantile_tail_mask(
     sanitize_nonnegative: bool = True,
 ) -> np.ndarray:
     """Return a boolean mask for the lower or upper reliability-score tail."""
+    tail = _normalize_tail_side(tail)
+    sanitize_nonnegative = _normalize_bool_flag(sanitize_nonnegative, "sanitize_nonnegative")
     scores = sanitized_score_vector(
         reliability_scores,
         nonnegative=sanitize_nonnegative,
@@ -258,6 +281,8 @@ def protected_tail_topk_mask(
     to ordinary top-fraction selection by ``primary_scores``; if the complement
     is empty, all candidates are ranked by ``tail_scores``.
     """
+    tail = _normalize_tail_side(tail)
+    sanitize_nonnegative = _normalize_bool_flag(sanitize_nonnegative, "sanitize_nonnegative")
     primary = sanitized_score_vector(primary_scores, nonnegative=sanitize_nonnegative)
     tail_rank = sanitized_score_vector(tail_scores, nonnegative=sanitize_nonnegative)
     reliability = sanitized_score_vector(
@@ -374,6 +399,8 @@ def tail_rescue_topk_mask(
     sanitize_nonnegative: bool = True,
 ) -> np.ndarray:
     """Top-k selection with a bounded quota rescued from a reliability tail."""
+    tail = _normalize_tail_side(tail)
+    sanitize_nonnegative = _normalize_bool_flag(sanitize_nonnegative, "sanitize_nonnegative")
     primary = sanitized_score_vector(primary_scores, nonnegative=sanitize_nonnegative)
     tail_rank = sanitized_score_vector(tail_scores, nonnegative=sanitize_nonnegative)
     reliability = sanitized_score_vector(
