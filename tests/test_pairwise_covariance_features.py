@@ -63,6 +63,21 @@ class TestPairwiseCovarianceFeatures(unittest.TestCase):
 
         self.assertEqual(distances.shape, (0, 3))
 
+    def test_pairwise_mahalanobis_distances_rejects_ambiguous_regularization(self):
+        means = array([[0.0], [0.0]])
+        covariance = zeros((2, 2, 1))
+
+        for bad_regularization in (True, array([1.0])):
+            with self.subTest(bad_regularization=bad_regularization):
+                with self.assertRaisesRegex(ValueError, "regularization"):
+                    pairwise_mahalanobis_distances(
+                        means,
+                        covariance,
+                        means,
+                        covariance,
+                        regularization=bad_regularization,
+                    )
+
     def test_pairwise_covariance_shape_components_separate_shape_and_scale(self):
         covariances_a = array(
             [
@@ -115,6 +130,18 @@ class TestPairwiseCovarianceFeatures(unittest.TestCase):
         self.assertEqual(shape_cost.shape, (0, 4))
         self.assertEqual(logdet_cost.shape, (0, 4))
         self.assertEqual(shape_similarity.shape, (0, 4))
+
+    def test_pairwise_covariance_shape_components_rejects_ambiguous_epsilon(self):
+        covariances = zeros((2, 2, 1))
+
+        for bad_epsilon in (True, array([1e-6])):
+            with self.subTest(bad_epsilon=bad_epsilon):
+                with self.assertRaisesRegex(ValueError, "epsilon"):
+                    pairwise_covariance_shape_components(
+                        covariances,
+                        covariances,
+                        epsilon=bad_epsilon,
+                    )
 
     def test_invalid_inputs_raise(self):
         with self.assertRaises(ValueError):
