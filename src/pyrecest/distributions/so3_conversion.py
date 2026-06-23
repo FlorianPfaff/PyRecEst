@@ -1,7 +1,8 @@
 """Conversion registrations for SO(3) distribution representations."""
 
 # pylint: disable=no-name-in-module,no-member
-from numbers import Integral
+from math import isfinite
+from numbers import Integral, Real
 
 from pyrecest.backend import array, diag, matmul, reshape, sum, transpose
 
@@ -12,6 +13,11 @@ from .so3_product_tangent_gaussian_distribution import (
     SO3ProductTangentGaussianDistribution,
 )
 from .so3_tangent_gaussian_distribution import SO3TangentGaussianDistribution
+
+
+_COVARIANCE_REGULARIZATION_ERROR = (
+    "covariance_regularization must be a nonnegative finite scalar"
+)
 
 
 def _sample_so3_product_dirac(distribution, n_particles):
@@ -30,6 +36,17 @@ def _validate_particle_count(n_particles):
     return int(n_particles)
 
 
+def _validate_covariance_regularization(covariance_regularization):
+    if isinstance(covariance_regularization, bool) or not isinstance(
+        covariance_regularization, Real
+    ):
+        raise ValueError(_COVARIANCE_REGULARIZATION_ERROR)
+    covariance_regularization = float(covariance_regularization)
+    if not isfinite(covariance_regularization) or covariance_regularization < 0.0:
+        raise ValueError(_COVARIANCE_REGULARIZATION_ERROR)
+    return covariance_regularization
+
+
 def _so3_tangent_gaussian_from_dirac(
     distribution,
     n_particles=None,
@@ -41,6 +58,9 @@ def _so3_tangent_gaussian_from_dirac(
     Dirac inputs are moment-matched in the local tangent chart. Non-Dirac inputs
     can be converted by sampling first when ``n_particles`` is supplied.
     """
+    covariance_regularization = _validate_covariance_regularization(
+        covariance_regularization
+    )
     if isinstance(distribution, SO3TangentGaussianDistribution):
         return SO3TangentGaussianDistribution(
             distribution.mean(),
@@ -74,7 +94,7 @@ def _so3_tangent_gaussian_from_dirac(
     centered = residuals - residual_mean
     covariance = matmul(transpose(weights * centered), centered)
 
-    if covariance_regularization != 0.0:
+    if covariance_regularization > 0.0:
         covariance = covariance + covariance_regularization * diag(
             array([1.0, 1.0, 1.0])
         )
@@ -95,6 +115,9 @@ def _so3_product_tangent_gaussian_from_dirac(
     Dirac inputs are moment-matched in the local tangent chart. Non-Dirac inputs
     can be converted by sampling first when ``n_particles`` is supplied.
     """
+    covariance_regularization = _validate_covariance_regularization(
+        covariance_regularization
+    )
     if isinstance(distribution, SO3ProductTangentGaussianDistribution):
         return SO3ProductTangentGaussianDistribution(
             distribution.mean(),
@@ -138,7 +161,7 @@ def _so3_product_tangent_gaussian_from_dirac(
     centered = residuals - residual_mean
     covariance = matmul(transpose(weights * centered), centered)
 
-    if covariance_regularization != 0.0:
+    if covariance_regularization > 0.0:
         covariance = covariance + covariance_regularization * diag(
             array([1.0] * (3 * num_rotations))
         )
