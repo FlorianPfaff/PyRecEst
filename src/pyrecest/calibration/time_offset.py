@@ -134,24 +134,35 @@ def _finite_reference_rows(
 def nearest_time_indices(
     reference_times_s: np.ndarray, query_times_s: np.ndarray
 ) -> np.ndarray:
-    """Return original indices of nearest finite reference times for each query time."""
+    """Return original indices of nearest finite reference times for each query time.
+
+    Non-finite query times have no nearest reference time and are marked as ``-1``.
+    """
 
     reference = np.asarray(reference_times_s, dtype=float).reshape(-1)
     query = np.asarray(query_times_s, dtype=float).reshape(-1)
     finite_reference = _finite_reference_rows(reference)
     if not finite_reference.any():
         raise ValueError("reference_times_s must contain at least one finite value")
+
+    nearest = np.full(query.shape, -1, dtype=int)
+    finite_query = np.isfinite(query)
+    if not finite_query.any():
+        return nearest
+
     original_indices = np.flatnonzero(finite_reference)
     reference = reference[finite_reference]
     order = np.argsort(reference)
     sorted_reference = reference[order]
-    insertion = np.searchsorted(sorted_reference, query)
+    finite_query_values = query[finite_query]
+    insertion = np.searchsorted(sorted_reference, finite_query_values)
     right = np.clip(insertion, 0, sorted_reference.size - 1)
     left = np.clip(insertion - 1, 0, sorted_reference.size - 1)
-    use_right = np.abs(sorted_reference[right] - query) < np.abs(
-        sorted_reference[left] - query
+    use_right = np.abs(sorted_reference[right] - finite_query_values) < np.abs(
+        sorted_reference[left] - finite_query_values
     )
-    return original_indices[order[np.where(use_right, right, left)]]
+    nearest[finite_query] = original_indices[order[np.where(use_right, right, left)]]
+    return nearest
 
 
 def interpolate_reference_values(
@@ -259,7 +270,7 @@ def time_offset_sweep(
             measurement_values,
             reference_times_s,
             reference_values,
-            float(offset),
+            offset,
             max_time_delta_s=max_time_delta_s,
         )
         for offset in offsets_s
