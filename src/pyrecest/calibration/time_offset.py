@@ -83,6 +83,24 @@ def _as_finite_float(value: Any, name: str) -> float:
     return result
 
 
+def _as_nonnegative_time_delta(value: Any, name: str) -> float:
+    """Return ``value`` as a nonnegative scalar time delta, allowing infinity."""
+
+    arr = np.asarray(value)
+    if arr.ndim != 0 or arr.dtype == np.bool_:
+        raise ValueError(f"{name} must be nonnegative")
+    scalar = arr.item()
+    if isinstance(scalar, (bool, np.bool_)):
+        raise ValueError(f"{name} must be nonnegative")
+    try:
+        result = float(scalar)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{name} must be nonnegative") from exc
+    if result < 0.0 or np.isnan(result):
+        raise ValueError(f"{name} must be nonnegative")
+    return result
+
+
 def make_offset_grid(min_s: float, max_s: float, step_s: float) -> np.ndarray:
     """Return an inclusive offset grid rounded to nanosecond precision."""
 
@@ -110,9 +128,7 @@ def apply_time_offset(times_s: np.ndarray, offset_s: float | None) -> np.ndarray
 def _validate_max_time_delta(max_time_delta_s: float | None) -> None:
     if max_time_delta_s is None:
         return
-    max_time_delta = float(max_time_delta_s)
-    if max_time_delta < 0.0 or np.isnan(max_time_delta):
-        raise ValueError("max_time_delta_s must be nonnegative")
+    _as_nonnegative_time_delta(max_time_delta_s, "max_time_delta_s")
 
 
 def _finite_reference_rows(
