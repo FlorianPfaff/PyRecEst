@@ -1,8 +1,17 @@
+def _parameter_sort_key(parameter):
+    if parameter is None:
+        return (0, "")
+    try:
+        return (1, float(parameter))
+    except (TypeError, ValueError, OverflowError):
+        return (2, str(parameter))
+
+
 def group_results_by_filter(data):
     # Sort the data by 'parameter', treating None as negative infinity for sorting purposes
     sorted_data = sorted(
         data,
-        key=lambda x: (float("-inf") if x["parameter"] is None else x["parameter"]),
+        key=lambda x: _parameter_sort_key(x["parameter"]),
     )
 
     output_dict = {}
