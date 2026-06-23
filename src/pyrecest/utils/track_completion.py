@@ -139,12 +139,15 @@ def enumerate_fragment_completion_paths(
         high-branching production trackers should pre-prune in the provider.
     """
 
-    if max_path_length < 1:
-        raise ValueError("max_path_length must be positive")
+    max_path_length = _normalize_positive_integer(
+        max_path_length, "max_path_length"
+    )
     if direction not in {"prefix", "suffix", "both"}:
         raise ValueError("direction must be 'prefix', 'suffix', or 'both'")
-    if max_paths_per_fragment is not None and int(max_paths_per_fragment) < 1:
-        raise ValueError("max_paths_per_fragment must be positive or None")
+    if max_paths_per_fragment is not None:
+        max_paths_per_fragment = _normalize_positive_integer(
+            max_paths_per_fragment, "max_paths_per_fragment"
+        )
 
     matrix = normalize_track_matrix(track_matrix)
     occupied = occupied_observations_by_session(matrix)
@@ -178,7 +181,7 @@ def enumerate_fragment_completion_paths(
                 steps=(),
                 seen={(int(endpoint_session), endpoint_observation)},
                 occupied=occupied,
-                max_path_length=int(max_path_length),
+                max_path_length=max_path_length,
                 candidate_provider=candidate_provider,
                 candidate_session_provider=candidate_session_provider,
                 allow_duplicate_source=bool(allow_duplicate_source),
@@ -194,7 +197,7 @@ def enumerate_fragment_completion_paths(
                         path.path_length,
                         path_observations(path),
                     ),
-                )[: int(max_paths_per_fragment)]
+                )[:max_paths_per_fragment]
             paths.extend(fragment_paths)
     return paths
 
@@ -336,6 +339,24 @@ def _candidate_sessions(
             continue
         sessions.append(int(value))
     return tuple(dict.fromkeys(sessions))
+
+
+def _normalize_positive_integer(value: Any, name: str) -> int:
+    value_array = np.asarray(value)
+    if value_array.shape != () or np.issubdtype(value_array.dtype, np.bool_):
+        raise ValueError(f"{name} must be a positive integer")
+    if np.issubdtype(value_array.dtype, np.integer):
+        parsed = int(value_array.item())
+    elif np.issubdtype(value_array.dtype, np.floating):
+        scalar = float(value_array.item())
+        if not np.isfinite(scalar) or not scalar.is_integer():
+            raise ValueError(f"{name} must be a positive integer")
+        parsed = int(scalar)
+    else:
+        raise ValueError(f"{name} must be a positive integer")
+    if parsed < 1:
+        raise ValueError(f"{name} must be a positive integer")
+    return parsed
 
 
 def _coerce_candidate_session(value: Any) -> int | None:
