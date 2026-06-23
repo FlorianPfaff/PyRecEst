@@ -29,7 +29,9 @@ def test_huber_covariance_scale_rejects_nonpositive_threshold():
         huber_covariance_scale(1.0, huber_threshold=0.0)
 
 
-@pytest.mark.parametrize("invalid_threshold", [float("nan"), float("inf"), -float("inf")])
+@pytest.mark.parametrize(
+    "invalid_threshold", [float("nan"), float("inf"), -float("inf")]
+)
 def test_huber_covariance_scale_rejects_nonfinite_threshold(invalid_threshold):
     with pytest.raises(ValueError, match="finite and positive"):
         huber_covariance_scale(1.0, huber_threshold=invalid_threshold)

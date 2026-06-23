@@ -19,9 +19,11 @@ def nearly_coordinated_turn_model(
         dt,
         "dt",
     )
-    turn_rate_variance = _motion_models._as_nonnegative_float(  # pylint: disable=protected-access
-        turn_rate_variance,
-        "turn_rate_variance",
+    turn_rate_variance = (
+        _motion_models._as_nonnegative_float(  # pylint: disable=protected-access
+            turn_rate_variance,
+            "turn_rate_variance",
+        )
     )
     return _nearly_coordinated_turn_model_impl(
         dt=dt,

@@ -1,6 +1,7 @@
 """Utility helpers for :mod:`pyrecest`."""
 
 from . import multisession_assignment as _multisession_assignment_module
+from ._multisession_assignment_labels import tracks_to_session_labels
 from .assignment import min_cost_max_cardinality_assignment, murty_k_best_assignments
 from .association_features import (
     CalibratedPairwiseAssociationModel,
@@ -47,7 +48,6 @@ from .multisession_assignment import (
     MultiSessionAssignmentResult,
     solve_multisession_assignment,
 )
-from ._multisession_assignment_labels import tracks_to_session_labels
 from .multisession_assignment_observation_costs import (
     solve_multisession_assignment_with_observation_costs,
 )

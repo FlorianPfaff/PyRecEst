@@ -93,9 +93,7 @@ def _validate_mtt_cutoff_distance(value: Any) -> float:
     try:
         cutoff_distance = float(value_array.item())
     except (TypeError, ValueError, OverflowError) as exc:
-        raise ValueError(
-            "cutoff_distance must be a finite nonnegative scalar"
-        ) from exc
+        raise ValueError("cutoff_distance must be a finite nonnegative scalar") from exc
     if not np.isfinite(cutoff_distance) or cutoff_distance < 0.0:
         raise ValueError("cutoff_distance must be a finite nonnegative scalar")
     return cutoff_distance

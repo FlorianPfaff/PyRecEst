@@ -4,6 +4,7 @@ evolve and how measurements are evaluated. These objects are deliberately small
 and capability-oriented so filters can opt into the pieces they need.
 """
 
+from ._validated_motion_models import nearly_coordinated_turn_model
 from .adapters import (
     LinearMeasurementArguments,
     LinearTransitionArguments,
@@ -66,7 +67,6 @@ from .motion_models import (
     white_noise_jerk_covariance,
     white_noise_snap_covariance,
 )
-from ._validated_motion_models import nearly_coordinated_turn_model
 from .sensor_models import (
     bearing_only_measurement,
     bearing_only_model,

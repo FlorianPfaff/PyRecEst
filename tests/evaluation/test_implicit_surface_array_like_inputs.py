@@ -1,7 +1,6 @@
 """Regression tests for implicit-surface helpers with plain array-like inputs."""
 
 import numpy as np
-
 from pyrecest.evaluation import surface_band_probability_from_signed_distance
 
 

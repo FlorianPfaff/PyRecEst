@@ -190,7 +190,9 @@ def _integer_population_size(a):
     return None
 
 
-def _choice_indices(population_size, size, num_samples, replace, p, device, *, shuffle=True):
+def _choice_indices(
+    population_size, size, num_samples, replace, p, device, *, shuffle=True
+):
     if population_size <= 0:
         if num_samples == 0:
             return _torch.empty(size or (0,), dtype=_torch.long, device=device)

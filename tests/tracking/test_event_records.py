@@ -74,7 +74,9 @@ def test_record_from_update_preserves_prior_posterior_and_legacy_aliases() -> No
     json.dumps(as_dict)
 
 
-def test_tracking_record_rejects_rectangular_innovation_cov_without_innovation() -> None:
+def test_tracking_record_rejects_rectangular_innovation_cov_without_innovation() -> (
+    None
+):
     event = event_from_measurement(time=0.0, source="imu", action="coast")
 
     with pytest.raises(ValueError, match="innovation_cov must be a square matrix"):

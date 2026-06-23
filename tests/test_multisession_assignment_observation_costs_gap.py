@@ -2,7 +2,10 @@
 
 import unittest
 
-from pyrecest.backend import __backend_name__, array  # pylint: disable=no-name-in-module
+from pyrecest.backend import (  # pylint: disable=no-name-in-module
+    __backend_name__,
+    array,
+)
 from pyrecest.utils import solve_multisession_assignment_with_observation_costs
 
 

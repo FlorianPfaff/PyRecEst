@@ -2,10 +2,9 @@
 
 import unittest
 
+import pyrecest.utils.multisession_assignment as multisession_assignment_module
 from pyrecest.backend import __backend_name__
 from pyrecest.utils import MultiSessionAssignmentResult, tracks_to_session_labels
-
-import pyrecest.utils.multisession_assignment as multisession_assignment_module
 
 
 class TestMultiSessionAssignmentLabels(unittest.TestCase):

@@ -1,7 +1,6 @@
 import unittest
 
 import numpy as np
-
 from pyrecest.evaluation.get_distance_function import get_distance_function
 
 

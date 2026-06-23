@@ -1,7 +1,6 @@
 import unittest
 
 import numpy as np
-
 from pyrecest.evaluation.generate_measurements import generate_measurements
 
 

@@ -372,5 +372,7 @@ def _coerce_finite_threshold(value: Any, column: str) -> float:
             f"Constraint threshold for {column!r} must be a finite scalar."
         ) from exc
     if not np.isfinite(threshold):
-        raise ValueError(f"Constraint threshold for {column!r} must be a finite scalar.")
+        raise ValueError(
+            f"Constraint threshold for {column!r} must be a finite scalar."
+        )
     return threshold

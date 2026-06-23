@@ -1,5 +1,4 @@
 import numpy as np
-
 from pyrecest.evaluation import get_distance_function
 
 

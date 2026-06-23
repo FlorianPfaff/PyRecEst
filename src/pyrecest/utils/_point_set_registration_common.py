@@ -7,8 +7,8 @@ from dataclasses import dataclass
 from typing import Any, Callable
 
 # pylint: disable=no-name-in-module,no-member
+from pyrecest.backend import all as backend_all
 from pyrecest.backend import (
-    all as backend_all,
     array_equal,
     asarray,
     cast,
@@ -183,9 +183,7 @@ def solve_gated_assignment(cost_matrix, *, max_cost: float = float("inf")):
 
     highest_valid_cost = float(valid_costs.max())
     unassigned_cost = (
-        max_cost_value
-        if math.isfinite(max_cost_value)
-        else highest_valid_cost + 1.0
+        max_cost_value if math.isfinite(max_cost_value) else highest_valid_cost + 1.0
     )
     cost_scale = max(abs(highest_valid_cost), abs(unassigned_cost), 1.0)
     invalid_cost = max(highest_valid_cost, 2.0 * unassigned_cost) + cost_scale

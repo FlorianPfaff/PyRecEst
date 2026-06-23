@@ -5,7 +5,6 @@ from __future__ import annotations
 import unittest
 
 import numpy as np
-
 from pyrecest.utils.track_completion import (
     CompletionCandidate,
     enumerate_fragment_completion_paths,

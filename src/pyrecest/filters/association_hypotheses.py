@@ -337,7 +337,9 @@ class TopKGate:
                 ),
             )
             for hypothesis in sorted_group[: self.k]:
-                accepted_keys.add((_track_index(hypothesis), _measurement_index(hypothesis)))
+                accepted_keys.add(
+                    (_track_index(hypothesis), _measurement_index(hypothesis))
+                )
 
         result = []
         for hypothesis in hypotheses:

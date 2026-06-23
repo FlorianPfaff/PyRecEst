@@ -119,7 +119,9 @@ class TestModelValidation(unittest.TestCase):
             mu = array([0.0, 1.0])
 
             def dim(self):
-                raise AssertionError("dim() must not be called when methods are disabled")
+                raise AssertionError(
+                    "dim() must not be called when methods are disabled"
+                )
 
         self.assertEqual(
             infer_state_dim_from_distribution(

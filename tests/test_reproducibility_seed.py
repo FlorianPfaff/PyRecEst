@@ -1,7 +1,6 @@
 import unittest
 
 import numpy as np
-
 from pyrecest.reproducibility import seed_all
 
 

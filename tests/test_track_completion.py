@@ -5,7 +5,6 @@ from __future__ import annotations
 import unittest
 
 import numpy as np
-
 from pyrecest.utils.track_completion import (
     CompletionCandidate,
     enumerate_fragment_completion_paths,
@@ -69,6 +68,7 @@ class TestTrackCompletion(unittest.TestCase):
 
         for invalid_candidate in invalid_candidates:
             with self.subTest(invalid_candidate=invalid_candidate):
+
                 def provider(session: int, observation: int, target_session: int):
                     del session, observation, target_session
                     return [invalid_candidate]

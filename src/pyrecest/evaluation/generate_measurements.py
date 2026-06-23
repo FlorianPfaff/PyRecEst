@@ -250,13 +250,16 @@ def generate_measurements(groundtruth, simulation_config):
                 measurements[t] = curr_dist.sample(n_meas)
             elif isinstance(meas_noise, GaussianDistribution):
                 noise_samples = meas_noise.sample(n_meas)
-                measurements[t] = tile(
-                    groundtruth[t],
-                    (
-                        n_meas,
-                        1,
-                    ),
-                ) + noise_samples
+                measurements[t] = (
+                    tile(
+                        groundtruth[t],
+                        (
+                            n_meas,
+                            1,
+                        ),
+                    )
+                    + noise_samples
+                )
             else:
                 raise TypeError(
                     "meas_noise must be a supported PyRecEst distribution; "

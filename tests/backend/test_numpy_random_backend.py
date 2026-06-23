@@ -29,9 +29,7 @@ def test_choice_without_replacement_shuffle_false_preserves_order():
     matrix = np.array([[10, 20, 30], [40, 50, 60]])
 
     random.seed(0)
-    samples = random.choice(
-        values, size=values.shape[0], replace=False, shuffle=False
-    )
+    samples = random.choice(values, size=values.shape[0], replace=False, shuffle=False)
     column_samples = random.choice(
         matrix,
         size=matrix.shape[1],

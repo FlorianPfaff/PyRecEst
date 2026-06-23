@@ -1,5 +1,4 @@
 import pytest
-
 from pyrecest.evaluation import get_axis_label
 
 
