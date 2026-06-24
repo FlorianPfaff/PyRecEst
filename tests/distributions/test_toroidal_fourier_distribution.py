@@ -108,9 +108,7 @@ class TestToroidalFourierDistributionConstructor(unittest.TestCase):
         pts = column_stack((X.flatten(), Y.flatten()))
         fvals = twn.pdf(pts).reshape((n, n))
 
-        from_dist = ToroidalFourierDistribution.from_distribution(
-            twn, n, "identity"
-        )
+        from_dist = ToroidalFourierDistribution.from_distribution(twn, n, "identity")
         from_values = ToroidalFourierDistribution.from_function_values(
             fvals, (n,), "identity"
         )
@@ -137,18 +135,16 @@ class TestToroidalFourierDistributionConstructor(unittest.TestCase):
         invalid_counts = (True, (True, 5), (5, 1.5), (), (5, 0), (5, -1), (3, 3, 3))
 
         for n_coefficients in invalid_counts:
-            with self.subTest(method="from_distribution", n_coefficients=n_coefficients):
-                with self.assertRaisesRegex(
-                    (TypeError, ValueError), "n_coefficients"
-                ):
+            with self.subTest(
+                method="from_distribution", n_coefficients=n_coefficients
+            ):
+                with self.assertRaisesRegex((TypeError, ValueError), "n_coefficients"):
                     ToroidalFourierDistribution.from_distribution(
                         twn, n_coefficients, "identity"
                     )
 
             with self.subTest(method="from_function", n_coefficients=n_coefficients):
-                with self.assertRaisesRegex(
-                    (TypeError, ValueError), "n_coefficients"
-                ):
+                with self.assertRaisesRegex((TypeError, ValueError), "n_coefficients"):
                     ToroidalFourierDistribution.from_function(
                         fun, n_coefficients, "identity"
                     )
@@ -156,9 +152,7 @@ class TestToroidalFourierDistributionConstructor(unittest.TestCase):
             with self.subTest(
                 method="from_function_values", n_coefficients=n_coefficients
             ):
-                with self.assertRaisesRegex(
-                    (TypeError, ValueError), "n_coefficients"
-                ):
+                with self.assertRaisesRegex((TypeError, ValueError), "n_coefficients"):
                     ToroidalFourierDistribution.from_function_values(
                         fvals, n_coefficients, "identity"
                     )

@@ -19,7 +19,9 @@ def test_constraint_threshold_rejects_bool_and_non_scalar_values() -> None:
 
 
 def test_constraint_threshold_accepts_scalar_numpy_float() -> None:
-    table = pd.DataFrame([{"name": "keep", "score": 1.0}, {"name": "drop", "score": 2.0}])
+    table = pd.DataFrame(
+        [{"name": "keep", "score": 1.0}, {"name": "drop", "score": 2.0}]
+    )
 
     mask = constraint_mask(table, {"score": ("<=", np.array(1.0))})
 

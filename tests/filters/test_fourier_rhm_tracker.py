@@ -29,9 +29,7 @@ class TestFourierRHMTracker(unittest.TestCase):
 
     def test_constructor_rejects_invalid_harmonic_counts(self):
         for invalid_count in (True, -1, 1.5, "2", [2]):
-            with self.subTest(n_harmonics=invalid_count), self.assertRaises(
-                ValueError
-            ):
+            with self.subTest(n_harmonics=invalid_count), self.assertRaises(ValueError):
                 FourierRHMTracker(invalid_count)
 
     def test_radius_and_contour_points_follow_fourier_coefficients(self):

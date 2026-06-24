@@ -98,7 +98,9 @@ def test_none_returns_copied_records_with_metadata() -> None:
     assert records[0]["state"][0] == 0.0
 
 
-@pytest.mark.parametrize("bad_lag", [None, -1.0, np.nan, np.inf, -np.inf, np.array([1.0]), "later"])
+@pytest.mark.parametrize(
+    "bad_lag", [None, -1.0, np.nan, np.inf, -np.inf, np.array([1.0]), "later"]
+)
 def test_fixed_lag_requires_finite_nonnegative_lag(bad_lag) -> None:
     with pytest.raises(ValueError, match="finite nonnegative lag"):
         smooth_records(

@@ -146,7 +146,9 @@ def top_count_mask(
     original index, making the selection reproducible across NumPy versions.
     """
     largest = _normalize_bool_flag(largest, "largest")
-    sanitize_nonnegative = _normalize_bool_flag(sanitize_nonnegative, "sanitize_nonnegative")
+    sanitize_nonnegative = _normalize_bool_flag(
+        sanitize_nonnegative, "sanitize_nonnegative"
+    )
     primary = sanitized_score_vector(scores, nonnegative=sanitize_nonnegative)
     count = int(primary.shape[0])
     retained = _normalize_nonnegative_integer(retained_count, "retained_count")
@@ -191,7 +193,9 @@ def top_fraction_mask(
 ) -> np.ndarray:
     """Return a top-k mask whose size is derived from a retention fraction."""
     largest = _normalize_bool_flag(largest, "largest")
-    sanitize_nonnegative = _normalize_bool_flag(sanitize_nonnegative, "sanitize_nonnegative")
+    sanitize_nonnegative = _normalize_bool_flag(
+        sanitize_nonnegative, "sanitize_nonnegative"
+    )
     primary = sanitized_score_vector(scores, nonnegative=sanitize_nonnegative)
     retained = retained_count_from_fraction(
         int(primary.shape[0]),
@@ -216,7 +220,9 @@ def quantile_tail_threshold(
 ) -> float:
     """Return the threshold separating a reliability-score quantile tail."""
     tail = _normalize_tail_side(tail)
-    sanitize_nonnegative = _normalize_bool_flag(sanitize_nonnegative, "sanitize_nonnegative")
+    sanitize_nonnegative = _normalize_bool_flag(
+        sanitize_nonnegative, "sanitize_nonnegative"
+    )
     scores = sanitized_score_vector(
         reliability_scores,
         nonnegative=sanitize_nonnegative,
@@ -243,7 +249,9 @@ def quantile_tail_mask(
 ) -> np.ndarray:
     """Return a boolean mask for the lower or upper reliability-score tail."""
     tail = _normalize_tail_side(tail)
-    sanitize_nonnegative = _normalize_bool_flag(sanitize_nonnegative, "sanitize_nonnegative")
+    sanitize_nonnegative = _normalize_bool_flag(
+        sanitize_nonnegative, "sanitize_nonnegative"
+    )
     scores = sanitized_score_vector(
         reliability_scores,
         nonnegative=sanitize_nonnegative,
@@ -282,7 +290,9 @@ def protected_tail_topk_mask(
     is empty, all candidates are ranked by ``tail_scores``.
     """
     tail = _normalize_tail_side(tail)
-    sanitize_nonnegative = _normalize_bool_flag(sanitize_nonnegative, "sanitize_nonnegative")
+    sanitize_nonnegative = _normalize_bool_flag(
+        sanitize_nonnegative, "sanitize_nonnegative"
+    )
     primary = sanitized_score_vector(primary_scores, nonnegative=sanitize_nonnegative)
     tail_rank = sanitized_score_vector(tail_scores, nonnegative=sanitize_nonnegative)
     reliability = sanitized_score_vector(
@@ -400,7 +410,9 @@ def tail_rescue_topk_mask(
 ) -> np.ndarray:
     """Top-k selection with a bounded quota rescued from a reliability tail."""
     tail = _normalize_tail_side(tail)
-    sanitize_nonnegative = _normalize_bool_flag(sanitize_nonnegative, "sanitize_nonnegative")
+    sanitize_nonnegative = _normalize_bool_flag(
+        sanitize_nonnegative, "sanitize_nonnegative"
+    )
     primary = sanitized_score_vector(primary_scores, nonnegative=sanitize_nonnegative)
     tail_rank = sanitized_score_vector(tail_scores, nonnegative=sanitize_nonnegative)
     reliability = sanitized_score_vector(

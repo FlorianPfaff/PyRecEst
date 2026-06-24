@@ -58,7 +58,12 @@ class TestSigmaPoints(unittest.TestCase):
             ),
             (
                 MerweScaledSigmaPoints,
-                {"n": 2, "alpha": np.array(True, dtype=object), "beta": 2.0, "kappa": 0.0},
+                {
+                    "n": 2,
+                    "alpha": np.array(True, dtype=object),
+                    "beta": 2.0,
+                    "kappa": 0.0,
+                },
                 "alpha must be a scalar",
             ),
             (

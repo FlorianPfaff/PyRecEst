@@ -46,9 +46,7 @@ class TestGoalConditionedReplayParticleIMMFilter(unittest.TestCase):
             [len(filt.mode_names), 1, 2, 3],
         )
         for mode_indices in invalid_mode_indices:
-            with self.subTest(mode_indices=mode_indices), self.assertRaises(
-                ValueError
-            ):
+            with self.subTest(mode_indices=mode_indices), self.assertRaises(ValueError):
                 filt.set_mode_indices(mode_indices)
 
     def test_goal_directed_mode_moves_velocity_toward_goal(self):

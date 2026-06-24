@@ -298,7 +298,9 @@ class SphericalHarmonicsDistributionComplex(AbstractSphericalHarmonicsDistributi
             method is only supported on the ``"numpy"`` backend.
         """
         if pyrecest.backend.__backend_name__ != "numpy":  # pylint: disable=no-member
-            raise NotImplementedError("pysh.SHGrid.from_array requires the numpy backend.")
+            raise NotImplementedError(
+                "pysh.SHGrid.from_array requires the numpy backend."
+            )
         import numpy as _np  # noqa: PLC0415
         import pyshtools as pysh  # pylint: disable=import-error
 

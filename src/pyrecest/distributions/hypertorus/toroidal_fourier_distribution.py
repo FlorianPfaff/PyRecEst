@@ -39,8 +39,7 @@ def _normalize_toroidal_coefficient_shape(n_coefficients) -> tuple[int, int]:
 
     try:
         counts = tuple(
-            _as_positive_toroidal_coefficient_count(value)
-            for value in n_coefficients
+            _as_positive_toroidal_coefficient_count(value) for value in n_coefficients
         )
     except TypeError as exc:
         raise TypeError(

@@ -1,7 +1,6 @@
 import unittest
 
 import numpy as np
-
 from pyrecest.tracking.event_records import TrackingEvent, TrackingRecord
 
 

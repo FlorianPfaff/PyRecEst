@@ -1,7 +1,6 @@
 import unittest
 
 import numpy as np
-
 from pyrecest.backend import allclose, array, diag
 from pyrecest.distributions import GaussianDistribution
 from pyrecest.models import (

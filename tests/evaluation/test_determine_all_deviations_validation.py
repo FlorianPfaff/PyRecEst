@@ -1,9 +1,7 @@
 import numpy as np
-import pytest
-
 import pyrecest.backend
+import pytest
 from pyrecest.evaluation.determine_all_deviations import determine_all_deviations
-
 
 pytestmark = pytest.mark.skipif(
     pyrecest.backend.__backend_name__ == "jax",

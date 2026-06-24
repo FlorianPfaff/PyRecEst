@@ -209,7 +209,9 @@ def ellipsoid_sigma_points(
     ``(count, support_point_count, dim)``.
     """
 
-    radii_tuple = tuple(_as_finite_nonnegative_scalar("radius", radius) for radius in radii)
+    radii_tuple = tuple(
+        _as_finite_nonnegative_scalar("radius", radius) for radius in radii
+    )
     if not radii_tuple:
         raise ValueError("radii must contain at least one radius.")
 

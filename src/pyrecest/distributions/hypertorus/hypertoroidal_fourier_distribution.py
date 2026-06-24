@@ -69,8 +69,7 @@ def _normalize_coefficient_shape(
     else:
         try:
             values = tuple(
-                _as_positive_coefficient_count(value, name)
-                for value in n_coefficients
+                _as_positive_coefficient_count(value, name) for value in n_coefficients
             )
         except TypeError as exc:
             raise TypeError(
@@ -503,9 +502,7 @@ class HypertoroidalFourierDistribution(
             Transformation to apply to the function values before computing
             Fourier coefficients. One of 'sqrt', 'log', 'identity'.
         """
-        n_coefficients = _normalize_coefficient_shape(
-            n_coefficients, "n_coefficients"
-        )
+        n_coefficients = _normalize_coefficient_shape(n_coefficients, "n_coefficients")
         # Check that number of arguments matches dimensionality, where possible
         axes = [linspace(0.0, 2.0 * pi, int(n), endpoint=False) for n in n_coefficients]
         grid = meshgrid(*axes, indexing="ij")

@@ -92,9 +92,7 @@ class SO3TangentSavitzkyGolaySmootherTest(unittest.TestCase):
         ):
             with self.subTest(polynomial_degree=invalid_degree):
                 with self.assertRaisesRegex(ValueError, "polynomial_degree"):
-                    SO3TangentSavitzkyGolaySmoother(
-                        polynomial_degree=invalid_degree
-                    )
+                    SO3TangentSavitzkyGolaySmoother(polynomial_degree=invalid_degree)
 
         valid = SO3TangentSavitzkyGolaySmoother(
             window_size=np.array(5),

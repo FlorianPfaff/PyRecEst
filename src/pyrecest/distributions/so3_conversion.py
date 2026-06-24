@@ -14,7 +14,6 @@ from .so3_product_tangent_gaussian_distribution import (
 )
 from .so3_tangent_gaussian_distribution import SO3TangentGaussianDistribution
 
-
 _COVARIANCE_REGULARIZATION_ERROR = (
     "covariance_regularization must be a nonnegative finite scalar"
 )

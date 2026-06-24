@@ -4,7 +4,6 @@
 import math
 
 import numpy as np
-
 from pyrecest.backend import (
     asarray,
     atleast_1d,

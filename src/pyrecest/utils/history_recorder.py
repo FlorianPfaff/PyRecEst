@@ -76,7 +76,9 @@ class HistoryRecorder:
             pad_with_nan = _validate_bool_flag(pad_with_nan, "pad_with_nan")
 
         if name not in self._entries:
-            self.register(name, pad_with_nan=False if pad_with_nan is None else pad_with_nan)
+            self.register(
+                name, pad_with_nan=False if pad_with_nan is None else pad_with_nan
+            )
 
         entry = self._entries[name]
         if pad_with_nan is not None and entry.pad_with_nan != pad_with_nan:

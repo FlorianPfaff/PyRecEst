@@ -13,7 +13,9 @@ class TestJointThinPlateSplineRegularizationValidation(unittest.TestCase):
         pyrecest.backend.__backend_name__ == "jax",
         reason="Not supported on this backend",
     )
-    def test_joint_tps_registration_rejects_invalid_regularization_before_matching(self):
+    def test_joint_tps_registration_rejects_invalid_regularization_before_matching(
+        self,
+    ):
         reference = array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
         moving = reference + array([100.0, 100.0])
 
