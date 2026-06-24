@@ -57,7 +57,9 @@ class TestMultiSessionAssignmentLabels(unittest.TestCase):
                 with self.subTest(converter=name, fill_value=repr(fill_value)):
                     labels = converter(tracks, session_sizes=[3], fill_value=fill_value)
                     self.assertTrue(
-                        array_equal(labels[0], array([0, 1, expected_fill_value], dtype=int))
+                        array_equal(
+                            labels[0], array([0, 1, expected_fill_value], dtype=int)
+                        )
                     )
 
     @unittest.skipIf(

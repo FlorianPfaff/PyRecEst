@@ -1,7 +1,9 @@
 import unittest
 
 from pyrecest.backend import array, pi
-from pyrecest.distributions.circle.circular_grid_distribution import CircularGridDistribution
+from pyrecest.distributions.circle.circular_grid_distribution import (
+    CircularGridDistribution,
+)
 
 
 class TestCircularGridSincRepetitions(unittest.TestCase):
