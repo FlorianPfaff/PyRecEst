@@ -20,6 +20,10 @@ ConstraintOperator = Literal["<=", ">=", "<", ">", "==", "!="]
 ConstraintSpec = tuple[ConstraintOperator, float | int | bool]
 
 
+def _is_text_scalar(value: Any) -> bool:
+    return isinstance(value, (str, bytes, np.str_, np.bytes_))
+
+
 def pareto_front_indices(
     table: pd.DataFrame,
     objectives: Sequence[str],
@@ -357,18 +361,19 @@ def _coerce_numeric(value: Any) -> float:
 
 
 def _validate_eps(eps: Any) -> float:
+    message = "eps must be a finite non-negative scalar."
     value_array = np.asarray(eps)
     if value_array.shape != () or value_array.dtype == np.bool_:
-        raise ValueError("eps must be a finite non-negative scalar.")
+        raise ValueError(message)
     scalar = value_array.item()
-    if isinstance(scalar, (bool, np.bool_, str, bytes, np.str_, np.bytes_)):
-        raise ValueError("eps must be a finite non-negative scalar.")
+    if isinstance(scalar, (bool, np.bool_)) or _is_text_scalar(scalar):
+        raise ValueError(message)
     try:
         value = float(scalar)
     except (TypeError, ValueError, OverflowError) as exc:
-        raise ValueError("eps must be a finite non-negative scalar.") from exc
+        raise ValueError(message) from exc
     if not np.isfinite(value) or value < 0.0:
-        raise ValueError("eps must be a finite non-negative scalar.")
+        raise ValueError(message)
     return value
 
 
@@ -398,7 +403,7 @@ def _coerce_finite_threshold(value: Any, column: str) -> float:
     if value_array.shape != () or value_array.dtype == np.bool_:
         raise ValueError(message)
     scalar = value_array.item()
-    if isinstance(scalar, (bool, np.bool_, str, bytes, np.str_, np.bytes_)):
+    if isinstance(scalar, (bool, np.bool_)) or _is_text_scalar(scalar):
         raise ValueError(message)
     try:
         threshold = float(scalar)
