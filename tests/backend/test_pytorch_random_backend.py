@@ -104,6 +104,36 @@ def test_randint_rejects_invalid_array_bounds(low, high):
         random.randint(low, high)
 
 
+@pytest.mark.parametrize("bad_size", [(), (3,), (3, 1)])
+def test_normal_rejects_array_parameters_incompatible_with_explicit_size(bad_size):
+    with pytest.raises(ValueError, match="broadcast"):
+        random.normal(torch.tensor([1.0, 2.0]), 1.0, size=bad_size)
+
+
+@pytest.mark.parametrize("bad_size", [(), (3,), (3, 1)])
+def test_uniform_rejects_array_parameters_incompatible_with_explicit_size(bad_size):
+    with pytest.raises(ValueError, match="broadcast"):
+        random.uniform(torch.tensor([1.0, 2.0]), 3.0, size=bad_size)
+
+
+def test_normal_accepts_array_parameters_with_compatible_explicit_size():
+    random.seed(0)
+
+    samples = random.normal(torch.tensor([1.0, 2.0]), 1.0, size=(4, 2))
+
+    assert samples.shape == (4, 2)
+
+
+def test_uniform_accepts_array_parameters_with_compatible_explicit_size():
+    random.seed(0)
+
+    samples = random.uniform(torch.tensor([1.0, 2.0]), 3.0, size=(4, 2))
+
+    assert samples.shape == (4, 2)
+    assert torch.all(samples >= torch.tensor([1.0, 2.0]))
+    assert torch.all(samples <= 3.0)
+
+
 def test_scalar_and_empty_tuple_sizes_keep_scalar_shape():
     assert random.rand().shape == ()
     assert random.rand(size=()).shape == ()
