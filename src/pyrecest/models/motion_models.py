@@ -47,13 +47,33 @@ __all__ = [
     "white_noise_snap_covariance",
 ]
 
+_TEXT_OR_BOOL_SCALAR_TYPES = (
+    bool,
+    np.bool_,
+    str,
+    bytes,
+    bytearray,
+    np.str_,
+    np.bytes_,
+)
+_REJECTED_NUMERIC_ARRAY_KINDS = frozenset({"b", "c", "S", "U", "M", "m"})
+
+
+def _is_text_bool_or_complex(value: Any) -> bool:
+    return isinstance(value, _TEXT_OR_BOOL_SCALAR_TYPES) or isinstance(
+        value, (complex, np.complexfloating)
+    )
+
 
 def _as_scalar_float(value: Any, name: str) -> float:
     value_array = np.asarray(value)
-    if value_array.shape != () or np.issubdtype(value_array.dtype, np.bool_):
+    if value_array.shape != () or value_array.dtype.kind in _REJECTED_NUMERIC_ARRAY_KINDS:
+        raise ValueError(f"{name} must be a scalar number")
+    scalar_value = value_array.item()
+    if _is_text_bool_or_complex(scalar_value):
         raise ValueError(f"{name} must be a scalar number")
     try:
-        scalar = float(value_array.item())
+        scalar = float(scalar_value)
     except (TypeError, ValueError, OverflowError) as exc:
         raise ValueError(f"{name} must be a scalar number") from exc
     if not np.isfinite(scalar):
@@ -98,11 +118,15 @@ def _as_nonnegative_integer(value: Any, name: str) -> int:
 
 def _as_nonnegative_vector(value: Any, length: int, name: str) -> np.ndarray:
     raw_value_array = np.asarray(value)
-    if np.issubdtype(raw_value_array.dtype, np.bool_):
+    if raw_value_array.dtype.kind in _REJECTED_NUMERIC_ARRAY_KINDS:
+        raise ValueError(f"{name} must be numeric")
+    if raw_value_array.dtype == object and any(
+        _is_text_bool_or_complex(item) for item in raw_value_array.flat
+    ):
         raise ValueError(f"{name} must be numeric")
     try:
         value_array = np.asarray(value, dtype=float)
-    except (TypeError, ValueError) as exc:
+    except (TypeError, ValueError, OverflowError) as exc:
         raise ValueError(f"{name} must be numeric") from exc
     if value_array.shape == ():
         return np.repeat(_as_nonnegative_float(value_array, name), length)
