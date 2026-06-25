@@ -44,10 +44,11 @@ def evaluate_for_file(
     n_meas_at_individual_time_step = np.zeros(data["measurements"].shape[1], dtype=int)
 
     for idx, inner_array in enumerate(data["measurements"][0]):
+        inner_array = np.asarray(inner_array)
         if inner_array.ndim == 2:
             n_meas_at_individual_time_step[idx] = inner_array.shape[0]
         elif inner_array.ndim == 1:
-            n_meas_at_individual_time_step[idx] = 1
+            n_meas_at_individual_time_step[idx] = 0 if inner_array.size == 0 else 1
 
     scenario_config.setdefault(
         "n_meas_at_individual_time_step", n_meas_at_individual_time_step
