@@ -99,6 +99,7 @@ def generate_groundtruth(simulation_param, x0=None):
     if groundtruth[0].shape[1] != simulation_param["initial_prior"].dim:
         raise RuntimeError("Generated groundtruth has the wrong state dimension.")
     for t in range(simulation_param["n_timesteps"]):
-        groundtruth[t] = squeeze(groundtruth[t])
+        if simulation_param["n_targets"] == 1:
+            groundtruth[t] = squeeze(groundtruth[t])
 
     return groundtruth

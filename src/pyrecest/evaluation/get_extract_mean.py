@@ -10,7 +10,7 @@ _EXTRACT_MEAN_FACTORIES: dict[str, MeanExtractorFactory] = {}
 def _normalize_registry_name(manifold_name: str) -> str:
     if not isinstance(manifold_name, str) or not manifold_name.strip():
         raise ValueError("manifold_name must be a non-empty string")
-    return manifold_name.lower()
+    return manifold_name.strip().lower()
 
 
 def register_extract_mean(
@@ -66,7 +66,7 @@ def _extract_mtt_mean(filter_state):
 
 
 def get_extract_mean(manifold_name, mtt_scenario=False):
-    normalized_name = str(manifold_name).lower()
+    normalized_name = _normalize_registry_name(manifold_name)
     registered_factory = _EXTRACT_MEAN_FACTORIES.get(normalized_name)
     if registered_factory is not None:
         return registered_factory(manifold_name, mtt_scenario)

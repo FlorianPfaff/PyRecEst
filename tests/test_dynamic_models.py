@@ -100,11 +100,17 @@ class TestMotionModelCatalog(unittest.TestCase):
         invalid_cases = [
             {"dt": -1.0, "message": "dt"},
             {"dt": np.nan, "message": "dt"},
+            {"dt": "1.0", "message": "dt"},
             {"spatial_dim": 1.5, "message": "spatial_dim"},
+            {"spatial_dim": "2", "message": "spatial_dim"},
             {"derivative_order": 1.5, "message": "derivative_order"},
+            {"derivative_order": b"1", "message": "derivative_order"},
             {"spectral_density": -1.0, "message": "spectral_density"},
             {"spectral_density": np.nan, "message": "spectral_density"},
             {"spectral_density": True, "message": "spectral_density"},
+            {"spectral_density": "1.0", "message": "spectral_density"},
+            {"spectral_density": ["1.0", "2.0"], "message": "spectral_density"},
+            {"spectral_density": np.array([True, False], dtype=object), "message": "spectral_density"},
             {
                 "spectral_density": np.array([1.0, np.nan]),
                 "message": "spectral_density",
@@ -252,6 +258,8 @@ class TestSensorModelCatalog(unittest.TestCase):
         invalid_position_indices = (
             (0.5, 1),
             (True, 1),
+            ("0", 1),
+            (b"0", 1),
             (-1, 1),
             (0, 4),
             (0, 1, 2),
@@ -278,7 +286,7 @@ class TestSensorModelCatalog(unittest.TestCase):
         state = array([0.0, 4.0, 0.0, 1.0])
         sensors = array([[0.0, 0.0], [3.0, 0.0]])
 
-        for propagation_speed in (0.0, np.nan, np.inf, True):
+        for propagation_speed in (0.0, np.nan, np.inf, True, "1.0", b"1.0"):
             with self.subTest(propagation_speed=propagation_speed):
                 with self.assertRaisesRegex(ValueError, "propagation_speed"):
                     tdoa_measurement(
@@ -293,7 +301,7 @@ class TestSensorModelCatalog(unittest.TestCase):
                         propagation_speed=propagation_speed,
                     )
 
-        for reference_sensor in (1.5, True, -1, 2, np.array([0])):
+        for reference_sensor in (1.5, True, "0", b"0", -1, 2, np.array([0])):
             with self.subTest(reference_sensor=reference_sensor):
                 with self.assertRaisesRegex(ValueError, "reference_sensor"):
                     tdoa_measurement(

@@ -27,7 +27,7 @@ _UNSUPPORTED_NUMERIC_CONFIG_TYPES = (
 def _normalize_registry_name(manifold_name: str) -> str:
     if not isinstance(manifold_name, str) or not manifold_name.strip():
         raise ValueError("manifold_name must be a non-empty string")
-    return manifold_name.lower()
+    return manifold_name.strip().lower()
 
 
 def register_distance_function(
@@ -236,7 +236,7 @@ def _angular_distance_from_inner_product(inner_product):
 def get_distance_function(
     manifold_name, additional_params=None, nSymm=None, symmetryOffsets=None
 ):
-    normalized_name = str(manifold_name).lower()
+    normalized_name = _normalize_registry_name(manifold_name)
     registered_factory = _DISTANCE_FUNCTION_FACTORIES.get(normalized_name)
     if registered_factory is not None:
         return registered_factory(manifold_name, additional_params)
