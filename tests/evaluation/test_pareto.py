@@ -281,7 +281,16 @@ def test_pareto_helpers_reject_invalid_eps_values() -> None:
             {"name": "b", "error": 2.0, "runtime": 1.0},
         ]
     )
-    invalid_eps_values = (-1e-12, float("nan"), float("inf"), True, np.array([1e-12]))
+    invalid_eps_values = (
+        -1e-12,
+        float("nan"),
+        float("inf"),
+        True,
+        np.array([1e-12]),
+        "1e-12",
+        np.str_("1e-12"),
+        np.array("1e-12"),
+    )
 
     for eps in invalid_eps_values:
         with pytest.raises(ValueError, match="eps"):
@@ -316,3 +325,16 @@ def test_pareto_helpers_reject_invalid_eps_values() -> None:
                 direction="min",
                 eps=eps,
             )
+
+
+def test_constraint_mask_rejects_text_threshold_scalars() -> None:
+    table = pd.DataFrame(
+        [
+            {"name": "a", "error": 1.0, "runtime": 2.0},
+            {"name": "b", "error": 2.0, "runtime": 1.0},
+        ]
+    )
+
+    for threshold in ("2.0", np.str_("2.0"), np.array("2.0")):
+        with pytest.raises(ValueError, match="Constraint threshold"):
+            constraint_mask(table, {"error": ("<=", threshold)})
