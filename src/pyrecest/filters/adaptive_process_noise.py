@@ -76,6 +76,27 @@ def _normalize_finite_scalar(value: float, name: str) -> float:
     return value_float
 
 
+def _normalize_nonnegative_finite_scalar(value: float, name: str) -> float:
+    message = f"{name} must be a nonnegative finite scalar"
+    value_array = np.asarray(value)
+    if (
+        value_array.shape != ()
+        or value_array.dtype == np.bool_
+        or value_array.dtype.kind in "USbcMm"
+    ):
+        raise ValueError(message)
+    value_scalar = value_array.item()
+    if isinstance(value_scalar, (bool, np.bool_, str, bytes, bytearray)):
+        raise ValueError(message)
+    try:
+        value_float = float(value_scalar)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(message) from exc
+    if value_float < 0.0 or not np.isfinite(value_float):
+        raise ValueError(message)
+    return value_float
+
+
 @dataclass
 class RollingNISProcessNoiseAdapter:
     """Maintain EWMA NIS ratios and return process-noise scale factors."""
@@ -152,7 +173,7 @@ def adaptive_scale_from_ratio(
     """Map a normalized NIS ratio to a bounded process-noise scale."""
 
     config = AdaptiveProcessNoiseConfig() if config is None else config
-    ratio = float(ratio)
+    ratio = _normalize_nonnegative_finite_scalar(ratio, "ratio")
     if ratio > float(config.high_nis_ratio):
         scale = 1.0 + float(config.scale_gain) * (ratio - float(config.high_nis_ratio))
     elif ratio < float(config.low_nis_ratio):
