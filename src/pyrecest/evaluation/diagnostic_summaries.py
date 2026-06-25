@@ -344,20 +344,28 @@ def _json_record(record: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def _json_value(value: Any) -> Any:
-    if isinstance(value, np.integer):
-        return int(value)
-    if isinstance(value, np.floating):
-        value = float(value)
-    if isinstance(value, float):
-        return None if not math.isfinite(value) else value
-    if isinstance(value, np.bool_):
-        return bool(value)
+    if value is None:
+        return None
     if isinstance(value, np.ndarray):
         return [_json_value(item) for item in value.tolist()]
     if isinstance(value, Mapping):
         return _json_record(value)
     if isinstance(value, (list, tuple)):
         return [_json_value(item) for item in value]
+    if isinstance(value, np.bool_):
+        return bool(value)
+    if isinstance(value, np.integer):
+        return int(value)
+    if isinstance(value, np.floating):
+        value = float(value)
+    if isinstance(value, float):
+        return None if not math.isfinite(value) else value
+    if isinstance(value, (bytes, bytearray, np.bytes_)):
+        return bytes(value).decode("utf-8", errors="replace")
+    if isinstance(value, np.str_):
+        return str(value)
+    if not isinstance(value, str) and _is_nan(value):
+        return None
     return value
 
 
