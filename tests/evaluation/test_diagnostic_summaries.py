@@ -1,3 +1,4 @@
+import json
 import math
 import unittest
 
@@ -207,6 +208,28 @@ class DiagnosticSummariesTest(unittest.TestCase):
         self.assertEqual(summary["top_residuals"], [])
         self.assertEqual(summary["covariance_inflation"]["count"], 0)
         self.assertEqual(summary["worst_time_windows"], [])
+
+    def test_summary_json_records_normalize_missing_and_bytes_payloads(self):
+        records = [
+            {
+                "time_s": 0.0,
+                "track_id": "A",
+                "source": "rf",
+                "residual_norm": 2.0,
+                "covariance_scale": 1.0,
+                "error": 1.0,
+                "note": pd.NA,
+                "payload": b"ok",
+                "vector": np.array([1.0, np.nan]),
+            }
+        ]
+
+        rows = top_residuals(records)
+
+        self.assertIsNone(rows[0]["note"])
+        self.assertEqual(rows[0]["payload"], "ok")
+        self.assertEqual(rows[0]["vector"], [1.0, None])
+        json.dumps(rows)
 
 
 if __name__ == "__main__":
