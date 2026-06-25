@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.filters.sparse_second_order_grid import sparse_second_order_grid_evidence
 
 

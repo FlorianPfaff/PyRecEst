@@ -15,7 +15,9 @@ class SymmetricDistanceNumericValidationTest(unittest.TestCase):
 
     def test_rejects_boolean_symmetry_offsets(self):
         with self.assertRaisesRegex(ValueError, "symmetryOffsets.*numeric"):
-            get_distance_function("circle", symmetryOffsets=np.array([True], dtype=object))
+            get_distance_function(
+                "circle", symmetryOffsets=np.array([True], dtype=object)
+            )
 
 
 if __name__ == "__main__":

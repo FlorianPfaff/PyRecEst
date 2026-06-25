@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.utils.track_completion import (
     CompletionCandidate,
     enumerate_fragment_completion_paths,
@@ -44,7 +43,9 @@ def test_score_path_rejects_non_real_values():
     invalid_scores = ("2.0", True, np.inf, [1.0])
 
     for invalid_score in invalid_scores:
-        with pytest.raises(ValueError, match="path scores must be a finite real scalar"):
+        with pytest.raises(
+            ValueError, match="path scores must be a finite real scalar"
+        ):
             enumerate_fragment_completion_paths(
                 [[0, None]],
                 direction="suffix",

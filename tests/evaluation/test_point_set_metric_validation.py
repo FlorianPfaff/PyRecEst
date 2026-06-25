@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.evaluation.point_set_metrics import nearest_neighbor_distances
 
 

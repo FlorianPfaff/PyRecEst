@@ -227,7 +227,9 @@ def _normalize_probability_clip(value: Any) -> float:
         raise ValueError(_PROBABILITY_CLIP_ERROR)
 
     scalar = value_array.item()
-    if isinstance(scalar, (bool, np.bool_, complex, np.complexfloating, *_TEXT_SCALAR_TYPES)):
+    if isinstance(
+        scalar, (bool, np.bool_, complex, np.complexfloating, *_TEXT_SCALAR_TYPES)
+    ):
         raise ValueError(_PROBABILITY_CLIP_ERROR)
     if not isinstance(scalar, Real):
         raise ValueError(_PROBABILITY_CLIP_ERROR)

@@ -69,7 +69,9 @@ def test_surface_residual_gradient_and_variance_helpers() -> None:
         (surface_variances, "variance_at"),
     ],
 )
-def test_surface_helpers_reject_non_callable_protocol_members(helper, method_name) -> None:
+def test_surface_helpers_reject_non_callable_protocol_members(
+    helper, method_name
+) -> None:
     points = np.asarray([[0.0, 0.0, 1.0]], dtype=np.float64)
 
     with pytest.raises(TypeError, match=f"surface must implement {method_name}"):

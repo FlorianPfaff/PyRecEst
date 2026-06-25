@@ -19,7 +19,9 @@ def test_assert_backend_rejects_unexpected_backend():
         pyrecest.assert_backend(unexpected)
 
 
-@pytest.mark.parametrize("expected", [(), ("",), " ", (" numpy",), ("numpy ",), ("numpy", 1), 1])
+@pytest.mark.parametrize(
+    "expected", [(), ("",), " ", (" numpy",), ("numpy ",), ("numpy", 1), 1]
+)
 def test_assert_backend_rejects_invalid_expected_names(expected):
     with pytest.raises(ValueError, match="expected"):
         pyrecest.assert_backend(expected)

@@ -33,7 +33,16 @@ def _validate_bool_flag(value: Any, name: str) -> bool:
     raise TypeError(f"{name} must be a boolean")
 
 
-_INVALID_PADDED_HISTORY_DTYPE_PREFIXES = ("<u", ">u", "|u", "=u", "<s", ">s", "|s", "=s")
+_INVALID_PADDED_HISTORY_DTYPE_PREFIXES = (
+    "<u",
+    ">u",
+    "|u",
+    "=u",
+    "<s",
+    ">s",
+    "|s",
+    "=s",
+)
 
 
 def _is_invalid_padded_history_dtype(dtype: Any) -> bool:

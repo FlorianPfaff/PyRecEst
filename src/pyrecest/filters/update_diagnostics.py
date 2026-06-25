@@ -28,9 +28,7 @@ class MeasurementUpdateDiagnostics:
     metadata: Mapping[str, Any] | None = None
 
     def __post_init__(self):
-        indices = _normalize_active_measurement_indices(
-            self.active_measurement_indices
-        )
+        indices = _normalize_active_measurement_indices(self.active_measurement_indices)
         object.__setattr__(self, "active_measurement_indices", indices)
         if self.measurement_count is not None:
             object.__setattr__(

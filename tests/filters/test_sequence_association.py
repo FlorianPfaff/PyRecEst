@@ -114,7 +114,9 @@ class SequenceAssociationTest(unittest.TestCase):
         invalid_frame_indices = (True, 1.5, np.nan, np.inf, "0", np.array([0]))
         for frame_index in invalid_frame_indices:
             with self.subTest(frame_index=frame_index):
-                with self.assertRaisesRegex(ValueError, "frame_index must be an integer"):
+                with self.assertRaisesRegex(
+                    ValueError, "frame_index must be an integer"
+                ):
                     SequenceAssociationNode(frame_index, 0)
 
         invalid_candidate_indices = (False, 1.25, -np.inf, "1", np.array([1]))

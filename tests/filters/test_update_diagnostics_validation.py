@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.filters.update_diagnostics import MeasurementUpdateDiagnostics
 
 

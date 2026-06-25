@@ -287,9 +287,7 @@ def _extend_completion_path(
             raw_steps = (*steps, step)
             chronological_steps = _chronological_steps(direction, raw_steps)
             if score_path is not None:
-                score = _as_finite_score(
-                    score_path(chronological_steps), "path scores"
-                )
+                score = _as_finite_score(score_path(chronological_steps), "path scores")
             else:
                 score = _as_finite_score(
                     sum(item.score for item in chronological_steps), "path scores"
