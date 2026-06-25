@@ -17,7 +17,13 @@ def test_evaluate_for_file_counts_empty_1d_measurements_as_zero(tmp_path, monkey
 
     captured = {}
 
-    def capture_call(groundtruths_arg, measurements_arg, filter_configs, scenario_config, **kwargs):
+    def capture_call(
+        groundtruths_arg,
+        measurements_arg,
+        filter_configs,
+        scenario_config,
+        **kwargs,
+    ):
         captured["scenario_config"] = dict(scenario_config)
         return (
             {},
