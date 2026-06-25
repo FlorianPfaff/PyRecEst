@@ -3,14 +3,15 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from datetime import date, datetime, timedelta
 from typing import Any
 
 import numpy as np
 
 from .linear_gaussian import LinearGaussianMeasurementModel
 
-_BOOL_OR_TEXT_KINDS = {"b", "S", "U"}
-_BOOL_OR_TEXT_SCALAR_TYPES = (
+_NON_REAL_NUMERIC_KINDS = {"b", "c", "m", "M", "S", "U"}
+_NON_REAL_NUMERIC_SCALAR_TYPES = (
     bool,
     np.bool_,
     str,
@@ -18,6 +19,13 @@ _BOOL_OR_TEXT_SCALAR_TYPES = (
     bytearray,
     np.str_,
     np.bytes_,
+    complex,
+    np.complexfloating,
+    date,
+    datetime,
+    timedelta,
+    np.datetime64,
+    np.timedelta64,
 )
 
 
@@ -107,7 +115,9 @@ class MaskedLinearMeasurementModel(LinearGaussianMeasurementModel):
         covariance = (
             diagonal_measurement_covariance(stds)
             if stds is not None
-            else np.asarray(measurement_noise_cov, dtype=float)
+            else _real_numeric_array(
+                measurement_noise_cov, name="measurement_noise_cov"
+            )
         )
         super().__init__(matrix, covariance)
         self.observed_dims = tuple(
@@ -143,7 +153,9 @@ class WeakDimensionMeasurementModel(LinearGaussianMeasurementModel):
         if stds is not None and (trusted_std is not None or weak_std is not None):
             raise ValueError("stds cannot be combined with trusted_std or weak_std")
         if measurement_noise_cov is not None:
-            covariance = np.asarray(measurement_noise_cov, dtype=float)
+            covariance = _real_numeric_array(
+                measurement_noise_cov, name="measurement_noise_cov"
+            )
         elif stds is not None and _is_mapping(stds):
             covariance = block_diag_measurement_covariance(
                 trusted_std=stds, dimension_order=dimension_order
@@ -182,13 +194,17 @@ def _is_mapping(value: object) -> bool:
     return isinstance(value, Mapping)
 
 
-def _standard_deviations_array(stds: Sequence[float] | np.ndarray) -> np.ndarray:
+def _real_numeric_array(value: Any, *, name: str) -> np.ndarray:
     try:
-        if _contains_bool_or_text_values(stds):
+        if _contains_non_real_numeric_values(value):
             raise ValueError
-        values = np.asarray(stds, dtype=float).reshape(-1)
+        return np.asarray(value, dtype=float)
     except (TypeError, ValueError, OverflowError) as exc:
-        raise ValueError("stds must contain real numeric values") from exc
+        raise ValueError(f"{name} must contain real numeric values") from exc
+
+
+def _standard_deviations_array(stds: Sequence[float] | np.ndarray) -> np.ndarray:
+    values = _real_numeric_array(stds, name="stds").reshape(-1)
     if values.size == 0:
         raise ValueError("stds must contain at least one standard deviation")
     if not np.isfinite(values).all() or np.any(values <= 0.0):
@@ -196,13 +212,15 @@ def _standard_deviations_array(stds: Sequence[float] | np.ndarray) -> np.ndarray
     return values
 
 
-def _contains_bool_or_text_values(value: Any) -> bool:
+def _contains_non_real_numeric_values(value: Any) -> bool:
     array = np.asarray(value)
-    if array.dtype.kind in _BOOL_OR_TEXT_KINDS:
+    if array.dtype.kind in _NON_REAL_NUMERIC_KINDS:
         return True
     if array.dtype.kind != "O":
         return False
-    return any(isinstance(item, _BOOL_OR_TEXT_SCALAR_TYPES) for item in array.flat)
+    return any(
+        isinstance(item, _NON_REAL_NUMERIC_SCALAR_TYPES) for item in array.flat
+    )
 
 
 def _positive_int(value: int, name: str) -> int:
