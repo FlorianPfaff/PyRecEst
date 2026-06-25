@@ -18,6 +18,7 @@ import numpy as np
 _TEXT_TYPES = (str, bytes, bytearray, np.str_, np.bytes_)
 _BOOLEAN_TYPES = (bool, np.bool_)
 _COMPLEX_TYPES = (complex, np.complexfloating)
+_TEMPORAL_TYPES = (np.datetime64, np.timedelta64)
 _MISSING_TYPES = (type(None),)
 
 
@@ -182,6 +183,10 @@ def _contains_complex_values(value: Any) -> bool:
     return _contains_values_of_type(value, _COMPLEX_TYPES)
 
 
+def _contains_temporal_values(value: Any) -> bool:
+    return _contains_values_of_type(value, _TEMPORAL_TYPES)
+
+
 def _contains_missing_values(value: Any) -> bool:
     return _contains_values_of_type(value, _MISSING_TYPES)
 
@@ -194,10 +199,14 @@ def _as_numeric_matrix(value: Any, name: str) -> np.ndarray:
 
     if raw_values.dtype == np.bool_:
         raise ValueError(f"{name} must be numeric, not boolean")
+    if raw_values.dtype.kind in {"M", "m"}:
+        raise ValueError(f"{name} must be numeric")
     if _contains_missing_values(value) or _contains_missing_values(raw_values):
         raise ValueError(f"{name} must be numeric")
     if _contains_boolean_values(value) or _contains_boolean_values(raw_values):
         raise ValueError(f"{name} must be numeric, not boolean")
+    if _contains_temporal_values(value) or _contains_temporal_values(raw_values):
+        raise ValueError(f"{name} must be numeric")
     if (
         raw_values.dtype.kind == "c"
         or _contains_complex_values(value)
