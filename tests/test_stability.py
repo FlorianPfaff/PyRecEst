@@ -1,5 +1,4 @@
 import pytest
-
 from pyrecest.stability import (
     PublicAPIStatus,
     get_public_api_status,

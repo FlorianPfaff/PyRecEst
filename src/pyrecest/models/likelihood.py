@@ -24,7 +24,6 @@ from numbers import Integral
 from typing import Any, Callable
 
 import numpy as np
-
 from pyrecest.protocols.models import (
     SupportsLikelihood,
     SupportsLogLikelihood,

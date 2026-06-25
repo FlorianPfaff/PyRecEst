@@ -3,9 +3,8 @@
 from __future__ import annotations
 
 import numpy as np
-import pytest
-
 import pyrecest._backend.numpy.random as numpy_random
+import pytest
 
 
 @pytest.mark.parametrize(

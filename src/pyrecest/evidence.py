@@ -75,8 +75,7 @@ class EvidenceComputationMode:
         if conflicting_metadata_keys:
             reserved = ", ".join(sorted(str(key) for key in conflicting_metadata_keys))
             raise ValueError(
-                "metadata keys would overwrite evidence diagnostics: "
-                f"{reserved}"
+                "metadata keys would overwrite evidence diagnostics: " f"{reserved}"
             )
         object.__setattr__(self, "return_smoothed", return_smoothed)
         object.__setattr__(self, "terminal_posterior", terminal_posterior)

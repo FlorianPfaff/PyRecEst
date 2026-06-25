@@ -1,4 +1,4 @@
-'Utilities for masked and weak-dimension linear Gaussian measurements.'
+"Utilities for masked and weak-dimension linear Gaussian measurements."
 
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ _BOOL_OR_TEXT_SCALAR_TYPES = (
 
 
 def diagonal_measurement_covariance(stds: Sequence[float] | np.ndarray) -> np.ndarray:
-    'Return a diagonal covariance matrix from measurement standard deviations.'
+    "Return a diagonal covariance matrix from measurement standard deviations."
     values = _standard_deviations_array(stds)
     return np.diag(values**2)
 
@@ -33,7 +33,7 @@ def block_diag_measurement_covariance(
     weak_std: Mapping[Any, float] | Sequence[float] | None = None,
     dimension_order: Sequence[Any] | None = None,
 ) -> np.ndarray:
-    'Return a diagonal covariance from trusted and weak dimension stds.'
+    "Return a diagonal covariance from trusted and weak dimension stds."
     if trusted_std is None and weak_std is None:
         raise ValueError("at least one of trusted_std or weak_std must be provided")
     if _is_mapping(trusted_std) or _is_mapping(weak_std):
@@ -74,7 +74,7 @@ def block_diag_measurement_covariance(
 
 
 def selection_matrix(state_dim: int, observed_dims: Sequence[int]) -> np.ndarray:
-    'Return a matrix selecting observed state components.'
+    "Return a matrix selecting observed state components."
     state_dim = _positive_int(state_dim, "state_dim")
     dims = [_nonnegative_int(dim, "observed_dims") for dim in observed_dims]
     if not dims:
@@ -90,7 +90,7 @@ def selection_matrix(state_dim: int, observed_dims: Sequence[int]) -> np.ndarray
 
 
 class MaskedLinearMeasurementModel(LinearGaussianMeasurementModel):
-    'Linear Gaussian model that observes a subset of state dimensions.'
+    "Linear Gaussian model that observes a subset of state dimensions."
 
     def __init__(
         self,
@@ -116,7 +116,7 @@ class MaskedLinearMeasurementModel(LinearGaussianMeasurementModel):
 
 
 class WeakDimensionMeasurementModel(LinearGaussianMeasurementModel):
-    'Linear Gaussian model with per-dimension measurement trust levels.'
+    "Linear Gaussian model with per-dimension measurement trust levels."
 
     def __init__(
         self,
@@ -137,7 +137,9 @@ class WeakDimensionMeasurementModel(LinearGaussianMeasurementModel):
                 "provide stds, measurement_noise_cov, or trusted/weak stds"
             )
         if measurement_noise_cov is not None and provided > 1:
-            raise ValueError("measurement_noise_cov cannot be combined with std arguments")
+            raise ValueError(
+                "measurement_noise_cov cannot be combined with std arguments"
+            )
         if stds is not None and (trusted_std is not None or weak_std is not None):
             raise ValueError("stds cannot be combined with trusted_std or weak_std")
         if measurement_noise_cov is not None:
@@ -162,7 +164,7 @@ def masked_position_measurement_model(
     observed_dims: Sequence[int],
     stds: Sequence[float] | np.ndarray,
 ) -> MaskedLinearMeasurementModel:
-    'Convenience constructor for masked position-like measurements.'
+    "Convenience constructor for masked position-like measurements."
     return MaskedLinearMeasurementModel(
         state_dim=state_dim, observed_dims=observed_dims, stds=stds
     )
@@ -172,7 +174,7 @@ def weak_dimension_measurement_model(
     measurement_matrix: np.ndarray,
     stds: Sequence[float] | np.ndarray,
 ) -> WeakDimensionMeasurementModel:
-    'Convenience constructor for weak-dimension linear measurements.'
+    "Convenience constructor for weak-dimension linear measurements."
     return WeakDimensionMeasurementModel(measurement_matrix, stds=stds)
 
 

@@ -11,7 +11,6 @@ from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any
 
-
 _INVALID_TOLERANCE_MESSAGE = "tolerance must be a non-negative finite number"
 
 

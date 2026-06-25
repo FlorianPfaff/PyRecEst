@@ -124,7 +124,9 @@ class PointProcessUpdateConfig:
             raise ValueError("max_map_iterations must be non-negative")
         if self.shape_update_modes < 0:
             raise ValueError("shape_update_modes must be non-negative")
-        covariance_damping = _validate_positive_finite(self.covariance_damping, "covariance_damping")
+        covariance_damping = _validate_positive_finite(
+            self.covariance_damping, "covariance_damping"
+        )
         if covariance_damping > 1.0:
             raise ValueError("covariance_damping must be finite and in (0, 1]")
         _validate_positive_finite(self.max_state_update_norm, "max_state_update_norm")

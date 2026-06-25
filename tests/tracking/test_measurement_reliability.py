@@ -62,7 +62,9 @@ def test_reliability_weighted_measurement_rejects_malformed_measurements() -> No
     )
 
     for measurement in invalid_measurements:
-        with pytest.raises(ValueError, match="measurement must contain real numeric values"):
+        with pytest.raises(
+            ValueError, match="measurement must contain real numeric values"
+        ):
             ReliabilityWeightedMeasurement(
                 measurement=measurement,
                 covariance=np.eye(1),
@@ -79,9 +81,13 @@ def test_reliability_helpers_reject_malformed_covariance_arrays() -> None:
     )
 
     for covariance in invalid_covariances:
-        with pytest.raises(ValueError, match="covariance must contain real numeric values"):
+        with pytest.raises(
+            ValueError, match="covariance must contain real numeric values"
+        ):
             scale_covariance_by_reliability(covariance, 0.5)
-        with pytest.raises(ValueError, match="covariance must contain real numeric values"):
+        with pytest.raises(
+            ValueError, match="covariance must contain real numeric values"
+        ):
             apply_measurement_reliability(covariance, reliability=0.5)
 
 

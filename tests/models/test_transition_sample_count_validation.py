@@ -4,7 +4,11 @@ import unittest
 
 import numpy as np
 from pyrecest.backend import array
-from pyrecest.models import DensityTransitionModel, SampleableTransitionModel, sample_next_state
+from pyrecest.models import (
+    DensityTransitionModel,
+    SampleableTransitionModel,
+    sample_next_state,
+)
 
 
 class TransitionSampleCountValidationTest(unittest.TestCase):

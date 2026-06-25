@@ -1,8 +1,8 @@
 """Regression tests for CircularUKF measurement numeric validation."""
 
 import numpy as np
-import pytest
 import pyrecest.backend
+import pytest
 from pyrecest.backend import array
 from pyrecest.distributions import GaussianDistribution
 from pyrecest.filters.circular_ukf import CircularUKF
@@ -61,4 +61,6 @@ def test_update_nonlinear_rejects_ambiguous_measurement_function_outputs(
     circular_filter, measurement_noise
 ):
     with pytest.raises(TypeError, match="measurement vector.*real numeric"):
-        circular_filter.update_nonlinear(lambda _angle: ["1.0"], measurement_noise, [0.5])
+        circular_filter.update_nonlinear(
+            lambda _angle: ["1.0"], measurement_noise, [0.5]
+        )

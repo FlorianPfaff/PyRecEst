@@ -18,7 +18,9 @@ def is_backend(expected: str) -> bool:
     return get_backend_name() == expected
 
 
-def _normalize_expected_backend_names(expected: str | tuple[str, ...]) -> tuple[str, ...]:
+def _normalize_expected_backend_names(
+    expected: str | tuple[str, ...],
+) -> tuple[str, ...]:
     message = "expected must name at least one backend."
     if isinstance(expected, str):
         names = (expected,)

@@ -131,7 +131,9 @@ def _to_float_list(
     message = f"{name} must contain numeric values"
 
     def convert(item: Any) -> float:
-        if reject_text_or_bool and (isinstance(item, bool) or isinstance(item, _TEXT_TYPES)):
+        if reject_text_or_bool and (
+            isinstance(item, bool) or isinstance(item, _TEXT_TYPES)
+        ):
             raise ValueError(message)
         try:
             return float(item)

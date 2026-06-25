@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.evaluation.point_set_metrics import (
     distance_quantiles,
     point_set_geometry_summary,

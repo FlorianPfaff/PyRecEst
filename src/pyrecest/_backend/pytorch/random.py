@@ -369,7 +369,9 @@ def _uniform_size(size, low, high):
 
 
 def _validate_uniform_bounds(low, high):
-    if bool(_torch.any(~_torch.isfinite(low))) or bool(_torch.any(~_torch.isfinite(high))):
+    if bool(_torch.any(~_torch.isfinite(low))) or bool(
+        _torch.any(~_torch.isfinite(high))
+    ):
         raise ValueError("uniform bounds must be finite")
     if bool(_torch.any(low > high)):
         raise ValueError("Upper bound must be greater than or equal to lower bound")

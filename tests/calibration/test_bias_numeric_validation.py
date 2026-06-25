@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.calibration.bias import (
     SensorBiasCorrectionModel,
     make_bias_training_examples,

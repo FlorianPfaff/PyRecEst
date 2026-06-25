@@ -29,7 +29,9 @@ class TestCalibratedAssociationNonfiniteProbabilities(unittest.TestCase):
             NonfiniteMatchProbabilityModel(), feature_names=("distance",)
         )
 
-        with self.assertRaisesRegex(ValueError, "predicted probabilities must be finite"):
+        with self.assertRaisesRegex(
+            ValueError, "predicted probabilities must be finite"
+        ):
             model.predict_match_probability(array([[0.1], [0.2]]))
 
     def test_rejects_nonfinite_predict_proba_values(self):
@@ -37,7 +39,9 @@ class TestCalibratedAssociationNonfiniteProbabilities(unittest.TestCase):
             NonfinitePredictProbaModel(), feature_names=("distance",)
         )
 
-        with self.assertRaisesRegex(ValueError, "predicted probabilities must be finite"):
+        with self.assertRaisesRegex(
+            ValueError, "predicted probabilities must be finite"
+        ):
             model.predict_match_probability(array([[0.1], [0.2]]))
 
     def test_rejects_nonfinite_cost_derived_probabilities(self):
@@ -45,7 +49,9 @@ class TestCalibratedAssociationNonfiniteProbabilities(unittest.TestCase):
             NonfiniteCostModel(), feature_names=("distance",)
         )
 
-        with self.assertRaisesRegex(ValueError, "predicted probabilities must be finite"):
+        with self.assertRaisesRegex(
+            ValueError, "predicted probabilities must be finite"
+        ):
             model.predict_match_probability(array([[0.1], [0.2]]))
 
 

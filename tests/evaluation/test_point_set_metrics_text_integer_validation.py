@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.evaluation.point_set_metrics import (
     deterministic_subsample,
     nearest_neighbor_distances,

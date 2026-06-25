@@ -1,7 +1,6 @@
 from types import SimpleNamespace
 
 import numpy as np
-
 from pyrecest.models.validation import infer_state_dim_from_distribution
 
 

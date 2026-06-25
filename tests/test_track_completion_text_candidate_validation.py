@@ -1,6 +1,8 @@
 import numpy as np
-
-from pyrecest.utils.track_completion import CompletionCandidate, enumerate_fragment_completion_paths
+from pyrecest.utils.track_completion import (
+    CompletionCandidate,
+    enumerate_fragment_completion_paths,
+)
 
 
 def test_text_candidate_observations_are_rejected():

@@ -1,5 +1,4 @@
 import numpy as np
-
 from pyrecest.utils.track_evaluation import normalize_track_matrix, track_pair_set
 
 

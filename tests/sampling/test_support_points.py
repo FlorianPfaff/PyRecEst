@@ -91,7 +91,9 @@ def test_ellipsoid_axis_offsets_reject_nonfinite_radius(bad_radius: float) -> No
         ellipsoid_axis_offsets(np.eye(2), radius=bad_radius)
 
 
-@pytest.mark.parametrize("bad_radius", ["1.0", b"1.0", np.str_("1.0"), np.bytes_(b"1.0")])
+@pytest.mark.parametrize(
+    "bad_radius", ["1.0", b"1.0", np.str_("1.0"), np.bytes_(b"1.0")]
+)
 def test_ellipsoid_axis_offsets_reject_text_radius(bad_radius: object) -> None:
     with pytest.raises(ValueError, match="radius"):
         ellipsoid_axis_offsets(np.eye(2), radius=bad_radius)

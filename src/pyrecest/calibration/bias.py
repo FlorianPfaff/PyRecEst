@@ -54,9 +54,15 @@ class SensorBiasCorrectionModel:
         coefficients = _as_numeric_array(self.coefficients, "coefficients").reshape(
             feature_dim, target_dim
         )
-        feature_mean = _as_numeric_array(self.feature_mean, "feature_mean").reshape(feature_dim)
-        feature_scale = _as_numeric_array(self.feature_scale, "feature_scale").reshape(feature_dim)
-        residual_std = _as_numeric_array(self.residual_std, "residual_std").reshape(target_dim)
+        feature_mean = _as_numeric_array(self.feature_mean, "feature_mean").reshape(
+            feature_dim
+        )
+        feature_scale = _as_numeric_array(self.feature_scale, "feature_scale").reshape(
+            feature_dim
+        )
+        residual_std = _as_numeric_array(self.residual_std, "residual_std").reshape(
+            target_dim
+        )
         feature_scale = np.where(
             np.isfinite(feature_scale) & (feature_scale > 0.0), feature_scale, 1.0
         )

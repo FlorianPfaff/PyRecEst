@@ -1,7 +1,7 @@
 """Regression tests for CircularUKF boolean flag validation."""
 
-import pytest
 import pyrecest.backend
+import pytest
 from pyrecest.backend import array
 from pyrecest.distributions import GaussianDistribution
 from pyrecest.filters.circular_ukf import CircularUKF

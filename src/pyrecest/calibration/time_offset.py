@@ -157,7 +157,9 @@ def _finite_reference_rows(
 ) -> np.ndarray:
     """Return a mask selecting reference rows that are usable for matching."""
 
-    reference_times = _as_real_numeric_array(reference_times_s, "reference_times_s").reshape(-1)
+    reference_times = _as_real_numeric_array(
+        reference_times_s, "reference_times_s"
+    ).reshape(-1)
     finite = np.isfinite(reference_times)
     if reference_values is not None:
         values = _as_real_numeric_array(reference_values, "reference_values")
@@ -175,7 +177,9 @@ def nearest_time_indices(
     Non-finite query times have no nearest reference time and are marked as ``-1``.
     """
 
-    reference = _as_real_numeric_array(reference_times_s, "reference_times_s").reshape(-1)
+    reference = _as_real_numeric_array(reference_times_s, "reference_times_s").reshape(
+        -1
+    )
     query = _as_real_numeric_array(query_times_s, "query_times_s").reshape(-1)
     finite_reference = _finite_reference_rows(reference)
     if not finite_reference.any():
@@ -211,7 +215,9 @@ def interpolate_reference_values(
     """Interpolate reference values at query times and return a validity mask."""
 
     max_time_delta = _validate_max_time_delta(max_time_delta_s)
-    reference_times = _as_real_numeric_array(reference_times_s, "reference_times_s").reshape(-1)
+    reference_times = _as_real_numeric_array(
+        reference_times_s, "reference_times_s"
+    ).reshape(-1)
     reference_values = _as_real_numeric_array(reference_values, "reference_values")
     query_times = _as_real_numeric_array(query_times_s, "query_times_s").reshape(-1)
     if reference_values.ndim not in (1, 2):
@@ -260,7 +266,9 @@ def time_offset_error_summary(
 ) -> dict[str, float]:
     """Evaluate one candidate offset against a reference trajectory."""
 
-    measurement_values = _as_real_numeric_array(measurement_values, "measurement_values")
+    measurement_values = _as_real_numeric_array(
+        measurement_values, "measurement_values"
+    )
     if measurement_values.ndim == 1:
         measurement_values = measurement_values.reshape(-1, 1)
     elif measurement_values.ndim != 2:

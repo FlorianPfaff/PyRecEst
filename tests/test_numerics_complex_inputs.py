@@ -1,7 +1,10 @@
 import numpy as np
 import pytest
-
-from pyrecest.numerics import assert_covariance_matrix, is_positive_semidefinite, is_symmetric
+from pyrecest.numerics import (
+    assert_covariance_matrix,
+    is_positive_semidefinite,
+    is_symmetric,
+)
 
 
 def test_covariance_helpers_reject_complex_inputs():

@@ -128,7 +128,9 @@ class AssociationHypothesesTest(unittest.TestCase):
 
         self.assertEqual(gate.k, 2)
 
-    def test_probability_likelihood_gate_rejects_zero_threshold_and_allows_zero_probability_threshold(self):
+    def test_probability_likelihood_gate_rejects_zero_threshold_and_allows_zero_probability_threshold(
+        self,
+    ):
         with self.assertRaises(ValueError):
             ProbabilityThresholdGate(0.0, use_likelihood=True)
 

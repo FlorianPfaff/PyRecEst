@@ -1,5 +1,4 @@
 import numpy as np
-
 from pyrecest._backend.numpy import linalg
 
 

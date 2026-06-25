@@ -29,7 +29,9 @@ class TestGridModelValidation(unittest.TestCase):
 
         transition_density = object()
         density_model = GridTransitionDensityModel(transition_density)
-        self.assertIs(density_model.transition_density_for_filter(object()), transition_density)
+        self.assertIs(
+            density_model.transition_density_for_filter(object()), transition_density
+        )
 
         filter_instance = object()
         factory_model = GridTransitionDensityFactoryModel(

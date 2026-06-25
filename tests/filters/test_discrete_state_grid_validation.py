@@ -1,7 +1,6 @@
 import unittest
 
 import numpy as np
-
 from pyrecest.filters.discrete_state import sparse_gaussian_transition_matrix
 
 
