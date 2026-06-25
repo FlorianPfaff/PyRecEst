@@ -167,6 +167,36 @@ def _normal_size(size):
     return _shape_from_size(size)
 
 
+def _broadcasted_parameter_shape(*parameters, message):
+    try:
+        return tuple(_torch.broadcast_shapes(*(parameter.shape for parameter in parameters)))
+    except RuntimeError as exc:
+        raise ValueError(message) from exc
+
+
+def _sample_shape_from_size_and_parameters(size, parameters, message):
+    parameter_shape = _broadcasted_parameter_shape(*parameters, message=message)
+    if size is None:
+        return parameter_shape
+
+    sample_shape = _shape_from_size(size)
+    try:
+        broadcast_shape = tuple(_torch.broadcast_shapes(sample_shape, parameter_shape))
+    except RuntimeError as exc:
+        raise ValueError(message) from exc
+    if broadcast_shape != sample_shape:
+        raise ValueError(message)
+    return sample_shape
+
+
+def _normal_array_size(size, loc, scale):
+    return _sample_shape_from_size_and_parameters(
+        size,
+        (loc, scale),
+        "size, loc, and scale could not be broadcast together",
+    )
+
+
 def _normal_device(*values):
     for value in values:
         if _torch.is_tensor(value):
@@ -349,23 +379,19 @@ def normal(loc=0.0, scale=1.0, size=None):
         return _torch.normal(mean=loc, std=scale, size=size or ())
 
     loc, scale = _normal_array_parameters(loc, scale)
-    if size is None:
-        return _torch.normal(mean=loc, std=scale)
-
     if bool(_torch.any(scale < 0)):
         raise ValueError("scale must be non-negative")
+    size = _normal_array_size(size, loc, scale)
     dtype = _torch.result_type(loc, scale)
     return _torch.empty(size, dtype=dtype, device=loc.device).normal_() * scale + loc
 
 
 def _uniform_size(size, low, high):
-    if size is not None:
-        return _shape_from_size(size)
-
-    try:
-        return tuple(_torch.broadcast_shapes(low.shape, high.shape))
-    except RuntimeError as exc:
-        raise ValueError("low and high could not be broadcast together") from exc
+    return _sample_shape_from_size_and_parameters(
+        size,
+        (low, high),
+        "size, low, and high could not be broadcast together",
+    )
 
 
 def _validate_uniform_bounds(low, high):
