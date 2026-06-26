@@ -394,10 +394,16 @@ def _is_missing(value: Any) -> bool:
 
 
 def _parse_constraint_spec(spec: ConstraintSpec | Mapping[str, Any]) -> ConstraintSpec:
+    message = (
+        "Constraint specs must be ('op', value) pairs or mappings with "
+        "'op' and 'value' keys."
+    )
     if isinstance(spec, Mapping):
         op = spec.get("op")
         threshold = spec.get("value")
     else:
+        if _is_text_scalar(spec) or not isinstance(spec, Sequence):
+            raise ValueError(message)
         if len(spec) != 2:
             raise ValueError("Constraint tuple specs must have length 2.")
         op, threshold = spec
