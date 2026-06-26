@@ -17,15 +17,21 @@ from shapely.affinity import rotate, translate
 from shapely.geometry import Polygon
 
 
-def _as_shapely_scalar(value):
-    if np.isscalar(value):
-        return float(value)
-    if hasattr(value, "item"):
-        try:
-            return float(value.item())
-        except (TypeError, ValueError):
-            pass
-    return float(np.asarray(value).reshape(-1)[0])
+def _as_shapely_scalar(value, name="groundtruth component"):
+    value_array = np.asarray(value)
+    if value_array.dtype == np.bool_ or value_array.size != 1:
+        raise ValueError(f"{name} must be a finite scalar.")
+
+    scalar = value_array.reshape(-1)[0]
+    if isinstance(scalar, (bool, np.bool_, str, bytes, bytearray, np.str_, np.bytes_)):
+        raise ValueError(f"{name} must be a finite scalar.")
+    try:
+        result = float(scalar)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{name} must be a finite scalar.") from exc
+    if not np.isfinite(result):
+        raise ValueError(f"{name} must be a finite scalar.")
+    return result
 
 
 def _as_nonnegative_measurement_count(value, name="measurement count") -> int:
@@ -136,13 +142,13 @@ def generate_measurements(groundtruth, simulation_config):
         for t in range(simulation_config["n_timesteps"]):
             curr_groundtruth = groundtruth[t]
             if curr_groundtruth.shape[-1] == 2:
-                x = _as_shapely_scalar(curr_groundtruth[..., 0])
-                y = _as_shapely_scalar(curr_groundtruth[..., 1])
+                x = _as_shapely_scalar(curr_groundtruth[..., 0], "groundtruth x")
+                y = _as_shapely_scalar(curr_groundtruth[..., 1], "groundtruth y")
                 curr_shape = translate(shape, xoff=x, yoff=y)
             elif curr_groundtruth.shape[-1] == 3:
-                angle = _as_shapely_scalar(curr_groundtruth[..., 0])
-                x = _as_shapely_scalar(curr_groundtruth[..., 1])
-                y = _as_shapely_scalar(curr_groundtruth[..., 2])
+                angle = _as_shapely_scalar(curr_groundtruth[..., 0], "groundtruth angle")
+                x = _as_shapely_scalar(curr_groundtruth[..., 1], "groundtruth x")
+                y = _as_shapely_scalar(curr_groundtruth[..., 2], "groundtruth y")
                 curr_shape = rotate(
                     translate(shape, xoff=x, yoff=y),
                     angle=angle,
@@ -155,7 +161,7 @@ def generate_measurements(groundtruth, simulation_config):
                 )
             if not isinstance(curr_shape, PolygonWithSampling):
                 curr_shape.__class__ = (
-                    PolygonWithSampling  # Evil class surgery to add sampling methods
+                    PolygonWithSampling  # Preserve existing subclass swap to add sampling methods
                 )
 
             if "n_meas_at_individual_time_step" in simulation_config:
