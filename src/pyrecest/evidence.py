@@ -61,7 +61,10 @@ class EvidenceComputationMode:
     metadata: dict[str, Any] | None = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        if not isinstance(self.mode, str) or self.mode not in {"full_smoothing", "evidence_only"}:
+        if not isinstance(self.mode, str) or self.mode not in {
+            "full_smoothing",
+            "evidence_only",
+        }:
             raise ValueError(f"unknown evidence computation mode {self.mode!r}")
         return_smoothed = _coerce_bool_flag(self.return_smoothed, "return_smoothed")
         terminal_posterior = _coerce_bool_flag(

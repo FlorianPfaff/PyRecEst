@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import pandas as pd
-
 from pyrecest.evaluation import is_pareto_front, pareto_front_indices, record_dominates
 
 

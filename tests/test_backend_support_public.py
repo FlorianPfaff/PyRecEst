@@ -7,7 +7,6 @@ from pyrecest import (
 )
 from pyrecest._backend.capabilities import BACKEND_SUPPORT_LEVELS
 
-
 backend_support_module = import_module("pyrecest.backend_support")
 
 

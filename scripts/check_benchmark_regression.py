@@ -55,7 +55,9 @@ def _flatten_numbers(value: Any, *, path: str) -> list[float]:
     raise TypeError(f"{path} must be a number or nested sequence of numbers")
 
 
-def _finite_nonnegative_number(value: Any, *, path: str) -> tuple[float | None, str | None]:
+def _finite_nonnegative_number(
+    value: Any, *, path: str
+) -> tuple[float | None, str | None]:
     if isinstance(value, bool):
         return None, f"{path} must be numeric, not boolean"
     if not isinstance(value, int | float):

@@ -70,7 +70,17 @@ class LinearGaussianModelsTest(unittest.TestCase):
         )
 
     def test_identity_models_reject_invalid_dimensions(self):
-        invalid_dims = (True, False, 0, -1, 1.5, float("inf"), "2", b"2", bytearray(b"2"))
+        invalid_dims = (
+            True,
+            False,
+            0,
+            -1,
+            1.5,
+            float("inf"),
+            "2",
+            b"2",
+            bytearray(b"2"),
+        )
 
         for dim in invalid_dims:
             with self.subTest(model="transition", dim=dim):

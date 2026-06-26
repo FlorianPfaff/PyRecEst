@@ -41,7 +41,12 @@ def _load_backend_capabilities() -> dict[str, dict[str, str]]:
 
 
 def _markdown_table_cell(value: object) -> str:
-    return str(value).replace("\r", " ").replace("\n", "<br>").replace(chr(124), chr(0xFF5C))
+    return (
+        str(value)
+        .replace("\r", " ")
+        .replace("\n", "<br>")
+        .replace(chr(124), chr(0xFF5C))
+    )
 
 
 def validate_registry() -> list[str]:

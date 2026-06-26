@@ -7,7 +7,6 @@ from typing import Any
 
 import numpy as np
 
-
 _UNSUPPORTED_NUMERIC_KINDS = {"b", "S", "U", "c", "M", "m"}
 _UNSUPPORTED_SCALAR_TYPES = (
     type(None),

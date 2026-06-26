@@ -89,7 +89,9 @@ def test_innovation_diagnostic_rejects_non_real_residual_values(bad_residual) ->
         [[None]],
     ),
 )
-def test_innovation_diagnostic_rejects_non_real_covariance_values(bad_covariance) -> None:
+def test_innovation_diagnostic_rejects_non_real_covariance_values(
+    bad_covariance,
+) -> None:
     with pytest.raises(
         ValueError,
         match="innovation_covariance must contain finite real numeric values",

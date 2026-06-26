@@ -189,7 +189,9 @@ def _normal_size(size):
 
 def _broadcasted_parameter_shape(*parameters, message):
     try:
-        return tuple(_torch.broadcast_shapes(*(parameter.shape for parameter in parameters)))
+        return tuple(
+            _torch.broadcast_shapes(*(parameter.shape for parameter in parameters))
+        )
     except RuntimeError as exc:
         raise ValueError(message) from exc
 

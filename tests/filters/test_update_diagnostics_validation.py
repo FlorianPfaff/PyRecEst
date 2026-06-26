@@ -30,7 +30,9 @@ def test_active_measurement_indices_must_fit_measurement_count():
         ValueError,
         match="active_measurement_indices.*measurement_count",
     ):
-        MeasurementUpdateDiagnostics(active_measurement_indices=(0, 2), measurement_count=2)
+        MeasurementUpdateDiagnostics(
+            active_measurement_indices=(0, 2), measurement_count=2
+        )
 
 
 def test_measurement_count_rejects_non_integer_values():
