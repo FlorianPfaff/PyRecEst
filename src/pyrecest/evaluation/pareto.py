@@ -361,7 +361,9 @@ def _coerce_numeric(value: Any) -> float:
     if value_array.shape != () or value_array.dtype.kind in "bSUcMm":
         return float("nan")
     scalar = value_array.item()
-    if isinstance(scalar, (bool, np.bool_, complex, np.complexfloating)) or _is_text_scalar(scalar):
+    if isinstance(
+        scalar, (bool, np.bool_, complex, np.complexfloating)
+    ) or _is_text_scalar(scalar):
         return float("nan")
     try:
         return float(scalar)

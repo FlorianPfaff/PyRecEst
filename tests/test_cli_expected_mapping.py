@@ -11,7 +11,9 @@ def test_expected_mapping_reports_nonnumeric_actual_instead_of_raising():
         tolerance=1e-8,
     )
 
-    assert errors == ["metrics.rmse mismatch: expected finite numeric 1.0, got 'not-a-number'"]
+    assert errors == [
+        "metrics.rmse mismatch: expected finite numeric 1.0, got 'not-a-number'"
+    ]
 
 
 def test_expected_mapping_compares_boolean_expected_values_exactly():

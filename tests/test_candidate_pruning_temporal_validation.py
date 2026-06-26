@@ -1,7 +1,6 @@
 import unittest
 
 import numpy as np
-
 from pyrecest.utils import (
     CandidatePruningConfig,
     candidate_mask_from_costs,
@@ -21,7 +20,9 @@ class TestCandidatePruningTemporalValidation(unittest.TestCase):
         for function in (candidate_mask_from_costs, prune_pairwise_cost_matrix):
             for matrix in invalid_matrices:
                 with self.subTest(function=function.__name__, dtype=str(matrix.dtype)):
-                    with self.assertRaisesRegex(ValueError, "cost_matrix must be numeric"):
+                    with self.assertRaisesRegex(
+                        ValueError, "cost_matrix must be numeric"
+                    ):
                         function(matrix)
 
     def test_probability_matrix_rejects_datetime_and_timedelta_entries(self):
@@ -35,7 +36,9 @@ class TestCandidatePruningTemporalValidation(unittest.TestCase):
 
         for probabilities in invalid_probability_matrices:
             with self.subTest(dtype=str(probabilities.dtype)):
-                with self.assertRaisesRegex(ValueError, "probability_matrix must be numeric"):
+                with self.assertRaisesRegex(
+                    ValueError, "probability_matrix must be numeric"
+                ):
                     candidate_mask_from_costs(
                         np.array([[1.0]]),
                         probability_matrix=probabilities,

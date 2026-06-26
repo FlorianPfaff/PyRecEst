@@ -1,5 +1,4 @@
 import pytest
-
 from pyrecest.models.likelihood import SampleableTransitionModel
 
 

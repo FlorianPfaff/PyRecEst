@@ -67,7 +67,10 @@ def _is_text_bool_or_complex(value: Any) -> bool:
 
 def _as_scalar_float(value: Any, name: str) -> float:
     value_array = np.asarray(value)
-    if value_array.shape != () or value_array.dtype.kind in _REJECTED_NUMERIC_ARRAY_KINDS:
+    if (
+        value_array.shape != ()
+        or value_array.dtype.kind in _REJECTED_NUMERIC_ARRAY_KINDS
+    ):
         raise ValueError(f"{name} must be a scalar number")
     scalar_value = value_array.item()
     if _is_text_bool_or_complex(scalar_value):

@@ -1,7 +1,6 @@
 """Regression tests for track-edit metadata selector validation."""
 
 import pytest
-
 from pyrecest.utils.track_edit_whatif import TrackEdit, apply_track_edit
 
 
@@ -15,7 +14,9 @@ def test_remove_link_rejects_fractional_occurrence_index() -> None:
         metadata={"occurrence_index": 0.5},
     )
 
-    with pytest.raises(ValueError, match="metadata\['occurrence_index'\] must be an integer"):
+    with pytest.raises(
+        ValueError, match="metadata\['occurrence_index'\] must be an integer"
+    ):
         apply_track_edit([[1, 2], [1, 2]], edit)
 
 
@@ -32,7 +33,10 @@ def test_swap_link_rejects_boolean_removed_observation() -> None:
         },
     )
 
-    with pytest.raises(ValueError, match="metadata\['remove_source_observation'\] must be a non-negative integer"):
+    with pytest.raises(
+        ValueError,
+        match="metadata\['remove_source_observation'\] must be a non-negative integer",
+    ):
         apply_track_edit([[1, 2]], edit)
 
 
@@ -43,5 +47,7 @@ def test_merge_tracks_rejects_text_other_track_index() -> None:
         metadata={"other_track_index": "1"},
     )
 
-    with pytest.raises(ValueError, match="metadata\['other_track_index'\] must be an integer"):
+    with pytest.raises(
+        ValueError, match="metadata\['other_track_index'\] must be an integer"
+    ):
         apply_track_edit([[1, None], [None, 2]], edit)

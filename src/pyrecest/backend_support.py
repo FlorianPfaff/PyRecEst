@@ -38,7 +38,12 @@ def backend_support(
 
 
 def _markdown_table_cell(value: object) -> str:
-    return str(value).replace("\r", " ").replace("\n", "<br>").replace(chr(124), chr(0xFF5C))
+    return (
+        str(value)
+        .replace("\r", " ")
+        .replace("\n", "<br>")
+        .replace(chr(124), chr(0xFF5C))
+    )
 
 
 def _markdown_table_row(cells: list[str]) -> str:
