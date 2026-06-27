@@ -12,7 +12,9 @@ from pyrecest.filters.gaussian_mixture_phd_filter import GaussianMixturePHDFilte
 )
 class TestGaussianMixturePHDFilterDimensions(unittest.TestCase):
     def test_constructor_rejects_mismatched_birth_dimension(self):
-        with self.assertRaisesRegex(ValueError, "Birth components must have dimension 2"):
+        with self.assertRaisesRegex(
+            ValueError, "Birth components must have dimension 2"
+        ):
             GaussianMixturePHDFilter(
                 initial_components=[GaussianDistribution(array([0.0, 0.0]), eye(2))],
                 initial_weights=array([0.8]),
@@ -32,7 +34,9 @@ class TestGaussianMixturePHDFilterDimensions(unittest.TestCase):
             log_posterior_estimates=False,
         )
 
-        with self.assertRaisesRegex(ValueError, "Birth components must have dimension 2"):
+        with self.assertRaisesRegex(
+            ValueError, "Birth components must have dimension 2"
+        ):
             tracker.set_birth_model(
                 [GaussianDistribution(array([5.0, 5.0, 0.0]), eye(3))],
                 array([0.2]),
@@ -46,7 +50,9 @@ class TestGaussianMixturePHDFilterDimensions(unittest.TestCase):
             log_posterior_estimates=False,
         )
 
-        with self.assertRaisesRegex(ValueError, "Birth components must have dimension 2"):
+        with self.assertRaisesRegex(
+            ValueError, "Birth components must have dimension 2"
+        ):
             tracker.predict_linear(
                 eye(2),
                 0.1 * eye(2),

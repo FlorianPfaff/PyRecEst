@@ -369,7 +369,9 @@ def _as_finite_real_array(value: Any, name: str) -> np.ndarray:
 
     if raw_values.dtype == np.bool_ or raw_values.dtype.kind in "USbcMm":
         raise ValueError(message)
-    if _contains_values_of_type(value, _INVALID_REAL_NUMERIC_TYPES) or _contains_values_of_type(raw_values, _INVALID_REAL_NUMERIC_TYPES):
+    if _contains_values_of_type(
+        value, _INVALID_REAL_NUMERIC_TYPES
+    ) or _contains_values_of_type(raw_values, _INVALID_REAL_NUMERIC_TYPES):
         raise ValueError(message)
 
     try:

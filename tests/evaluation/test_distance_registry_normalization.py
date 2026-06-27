@@ -14,5 +14,13 @@ def test_custom_distance_registry_strips_names_for_registration_and_lookup():
 
     assert "unit-test-distance-trimmed" in available_distance_functions()
     assert "  unit-test-distance-trimmed  " not in available_distance_functions()
-    assert get_distance_function("unit-test-distance-trimmed")(array([0.0]), array([1.0])) == 13.0
-    assert get_distance_function("  unit-test-distance-trimmed  ")(array([0.0]), array([1.0])) == 13.0
+    assert (
+        get_distance_function("unit-test-distance-trimmed")(array([0.0]), array([1.0]))
+        == 13.0
+    )
+    assert (
+        get_distance_function("  unit-test-distance-trimmed  ")(
+            array([0.0]), array([1.0])
+        )
+        == 13.0
+    )

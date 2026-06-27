@@ -52,11 +52,16 @@ def test_benchmark_regression_rejects_boolean_elapsed(tmp_path: Path) -> None:
     )
 
     assert completed.returncode == 1
-    assert "::error::linear_kalman.elapsed_seconds must be numeric, not boolean" in completed.stdout
+    assert (
+        "::error::linear_kalman.elapsed_seconds must be numeric, not boolean"
+        in completed.stdout
+    )
     assert "Traceback" not in completed.stderr
 
 
-def test_benchmark_regression_rejects_text_elapsed_without_traceback(tmp_path: Path) -> None:
+def test_benchmark_regression_rejects_text_elapsed_without_traceback(
+    tmp_path: Path,
+) -> None:
     completed = _run_checker(
         tmp_path,
         actual_entry={
@@ -74,7 +79,10 @@ def test_benchmark_regression_rejects_text_elapsed_without_traceback(tmp_path: P
     )
 
     assert completed.returncode == 1
-    assert "::error::linear_kalman.elapsed_seconds must be numeric, got '0.01'" in completed.stdout
+    assert (
+        "::error::linear_kalman.elapsed_seconds must be numeric, got '0.01'"
+        in completed.stdout
+    )
     assert "Traceback" not in completed.stderr
 
 
@@ -96,11 +104,16 @@ def test_benchmark_regression_rejects_text_iterations(tmp_path: Path) -> None:
     )
 
     assert completed.returncode == 1
-    assert "::error::linear_kalman.iterations must be an integer, got '200'" in completed.stdout
+    assert (
+        "::error::linear_kalman.iterations must be an integer, got '200'"
+        in completed.stdout
+    )
     assert "Traceback" not in completed.stderr
 
 
-def test_benchmark_regression_reports_invalid_final_estimate_without_traceback(tmp_path: Path) -> None:
+def test_benchmark_regression_reports_invalid_final_estimate_without_traceback(
+    tmp_path: Path,
+) -> None:
     completed = _run_checker(
         tmp_path,
         actual_entry={
@@ -118,5 +131,8 @@ def test_benchmark_regression_reports_invalid_final_estimate_without_traceback(t
     )
 
     assert completed.returncode == 1
-    assert "::error::linear_kalman.final_estimate[1] must be numeric, not boolean" in completed.stdout
+    assert (
+        "::error::linear_kalman.final_estimate[1] must be numeric, not boolean"
+        in completed.stdout
+    )
     assert "Traceback" not in completed.stderr

@@ -5,7 +5,9 @@ import numpy.testing as npt
 
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import array, eye
-from pyrecest.filters.abstract_extended_object_tracker import AbstractExtendedObjectTracker
+from pyrecest.filters.abstract_extended_object_tracker import (
+    AbstractExtendedObjectTracker,
+)
 
 
 class _MinimalExtendedObjectTracker(AbstractExtendedObjectTracker):

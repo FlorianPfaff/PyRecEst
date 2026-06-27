@@ -52,7 +52,9 @@ def test_support_points_from_axis_offsets_supports_batches() -> None:
 
 
 def test_support_points_from_axis_offsets_can_omit_center() -> None:
-    support = support_points_from_axis_offsets([0.0, 0.0], np.eye(2), include_center=False)
+    support = support_points_from_axis_offsets(
+        [0.0, 0.0], np.eye(2), include_center=False
+    )
 
     assert support.shape == (4, 2)
     assert np.allclose(support, [[1.0, 0.0], [-1.0, 0.0], [0.0, 1.0], [0.0, -1.0]])

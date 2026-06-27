@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-
 from pyrecest.utils.association_features import CalibratedPairwiseAssociationModel
 
 
@@ -46,7 +45,9 @@ def test_predict_match_probability_rejects_non_real_probability_values(probabili
         feature_names=["distance"],
     )
 
-    with pytest.raises(ValueError, match="predicted probabilities must be real numeric"):
+    with pytest.raises(
+        ValueError, match="predicted probabilities must be real numeric"
+    ):
         model.predict_match_probability(np.array([[0.0], [1.0]]))
 
 
@@ -56,7 +57,9 @@ def test_predict_proba_rejects_non_real_probabilities_before_class_selection():
         feature_names=["distance"],
     )
 
-    with pytest.raises(ValueError, match="predicted probabilities must be real numeric"):
+    with pytest.raises(
+        ValueError, match="predicted probabilities must be real numeric"
+    ):
         model.predict_match_probability(np.array([[0.0]]))
 
 
@@ -66,5 +69,7 @@ def test_pairwise_cost_model_rejects_temporal_cost_values():
         feature_names=["distance"],
     )
 
-    with pytest.raises(ValueError, match="predicted pairwise costs must be real numeric"):
+    with pytest.raises(
+        ValueError, match="predicted pairwise costs must be real numeric"
+    ):
         model.predict_match_probability(np.array([[0.0]]))
