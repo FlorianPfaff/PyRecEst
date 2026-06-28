@@ -48,7 +48,10 @@ def _is_real_numeric_object_value(value) -> bool:
         if kind is not None:
             return kind in {"i", "u", "f"}
         dtype_name = str(dtype).lower()
-        if any(token in dtype_name for token in ("bool", "complex", "str", "string", "object")):
+        if any(
+            token in dtype_name
+            for token in ("bool", "complex", "str", "string", "object")
+        ):
             return False
         if "float" in dtype_name or "int" in dtype_name:
             return True
@@ -81,7 +84,9 @@ def _has_real_numeric_dtype(value) -> bool:
     if kind is not None:
         return kind in {"i", "u", "f"}
     dtype_name = str(dtype).lower()
-    if any(token in dtype_name for token in ("bool", "complex", "str", "string", "object")):
+    if any(
+        token in dtype_name for token in ("bool", "complex", "str", "string", "object")
+    ):
         return False
     return "float" in dtype_name or "int" in dtype_name
 

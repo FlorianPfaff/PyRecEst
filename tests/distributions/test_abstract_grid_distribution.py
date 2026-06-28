@@ -49,15 +49,11 @@ class AbstractGridDistributionTest(unittest.TestCase):
 
     def test_constructor_rejects_one_dimensional_grid_for_multidimensional_space(self):
         with self.assertRaisesRegex(ValueError, "dimension 2"):
-            DummyGridDistribution(
-                array([1.0, 1.0]), grid=array([0.0, 1.0]), dim=2
-            )
+            DummyGridDistribution(array([1.0, 1.0]), grid=array([0.0, 1.0]), dim=2)
 
     def test_constructor_rejects_higher_rank_grid_coordinates(self):
         with self.assertRaisesRegex(ValueError, "one- or two-dimensional"):
-            DummyGridDistribution(
-                array([1.0, 1.0]), grid=array([[[0.0]], [[1.0]]])
-            )
+            DummyGridDistribution(array([1.0, 1.0]), grid=array([[[0.0]], [[1.0]]]))
 
     def test_integrate_rejects_custom_boundaries(self):
         dist = DummyGridDistribution(array([1.0, 1.0]))

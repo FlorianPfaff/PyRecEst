@@ -2,7 +2,11 @@ import numpy as _np
 from pyrecest._backend._dtype_utils import (
     _dyn_update_dtype,
     _modify_func_default_dtype,
+)
+from pyrecest._backend._dtype_utils import (
     get_default_cdtype as _shared_get_default_cdtype,
+)
+from pyrecest._backend._dtype_utils import (
     get_default_dtype as _shared_get_default_dtype,
 )
 

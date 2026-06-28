@@ -72,8 +72,7 @@ def _contains_non_real_cost(values: np.ndarray) -> bool:
         return True
     if values.dtype == object:
         return any(
-            isinstance(item, _INVALID_COST_SCALAR_TYPES)
-            for item in values.reshape(-1)
+            isinstance(item, _INVALID_COST_SCALAR_TYPES) for item in values.reshape(-1)
         )
     return False
 

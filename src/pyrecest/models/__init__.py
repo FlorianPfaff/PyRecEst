@@ -4,6 +4,7 @@ evolve and how measurements are evaluated. These objects are deliberately small
 and capability-oriented so filters can opt into the pieces they need.
 """
 
+from ._sampleable_transition_validation import install_sampleable_transition_validation
 from ._validated_motion_models import nearly_coordinated_turn_model
 from .adapters import (
     LinearMeasurementArguments,
@@ -36,7 +37,6 @@ from .likelihood import (
     SupportsTransitionDensity,
     SupportsTransitionSampling,
 )
-from ._sampleable_transition_validation import install_sampleable_transition_validation
 
 install_sampleable_transition_validation()
 

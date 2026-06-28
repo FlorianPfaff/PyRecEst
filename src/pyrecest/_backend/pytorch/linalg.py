@@ -14,7 +14,9 @@ from torch.linalg import (
     inv,
 )
 from torch.linalg import matrix_exp as expm
-from torch.linalg import matrix_power
+from torch.linalg import (
+    matrix_power,
+)
 
 from .._backend_config import np_atol as atol
 from ..numpy import linalg as _gsnplinalg

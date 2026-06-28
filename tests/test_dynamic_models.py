@@ -110,7 +110,10 @@ class TestMotionModelCatalog(unittest.TestCase):
             {"spectral_density": True, "message": "spectral_density"},
             {"spectral_density": "1.0", "message": "spectral_density"},
             {"spectral_density": ["1.0", "2.0"], "message": "spectral_density"},
-            {"spectral_density": np.array([True, False], dtype=object), "message": "spectral_density"},
+            {
+                "spectral_density": np.array([True, False], dtype=object),
+                "message": "spectral_density",
+            },
             {
                 "spectral_density": np.array([1.0, np.nan]),
                 "message": "spectral_density",

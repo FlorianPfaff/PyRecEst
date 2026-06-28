@@ -34,7 +34,6 @@ from .multisession_assignment import (
     solve_multisession_assignment,
 )
 
-
 _INVALID_SCORE_SCALAR_TYPES = (
     type(None),
     bool,

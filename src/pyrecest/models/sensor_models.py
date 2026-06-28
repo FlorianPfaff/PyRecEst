@@ -47,7 +47,10 @@ def _state_vector(state):
 
 def _as_scalar_float(value: Any, name: str) -> float:
     value_array = np.asarray(value)
-    if value_array.shape != () or value_array.dtype.kind in _REJECTED_SCALAR_ARRAY_KINDS:
+    if (
+        value_array.shape != ()
+        or value_array.dtype.kind in _REJECTED_SCALAR_ARRAY_KINDS
+    ):
         raise ValueError(f"{name} must be a scalar number")
     scalar_value = value_array.item()
     if isinstance(scalar_value, _TEXT_OR_BOOL_SCALAR_TYPES) or isinstance(

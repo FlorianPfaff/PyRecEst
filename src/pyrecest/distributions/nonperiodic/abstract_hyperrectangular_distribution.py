@@ -9,7 +9,6 @@ from ..abstract_bounded_nonperiodic_distribution import (
     AbstractBoundedNonPeriodicDistribution,
 )
 
-
 _ERROR_SCALAR_PDF_VALUE = (
     "pdf must return one finite scalar value per integration point"
 )

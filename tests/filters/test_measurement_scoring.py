@@ -1,5 +1,4 @@
 import numpy as np
-
 from pyrecest.filters.measurement_scoring import MeasurementScore
 
 

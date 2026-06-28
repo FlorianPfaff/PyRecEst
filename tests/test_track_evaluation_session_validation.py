@@ -3,7 +3,6 @@
 import unittest
 
 import numpy as np
-
 from pyrecest.utils.track_evaluation import (
     complete_track_set,
     score_complete_tracks,

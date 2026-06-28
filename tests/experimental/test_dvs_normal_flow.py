@@ -24,7 +24,9 @@ def test_signed_scalar_sign_rejects_invalid_values(bad_value):
         signed_scalar_sign(bad_value)
 
 
-@pytest.mark.parametrize("bad_tolerance", [-1e-12, np.nan, np.inf, "1e-12", 1e-12 + 0.0j])
+@pytest.mark.parametrize(
+    "bad_tolerance", [-1e-12, np.nan, np.inf, "1e-12", 1e-12 + 0.0j]
+)
 def test_signed_scalar_sign_rejects_invalid_zero_tolerance(bad_tolerance):
     with pytest.raises(ValueError, match="zero_tolerance"):
         signed_scalar_sign(1.0, zero_tolerance=bad_tolerance)
@@ -108,7 +110,9 @@ def test_polarity_consistency_and_weight_for_signed_flow():
 @pytest.mark.parametrize("bad_weight", [np.nan, np.inf, "0.5", 0.5 + 0.0j, -0.1, 1.1])
 def test_polarity_weight_rejects_invalid_mismatch_weight(bad_weight):
     with pytest.raises(ValueError, match="polarity_mismatch_weight"):
-        polarity_weight_for_signed_flow(1.0, 0.0, 1.0, polarity_mismatch_weight=bad_weight)
+        polarity_weight_for_signed_flow(
+            1.0, 0.0, 1.0, polarity_mismatch_weight=bad_weight
+        )
 
 
 def test_polarity_weights_for_signed_flows_resolves_batch_sign():
@@ -122,4 +126,6 @@ def test_polarity_weights_for_signed_flows_resolves_batch_sign():
 
 def test_polarity_weights_for_signed_flows_rejects_invalid_mismatch_weight_when_disabled():
     with pytest.raises(ValueError, match="polarity_mismatch_weight"):
-        polarity_weights_for_signed_flows([1.0], [1.0], None, polarity_mismatch_weight=np.nan)
+        polarity_weights_for_signed_flows(
+            [1.0], [1.0], None, polarity_mismatch_weight=np.nan
+        )

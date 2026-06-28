@@ -10,7 +10,9 @@ import pyrecest.backend
 # pylint: disable=no-name-in-module,no-member,redefined-builtin
 from pyrecest.backend import empty, int32, int64, log, random, squeeze
 
-_SCALAR_VALUE_ERROR = "Metropolis-Hastings scalar evaluations must return scalar values."
+_SCALAR_VALUE_ERROR = (
+    "Metropolis-Hastings scalar evaluations must return scalar values."
+)
 
 
 def _shape_size(value) -> int | None:

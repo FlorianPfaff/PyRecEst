@@ -225,9 +225,7 @@ def _contains_non_real_numeric_values(value: Any) -> bool:
         return True
     if array.dtype.kind != "O":
         return False
-    return any(
-        isinstance(item, _NON_REAL_NUMERIC_SCALAR_TYPES) for item in array.flat
-    )
+    return any(isinstance(item, _NON_REAL_NUMERIC_SCALAR_TYPES) for item in array.flat)
 
 
 def _positive_int(value: int, name: str) -> int:
