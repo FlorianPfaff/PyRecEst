@@ -1,7 +1,6 @@
 import warnings
 
 import pytest
-
 from pyrecest.deprecation import deprecated
 
 

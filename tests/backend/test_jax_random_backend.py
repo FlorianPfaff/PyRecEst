@@ -164,7 +164,9 @@ def test_choice_rejects_non_boolean_replace_flag(bad_replace):
         random.choice(jnp.array([0, 1, 2]), size=2, replace=bad_replace)
 
 
-@pytest.mark.parametrize("replace", [np.bool_(False), np.array(False), jnp.array(False)])
+@pytest.mark.parametrize(
+    "replace", [np.bool_(False), np.array(False), jnp.array(False)]
+)
 def test_choice_accepts_scalar_boolean_replace_flag(replace):
     random.seed(0)
 

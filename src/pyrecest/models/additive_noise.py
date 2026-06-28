@@ -416,7 +416,9 @@ class AdditiveNoiseMeasurementModel:
             raise NotImplementedError(
                 "The measurement noise distribution does not provide sample(n)"
             )
-        return self.measurement_function(state, **kwargs) + self.noise_distribution.sample(n)
+        return self.measurement_function(
+            state, **kwargs
+        ) + self.noise_distribution.sample(n)
 
     def likelihood(self, measurement, state, **kwargs):
         """Evaluate ``p(measurement | state)`` from the additive noise density."""

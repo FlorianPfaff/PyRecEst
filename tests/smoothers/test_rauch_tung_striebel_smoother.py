@@ -38,7 +38,9 @@ class RauchTungStriebelSmootherTest(unittest.TestCase):
         npt.assert_allclose(smoothed_states[1].C, array([[0.6]]))
         npt.assert_allclose(smoother_gains[0], array([[1.0 / 3.0]]))
 
-    def test_scalar_measurement_noise_uses_measurement_dimension_not_state_dimension(self):
+    def test_scalar_measurement_noise_uses_measurement_dimension_not_state_dimension(
+        self,
+    ):
         smoother = RauchTungStriebelSmoother()
         filtered_states, predicted_states, smoothed_states, smoother_gains = (
             smoother.filter_and_smooth(

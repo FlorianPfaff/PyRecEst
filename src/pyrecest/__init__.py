@@ -47,7 +47,9 @@ def _patch_shared_numpy_squeeze_facade() -> None:
         if axis_error is None:
             axis_error = getattr(np_module, "AxisError", None)
         if axis_error is None:
-            return ValueError(f"axis {axis} is out of bounds for array of dimension {ndim}")
+            return ValueError(
+                f"axis {axis} is out of bounds for array of dimension {ndim}"
+            )
         try:
             return axis_error(axis, ndim=ndim)
         except TypeError:  # pragma: no cover - compatibility with older NumPy APIs
@@ -78,7 +80,9 @@ def _patch_shared_numpy_squeeze_facade() -> None:
             raise ValueError("duplicate value in 'axis'")
         if any(x_arr.shape[one_axis] != 1 for one_axis in normalized_axes):
             return x_arr
-        squeeze_axis = normalized_axes[0] if len(normalized_axes) == 1 else normalized_axes
+        squeeze_axis = (
+            normalized_axes[0] if len(normalized_axes) == 1 else normalized_axes
+        )
         return np_module.squeeze(x_arr, axis=squeeze_axis)
 
     squeeze.__name__ = getattr(original_squeeze, "__name__", "squeeze")
@@ -204,7 +208,9 @@ def _patch_jax_std_out_facade() -> None:
 
     original_std = backend.std
 
-    def std(a, axis=None, dtype=None, out=None, ddof=0, keepdims=False, *, correction=0):
+    def std(
+        a, axis=None, dtype=None, out=None, ddof=0, keepdims=False, *, correction=0
+    ):
         result = original_std(
             a,
             axis=axis,

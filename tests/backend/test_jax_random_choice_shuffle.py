@@ -28,7 +28,9 @@ def test_choice_without_replacement_shuffle_false_preserves_order():
 def test_choice_accepts_scalar_boolean_shuffle_flag(shuffle):
     random.seed(0)
 
-    samples = random.choice(jnp.array([0, 1, 2]), size=3, replace=False, shuffle=shuffle)
+    samples = random.choice(
+        jnp.array([0, 1, 2]), size=3, replace=False, shuffle=shuffle
+    )
 
     assert samples.shape == (3,)
 

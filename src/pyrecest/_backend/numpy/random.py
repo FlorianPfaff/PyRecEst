@@ -78,11 +78,7 @@ def _validate_multinomial_pvals(pvals):
         raise ValueError("pvals must contain at least one probability")
 
     pvals_sum = pvals_array.sum()
-    if (
-        _np.any(pvals_array < 0)
-        or not _np.isfinite(pvals_sum)
-        or pvals_sum <= 0
-    ):
+    if _np.any(pvals_array < 0) or not _np.isfinite(pvals_sum) or pvals_sum <= 0:
         raise ValueError("probabilities do not sum to a positive value")
     return pvals_array / pvals_sum
 

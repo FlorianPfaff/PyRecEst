@@ -1,7 +1,6 @@
 import numpy as np
 import numpy.testing as npt
 import pytest
-
 from pyrecest.backend import to_numpy
 from pyrecest.distributions.circle.wrapped_normal_distribution import (
     WrappedNormalDistribution,

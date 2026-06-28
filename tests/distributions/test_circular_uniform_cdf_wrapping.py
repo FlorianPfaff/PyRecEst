@@ -1,5 +1,4 @@
 import numpy.testing as npt
-
 from pyrecest.backend import array, pi
 from pyrecest.distributions.circle.circular_uniform_distribution import (
     CircularUniformDistribution,
