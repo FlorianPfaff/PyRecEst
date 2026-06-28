@@ -1,7 +1,6 @@
 import unittest
 
 import numpy as np
-
 from pyrecest.filters.global_nearest_neighbor import GlobalNearestNeighbor
 
 

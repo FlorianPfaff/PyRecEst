@@ -2,7 +2,6 @@ import importlib.util
 
 import numpy as np
 import pytest
-
 from pyrecest._backend import numpy as numpy_backend
 from tests.support.backend_runner import run_backend_code
 

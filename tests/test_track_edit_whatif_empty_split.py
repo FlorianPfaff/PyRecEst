@@ -1,6 +1,10 @@
 """Regression tests for empty split-track edits."""
 
-from pyrecest.utils.track_edit_whatif import TrackEdit, apply_track_edit, score_track_edit_delta
+from pyrecest.utils.track_edit_whatif import (
+    TrackEdit,
+    apply_track_edit,
+    score_track_edit_delta,
+)
 
 
 def test_split_track_rejects_empty_track() -> None:

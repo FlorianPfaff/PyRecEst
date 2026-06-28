@@ -3,7 +3,6 @@ import pytest
 
 jax = pytest.importorskip("jax")
 import jax.numpy as jnp  # noqa: E402
-
 from pyrecest._backend.jax import random  # noqa: E402
 
 

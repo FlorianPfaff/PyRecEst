@@ -3,7 +3,6 @@ from warnings import catch_warnings, simplefilter
 
 import numpy as np
 import numpy.testing as npt
-
 import pyrecest.backend
 
 # pylint: disable=no-name-in-module,no-member

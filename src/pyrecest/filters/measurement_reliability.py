@@ -8,7 +8,6 @@ from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
-
 from pyrecest.backend import all, array, isfinite, ones, reshape, stack, zeros
 
 
@@ -28,7 +27,9 @@ class MeasurementReliabilitySelection:
     active_measurement_indices: list[int]
 
 
-def _normalize_integer_count(value: Any, name: str, *, minimum: int, message: str) -> int:
+def _normalize_integer_count(
+    value: Any, name: str, *, minimum: int, message: str
+) -> int:
     try:
         value_array = np.asarray(value)
     except (TypeError, ValueError) as exc:
@@ -131,7 +132,9 @@ def _has_real_numeric_dtype(value) -> bool:
     if kind is not None:
         return kind in {"i", "u", "f"}
     dtype_name = str(dtype).lower()
-    if any(token in dtype_name for token in ("bool", "complex", "str", "string", "object")):
+    if any(
+        token in dtype_name for token in ("bool", "complex", "str", "string", "object")
+    ):
         return False
     return "float" in dtype_name or "int" in dtype_name
 

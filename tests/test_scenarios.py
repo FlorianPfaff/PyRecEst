@@ -2,7 +2,6 @@ import json
 from pathlib import Path
 
 import pytest
-
 from pyrecest.scenarios import load_scenario_config, run_scenario
 
 SCENARIO = Path("scenarios/linear_gaussian_cv_1d/config.toml")

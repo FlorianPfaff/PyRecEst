@@ -80,7 +80,9 @@ class CircularGridDistribution(AbstractCircularDistribution, AbstractGridDistrib
         lower = int(floor(sinc_repetitions / 2) * grid_size)
         upper = int(ceil(sinc_repetitions / 2) * grid_size)
         repetitions = arange(-lower, upper)
-        sinc_vals = self._matlab_sinc((xs_eval / step_size)[:, None] - repetitions[None, :])
+        sinc_vals = self._matlab_sinc(
+            (xs_eval / step_size)[:, None] - repetitions[None, :]
+        )
         grid_values = (
             sqrt(self.grid_values) if self.enforce_pdf_nonnegative else self.grid_values
         )
