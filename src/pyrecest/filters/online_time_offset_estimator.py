@@ -49,12 +49,14 @@ class OnlineTimeOffsetEstimator:
         if self.min_speed < 0.0:
             raise ValueError("min_speed must be nonnegative")
 
-    def predict(self, dt: float = 0.0) -> None:
-        """Apply random-walk process noise."""
+    def predict(self, dt: float = 1.0) -> None:
+        """Apply elapsed-time-scaled random-walk process noise."""
         dt_value = _as_finite_scalar(dt, "dt")
         if dt_value < 0.0:
             raise ValueError("dt must be nonnegative")
-        self.variance = float(max(self.variance + self.process_variance, 1.0e-12))
+        self.variance = float(
+            max(self.variance + self.process_variance * dt_value, 1.0e-12)
+        )
 
     def update_from_position_residual(
         self,
