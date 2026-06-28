@@ -55,7 +55,7 @@ jobs:
 
       - name: Cache wheel directory
         id: cache-wheels
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ${{ github.workspace }}/alpine-wheels
           key: ${{ runner.os }}-alpine-wheels-${{ hashFiles('poetry.lock') }}
