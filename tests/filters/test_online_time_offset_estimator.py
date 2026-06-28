@@ -33,12 +33,21 @@ class OnlineTimeOffsetEstimatorTest(unittest.TestCase):
         self.assertEqual(estimator.offset, 1.0)
         self.assertEqual(estimator.variance, 2.0)
 
-    def test_predict_adds_process_variance(self):
+    def test_predict_adds_process_variance_for_default_step(self):
+        estimator = OnlineTimeOffsetEstimator(variance=1.0, process_variance=0.25)
+
+        estimator.predict()
+
+        self.assertAlmostEqual(estimator.variance, 1.25)
+
+    def test_predict_scales_process_variance_by_elapsed_time(self):
         estimator = OnlineTimeOffsetEstimator(variance=1.0, process_variance=0.25)
 
         estimator.predict(dt=3.0)
+        self.assertAlmostEqual(estimator.variance, 1.75)
 
-        self.assertAlmostEqual(estimator.variance, 1.25)
+        estimator.predict(dt=0.0)
+        self.assertAlmostEqual(estimator.variance, 1.75)
 
     def test_predict_rejects_invalid_dt_without_state_change(self):
         invalid_values = (
