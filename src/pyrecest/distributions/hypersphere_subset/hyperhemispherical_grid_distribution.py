@@ -17,14 +17,22 @@ from pyrecest.backend import (
 )
 
 from ...sampling.hyperspherical_sampler import get_grid_hyperhemisphere
-from .abstract_hyperhemispherical_distribution import AbstractHyperhemisphericalDistribution
-from .abstract_hypersphere_subset_distribution import AbstractHypersphereSubsetDistribution
-from .abstract_hypersphere_subset_grid_distribution import AbstractHypersphereSubsetGridDistribution
+from .abstract_hyperhemispherical_distribution import (
+    AbstractHyperhemisphericalDistribution,
+)
+from .abstract_hypersphere_subset_distribution import (
+    AbstractHypersphereSubsetDistribution,
+)
+from .abstract_hypersphere_subset_grid_distribution import (
+    AbstractHypersphereSubsetGridDistribution,
+)
 from .custom_hyperhemispherical_distribution import CustomHyperhemisphericalDistribution
 from .hyperspherical_dirac_distribution import HypersphericalDiracDistribution
 
 
-class HyperhemisphericalGridDistribution(AbstractHypersphereSubsetGridDistribution, AbstractHyperhemisphericalDistribution):
+class HyperhemisphericalGridDistribution(
+    AbstractHypersphereSubsetGridDistribution, AbstractHyperhemisphericalDistribution
+):
     def __init__(self, grid, grid_values, enforce_pdf_nonnegative=True):
         if not bool(all(abs(grid) <= 1 + 1e-12)):
             raise ValueError("Grid points must not lie outside the unit cube.")
@@ -70,7 +78,9 @@ class HyperhemisphericalGridDistribution(AbstractHypersphereSubsetGridDistributi
 
         if xs.ndim == 1:
             if xs.shape[0] != self.input_dim:
-                raise ValueError(f"xs must have length {self.input_dim}, got {xs.shape[0]}.")
+                raise ValueError(
+                    f"xs must have length {self.input_dim}, got {xs.shape[0]}."
+                )
             xs = xs[None, :]
         elif xs.ndim == 2:
             if xs.shape[1] == self.input_dim:
@@ -78,7 +88,9 @@ class HyperhemisphericalGridDistribution(AbstractHypersphereSubsetGridDistributi
             elif xs.shape[0] == self.input_dim:
                 xs = xs.T
             else:
-                raise ValueError(f"xs must have shape (n, input_dim) with input_dim={self.input_dim}.")
+                raise ValueError(
+                    f"xs must have shape (n, input_dim) with input_dim={self.input_dim}."
+                )
         else:
             raise ValueError("xs must be a 1D or 2D array.")
 
@@ -95,21 +107,32 @@ class HyperhemisphericalGridDistribution(AbstractHypersphereSubsetGridDistributi
         return points, indices
 
     def get_manifold_size(self):
-        return 0.5 * AbstractHypersphereSubsetDistribution.compute_unit_hypersphere_surface(self.dim)
+        return (
+            0.5
+            * AbstractHypersphereSubsetDistribution.compute_unit_hypersphere_surface(
+                self.dim
+            )
+        )
 
     @beartype
     def multiply(
         self: "HyperhemisphericalGridDistribution",
         other: "HyperhemisphericalGridDistribution",
     ) -> "HyperhemisphericalGridDistribution":
-        if self.dim != other.dim or self.get_grid().shape != other.get_grid().shape or not allclose(self.get_grid(), other.get_grid()):
+        if (
+            self.dim != other.dim
+            or self.get_grid().shape != other.get_grid().shape
+            or not allclose(self.get_grid(), other.get_grid())
+        ):
             raise ValueError("Multiply:IncompatibleGrid")
 
         hgd_filtered = self.to_full_sphere().multiply(other.to_full_sphere())
         n_hemi = self.grid.shape[0]
         hemi_grid = hgd_filtered.grid[:n_hemi]
         hemi_values = 2.0 * hgd_filtered.grid_values[:n_hemi]
-        return HyperhemisphericalGridDistribution(hemi_grid, hemi_values, enforce_pdf_nonnegative=True)
+        return HyperhemisphericalGridDistribution(
+            hemi_grid, hemi_values, enforce_pdf_nonnegative=True
+        )
 
     @staticmethod
     def from_function(
@@ -120,9 +143,13 @@ class HyperhemisphericalGridDistribution(AbstractHypersphereSubsetGridDistributi
         enforce_pdf_nonnegative=True,
     ):
         if grid_type not in ("leopardi_symm", "healpix"):
-            raise ValueError("For hyperhemispheres, use one of the symmetric grid types 'leopardi_symm' or 'healpix'.")
+            raise ValueError(
+                "For hyperhemispheres, use one of the symmetric grid types 'leopardi_symm' or 'healpix'."
+            )
         grid, _ = get_grid_hyperhemisphere(grid_type, no_of_grid_points, dim=dim)
         grid_values = fun(grid)
-        sgd = HyperhemisphericalGridDistribution(grid, grid_values, enforce_pdf_nonnegative=enforce_pdf_nonnegative)
+        sgd = HyperhemisphericalGridDistribution(
+            grid, grid_values, enforce_pdf_nonnegative=enforce_pdf_nonnegative
+        )
         sgd.grid_type = grid_type
         return sgd

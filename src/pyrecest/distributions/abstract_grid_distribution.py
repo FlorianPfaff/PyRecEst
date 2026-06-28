@@ -43,8 +43,7 @@ class AbstractGridDistribution(AbstractDistributionType):
                 )
             if dim is not None and actual_dim != dim:
                 raise ValueError(
-                    f"Grid coordinates must have dimension {dim}, got "
-                    f"{actual_dim}."
+                    f"Grid coordinates must have dimension {dim}, got " f"{actual_dim}."
                 )
         if grid is None or (grid.ndim > 1 and grid.shape[0] < grid.shape[1]):
             warnings.warn(

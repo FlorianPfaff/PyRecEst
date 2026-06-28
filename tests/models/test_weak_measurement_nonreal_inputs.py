@@ -4,14 +4,12 @@ from datetime import date, datetime, timedelta
 
 import numpy as np
 import pytest
-
 from pyrecest.models import (
     MaskedLinearMeasurementModel,
     WeakDimensionMeasurementModel,
     block_diag_measurement_covariance,
     diagonal_measurement_covariance,
 )
-
 
 _NON_REAL_STD_CASES = (
     [1.0 + 0.0j],

@@ -1,5 +1,4 @@
 import pytest
-
 from pyrecest import scenarios
 
 
@@ -27,7 +26,9 @@ def test_register_scenario_runner_strips_whitespace():
     try:
         assert scenarios.register_scenario_runner(f"  {name}\t", runner) is runner
         assert name in scenarios.available_scenario_types()
-        assert f"  {name}\t" not in scenarios._SCENARIO_RUNNERS  # pylint: disable=protected-access
+        assert (
+            f"  {name}\t" not in scenarios._SCENARIO_RUNNERS
+        )  # pylint: disable=protected-access
 
         with pytest.raises(ValueError, match="already registered"):
             scenarios.register_scenario_runner(name, runner)
@@ -38,8 +39,7 @@ def test_register_scenario_runner_strips_whitespace():
 def test_run_scenario_rejects_unhashable_scenario_type(tmp_path):
     scenario_path = tmp_path / "bad_scenario.toml"
     scenario_path.write_text(
-        "[scenario]\n"
-        'type = ["linear_gaussian"]\n',
+        "[scenario]\n" 'type = ["linear_gaussian"]\n',
         encoding="utf-8",
     )
 

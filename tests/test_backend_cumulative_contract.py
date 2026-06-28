@@ -4,8 +4,8 @@ import subprocess
 import sys
 
 import pyrecest.backend as backend
-from pyrecest.backend_tools import get_backend_name
 import pytest
+from pyrecest.backend_tools import get_backend_name
 
 
 def _to_python(value):

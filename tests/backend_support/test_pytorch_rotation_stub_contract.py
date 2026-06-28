@@ -15,9 +15,7 @@ def test_pytorch_rotation_stub_exposes_matrix_methods_with_backend_error():
     from pyrecest._backend.pytorch.spatial import Rotation
 
     with pytest.raises(RuntimeError, match="Rotation.from_matrix is not supported"):
-        Rotation.from_matrix(
-            [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
-        )
+        Rotation.from_matrix([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
 
     rotation = object.__new__(Rotation)
     with pytest.raises(RuntimeError, match="Rotation.as_matrix is not supported"):

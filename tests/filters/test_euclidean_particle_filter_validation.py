@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.filters.euclidean_particle_filter import EuclideanParticleFilter
 
 

@@ -13,7 +13,6 @@ from ._dtype import (
     is_floating,
 )
 
-
 # The public backend facade exposes NumPy-style helpers. Keep array-like
 # coercion local to this module instead of re-exporting raw torch.linalg
 # functions, because raw torch.linalg rejects Python lists and integer arrays.

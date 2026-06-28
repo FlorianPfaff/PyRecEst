@@ -18,17 +18,23 @@ def _murty_solution_with_full_assignment(solution, n_cols):
 
 
 def _solve_subproblem_with_full_assignment(*args, **kwargs):
-    solution = _assignment_module._solve_subproblem_without_full_assignment(*args, **kwargs)
+    solution = _assignment_module._solve_subproblem_without_full_assignment(
+        *args, **kwargs
+    )
     n_cols = args[2] if len(args) > 2 else kwargs["n_cols"]
     return _murty_solution_with_full_assignment(solution, n_cols)
 
 
 if not hasattr(_assignment_module, "_solve_subproblem_without_full_assignment"):
-    _assignment_module._solve_subproblem_without_full_assignment = _assignment_module._solve_subproblem
+    _assignment_module._solve_subproblem_without_full_assignment = (
+        _assignment_module._solve_subproblem
+    )
     _assignment_module._solve_subproblem = _solve_subproblem_with_full_assignment
 
 
-min_cost_max_cardinality_assignment = _assignment_module.min_cost_max_cardinality_assignment
+min_cost_max_cardinality_assignment = (
+    _assignment_module.min_cost_max_cardinality_assignment
+)
 murty_k_best_assignments = _assignment_module.murty_k_best_assignments
 from .association_features import (
     CalibratedPairwiseAssociationModel,

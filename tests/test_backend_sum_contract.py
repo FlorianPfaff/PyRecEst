@@ -30,7 +30,9 @@ def test_convert_to_wider_dtype_matches_numpy_result_type_for_mixed_dtypes():
     expected_dtype = np.result_type(np.dtype("int64"), np.dtype("float32"))
     assert backend.to_numpy(first).dtype == expected_dtype
     assert backend.to_numpy(second).dtype == expected_dtype
-    np.testing.assert_allclose(backend.to_numpy(first), np.array([1], dtype=expected_dtype))
+    np.testing.assert_allclose(
+        backend.to_numpy(first), np.array([1], dtype=expected_dtype)
+    )
     np.testing.assert_allclose(
         backend.to_numpy(second), np.array([1.5], dtype=expected_dtype)
     )

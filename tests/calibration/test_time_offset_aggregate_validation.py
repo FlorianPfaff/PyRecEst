@@ -2,7 +2,6 @@ import unittest
 
 import numpy as np
 import numpy.testing as npt
-
 from pyrecest.calibration import aggregate_time_offset_sweeps
 from pyrecest.calibration.time_offset import (
     aggregate_time_offset_sweeps as aggregate_time_offset_sweeps_from_module,

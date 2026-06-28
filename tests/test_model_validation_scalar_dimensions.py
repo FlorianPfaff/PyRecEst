@@ -1,7 +1,6 @@
 import numpy as np
 import numpy.testing as npt
 import pytest
-
 from pyrecest.models.validation import (
     validate_covariance_matrix,
     validate_matrix,

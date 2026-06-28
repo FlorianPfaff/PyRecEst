@@ -19,7 +19,9 @@ def _patch_pytorch_comparison_facade() -> None:
 
     try:
         import torch as _torch  # pylint: disable=import-outside-toplevel
-    except ModuleNotFoundError:  # pragma: no cover - backend import fails first in practice
+    except (
+        ModuleNotFoundError
+    ):  # pragma: no cover - backend import fails first in practice
         return
 
     def _coerce_binary_args(x, y):

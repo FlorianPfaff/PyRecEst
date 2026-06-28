@@ -15,7 +15,13 @@ from .bias import (
 )
 from .time_offset import (
     TimeOffsetFitResult,
-    aggregate_time_offset_sweeps as _aggregate_time_offset_sweeps,
+    _aggregate_std_metric,
+    _as_nonnegative_summary_count,
+    _as_summary_scalar,
+    _validate_error_metric,
+)
+from .time_offset import aggregate_time_offset_sweeps as _aggregate_time_offset_sweeps
+from .time_offset import (
     apply_time_offset,
     fit_time_offset,
     interpolate_reference_values,
@@ -23,12 +29,6 @@ from .time_offset import (
     nearest_time_indices,
     time_offset_error_summary,
     time_offset_sweep,
-)
-from .time_offset import (
-    _aggregate_std_metric,
-    _as_nonnegative_summary_count,
-    _as_summary_scalar,
-    _validate_error_metric,
 )
 
 

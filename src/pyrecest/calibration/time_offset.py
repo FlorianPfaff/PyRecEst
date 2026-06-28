@@ -8,7 +8,6 @@ from typing import Any
 
 import numpy as np
 
-
 _ERROR_METRIC_NAMES = frozenset({"max", "mean", "p95", "rmse", "std"})
 _ERROR_METRIC_MESSAGE = "metric must be one of 'max', 'mean', 'p95', 'rmse', or 'std'"
 

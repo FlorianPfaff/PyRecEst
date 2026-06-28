@@ -40,7 +40,9 @@ def test_size_arguments_accept_zero_dimensional_integer_arrays_and_tensors(scala
         torch.tensor(3.0),
     ],
 )
-def test_size_arguments_reject_zero_dimensional_non_integer_arrays_and_tensors(bad_size):
+def test_size_arguments_reject_zero_dimensional_non_integer_arrays_and_tensors(
+    bad_size,
+):
     for sampler in _size_aware_samplers():
         with pytest.raises(TypeError, match="size must"):
             sampler(bad_size)

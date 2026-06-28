@@ -71,9 +71,7 @@ def test_generate_measurements_eot_accepts_array_like_groundtruth_entries():
     simulation_config = {
         "n_timesteps": 1,
         "eot": True,
-        "target_shape": PolygonWithSampling(
-            [(0.0, 0.0), (1.0, 0.0), (0.0, 1.0)]
-        ),
+        "target_shape": PolygonWithSampling([(0.0, 0.0), (1.0, 0.0), (0.0, 1.0)]),
         "eot_sampling_style": "within",
         "n_meas_at_individual_time_step": np.array([0]),
     }

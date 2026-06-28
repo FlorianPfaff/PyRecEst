@@ -150,7 +150,9 @@ def generate_measurements(groundtruth, simulation_config):
                 y = _as_shapely_scalar(curr_groundtruth[..., 1], "groundtruth y")
                 curr_shape = translate(shape, xoff=x, yoff=y)
             elif curr_groundtruth.shape[-1] == 3:
-                angle = _as_shapely_scalar(curr_groundtruth[..., 0], "groundtruth angle")
+                angle = _as_shapely_scalar(
+                    curr_groundtruth[..., 0], "groundtruth angle"
+                )
                 x = _as_shapely_scalar(curr_groundtruth[..., 1], "groundtruth x")
                 y = _as_shapely_scalar(curr_groundtruth[..., 2], "groundtruth y")
                 curr_shape = rotate(
@@ -164,9 +166,7 @@ def generate_measurements(groundtruth, simulation_config):
                     "Currently only R^2 and SE(2) scenarios are supported."
                 )
             if not isinstance(curr_shape, PolygonWithSampling):
-                curr_shape.__class__ = (
-                    PolygonWithSampling  # Preserve existing subclass swap to add sampling methods
-                )
+                curr_shape.__class__ = PolygonWithSampling  # Preserve existing subclass swap to add sampling methods
 
             if "n_meas_at_individual_time_step" in simulation_config:
                 if "intensity_lambda" in simulation_config:

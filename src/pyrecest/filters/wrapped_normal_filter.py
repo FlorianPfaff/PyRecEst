@@ -8,7 +8,6 @@ from pyrecest.distributions import CircularDiracDistribution, WrappedNormalDistr
 from .abstract_filter import AbstractFilter
 from .manifold_mixins import CircularFilterMixin
 
-
 _PROGRESSIVE_TAU_MESSAGE = "tau must be a positive finite scalar"
 
 

@@ -42,11 +42,7 @@ def _scalar_integer_dimension(value):
         ):
             return int(value.item())
         return None
-    if (
-        _torch.is_tensor(value)
-        and value.ndim == 0
-        and value.dtype in _INTEGER_DTYPES
-    ):
+    if _torch.is_tensor(value) and value.ndim == 0 and value.dtype in _INTEGER_DTYPES:
         return int(value.item())
     return None
 
@@ -121,11 +117,7 @@ def _choice_bool(value, name):
         return bool(value)
     if _torch.is_tensor(value) and value.ndim == 0 and value.dtype == _torch.bool:
         return bool(value.item())
-    if (
-        isinstance(value, _np.ndarray)
-        and value.shape == ()
-        and value.dtype.kind == "b"
-    ):
+    if isinstance(value, _np.ndarray) and value.shape == () and value.dtype.kind == "b":
         return bool(value.item())
     raise TypeError(f"{name} must be a boolean")
 
@@ -147,11 +139,7 @@ def _validate_choice_probabilities(p, population_size, device):
     if p.ndim != 1 or p.shape[0] != population_size:
         raise ValueError("p must be 1-dimensional with one entry per population item")
     p_sum = p.sum()
-    if (
-        bool(_torch.any(p < 0))
-        or not bool(_torch.isfinite(p_sum))
-        or bool(p_sum <= 0)
-    ):
+    if bool(_torch.any(p < 0)) or not bool(_torch.isfinite(p_sum)) or bool(p_sum <= 0):
         raise ValueError("probabilities do not sum to a positive value")
     return p / p_sum
 
@@ -261,7 +249,9 @@ def _normal_size(size):
 
 def _broadcasted_parameter_shape(*parameters, message):
     try:
-        return tuple(_torch.broadcast_shapes(*(parameter.shape for parameter in parameters)))
+        return tuple(
+            _torch.broadcast_shapes(*(parameter.shape for parameter in parameters))
+        )
     except RuntimeError as exc:
         raise ValueError(message) from exc
 

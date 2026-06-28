@@ -147,7 +147,9 @@ def _symmetric_distance_function(
     def distance_function(xest, xtrue):
         xest_array = asarray(xest)
         xtrue_array = asarray(xtrue)
-        return min(base_distance(xest_array, xtrue_array + offset) for offset in offsets)
+        return min(
+            base_distance(xest_array, xtrue_array + offset) for offset in offsets
+        )
 
     return distance_function
 

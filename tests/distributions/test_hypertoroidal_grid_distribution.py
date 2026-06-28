@@ -95,8 +95,12 @@ class HypertoroidalGridDistributionTest(unittest.TestCase):
         list_query = [[2.0 * pi - 0.1, 0.05]]
         array_query = array(list_query)
 
-        npt.assert_allclose(hgd.get_closest_point(list_query), hgd.get_closest_point(array_query))
-        npt.assert_allclose(hgd.value_of_closest(list_query), hgd.value_of_closest(array_query))
+        npt.assert_allclose(
+            hgd.get_closest_point(list_query), hgd.get_closest_point(array_query)
+        )
+        npt.assert_allclose(
+            hgd.value_of_closest(list_query), hgd.value_of_closest(array_query)
+        )
         npt.assert_allclose(hgd.pdf(list_query), hgd.pdf(array_query))
 
     def test_custom_one_dimensional_flat_grid_is_reshaped_to_column_grid(self):

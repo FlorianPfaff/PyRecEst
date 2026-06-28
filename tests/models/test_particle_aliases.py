@@ -1,7 +1,9 @@
 import unittest
 
 from pyrecest.models.likelihood import DensityTransitionModel
-from pyrecest.models.particle import DensityTransitionModel as ParticleDensityTransitionModel
+from pyrecest.models.particle import (
+    DensityTransitionModel as ParticleDensityTransitionModel,
+)
 
 
 class TestParticleAliases(unittest.TestCase):

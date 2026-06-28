@@ -8,20 +8,16 @@ from pyrecest.backend import array, pi
 from pyrecest.filters import ManifoldExponentialMovingAverage
 
 
-
 def _phi_euclidean(state, xi):
     return state + xi
-
 
 
 def _phi_inv_euclidean(state_ref, state):
     return state - state_ref
 
 
-
 def _phi_so2(state, xi):
     return state + xi[0]
-
 
 
 def _phi_inv_so2(state_ref, state):

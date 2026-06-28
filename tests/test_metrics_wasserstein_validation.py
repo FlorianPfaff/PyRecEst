@@ -1,7 +1,6 @@
 import unittest
 
 import numpy as np
-
 from pyrecest.utils.metrics import (
     extent_wasserstein_distance,
     gaussian_wasserstein_distance,

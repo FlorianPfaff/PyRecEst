@@ -287,7 +287,9 @@ class MurtyAssignmentTest(unittest.TestCase):
 
         for invalid_cost_matrix in invalid_cost_matrices:
             with self.subTest(invalid_cost_matrix=invalid_cost_matrix):
-                with self.assertRaisesRegex(ValueError, "cost_matrix must be real-valued"):
+                with self.assertRaisesRegex(
+                    ValueError, "cost_matrix must be real-valued"
+                ):
                     murty_k_best_assignments(invalid_cost_matrix)
 
         with self.assertRaisesRegex(ValueError, "cost_matrix must be real-valued"):

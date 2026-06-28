@@ -57,7 +57,9 @@ def _has_non_real_numeric_values(value: object, *, allow_bool: bool = False) -> 
     return array.dtype.kind in {"M", "m"}
 
 
-def _as_finite_real_array(name: str, value: object, *, allow_bool: bool = False) -> np.ndarray:
+def _as_finite_real_array(
+    name: str, value: object, *, allow_bool: bool = False
+) -> np.ndarray:
     message = f"{name} must contain finite real numeric values."
     if _has_non_real_numeric_values(value, allow_bool=allow_bool):
         raise ValueError(message)
@@ -70,7 +72,9 @@ def _as_finite_real_array(name: str, value: object, *, allow_bool: bool = False)
     return array
 
 
-def _as_finite_real_scalar(name: str, value: object, *, allow_bool: bool = False) -> float:
+def _as_finite_real_scalar(
+    name: str, value: object, *, allow_bool: bool = False
+) -> float:
     message = f"{name} must be a finite real scalar."
     try:
         array = _as_finite_real_array(name, value, allow_bool=allow_bool)
@@ -172,8 +176,12 @@ def infer_polarity_contrast_sign(
         return normalized
 
     tolerance = _as_finite_nonnegative_scalar("zero_tolerance", zero_tolerance)
-    flows = _as_finite_real_array("signed_normal_flows", signed_normal_flows).reshape((-1,))
-    polarities = _as_finite_real_array("event_polarities", event_polarities, allow_bool=True).reshape((-1,))
+    flows = _as_finite_real_array("signed_normal_flows", signed_normal_flows).reshape(
+        (-1,)
+    )
+    polarities = _as_finite_real_array(
+        "event_polarities", event_polarities, allow_bool=True
+    ).reshape((-1,))
     if flows.shape != polarities.shape:
         raise ValueError("event_polarities must have one value per signed normal flow")
 
@@ -234,7 +242,9 @@ def polarity_weight_for_signed_flow(
     zero_tolerance=1e-12,
 ) -> float:
     """Return a multiplicative reliability weight from polarity consistency."""
-    mismatch_weight = _as_unit_interval_scalar("polarity_mismatch_weight", polarity_mismatch_weight)
+    mismatch_weight = _as_unit_interval_scalar(
+        "polarity_mismatch_weight", polarity_mismatch_weight
+    )
     consistency = polarity_consistency_for_signed_flow(
         signed_normal_flow_value,
         event_polarity,
@@ -257,9 +267,15 @@ def polarity_weights_for_signed_flows(
     zero_tolerance=1e-12,
 ) -> np.ndarray:
     """Return polarity reliability weights for a batch of signed-flow samples."""
-    mismatch_weight = _as_unit_interval_scalar("polarity_mismatch_weight", polarity_mismatch_weight)
-    flows = _as_finite_real_array("signed_normal_flows", signed_normal_flows).reshape((-1,))
-    polarities = _as_finite_real_array("event_polarities", event_polarities, allow_bool=True).reshape((-1,))
+    mismatch_weight = _as_unit_interval_scalar(
+        "polarity_mismatch_weight", polarity_mismatch_weight
+    )
+    flows = _as_finite_real_array("signed_normal_flows", signed_normal_flows).reshape(
+        (-1,)
+    )
+    polarities = _as_finite_real_array(
+        "event_polarities", event_polarities, allow_bool=True
+    ).reshape((-1,))
     resolved_sign = infer_polarity_contrast_sign(
         flows,
         polarities,
