@@ -44,7 +44,9 @@ class BackendContractTest(unittest.TestCase):
         if backend.__backend_name__ not in {"autograd", "numpy"}:
             self.skipTest("shared NumPy copy regression test")
 
-        from pyrecest import copy as package_copy  # pylint: disable=import-outside-toplevel
+        from pyrecest import (
+            copy as package_copy,  # pylint: disable=import-outside-toplevel
+        )
 
         npt.assert_allclose(to_numpy(backend.copy(5.0)), np.array(5.0))
         npt.assert_allclose(to_numpy(backend.copy([1.0, 2.0])), np.array([1.0, 2.0]))

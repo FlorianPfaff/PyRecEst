@@ -43,7 +43,6 @@ def test_jax_linalg_accepts_array_like_inputs_directly():
         pytest.skip("JAX is not installed")
 
     import jax.numpy as jnp
-
     from pyrecest._backend.jax import linalg
 
     assert abs(float(linalg.det([[1.0, 2.0], [3.0, 4.0]])) + 2.0) < 1e-5
