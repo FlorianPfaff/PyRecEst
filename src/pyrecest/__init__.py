@@ -198,6 +198,43 @@ def _patch_pytorch_tile_facade() -> None:
     backend.tile = tile
 
 
+def _pytorch_flip_axes(axis, ndim) -> tuple[int, ...]:
+    """Normalize NumPy-style ``flip`` axes for ``torch.flip``."""
+
+    if axis is None:
+        return tuple(range(ndim))
+    try:
+        return (_operator_index(axis),)
+    except TypeError:
+        return tuple(_operator_index(one_axis) for one_axis in axis)
+
+
+def _patch_pytorch_flip_facade() -> None:
+    """Make public PyTorch ``flip`` follow NumPy axis semantics."""
+
+    import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
+
+    if getattr(backend, "__backend_name__", None) != "pytorch":
+        return
+
+    try:
+        import torch as _torch  # pylint: disable=import-outside-toplevel
+    except (
+        ModuleNotFoundError
+    ):  # pragma: no cover - backend import fails first in practice
+        return
+
+    original_flip = backend.flip
+
+    def flip(x, axis=None):
+        x = backend.array(x)
+        return _torch.flip(x, dims=_pytorch_flip_axes(axis, x.ndim))
+
+    flip.__name__ = getattr(original_flip, "__name__", "flip")
+    flip.__doc__ = getattr(original_flip, "__doc__", None)
+    backend.flip = flip
+
+
 def _patch_jax_std_out_facade() -> None:
     """Make public JAX ``std`` accept NumPy's ``out`` argument."""
 
@@ -231,6 +268,7 @@ def _patch_jax_std_out_facade() -> None:
 
 _patch_pytorch_comparison_facade()
 _patch_pytorch_tile_facade()
+_patch_pytorch_flip_facade()
 _patch_jax_std_out_facade()
 
 from pyrecest.backend_support import (  # noqa: E402,F401
