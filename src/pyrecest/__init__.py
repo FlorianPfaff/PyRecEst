@@ -198,6 +198,46 @@ def _patch_pytorch_tile_facade() -> None:
     backend.tile = tile
 
 
+def _patch_raw_pytorch_trace_facade() -> None:
+    """Make raw PyTorch ``trace`` follow NumPy's trace signature."""
+
+    try:
+        import pyrecest._backend.pytorch as pytorch_backend  # pylint: disable=import-outside-toplevel
+    except ModuleNotFoundError:  # pragma: no cover - only relevant without PyTorch
+        return
+
+    original_trace = getattr(pytorch_backend, "trace", None)
+
+    def trace(a, offset=0, axis1=-2, axis2=-1, dtype=None, out=None):
+        values = pytorch_backend.array(a)
+        if values.ndim < 2:
+            raise ValueError("diag requires an array of at least two dimensions")
+        diagonal = pytorch_backend.diagonal(
+            values,
+            offset=_operator_index(offset),
+            axis1=_operator_index(axis1),
+            axis2=_operator_index(axis2),
+        )
+        result = pytorch_backend.sum(diagonal, axis=-1, dtype=dtype)
+        if out is not None:
+            copy_ = getattr(out, "copy_", None)
+            if copy_ is not None:
+                copy_(result)
+                return out
+            out[...] = result
+            return out
+        return result
+
+    trace.__name__ = getattr(original_trace, "__name__", "trace")
+    trace.__doc__ = getattr(original_trace, "__doc__", None)
+    pytorch_backend.trace = trace
+
+    import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
+
+    if getattr(backend, "__backend_name__", None) == "pytorch":
+        backend.trace = trace
+
+
 def _patch_jax_std_out_facade() -> None:
     """Make public JAX ``std`` accept NumPy's ``out`` argument."""
 
@@ -231,6 +271,7 @@ def _patch_jax_std_out_facade() -> None:
 
 _patch_pytorch_comparison_facade()
 _patch_pytorch_tile_facade()
+_patch_raw_pytorch_trace_facade()
 _patch_jax_std_out_facade()
 
 from pyrecest.backend_support import (  # noqa: E402,F401
