@@ -198,6 +198,39 @@ def _patch_pytorch_tile_facade() -> None:
     backend.tile = tile
 
 
+def _patch_pytorch_set_diag_facade() -> None:
+    """Make public and raw PyTorch ``set_diag`` accept array-like matrices."""
+
+    import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
+
+    if getattr(backend, "__backend_name__", None) != "pytorch":
+        return
+
+    try:
+        import torch as _torch  # pylint: disable=import-outside-toplevel
+        import pyrecest._backend.pytorch as pytorch_backend  # pylint: disable=import-outside-toplevel
+    except (
+        ModuleNotFoundError
+    ):  # pragma: no cover - backend import fails first in practice
+        return
+
+    original_set_diag = pytorch_backend.set_diag
+
+    def set_diag(x, new_diag):
+        x = backend.array(x)
+        diag_len = min(x.shape[-2], x.shape[-1])
+        result = x.clone()
+        diag_indices = _torch.arange(diag_len, device=x.device)
+        values = _torch.as_tensor(new_diag, dtype=x.dtype, device=x.device)
+        result[..., diag_indices, diag_indices] = values
+        return result
+
+    set_diag.__name__ = getattr(original_set_diag, "__name__", "set_diag")
+    set_diag.__doc__ = getattr(original_set_diag, "__doc__", None)
+    backend.set_diag = set_diag
+    pytorch_backend.set_diag = set_diag
+
+
 def _patch_jax_std_out_facade() -> None:
     """Make public JAX ``std`` accept NumPy's ``out`` argument."""
 
@@ -231,6 +264,7 @@ def _patch_jax_std_out_facade() -> None:
 
 _patch_pytorch_comparison_facade()
 _patch_pytorch_tile_facade()
+_patch_pytorch_set_diag_facade()
 _patch_jax_std_out_facade()
 
 from pyrecest.backend_support import (  # noqa: E402,F401
