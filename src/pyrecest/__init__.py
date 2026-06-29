@@ -198,6 +198,144 @@ def _patch_pytorch_tile_facade() -> None:
     backend.tile = tile
 
 
+def _resolve_pytorch_reduction_aliases(func_name, axis, keepdims, dim, keepdim):
+    """Normalize NumPy and PyTorch reduction-axis spelling."""
+
+    if dim is not None:
+        if axis is not None and axis != dim:
+            raise TypeError(f"{func_name}() got both 'axis' and 'dim'")
+        axis = dim
+    if keepdim is not None:
+        if keepdims not in (False, None) and keepdims != keepdim:
+            raise TypeError(f"{func_name}() got both 'keepdims' and 'keepdim'")
+        keepdims = keepdim
+    return axis, keepdims
+
+
+def _patch_pytorch_reduction_alias_facade() -> None:
+    """Make public PyTorch reductions accept ``dim``/``keepdim`` aliases."""
+
+    import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
+
+    if getattr(backend, "__backend_name__", None) != "pytorch":
+        return
+
+    def _copy_metadata(wrapper, original, fallback_name):
+        wrapper.__name__ = getattr(original, "__name__", fallback_name)
+        wrapper.__doc__ = getattr(original, "__doc__", None)
+        return wrapper
+
+    def _wrap_numpy_reduction(name):
+        original = getattr(backend, name)
+
+        def reduction(a, axis=None, dtype=None, out=None, keepdims=False, *, dim=None, keepdim=None):
+            axis, keepdims = _resolve_pytorch_reduction_aliases(
+                name, axis, keepdims, dim, keepdim
+            )
+            kwargs = {"axis": axis, "out": out, "keepdims": keepdims}
+            if dtype is not None:
+                kwargs["dtype"] = dtype
+            return original(a, **kwargs)
+
+        return _copy_metadata(reduction, original, name)
+
+    for name in ("all", "amax", "amin", "any", "max", "min", "prod"):
+        if hasattr(backend, name):
+            setattr(backend, name, _wrap_numpy_reduction(name))
+
+    original_count_nonzero = backend.count_nonzero
+
+    def count_nonzero(a, axis=None, keepdims=False, *, dim=None, keepdim=None):
+        axis, keepdims = _resolve_pytorch_reduction_aliases(
+            "count_nonzero", axis, keepdims, dim, keepdim
+        )
+        return original_count_nonzero(a, axis=axis, keepdims=keepdims)
+
+    backend.count_nonzero = _copy_metadata(
+        count_nonzero, original_count_nonzero, "count_nonzero"
+    )
+
+    original_mean = backend.mean
+
+    def mean(a, axis=None, dtype=None, out=None, keepdims=False, *, dim=None, keepdim=None):
+        axis, keepdims = _resolve_pytorch_reduction_aliases(
+            "mean", axis, keepdims, dim, keepdim
+        )
+        return original_mean(a, axis=axis, dtype=dtype, out=out, keepdims=keepdims)
+
+    backend.mean = _copy_metadata(mean, original_mean, "mean")
+
+    original_quantile = backend.quantile
+
+    def quantile(
+        a,
+        q,
+        axis=None,
+        out=None,
+        overwrite_input=False,
+        method="linear",
+        keepdims=False,
+        *,
+        dim=None,
+        keepdim=None,
+        interpolation=None,
+    ):
+        axis, keepdims = _resolve_pytorch_reduction_aliases(
+            "quantile", axis, keepdims, dim, keepdim
+        )
+        return original_quantile(
+            a,
+            q,
+            axis=axis,
+            out=out,
+            overwrite_input=overwrite_input,
+            method=method,
+            keepdims=keepdims,
+            interpolation=interpolation,
+        )
+
+    backend.quantile = _copy_metadata(quantile, original_quantile, "quantile")
+
+    original_std = backend.std
+
+    def std(
+        a,
+        axis=None,
+        dtype=None,
+        out=None,
+        ddof=0,
+        keepdims=False,
+        *,
+        correction=0,
+        dim=None,
+        keepdim=None,
+    ):
+        axis, keepdims = _resolve_pytorch_reduction_aliases(
+            "std", axis, keepdims, dim, keepdim
+        )
+        return original_std(
+            a,
+            axis=axis,
+            dtype=dtype,
+            out=out,
+            ddof=ddof,
+            keepdims=keepdims,
+            correction=correction,
+        )
+
+    backend.std = _copy_metadata(std, original_std, "std")
+
+    original_sum = backend.sum
+
+    def sum(a, axis=None, dtype=None, out=None, keepdims=False, *, dim=None, keepdim=None):
+        axis, keepdims = _resolve_pytorch_reduction_aliases(
+            "sum", axis, keepdims, dim, keepdim
+        )
+        return original_sum(a, axis=axis, dtype=dtype, out=out, keepdims=keepdims)
+
+    backend.sum = _copy_metadata(sum, original_sum, "sum")
+
+
 def _patch_jax_std_out_facade() -> None:
     """Make public JAX ``std`` accept NumPy's ``out`` argument."""
 
@@ -231,6 +369,7 @@ def _patch_jax_std_out_facade() -> None:
 
 _patch_pytorch_comparison_facade()
 _patch_pytorch_tile_facade()
+_patch_pytorch_reduction_alias_facade()
 _patch_jax_std_out_facade()
 
 from pyrecest.backend_support import (  # noqa: E402,F401
@@ -258,38 +397,3 @@ from pyrecest.exceptions import (  # noqa: E402,F401
     ShapeError,
     ValidationError,
 )
-from pyrecest.stability import (  # noqa: E402,F401
-    get_public_api_status,
-    iter_public_api_status,
-    stability,
-)
-
-try:
-    __version__ = version("pyrecest")
-except PackageNotFoundError:  # pragma: no cover - source tree without install metadata
-    __version__ = "0+unknown"
-
-__all__ = [
-    "BackendNotSupportedError",
-    "BackendSupportError",
-    "DimensionMismatchError",
-    "EvidenceComputationMode",
-    "NumericalStabilityError",
-    "OptionalDependencyError",
-    "PyRecEstError",
-    "ShapeError",
-    "ValidationError",
-    "__version__",
-    "assert_backend",
-    "backend_support",
-    "copy",
-    "format_backend_support_markdown",
-    "get_backend_name",
-    "get_backend_support",
-    "get_public_api_status",
-    "is_backend",
-    "iter_public_api_status",
-    "stability",
-    "warn_if_backend_env_changed",
-    "resolve_evidence_computation_mode",
-]
