@@ -1,6 +1,8 @@
 import numpy as np
 import pytest
 
+from tests.support.backend_runner import run_backend_code
+
 
 def test_pytorch_copy_returns_backend_tensors_for_array_like_inputs():
     pytest.importorskip("torch")
@@ -22,3 +24,19 @@ def test_pytorch_copy_returns_backend_tensors_for_array_like_inputs():
     source[0] = 99.0
     assert raw_pytorch.is_array(array_copy)
     assert array_copy.tolist() == [1.0, 2.0]
+
+
+def test_public_pytorch_copy_returns_backend_tensor_for_array_like_inputs():
+    pytest.importorskip("torch")
+
+    result = run_backend_code(
+        "pytorch",
+        """
+import pyrecest.backend as backend
+
+copied = backend.copy([[1.0, 2.0], [3.0, 4.0]])
+assert backend.is_array(copied)
+assert copied.tolist() == [[1.0, 2.0], [3.0, 4.0]]
+""",
+    )
+    assert result.returncode == 0, result.stderr
