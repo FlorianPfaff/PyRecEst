@@ -229,9 +229,72 @@ def _patch_jax_std_out_facade() -> None:
     backend.std = std
 
 
+def _patch_jax_scatter_add_facade() -> None:
+    """Make JAX ``scatter_add`` keep all non-scatter-axis coordinates."""
+
+    import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
+
+    if getattr(backend, "__backend_name__", None) != "jax":
+        return
+
+    try:
+        import jax.numpy as _jnp  # pylint: disable=import-outside-toplevel
+        import pyrecest._backend.jax as jax_backend  # pylint: disable=import-outside-toplevel
+    except ModuleNotFoundError:  # pragma: no cover - backend import fails first in practice
+        return
+
+    original_scatter_add = jax_backend.scatter_add
+
+    def _coordinate_indices(input_shape, dim, index):
+        coordinates = []
+        for axis, axis_size in enumerate(input_shape):
+            if axis == dim:
+                coordinates.append(index)
+                continue
+            if axis >= index.ndim:
+                raise ValueError(
+                    "index must have one dimension per input axis for scatter_add"
+                )
+            coordinate_shape = (
+                (1,) * axis + (axis_size,) + (1,) * (index.ndim - axis - 1)
+            )
+            coordinates.append(
+                _jnp.broadcast_to(
+                    _jnp.arange(axis_size).reshape(coordinate_shape), index.shape
+                )
+            )
+        return tuple(coordinates)
+
+    def scatter_add(input, dim, index, src):
+        input = _jnp.asarray(input)
+        index = _jnp.asarray(index)
+        src = _jnp.asarray(src, dtype=input.dtype)
+        dim = int(dim)
+        if dim < 0:
+            dim += input.ndim
+        if dim < 0 or dim >= input.ndim:
+            raise IndexError(f"dim {dim} is out of bounds for array of dimension {input.ndim}")
+        if index.ndim == 0:
+            return input.at[index].add(src)
+        if index.ndim != input.ndim:
+            if dim == 1 and input.ndim == 2 and index.ndim == 1:
+                row_indices = _jnp.arange(input.shape[0])
+                return input.at[row_indices, index].add(src)
+            raise ValueError(
+                "index must have one dimension per input axis for scatter_add"
+            )
+        return input.at[_coordinate_indices(input.shape, dim, index)].add(src)
+
+    scatter_add.__name__ = getattr(original_scatter_add, "__name__", "scatter_add")
+    scatter_add.__doc__ = getattr(original_scatter_add, "__doc__", None)
+    backend.scatter_add = scatter_add
+    jax_backend.scatter_add = scatter_add
+
+
 _patch_pytorch_comparison_facade()
 _patch_pytorch_tile_facade()
 _patch_jax_std_out_facade()
+_patch_jax_scatter_add_facade()
 
 from pyrecest.backend_support import (  # noqa: E402,F401
     backend_support,
