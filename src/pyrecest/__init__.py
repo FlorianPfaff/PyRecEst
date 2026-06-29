@@ -198,6 +198,31 @@ def _patch_pytorch_tile_facade() -> None:
     backend.tile = tile
 
 
+def _patch_pytorch_gamma_facade() -> None:
+    """Make PyTorch ``gamma`` accept scalar and array-like inputs."""
+
+    import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
+
+    if getattr(backend, "__backend_name__", None) != "pytorch":
+        return
+
+    try:
+        import torch as _torch  # pylint: disable=import-outside-toplevel
+        import pyrecest._backend.pytorch as pytorch_backend  # pylint: disable=import-outside-toplevel
+    except (
+        ModuleNotFoundError
+    ):  # pragma: no cover - backend import fails first in practice
+        return
+
+    def gamma(a):
+        return _torch.exp(_torch.special.gammaln(backend.array(a)))
+
+    gamma.__name__ = "gamma"
+    gamma.__doc__ = "Gamma function for PyTorch tensors and array-like inputs."
+    backend.gamma = gamma
+    pytorch_backend.gamma = gamma
+
+
 def _patch_jax_std_out_facade() -> None:
     """Make public JAX ``std`` accept NumPy's ``out`` argument."""
 
@@ -231,6 +256,7 @@ def _patch_jax_std_out_facade() -> None:
 
 _patch_pytorch_comparison_facade()
 _patch_pytorch_tile_facade()
+_patch_pytorch_gamma_facade()
 _patch_jax_std_out_facade()
 
 from pyrecest.backend_support import (  # noqa: E402,F401
