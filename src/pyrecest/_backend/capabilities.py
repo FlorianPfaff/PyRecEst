@@ -18,9 +18,7 @@ BACKEND_CAPABILITIES: Final = {
         "partial": {},
     },
     "pytorch": {
-        "unsupported": {
-            "": ("searchsorted",),
-        },
+        "unsupported": {},
         "bridged": {
             "linalg": {
                 "sqrtm": "SciPy bridge; not differentiable through the bridge.",
