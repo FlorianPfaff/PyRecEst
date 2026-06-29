@@ -42,7 +42,7 @@ unless a focused backend test covers the exact helper being used.
 | Backend | Best fit                                                                                                                  | Main limitations                                                                                                                                                          |
 |---------|---------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | NumPy   | Default backend and broadest compatibility for examples, evaluation, plotting, tracking, and SciPy-based helpers.         | No automatic differentiation through `pyrecest.backend.autodiff`. Autodiff calls raise `AutodiffNotImplementedError`.                                                     |
-| PyTorch | Tensor workflows and automatic differentiation where the required API is implemented.                                     | Some backend helpers are placeholders or bridge through NumPy/SciPy. `pyrecest.backend.signal.fftconvolve` and `pyrecest.backend.searchsorted` are not implemented.       |
+| PyTorch | Tensor workflows and automatic differentiation where the required API is implemented.                                     | Some backend helpers are placeholders or bridge through NumPy/SciPy. `pyrecest.backend.signal.fftconvolve` is not implemented.                                            |
 | JAX     | JAX array and autodiff workflows for APIs that avoid unsupported mutable, assignment-heavy, or SciPy-specific operations. | Several package areas explicitly skip or reject JAX, including some sampling, tracking, assignment, evaluation, point-set registration, and manifold-specific operations. |
 
 ## Capability Metadata
@@ -78,8 +78,6 @@ Use the PyTorch backend when tensor operations or PyTorch autodiff are part of
 the workflow. Keep these caveats in mind:
 
 - `pyrecest.backend.signal.fftconvolve` is not implemented.
-- `pyrecest.backend.searchsorted` is a placeholder that raises
-  `NotImplementedError`.
 - Some linear algebra helpers use NumPy or SciPy internally, including matrix
   square root, fractional matrix powers, polar decomposition, quadratic
   assignment, and some Sylvester-equation paths. These helpers may copy data
