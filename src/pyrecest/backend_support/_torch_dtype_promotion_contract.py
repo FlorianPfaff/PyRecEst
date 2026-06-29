@@ -8,7 +8,9 @@ def patch_pytorch_dtype_promotion_contract() -> None:
     try:
         import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
         import torch  # pylint: disable=import-outside-toplevel
-    except ModuleNotFoundError:  # pragma: no cover - PyTorch backend import failed earlier
+    except (
+        ModuleNotFoundError
+    ):  # pragma: no cover - PyTorch backend import failed earlier
         return
 
     original_convert = raw_pytorch.convert_to_wider_dtype
