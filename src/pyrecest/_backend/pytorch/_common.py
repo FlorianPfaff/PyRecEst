@@ -1,22 +1,20 @@
 import numpy as _np
-from torch import (
-    bool as _torch_bool,
-    complex64 as _torch_complex64,
-    complex128 as _torch_complex128,
-    dtype as _torch_dtype,
-    float16 as _torch_float16,
-    float32 as _torch_float32,
-    float64 as _torch_float64,
-    from_numpy as _torch_from_numpy,
-    int8 as _torch_int8,
-    int16 as _torch_int16,
-    int32 as _torch_int32,
-    int64 as _torch_int64,
-    is_tensor as _torch_is_tensor,
-    stack as _torch_stack,
-    tensor as _torch_tensor,
-    uint8 as _torch_uint8,
-)
+from torch import bool as _torch_bool
+from torch import complex64 as _torch_complex64
+from torch import complex128 as _torch_complex128
+from torch import dtype as _torch_dtype
+from torch import float16 as _torch_float16
+from torch import float32 as _torch_float32
+from torch import float64 as _torch_float64
+from torch import from_numpy as _torch_from_numpy
+from torch import int8 as _torch_int8
+from torch import int16 as _torch_int16
+from torch import int32 as _torch_int32
+from torch import int64 as _torch_int64
+from torch import is_tensor as _torch_is_tensor
+from torch import stack as _torch_stack
+from torch import tensor as _torch_tensor
+from torch import uint8 as _torch_uint8
 
 _TORCH_DTYPE_BY_NAME = {
     "bool": _torch_bool,

@@ -17,8 +17,8 @@ def _isolated_pytorch_backend(monkeypatch):
 
     monkeypatch.setenv("PYRECEST_BACKEND", "pytorch")
     try:
-        import pyrecest.backend as backend
         import pyrecest._backend.pytorch as raw_pytorch_backend
+        import pyrecest.backend as backend
 
         yield backend, raw_pytorch_backend
     finally:
@@ -53,4 +53,6 @@ def test_pytorch_diag_accepts_arraylike_and_numpy_k_keyword(monkeypatch):
 
         matrix = [[0, 4, 0], [1, 0, 5], [0, 2, 0]]
         assert backend.to_numpy(backend.diag(matrix, k=-1)).tolist() == [1, 2]
-        assert raw_pytorch_backend.to_numpy(raw_pytorch_backend.diag(matrix, k=1)).tolist() == [4, 5]
+        assert raw_pytorch_backend.to_numpy(
+            raw_pytorch_backend.diag(matrix, k=1)
+        ).tolist() == [4, 5]

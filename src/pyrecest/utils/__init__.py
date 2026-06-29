@@ -68,7 +68,10 @@ def _assign_by_similarity_matrix_with_unmatched_value_validation(
         similarity_matrix,
         dtype=_roi_assignment_module.float64,
     )
-    if similarities.ndim == 2 and 0 <= normalized_unmatched_value < similarities.shape[1]:
+    if (
+        similarities.ndim == 2
+        and 0 <= normalized_unmatched_value < similarities.shape[1]
+    ):
         raise ValueError(
             "unmatched_value must be outside the valid column index range."
         )

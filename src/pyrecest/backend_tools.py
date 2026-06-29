@@ -47,7 +47,9 @@ def _patch_pytorch_assignment_scalar_tensor_indices() -> None:
     try:
         import pyrecest._backend.pytorch as pytorch_backend  # pylint: disable=import-outside-toplevel
         import torch as _torch  # pylint: disable=import-outside-toplevel
-    except ModuleNotFoundError:  # pragma: no cover - PyTorch backend import failed earlier
+    except (
+        ModuleNotFoundError
+    ):  # pragma: no cover - PyTorch backend import failed earlier
         return
 
     backend.assignment = _wrap_pytorch_assignment_helper(backend.assignment, _torch)
@@ -76,7 +78,9 @@ def _patch_pytorch_diag_numpy_contract() -> None:
     try:
         import pyrecest._backend.pytorch as pytorch_backend  # pylint: disable=import-outside-toplevel
         import torch as _torch  # pylint: disable=import-outside-toplevel
-    except ModuleNotFoundError:  # pragma: no cover - PyTorch backend import failed earlier
+    except (
+        ModuleNotFoundError
+    ):  # pragma: no cover - PyTorch backend import failed earlier
         return
 
     if getattr(pytorch_backend.diag, "_pyrecest_numpy_contract", False):

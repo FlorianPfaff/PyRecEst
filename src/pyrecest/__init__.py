@@ -171,8 +171,8 @@ def _patch_pytorch_clip_facade() -> None:
         return
 
     try:
-        import torch as _torch  # pylint: disable=import-outside-toplevel
         import pyrecest._backend.pytorch as pytorch_backend  # pylint: disable=import-outside-toplevel
+        import torch as _torch  # pylint: disable=import-outside-toplevel
     except (
         ModuleNotFoundError
     ):  # pragma: no cover - backend import fails first in practice
@@ -251,8 +251,8 @@ def _patch_pytorch_tile_facade() -> None:
 
     try:
         import numpy as _np  # pylint: disable=import-outside-toplevel
-        import torch as _torch  # pylint: disable=import-outside-toplevel
         import pyrecest._backend.pytorch as _pytorch_backend  # pylint: disable=import-outside-toplevel
+        import torch as _torch  # pylint: disable=import-outside-toplevel
     except (
         ModuleNotFoundError
     ):  # pragma: no cover - backend import fails first in practice

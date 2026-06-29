@@ -125,7 +125,9 @@ def _torch_module_for_values(*values):
     except ModuleNotFoundError:
         return None
 
-    if _active_backend_name() == "pytorch" or any(_torch.is_tensor(value) for value in values):
+    if _active_backend_name() == "pytorch" or any(
+        _torch.is_tensor(value) for value in values
+    ):
         return _torch
     return None
 

@@ -1,7 +1,6 @@
 import numpy as np
-import pytest
-
 import pyrecest.backend as backend
+import pytest
 
 
 def test_common_helpers_ignore_late_backend_env_change(monkeypatch):
