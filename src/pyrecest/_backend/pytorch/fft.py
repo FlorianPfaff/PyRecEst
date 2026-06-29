@@ -40,7 +40,11 @@ def _wrap_arraylike_fft(torch_func, *, func_name, dim_alias=None):
 
 rfft = _wrap_arraylike_fft(_torch.fft.rfft, func_name="rfft", dim_alias="axis")
 irfft = _wrap_arraylike_fft(_torch.fft.irfft, func_name="irfft", dim_alias="axis")
-fftshift = _wrap_arraylike_fft(_torch.fft.fftshift, func_name="fftshift", dim_alias="axes")
-ifftshift = _wrap_arraylike_fft(_torch.fft.ifftshift, func_name="ifftshift", dim_alias="axes")
+fftshift = _wrap_arraylike_fft(
+    _torch.fft.fftshift, func_name="fftshift", dim_alias="axes"
+)
+ifftshift = _wrap_arraylike_fft(
+    _torch.fft.ifftshift, func_name="ifftshift", dim_alias="axes"
+)
 fftn = _wrap_arraylike_fft(_torch.fft.fftn, func_name="fftn", dim_alias="axes")
 ifftn = _wrap_arraylike_fft(_torch.fft.ifftn, func_name="ifftn", dim_alias="axes")

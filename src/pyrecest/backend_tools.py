@@ -47,7 +47,9 @@ def _patch_pytorch_assignment_scalar_tensor_indices() -> None:
     try:
         import pyrecest._backend.pytorch as pytorch_backend  # pylint: disable=import-outside-toplevel
         import torch as _torch  # pylint: disable=import-outside-toplevel
-    except ModuleNotFoundError:  # pragma: no cover - PyTorch backend import failed earlier
+    except (
+        ModuleNotFoundError
+    ):  # pragma: no cover - PyTorch backend import failed earlier
         return
 
     backend.assignment = _wrap_pytorch_assignment_helper(backend.assignment, _torch)
@@ -76,7 +78,9 @@ def _patch_pytorch_diag_numpy_contract() -> None:
     try:
         import pyrecest._backend.pytorch as pytorch_backend  # pylint: disable=import-outside-toplevel
         import torch as _torch  # pylint: disable=import-outside-toplevel
-    except ModuleNotFoundError:  # pragma: no cover - PyTorch backend import failed earlier
+    except (
+        ModuleNotFoundError
+    ):  # pragma: no cover - PyTorch backend import failed earlier
         return
 
     if getattr(pytorch_backend.diag, "_pyrecest_numpy_contract", False):
@@ -106,7 +110,9 @@ def _patch_pytorch_broadcast_arrays_numpy_contract() -> None:
     try:
         import pyrecest._backend.pytorch as pytorch_backend  # pylint: disable=import-outside-toplevel
         import torch as _torch  # pylint: disable=import-outside-toplevel
-    except ModuleNotFoundError:  # pragma: no cover - PyTorch backend import failed earlier
+    except (
+        ModuleNotFoundError
+    ):  # pragma: no cover - PyTorch backend import failed earlier
         return
 
     if getattr(pytorch_backend.broadcast_arrays, "_pyrecest_numpy_contract", False):
@@ -137,7 +143,9 @@ def _patch_pytorch_round_numpy_contract() -> None:
     try:
         import pyrecest._backend.pytorch as pytorch_backend  # pylint: disable=import-outside-toplevel
         import torch as _torch  # pylint: disable=import-outside-toplevel
-    except ModuleNotFoundError:  # pragma: no cover - PyTorch backend import failed earlier
+    except (
+        ModuleNotFoundError
+    ):  # pragma: no cover - PyTorch backend import failed earlier
         return
 
     if getattr(pytorch_backend.round, "_pyrecest_numpy_contract", False):
@@ -172,7 +180,9 @@ def _patch_pytorch_special_numpy_contract() -> None:
     try:
         import pyrecest._backend.pytorch as pytorch_backend  # pylint: disable=import-outside-toplevel
         import torch as _torch  # pylint: disable=import-outside-toplevel
-    except ModuleNotFoundError:  # pragma: no cover - PyTorch backend import failed earlier
+    except (
+        ModuleNotFoundError
+    ):  # pragma: no cover - PyTorch backend import failed earlier
         return
 
     def _return_or_store_out(result, out):
@@ -227,7 +237,9 @@ def _patch_pytorch_stack_helpers_numpy_contract() -> None:
         import numpy as _np  # pylint: disable=import-outside-toplevel
         import pyrecest._backend.pytorch as pytorch_backend  # pylint: disable=import-outside-toplevel
         import torch as _torch  # pylint: disable=import-outside-toplevel
-    except ModuleNotFoundError:  # pragma: no cover - PyTorch backend import failed earlier
+    except (
+        ModuleNotFoundError
+    ):  # pragma: no cover - PyTorch backend import failed earlier
         return
 
     def _tensor_sequence(tup):
@@ -272,8 +284,8 @@ def _patch_raw_pytorch_comparison_numpy_contract() -> None:
     """Make raw PyTorch comparison helpers accept NumPy-style array-like inputs."""
 
     try:
-        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import pyrecest._backend.pytorch as pytorch_backend  # pylint: disable=import-outside-toplevel
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import torch as _torch  # pylint: disable=import-outside-toplevel
     except ModuleNotFoundError:  # pragma: no cover - PyTorch backend may be unavailable
         return

@@ -124,9 +124,11 @@ def test_pytorch_fft_helpers_accept_array_like_inputs():
     )
 
     shift_source = [1, 2, 3, 4]
-    assert _as_numpy(backend.fft.fftshift(shift_source)).tolist() == np.fft.fftshift(
-        shift_source
-    ).tolist()
-    assert _as_numpy(backend.fft.ifftshift(shift_source)).tolist() == np.fft.ifftshift(
-        shift_source
-    ).tolist()
+    assert (
+        _as_numpy(backend.fft.fftshift(shift_source)).tolist()
+        == np.fft.fftshift(shift_source).tolist()
+    )
+    assert (
+        _as_numpy(backend.fft.ifftshift(shift_source)).tolist()
+        == np.fft.ifftshift(shift_source).tolist()
+    )

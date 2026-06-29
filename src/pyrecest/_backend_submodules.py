@@ -57,14 +57,12 @@ def _adapt_pytorch_allclose_keyword_contract(backend: ModuleType) -> None:
         return
 
     allclose = getattr(backend, "allclose", None)
-    if allclose is None or getattr(
-        allclose, "_pyrecest_missing_value_contract", False
-    ):
+    if allclose is None or getattr(allclose, "_pyrecest_missing_value_contract", False):
         return
 
     try:
-        import torch as _torch  # pylint: disable=import-outside-toplevel
         import pyrecest._backend.pytorch as pytorch_backend  # pylint: disable=import-outside-toplevel
+        import torch as _torch  # pylint: disable=import-outside-toplevel
     except ModuleNotFoundError:  # pragma: no cover - backend import fails first
         return
 
@@ -252,7 +250,11 @@ def _adapt_pytorch_stack_helpers_contract(backend: ModuleType) -> None:
 
     helper_names = ("hstack", "vstack", "column_stack", "dstack")
     if all(
-        getattr(getattr(pytorch_backend, helper_name, None), "_pyrecest_stack_contract", False)
+        getattr(
+            getattr(pytorch_backend, helper_name, None),
+            "_pyrecest_stack_contract",
+            False,
+        )
         for helper_name in helper_names
     ):
         return

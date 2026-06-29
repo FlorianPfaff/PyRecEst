@@ -1,7 +1,6 @@
 import numpy as np
-import pytest
-
 import pyrecest.backend as backend
+import pytest
 
 
 def test_pytorch_as_dtype_accepts_dtype_like_aliases():

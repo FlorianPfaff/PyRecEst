@@ -14,7 +14,11 @@ def test_jax_fft_helpers_accept_python_lists():
     env = os.environ.copy()
     env["PYRECEST_BACKEND"] = "jax"
     src_path = os.path.abspath("src")
-    env["PYTHONPATH"] = src_path if not env.get("PYTHONPATH") else os.pathsep.join([src_path, env["PYTHONPATH"]])
+    env["PYTHONPATH"] = (
+        src_path
+        if not env.get("PYTHONPATH")
+        else os.pathsep.join([src_path, env["PYTHONPATH"]])
+    )
 
     code = """
 import pyrecest.backend as backend
