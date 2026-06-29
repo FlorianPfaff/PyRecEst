@@ -198,6 +198,74 @@ def _patch_pytorch_tile_facade() -> None:
     backend.tile = tile
 
 
+def _patch_pytorch_searchsorted_facade() -> None:
+    """Make public and raw PyTorch ``searchsorted`` use native Torch support."""
+
+    import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
+
+    if getattr(backend, "__backend_name__", None) != "pytorch":
+        return
+
+    try:
+        import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
+        import torch as _torch  # pylint: disable=import-outside-toplevel
+    except (
+        ModuleNotFoundError
+    ):  # pragma: no cover - backend import fails first in practice
+        return
+
+    def _searchsorted_tensor(value, *, device=None, dtype=None):
+        if _torch.is_tensor(value):
+            target_device = device if device is not None else value.device
+            target_dtype = dtype if dtype is not None else value.dtype
+            if value.device != target_device or value.dtype != target_dtype:
+                return value.to(device=target_device, dtype=target_dtype)
+            return value
+        return _torch.as_tensor(value, device=device, dtype=dtype)
+
+    def searchsorted(
+        a,
+        v,
+        side="left",
+        sorter=None,
+        *,
+        out=None,
+        out_int32=False,
+        right=None,
+    ):
+        if side not in {"left", "right"}:
+            raise ValueError("side must be 'left' or 'right'")
+        if right is not None:
+            right_side = bool(right)
+            requested_side = "right" if right_side else "left"
+            if side != "left" and side != requested_side:
+                raise TypeError("searchsorted() got conflicting 'side' and 'right'")
+            side = requested_side
+
+        device = next(
+            (
+                value.device
+                for value in (a, v, sorter, out)
+                if _torch.is_tensor(value)
+            ),
+            None,
+        )
+        sequence = _searchsorted_tensor(a, device=device)
+        values = _searchsorted_tensor(v, device=device)
+        kwargs = {"right": side == "right", "out_int32": bool(out_int32)}
+        if sorter is not None:
+            kwargs["sorter"] = _searchsorted_tensor(
+                sorter, device=device, dtype=_torch.long
+            )
+        if out is not None:
+            kwargs["out"] = out
+        return _torch.searchsorted(sequence, values, **kwargs)
+
+    searchsorted.__name__ = "searchsorted"
+    searchsorted.__doc__ = getattr(_torch.searchsorted, "__doc__", None)
+    backend.searchsorted = raw_pytorch.searchsorted = searchsorted
+
+
 def _patch_jax_std_out_facade() -> None:
     """Make public JAX ``std`` accept NumPy's ``out`` argument."""
 
@@ -231,6 +299,7 @@ def _patch_jax_std_out_facade() -> None:
 
 _patch_pytorch_comparison_facade()
 _patch_pytorch_tile_facade()
+_patch_pytorch_searchsorted_facade()
 _patch_jax_std_out_facade()
 
 from pyrecest.backend_support import (  # noqa: E402,F401
