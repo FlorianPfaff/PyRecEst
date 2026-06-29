@@ -246,8 +246,7 @@ def _patch_pytorch_tile_facade() -> None:
 
     import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
 
-    if getattr(backend, "__backend_name__", None) != "pytorch":
-        return
+    selected_backend_is_pytorch = getattr(backend, "__backend_name__", None) == "pytorch"
 
     try:
         import numpy as _np  # pylint: disable=import-outside-toplevel
@@ -259,7 +258,7 @@ def _patch_pytorch_tile_facade() -> None:
         return
 
     def tile(x, reps):
-        x = backend.array(x)
+        x = _pytorch_backend.array(x)
         repetitions = _pytorch_tile_repetitions(reps, _np, _torch)
         if not repetitions:
             return x.clone()
@@ -271,7 +270,8 @@ def _patch_pytorch_tile_facade() -> None:
 
     tile.__name__ = "tile"
     tile.__doc__ = getattr(_np.tile, "__doc__", None)
-    backend.tile = tile
+    if selected_backend_is_pytorch:
+        backend.tile = tile
     _pytorch_backend.tile = tile
 
 
