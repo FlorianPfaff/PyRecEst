@@ -198,6 +198,55 @@ def _patch_pytorch_tile_facade() -> None:
     backend.tile = tile
 
 
+def _pytorch_flip_axes(axis, ndim) -> tuple[int, ...]:
+    """Normalize NumPy-style flip axes for ``torch.flip``."""
+
+    if axis is None:
+        return tuple(range(ndim))
+    try:
+        axes = (_operator_index(axis),)
+    except TypeError:
+        axes = tuple(_operator_index(one_axis) for one_axis in axis)
+
+    normalized_axes = tuple(one_axis + ndim if one_axis < 0 else one_axis for one_axis in axes)
+    if len(set(normalized_axes)) != len(normalized_axes):
+        raise ValueError("duplicate value in 'axis'")
+    for original_axis, normalized_axis in zip(axes, normalized_axes):
+        if normalized_axis < 0 or normalized_axis >= ndim:
+            raise IndexError(
+                f"axis {original_axis} is out of bounds for array of dimension {ndim}"
+            )
+    return normalized_axes
+
+
+def _patch_pytorch_flip_facade() -> None:
+    """Make public PyTorch ``flip`` follow NumPy's default-axis contract."""
+
+    import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
+
+    if getattr(backend, "__backend_name__", None) != "pytorch":
+        return
+
+    try:
+        import numpy as _np  # pylint: disable=import-outside-toplevel
+        import torch as _torch  # pylint: disable=import-outside-toplevel
+    except (
+        ModuleNotFoundError
+    ):  # pragma: no cover - backend import fails first in practice
+        return
+
+    def flip(x, axis=None):
+        x = backend.array(x)
+        axes = _pytorch_flip_axes(axis, x.ndim)
+        if not axes:
+            return x.clone()
+        return _torch.flip(x, dims=axes)
+
+    flip.__name__ = "flip"
+    flip.__doc__ = getattr(_np.flip, "__doc__", None)
+    backend.flip = flip
+
+
 def _patch_jax_std_out_facade() -> None:
     """Make public JAX ``std`` accept NumPy's ``out`` argument."""
 
@@ -231,6 +280,7 @@ def _patch_jax_std_out_facade() -> None:
 
 _patch_pytorch_comparison_facade()
 _patch_pytorch_tile_facade()
+_patch_pytorch_flip_facade()
 _patch_jax_std_out_facade()
 
 from pyrecest.backend_support import (  # noqa: E402,F401
