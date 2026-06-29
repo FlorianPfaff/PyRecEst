@@ -44,16 +44,26 @@ def elementwise_grad(func):
     return _elementwise_grad
 
 
-def _apply_custom_gradient(cotangent, grads):
+def _shape_tuple(value):
+    """Return a plain Python shape tuple for array-like values."""
+    return tuple(int(dim) for dim in getattr(value, "shape", ()))
+
+
+def _apply_custom_gradient(cotangent, grads, argument):
     """Apply a user-supplied Jacobian/VJP factor to an upstream cotangent."""
-    if isinstance(grads, float):
+    cotangent = anp.asarray(cotangent)
+    grads = anp.asarray(grads)
+    argument_shape = _shape_tuple(argument)
+    cotangent_shape = _shape_tuple(cotangent)
+
+    if argument_shape and grads.shape == argument_shape:
         return cotangent * grads
 
-    ndim = getattr(grads, "ndim", None)
-    if ndim == 2:
-        return cotangent[..., None] * grads
-    if ndim == 3:
-        return cotangent[..., None, None] * grads
+    if grads.shape == cotangent_shape + argument_shape:
+        if cotangent.ndim == 0:
+            return cotangent * grads
+        return anp.tensordot(cotangent, grads, axes=cotangent.ndim)
+
     return cotangent * grads
 
 
@@ -110,7 +120,9 @@ def custom_gradient(*grad_funcs):
             for arg_index in range(len(values)):
                 if arg_index < len(grad_funcs):
                     grads = call_with_bound_values(grad_funcs[arg_index], values)
-                    gradients.append(_apply_custom_gradient(cotangent, grads))
+                    gradients.append(
+                        _apply_custom_gradient(cotangent, grads, values[arg_index])
+                    )
                 else:
                     gradients.append(None)
             return tuple(gradients)
