@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from operator import index as _operator_index
+
 from pyrecest._backend.capabilities import (
     API_BACKEND_CAPABILITIES,
     BACKEND_SUPPORT_LEVELS,
@@ -20,12 +22,12 @@ def _patch_pytorch_dot_numpy_contract() -> None:
         return
 
     try:
-        import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
+        import pyrecest._backend.pytorch as pytorch_backend  # pylint: disable=import-outside-toplevel
         import torch  # pylint: disable=import-outside-toplevel
     except ModuleNotFoundError:  # pragma: no cover - PyTorch backend import failed earlier
         return
 
-    original_dot = raw_pytorch.dot
+    original_dot = pytorch_backend.dot
     if getattr(original_dot, "_pyrecest_numpy_contract", False):
         return
 
@@ -50,10 +52,77 @@ def _patch_pytorch_dot_numpy_contract() -> None:
     dot.__doc__ = getattr(original_dot, "__doc__", None)
     dot._pyrecest_numpy_contract = True
     backend.dot = dot
-    raw_pytorch.dot = dot
+    pytorch_backend.dot = dot
+
+
+def _pytorch_tile_repetition(repetition) -> int:
+    """Return one NumPy-style tile repetition as an integer."""
+
+    try:
+        return _operator_index(repetition)
+    except TypeError as exc:
+        raise TypeError("tile repetitions must be integers") from exc
+
+
+def _pytorch_tile_repetitions(reps, numpy_module, torch_module) -> tuple[int, ...]:
+    """Normalize NumPy-style tile repetitions for ``torch.Tensor.repeat``."""
+
+    if torch_module.is_tensor(reps):
+        reps = reps.detach().cpu().numpy()
+    reps_array = numpy_module.asarray(reps)
+    if reps_array.shape == ():
+        repetitions = (_pytorch_tile_repetition(reps_array.item()),)
+    else:
+        repetitions = tuple(
+            _pytorch_tile_repetition(one_repetition)
+            for one_repetition in reps_array.tolist()
+        )
+    if any(one_repetition < 0 for one_repetition in repetitions):
+        raise ValueError("negative dimensions are not allowed")
+    return repetitions
+
+
+def _patch_pytorch_tile_numpy_contract() -> None:
+    """Make low-level PyTorch tile follow NumPy semantics for any public backend."""
+    try:
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
+    except ModuleNotFoundError:  # pragma: no cover - import fails before this module
+        return
+
+    active_pytorch_backend = getattr(backend, "__backend_name__", None) == "pytorch"
+
+    try:
+        import numpy as _np  # pylint: disable=import-outside-toplevel
+        import pyrecest._backend.pytorch as pytorch_backend  # pylint: disable=import-outside-toplevel
+        import torch  # pylint: disable=import-outside-toplevel
+    except ModuleNotFoundError:  # pragma: no cover - PyTorch is optional
+        return
+
+    original_tile = pytorch_backend.tile
+    if getattr(original_tile, "_pyrecest_numpy_contract", False):
+        return
+
+    def tile(x, reps):
+        x = pytorch_backend.array(x)
+        repetitions = _pytorch_tile_repetitions(reps, _np, torch)
+        if not repetitions:
+            return x.clone()
+        if x.ndim < len(repetitions):
+            x = x.reshape((1,) * (len(repetitions) - x.ndim) + tuple(x.shape))
+        elif x.ndim > len(repetitions):
+            repetitions = (1,) * (x.ndim - len(repetitions)) + repetitions
+        return x.repeat(repetitions)
+
+    tile.__name__ = getattr(original_tile, "__name__", "tile")
+    tile.__doc__ = getattr(_np.tile, "__doc__", None)
+    tile._pyrecest_numpy_contract = True
+    pytorch_backend.tile = tile
+    if active_pytorch_backend:
+        backend.tile = tile
 
 
 _patch_pytorch_dot_numpy_contract()
+_patch_pytorch_tile_numpy_contract()
 
 
 def get_backend_support(
