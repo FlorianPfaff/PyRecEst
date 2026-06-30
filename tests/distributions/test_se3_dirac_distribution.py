@@ -53,6 +53,22 @@ class SE3DiracDistributionTest(unittest.TestCase):
         npt.assert_allclose(dist.w, array(weights))
         self.assertEqual(dist.d.shape, (2, 7))
 
+    def test_linear_marginal_starts_after_full_quaternion_coordinates(self):
+        particles = array(
+            [
+                [0.0, 0.0, 0.0, 1.0, 1.0, 2.0, 3.0],
+                [1.0, 0.0, 0.0, 0.0, 4.0, 5.0, 6.0],
+            ]
+        )
+        weights = array([0.25, 0.75])
+
+        dist = SE3DiracDistribution(particles, weights)
+        linear_marginal = dist.marginalize_periodic()
+
+        self.assertEqual(linear_marginal.d.shape, (2, 3))
+        npt.assert_allclose(linear_marginal.d, particles[:, 4:])
+        npt.assert_allclose(dist.linear_mean(), array([3.25, 4.25, 5.25]))
+
     def test_constructor_rejects_unnormalized_hypersphere_particles(self):
         particles = array([[2.0, 0.0, 0.0, 0.0, 1.0, 2.0, 3.0]])
 
