@@ -43,11 +43,19 @@ def _normalize_dtype(dtype):
         return dtype
 
 
+def _as_torch_compatible_numpy_array(x):
+    if not x.dtype.isnative:
+        x = x.astype(x.dtype.newbyteorder("="), copy=False)
+    if any(stride < 0 for stride in x.strides):
+        x = x.copy()
+    return x
+
+
 def from_numpy(x):
     if _torch_is_tensor(x):
         return x
-    if isinstance(x, _np.ndarray) and any(stride < 0 for stride in x.strides):
-        x = x.copy()
+    if isinstance(x, _np.ndarray):
+        x = _as_torch_compatible_numpy_array(x)
     return _torch_from_numpy(x)
 
 
