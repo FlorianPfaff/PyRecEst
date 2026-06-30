@@ -35,6 +35,14 @@ def test_active_measurement_indices_must_fit_measurement_count():
         )
 
 
+def test_active_measurement_indices_reject_duplicates():
+    with pytest.raises(ValueError, match="active_measurement_indices.*duplicate"):
+        MeasurementUpdateDiagnostics(
+            active_measurement_indices=(0, np.int64(0)),
+            measurement_count=1,
+        )
+
+
 def test_measurement_count_rejects_non_integer_values():
     invalid_counts = (
         True,
