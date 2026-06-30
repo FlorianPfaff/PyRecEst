@@ -64,15 +64,25 @@ def _as_torch_compatible(value):
     return value
 
 
-def _as_tensor_pair(in1, in2):
-    device = next(
-        (value.device for value in (in1, in2) if _torch.is_tensor(value)), None
+def _preferred_tensor_device(*values):
+    tensor_devices = [value.device for value in values if _torch.is_tensor(value)]
+    if not tensor_devices:
+        return None
+    return next(
+        (device for device in tensor_devices if device.type != "cpu"),
+        tensor_devices[0],
     )
+
+
+def _as_tensor_pair(in1, in2):
+    device = _preferred_tensor_device(in1, in2)
     x = (
         in1
         if _torch.is_tensor(in1)
         else _torch.as_tensor(_as_torch_compatible(in1), device=device)
     )
+    if device is not None:
+        x = x.to(device=device)
     y = (
         in2
         if _torch.is_tensor(in2)
