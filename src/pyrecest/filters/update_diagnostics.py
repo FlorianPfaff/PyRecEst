@@ -85,10 +85,15 @@ def _normalize_active_measurement_indices(
         raise ValueError(
             "active_measurement_indices must be a sequence of non-negative integers"
         ) from exc
-    return tuple(
+    indices = tuple(
         _as_nonnegative_integer(value, "active_measurement_indices")
         for value in iterator
     )
+    if len(set(indices)) != len(indices):
+        raise ValueError(
+            "active_measurement_indices must not contain duplicate indices"
+        )
+    return indices
 
 
 def _as_nonnegative_integer(value: Any, name: str) -> int:
