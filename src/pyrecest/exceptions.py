@@ -18,6 +18,8 @@ def _normalize_supported_backends(
         return ()
     if isinstance(supported_backends, str):
         return (supported_backends,)
+    if isinstance(supported_backends, (bytes, bytearray)):
+        return (supported_backends.decode(),)
     return tuple(str(backend) for backend in supported_backends)
 
 
