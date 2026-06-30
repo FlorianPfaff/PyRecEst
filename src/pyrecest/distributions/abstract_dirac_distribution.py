@@ -13,6 +13,7 @@ from pyrecest.backend import (
     arange,
     argmax,
     asarray,
+    copy as backend_copy,
     int32,
     int64,
     isclose,
@@ -41,14 +42,14 @@ class AbstractDiracDistribution(AbstractDistributionType):
         :param w: Weights of Dirac locations as a numpy array. If not provided, defaults to uniform weights.
         """
         d = asarray(d)
-        self.d = copy.copy(d)
+        self.d = backend_copy(d)
         if w is None:
             self.w = ones(d.shape[0]) / d.shape[0]
         else:
             w = reshape(asarray(w), (-1,))
             if d.shape[0] != w.shape[0]:
                 raise ValueError("Number of Diracs and weights must match.")
-            self.w = copy.copy(w)
+            self.w = backend_copy(w)
         self.normalize_in_place()
 
     @staticmethod
