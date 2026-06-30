@@ -15,7 +15,9 @@ def patch_pytorch_dtype_promotion_contract() -> None:
         from pyrecest._backend.pytorch._common import (  # pylint: disable=import-outside-toplevel
             _normalize_dtype,
         )
-    except ModuleNotFoundError:  # pragma: no cover - PyTorch backend import failed earlier
+    except (
+        ModuleNotFoundError
+    ):  # pragma: no cover - PyTorch backend import failed earlier
         return
 
     _patch_pytorch_repeat_numpy_contract(raw_pytorch, torch)
@@ -157,7 +159,9 @@ def _patch_pytorch_diff_numpy_contract(raw_pytorch, torch) -> None:
         if axis < 0:
             axis += ndim
         if axis < 0 or axis >= ndim:
-            raise IndexError(f"axis {axis} is out of bounds for array of dimension {ndim}")
+            raise IndexError(
+                f"axis {axis} is out of bounds for array of dimension {ndim}"
+            )
         return axis
 
     def _boundary(value, reference, axis):
@@ -209,8 +213,7 @@ def _normalize_creation_shape(shape, torch, np):
         normalized_shape = (_operator_index(shape_array.item()),)
     else:
         normalized_shape = tuple(
-            _operator_index(one_dimension)
-            for one_dimension in shape_array.tolist()
+            _operator_index(one_dimension) for one_dimension in shape_array.tolist()
         )
     if any(one_dimension < 0 for one_dimension in normalized_shape):
         raise ValueError("negative dimensions are not allowed")
@@ -287,7 +290,9 @@ def _normalize_pad_pairs(pad_width, ndim, np):
     try:
         pad_pairs = np.broadcast_to(np.asarray(pad_width), (ndim, 2))
     except ValueError as exc:
-        raise ValueError(f"pad_width must be broadcastable to shape ({ndim}, 2)") from exc
+        raise ValueError(
+            f"pad_width must be broadcastable to shape ({ndim}, 2)"
+        ) from exc
     if np.any(pad_pairs < 0):
         raise ValueError("index can't contain negative values")
     try:
@@ -312,7 +317,9 @@ def _normalize_constant_value_pairs(constant_values, ndim, np):
 
 def _filled_pad_block(shape, value, reference, torch):
     """Return a constant-filled block compatible with ``reference``."""
-    scalar_value = torch.as_tensor(value, dtype=reference.dtype, device=reference.device)
+    scalar_value = torch.as_tensor(
+        value, dtype=reference.dtype, device=reference.device
+    )
     if scalar_value.ndim != 0:
         raise ValueError("constant_values entries must be scalar")
     block = torch.empty(tuple(shape), dtype=reference.dtype, device=reference.device)

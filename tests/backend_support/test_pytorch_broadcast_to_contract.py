@@ -53,7 +53,9 @@ for broadcast_to, to_numpy in (
     else:
         raise AssertionError("broadcast_to accepted a negative broadcast dimension")
 """
-    subprocess.run([sys.executable, "-c", code], check=True, env=_backend_test_env("pytorch"))
+    subprocess.run(
+        [sys.executable, "-c", code], check=True, env=_backend_test_env("pytorch")
+    )
 
 
 @pytest.mark.backend_portable
@@ -85,4 +87,6 @@ except ValueError:
 else:
     raise AssertionError("raw broadcast_to accepted a negative broadcast dimension")
 """
-    subprocess.run([sys.executable, "-c", code], check=True, env=_backend_test_env("numpy"))
+    subprocess.run(
+        [sys.executable, "-c", code], check=True, env=_backend_test_env("numpy")
+    )

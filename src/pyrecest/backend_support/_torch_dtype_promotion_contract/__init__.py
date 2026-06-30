@@ -7,13 +7,17 @@ from pathlib import Path
 
 
 def _load_base_contract_module():
-    module_path = Path(__file__).resolve().parent.parent / "_torch_dtype_promotion_contract.py"
+    module_path = (
+        Path(__file__).resolve().parent.parent / "_torch_dtype_promotion_contract.py"
+    )
     spec = importlib.util.spec_from_file_location(
         "_pyrecest_torch_dtype_promotion_contract_base",
         module_path,
     )
     if spec is None or spec.loader is None:
-        raise ImportError(f"Cannot load PyTorch dtype contract module from {module_path}")
+        raise ImportError(
+            f"Cannot load PyTorch dtype contract module from {module_path}"
+        )
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -29,7 +33,9 @@ def patch_pytorch_dtype_promotion_contract() -> None:
         import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
         import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import torch  # pylint: disable=import-outside-toplevel
-    except ModuleNotFoundError:  # pragma: no cover - PyTorch backend import failed earlier
+    except (
+        ModuleNotFoundError
+    ):  # pragma: no cover - PyTorch backend import failed earlier
         return
 
     _patch_pytorch_logical_device_contract(raw_pytorch, backend, torch)
