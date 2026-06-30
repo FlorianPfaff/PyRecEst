@@ -40,6 +40,40 @@ assert backend.to_numpy(matrix_trace).item() == 6.0
 
 
 @pytest.mark.backend_portable
+def test_pytorch_backend_accepts_non_native_byte_order_numpy_arrays():
+    if importlib.util.find_spec("torch") is None:
+        pytest.skip("PyTorch is not installed")
+
+    result = run_backend_code(
+        "pytorch",
+        """
+import sys
+
+import numpy as np
+import pyrecest.backend as backend
+from pyrecest._backend.pytorch._common import from_numpy
+
+non_native_prefix = ">" if sys.byteorder == "little" else "<"
+source = np.array([1.25, 2.5], dtype=f"{non_native_prefix}f8")
+assert not source.dtype.isnative
+
+converted_from_numpy = from_numpy(source)
+converted_array = backend.array(source)
+assert converted_from_numpy.dtype == backend.float64
+assert converted_array.dtype == backend.float64
+assert backend.to_numpy(converted_from_numpy).tolist() == [1.25, 2.5]
+assert backend.to_numpy(converted_array).tolist() == [1.25, 2.5]
+
+source[0] = 99.0
+assert backend.to_numpy(converted_from_numpy).tolist() == [1.25, 2.5]
+assert backend.to_numpy(converted_array).tolist() == [1.25, 2.5]
+""",
+    )
+
+    assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.backend_portable
 def test_pytorch_array_copies_numpy_inputs():
     if importlib.util.find_spec("torch") is None:
         pytest.skip("PyTorch is not installed")
