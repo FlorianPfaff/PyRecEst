@@ -340,8 +340,8 @@ def infer_state_dim_from_distribution(
     ``input_dim``.  If those are unavailable, it falls back to common storage
     attributes such as ``mu``/``m`` for means, ``C`` for covariance, and ``d``
     for row-oriented Dirac support locations.  Method calls such as
-    ``mean()``/``covariance()`` are allowed by default but can be disabled with
-    ``allow_methods=False`` to avoid expensive numerical fallbacks.
+    ``mean()``/``covariance()``/``d()`` are allowed by default but can be disabled
+    with ``allow_methods=False`` to avoid expensive numerical fallbacks.
     """
     allow_methods = _validate_bool_flag(allow_methods, "allow_methods")
     for attr_name in ("dim", "input_dim"):
@@ -384,7 +384,8 @@ def infer_state_dim_from_distribution(
 
     if hasattr(distribution, "d"):
         try:
-            support = validate_matrix(getattr(distribution, "d"), name="distribution.d")
+            support = _maybe_call(getattr(distribution, "d"), allow_methods=allow_methods)
+            support = validate_matrix(support, name="distribution.d")
             return _shape_tuple(support)[1]
         except (TypeError, ValueError):
             pass
