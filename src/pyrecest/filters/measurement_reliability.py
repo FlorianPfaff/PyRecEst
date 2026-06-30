@@ -74,9 +74,40 @@ def _normalize_positive_integer(value: Any, name: str) -> int:
     )
 
 
+def _is_boolean_object_value(value) -> bool:
+    if isinstance(value, (bool, np.bool_)):
+        return True
+    dtype = getattr(value, "dtype", None)
+    if dtype is None:
+        return False
+    kind = getattr(dtype, "kind", None)
+    if kind is not None:
+        return kind == "b"
+    return "bool" in str(dtype).lower()
+
+
+def _object_array_contains_only_boolean_values(value) -> bool:
+    try:
+        flat_values = reshape(value, (-1,))
+    except (TypeError, ValueError, AttributeError):
+        item = value.item() if hasattr(value, "item") else value
+        return _is_boolean_object_value(item)
+    return builtins.all(
+        _is_boolean_object_value(flat_values[index])
+        for index in range(flat_values.shape[0])
+    )
+
+
 def _has_boolean_dtype(value) -> bool:
     dtype = getattr(value, "dtype", None)
-    return dtype is not None and "bool" in str(dtype).lower()
+    if dtype is None:
+        return False
+    kind = getattr(dtype, "kind", None)
+    if kind == "b":
+        return True
+    if kind == "O" or (kind is None and "object" in str(dtype).lower()):
+        return _object_array_contains_only_boolean_values(value)
+    return "bool" in str(dtype).lower()
 
 
 def _has_object_dtype(value) -> bool:
