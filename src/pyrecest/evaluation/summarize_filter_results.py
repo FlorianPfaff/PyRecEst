@@ -27,6 +27,8 @@ def summarize_filter_results(
             "Provided both last_filter_states and last_estimates. Using last_estimates."
         )
         filter_results = last_estimates
+    elif last_estimates is not None:
+        filter_results = last_estimates
     elif last_filter_states is not None:
         filter_results = last_filter_states
     else:
