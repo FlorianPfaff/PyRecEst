@@ -93,3 +93,28 @@ assert backend.to_numpy(converted).tolist() == [0.0, 1.0, 2.0]
     )
 
     assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.backend_portable
+def test_pytorch_boxed_binary_scalar_prefers_existing_cuda_tensor_device():
+    if importlib.util.find_spec("torch") is None:
+        pytest.skip("PyTorch is not installed")
+
+    result = run_backend_code(
+        "pytorch",
+        """
+import pyrecest.backend as backend
+import torch
+
+if not torch.cuda.is_available():
+    raise SystemExit(0)
+
+tensor_operand = torch.ones(2, device="cuda")
+result = backend.arctan2([1.0, 2.0], tensor_operand)
+
+assert result.device.type == "cuda"
+assert tuple(result.shape) == (2,)
+""",
+    )
+
+    assert result.returncode == 0, result.stderr
