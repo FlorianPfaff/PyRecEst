@@ -1,10 +1,9 @@
 import pytest
 
-
 torch = pytest.importorskip("torch")
 
-import pyrecest.backend_tools  # noqa: E402,F401
 import pyrecest._backend.pytorch as pytorch_backend  # noqa: E402
+import pyrecest.backend_tools  # noqa: E402,F401
 
 
 def _non_cpu_device():

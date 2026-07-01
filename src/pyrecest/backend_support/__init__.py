@@ -48,8 +48,8 @@ def _patch_raw_pytorch_assignment_scalar_tensor_indices() -> None:
     """Make raw PyTorch assignment helpers accept scalar integer tensor indices."""
 
     try:
-        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import torch as _torch  # pylint: disable=import-outside-toplevel
     except ModuleNotFoundError:  # pragma: no cover - PyTorch backend may be unavailable
         return
@@ -226,7 +226,9 @@ def _patch_pytorch_copy_numpy_contract() -> None:
 
     try:
         import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
-    except ModuleNotFoundError:  # pragma: no cover - PyTorch backend import failed earlier
+    except (
+        ModuleNotFoundError
+    ):  # pragma: no cover - PyTorch backend import failed earlier
         return
 
     original_copy = raw_pytorch.copy
@@ -258,7 +260,9 @@ def _patch_pytorch_clip_numpy_contract() -> None:
     try:
         import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
         import torch  # pylint: disable=import-outside-toplevel
-    except ModuleNotFoundError:  # pragma: no cover - PyTorch backend import failed earlier
+    except (
+        ModuleNotFoundError
+    ):  # pragma: no cover - PyTorch backend import failed earlier
         return
 
     original_clip = raw_pytorch.clip
@@ -317,8 +321,7 @@ def _pytorch_broadcast_shape(shape, numpy_module, torch_module) -> tuple[int, ..
         broadcast_shape = (_operator_index(shape_array.item()),)
     else:
         broadcast_shape = tuple(
-            _operator_index(one_dimension)
-            for one_dimension in shape_array.tolist()
+            _operator_index(one_dimension) for one_dimension in shape_array.tolist()
         )
     if any(one_dimension < 0 for one_dimension in broadcast_shape):
         raise ValueError("all elements of broadcast shape must be non-negative")
@@ -338,7 +341,9 @@ def _patch_pytorch_broadcast_to_numpy_contract() -> None:
         import numpy as np  # pylint: disable=import-outside-toplevel
         import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
         import torch  # pylint: disable=import-outside-toplevel
-    except ModuleNotFoundError:  # pragma: no cover - PyTorch backend import failed earlier
+    except (
+        ModuleNotFoundError
+    ):  # pragma: no cover - PyTorch backend import failed earlier
         return
 
     original_broadcast_to = raw_pytorch.broadcast_to
