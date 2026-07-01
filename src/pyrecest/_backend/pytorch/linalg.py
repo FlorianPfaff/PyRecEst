@@ -95,6 +95,15 @@ def _out_kwargs(out):
     return {} if out is None else {"out": out}
 
 
+def _normalize_linalg_tolerance(value):
+    """Return PyTorch-compatible scalar tolerances from NumPy scalar inputs."""
+    if isinstance(value, _np.ndarray) and value.ndim == 0:
+        return value.item()
+    if isinstance(value, _np.generic):
+        return value.item()
+    return value
+
+
 def cholesky(a, upper=False, out=None):
     """Compute a Cholesky factor after PyRecEst-style array-like promotion."""
     return _torch.linalg.cholesky(_as_linalg_tensor(a), upper=upper, **_out_kwargs(out))
@@ -141,8 +150,11 @@ def pinv(a, rcond=None, hermitian=False, *, atol=None, rtol=None, out=None):
         if rtol is not None:
             raise TypeError("pinv() got both 'rcond' and 'rtol'")
         rtol = rcond
+    a = _as_linalg_tensor(a)
+    atol = _normalize_linalg_tolerance(atol)
+    rtol = _normalize_linalg_tolerance(rtol)
     return _torch.linalg.pinv(
-        _as_linalg_tensor(a),
+        a,
         atol=atol,
         rtol=rtol,
         hermitian=hermitian,
@@ -250,6 +262,8 @@ def matrix_rank(a, tol=None, hermitian=False, *, rtol=None, atol=None, **kwargs)
         atol = tol
 
     a = _as_linalg_tensor(a)
+    atol = _normalize_linalg_tolerance(atol)
+    rtol = _normalize_linalg_tolerance(rtol)
     return _torch.linalg.matrix_rank(a, atol=atol, rtol=rtol, hermitian=hermitian)
 
 
