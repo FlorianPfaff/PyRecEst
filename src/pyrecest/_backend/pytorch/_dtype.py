@@ -107,6 +107,16 @@ def _dtype_as_str(dtype):
     return str(dtype).split(".")[-1]
 
 
+def _preferred_tensor_device(*values):
+    tensor_devices = [value.device for value in values if _torch.is_tensor(value)]
+    if not tensor_devices:
+        return None
+    return next(
+        (device for device in tensor_devices if device.type != "cpu"),
+        tensor_devices[0],
+    )
+
+
 def set_default_dtype(value):
     """Set backend default dtype.
 
@@ -281,10 +291,15 @@ def _box_binary_scalar(target=None, box_x1=True, box_x2=True):
     def _decorator(func):
         @functools.wraps(func)
         def _wrapped(x1, x2, *args, **kwargs):
+            device = _preferred_tensor_device(x1, x2)
             if box_x1 and not _torch.is_tensor(x1):
-                x1 = _torch.tensor(x1)
+                x1 = _torch.tensor(x1, device=device)
+            elif device is not None and _torch.is_tensor(x1) and x1.device != device:
+                x1 = x1.to(device=device)
             if box_x2 and not _torch.is_tensor(x2):
-                x2 = _torch.tensor(x2)
+                x2 = _torch.tensor(x2, device=device)
+            elif device is not None and _torch.is_tensor(x2) and x2.device != device:
+                x2 = x2.to(device=device)
 
             return func(x1, x2, *args, **kwargs)
 
