@@ -244,7 +244,9 @@ from .track_metrics import (
 )
 
 _multisession_assignment_module.tracks_to_session_labels = tracks_to_session_labels
-_multisession_assignment_module._validate_scalar_cost = _validate_multisession_scalar_cost
+_multisession_assignment_module._validate_scalar_cost = (
+    _validate_multisession_scalar_cost
+)
 
 __all__ = [
     "MultiSessionAssignmentResult",
