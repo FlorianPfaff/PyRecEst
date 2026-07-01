@@ -38,7 +38,7 @@ def summarize_filter_results(
         warnings.warn("Using less than 1000 runs. This may lead to unreliable results.")
 
     extract_mean = get_extract_mean(
-        scenario_config["manifold"], mtt_scenario=scenario_config["mtt"]
+        scenario_config["manifold"], mtt_scenario=scenario_config.get("mtt", False)
     )
     distance_function = get_distance_function(scenario_config["manifold"])
     errors_all = determine_all_deviations(
