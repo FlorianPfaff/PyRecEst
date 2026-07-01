@@ -5,7 +5,6 @@ pytorch_backend: Any
 torch: Any
 try:
     import torch
-
     from pyrecest._backend import pytorch as pytorch_backend
 except ModuleNotFoundError:
     torch = None
@@ -31,11 +30,11 @@ class TestPytorchSolveSylvesterDevice(unittest.TestCase):
         self.assertEqual(result.dtype, pytorch_backend.float64)
         self.assertTrue(pytorch_backend.allclose(result, expected))
 
-    @unittest.skipIf(torch is None or not torch.cuda.is_available(), "CUDA is not available")
+    @unittest.skipIf(
+        torch is None or not torch.cuda.is_available(), "CUDA is not available"
+    )
     def test_solve_sylvester_aligns_mixed_tensor_devices(self):
-        a = torch.tensor(
-            [[2.0, 0.0], [0.0, 3.0]], dtype=torch.float32, device="cuda"
-        )
+        a = torch.tensor([[2.0, 0.0], [0.0, 3.0]], dtype=torch.float32, device="cuda")
         b = torch.tensor([[2.0, 0.0], [0.0, 3.0]], dtype=torch.float32)
         q = torch.tensor([[8.0, 10.0], [10.0, 12.0]], dtype=torch.float64)
 
