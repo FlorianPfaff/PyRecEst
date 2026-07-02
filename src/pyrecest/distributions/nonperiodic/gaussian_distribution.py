@@ -181,6 +181,7 @@ class GaussianDistribution(AbstractLinearDistribution):
         many likelihoods are accumulated or when densities may underflow.
         """
         xs = self._validate_evaluation_points(xs)
+        scalar_input = self.dim == 1 and ndim(xs) == 0
         if pyrecest.backend.__backend_name__ == "numpy":
             from scipy.stats import multivariate_normal as mvn
 
@@ -207,6 +208,8 @@ class GaussianDistribution(AbstractLinearDistribution):
         else:
             raise NotImplementedError("Backend not supported")
 
+        if scalar_input:
+            log_pdf_vals = reshape(log_pdf_vals, ())
         return log_pdf_vals
 
     log_pdf = ln_pdf
