@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib
 import importlib.util
 from pathlib import Path
 
@@ -22,9 +23,86 @@ def _load_base_contract_module():
 _BASE_CONTRACT = _load_base_contract_module()
 
 
+def _normalize_get_slice_indices(indices):
+    """Return grouped get_slice indices in a backend-compatible form."""
+    if isinstance(indices, tuple):
+        return indices
+    if isinstance(indices, (str, bytes)):
+        return indices
+
+    ndim = getattr(indices, "ndim", None)
+    if ndim is not None:
+        return tuple(indices) if ndim > 1 else indices
+
+    if isinstance(indices, list):
+        if not indices:
+            return indices
+        first_index = indices[0]
+        if isinstance(first_index, (str, bytes)):
+            return indices
+        if hasattr(first_index, "__len__"):
+            return tuple(indices)
+
+    return indices
+
+
+def _wrap_get_slice_arraylike_contract(original_get_slice, array_func, is_array_func=None):
+    """Return a get_slice wrapper for array-like inputs and grouped indices."""
+    if getattr(original_get_slice, "_pyrecest_get_slice_contract", False):
+        return original_get_slice
+
+    def get_slice(x, indices):
+        if is_array_func is None or not is_array_func(x):
+            x = array_func(x)
+        return original_get_slice(x, _normalize_get_slice_indices(indices))
+
+    get_slice.__name__ = getattr(original_get_slice, "__name__", "get_slice")
+    get_slice.__doc__ = getattr(original_get_slice, "__doc__", None)
+    get_slice._pyrecest_get_slice_contract = True
+    return get_slice
+
+
+def _patch_one_get_slice_module(module) -> None:
+    original_get_slice = getattr(module, "get_slice", None)
+    array_func = getattr(module, "array", None) or getattr(module, "asarray", None)
+    if original_get_slice is None or array_func is None:
+        return
+
+    module.get_slice = _wrap_get_slice_arraylike_contract(
+        original_get_slice,
+        array_func,
+        getattr(module, "is_array", None),
+    )
+
+
+def _patch_backend_get_slice_contract() -> None:
+    """Make raw and public get_slice helpers honor their array-like contract."""
+    try:
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
+    except ModuleNotFoundError:  # pragma: no cover - import fails before this module
+        backend = None
+
+    if backend is not None:
+        _patch_one_get_slice_module(backend)
+
+    for module_name in (
+        "pyrecest._backend._shared_numpy",
+        "pyrecest._backend.numpy",
+        "pyrecest._backend.autograd",
+        "pyrecest._backend.jax",
+        "pyrecest._backend.pytorch",
+    ):
+        try:
+            module = importlib.import_module(module_name)
+        except ModuleNotFoundError:  # pragma: no cover - optional backend unavailable
+            continue
+        _patch_one_get_slice_module(module)
+
+
 def patch_pytorch_dtype_promotion_contract() -> None:
     """Apply the base PyTorch contract patch plus device-placement fixes."""
     _BASE_CONTRACT.patch_pytorch_dtype_promotion_contract()
+    _patch_backend_get_slice_contract()
     try:
         import numpy as np  # pylint: disable=import-outside-toplevel
         import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
