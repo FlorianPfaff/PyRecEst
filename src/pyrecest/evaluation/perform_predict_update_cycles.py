@@ -49,6 +49,41 @@ def _last_stored_estimate(all_estimates):
         return all_estimates[-1]
 
 
+def _shape_has_zero_dimension(shape) -> bool:
+    """Return whether a shape-like object contains a zero dimension."""
+    try:
+        shape_iter = iter(shape)
+    except TypeError:
+        return False
+
+    for dimension in shape_iter:
+        try:
+            if int(dimension) == 0:
+                return True
+        except (TypeError, ValueError, OverflowError):
+            return False
+    return False
+
+
+def _is_empty_measurement_set(measurement) -> bool:
+    """Return whether ``measurement`` represents a zero-observation set."""
+    shape = getattr(measurement, "shape", None)
+    if shape is not None and _shape_has_zero_dimension(shape):
+        return True
+
+    size = getattr(measurement, "size", None)
+    if size is not None and not callable(size):
+        try:
+            return int(size) == 0
+        except (TypeError, ValueError, OverflowError):
+            pass
+
+    try:
+        return len(measurement) == 0
+    except TypeError:
+        return False
+
+
 # pylint: disable=too-many-arguments,too-many-locals,too-many-branches,too-many-positional-arguments
 def perform_predict_update_cycles(
     scenario_config,
@@ -93,13 +128,17 @@ def perform_predict_update_cycles(
             raise NotImplementedError("Cumulative updates not implemented yet.")
 
         all_meas_curr_time_step = atleast_2d(array(measurements[t]))
-        n_updates = all_meas_curr_time_step.shape[0]
+        if _is_empty_measurement_set(all_meas_curr_time_step):
+            n_updates = 0
+        else:
+            n_updates = all_meas_curr_time_step.shape[0]
 
         if scenario_config.get("eot", False):
-            meas_matrix = scenario_config.get("eot_meas_matrix")
-            filter_obj.update(
-                all_meas_curr_time_step.T, meas_matrix, meas_noise_for_filter
-            )
+            if n_updates > 0:
+                meas_matrix = scenario_config.get("eot_meas_matrix")
+                filter_obj.update(
+                    all_meas_curr_time_step.T, meas_matrix, meas_noise_for_filter
+                )
         else:
             for m in range(n_updates):
                 curr_meas = all_meas_curr_time_step[m, :]
