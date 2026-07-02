@@ -8,7 +8,7 @@ import numbers as _numbers
 
 import jax.numpy as _jnp
 from jax import vmap
-from jax.numpy import (  # For pyrecest; For Riemannian score-based SDE
+from jax.numpy import (  # For pyrecest; For Riemannian Score-based SDE
     abs,
     all,
     allclose,
@@ -382,6 +382,10 @@ def _assignment_value_length(values):
     return 1
 
 
+def _is_empty_index_sequence(indices):
+    return _is_iterable_index(indices) and len(indices) == 0
+
+
 def _normalize_assignment_index(indices, ndim_x, axis=0):
     if _is_boolean_index(indices):
         return _jnp.asarray(indices), False, None
@@ -445,6 +449,8 @@ def assignment(x, values, indices, axis=0):
         Copy of x with the values assigned at the given indices.
     """
     x = _jnp.asarray(x)
+    if _is_empty_index_sequence(indices):
+        return x
     normalized_indices, use_vectorization, len_indices = _normalize_assignment_index(
         indices,
         x.ndim,
@@ -486,6 +492,8 @@ def assignment_by_sum(x, values, indices, axis=0):
     If a list is given, it must have the same length as indices.
     """
     x = _jnp.asarray(x)
+    if _is_empty_index_sequence(indices):
+        return x
     normalized_indices, use_vectorization, len_indices = _normalize_assignment_index(
         indices,
         x.ndim,
