@@ -246,6 +246,41 @@ def _patch_pytorch_copy_numpy_contract() -> None:
         backend.copy = copy
 
 
+def _patch_pytorch_broadcast_arrays_numpy_contract() -> None:
+    """Make PyTorch broadcast_arrays accept array-like inputs."""
+    try:
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
+    except ModuleNotFoundError:  # pragma: no cover - import fails before this module
+        return
+
+    active_pytorch_backend = getattr(backend, "__backend_name__", None) == "pytorch"
+
+    try:
+        import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
+        import torch  # pylint: disable=import-outside-toplevel
+    except ModuleNotFoundError:  # pragma: no cover - PyTorch backend import failed earlier
+        return
+
+    original_broadcast_arrays = raw_pytorch.broadcast_arrays
+    if getattr(original_broadcast_arrays, "_pyrecest_numpy_contract", False):
+        return
+
+    def broadcast_arrays(*arrays):
+        tensors = tuple(raw_pytorch.array(array) for array in arrays)
+        return torch.broadcast_tensors(*tensors)
+
+    broadcast_arrays.__name__ = getattr(
+        original_broadcast_arrays,
+        "__name__",
+        "broadcast_arrays",
+    )
+    broadcast_arrays.__doc__ = getattr(torch.broadcast_tensors, "__doc__", None)
+    broadcast_arrays._pyrecest_numpy_contract = True
+    raw_pytorch.broadcast_arrays = broadcast_arrays
+    if active_pytorch_backend:
+        backend.broadcast_arrays = broadcast_arrays
+
+
 def _patch_pytorch_clip_numpy_contract() -> None:
     """Make PyTorch clip accept array-like inputs regardless of public backend."""
     try:
@@ -501,6 +536,7 @@ _patch_pytorch_dot_numpy_contract()
 _patch_pytorch_outer_numpy_contract()
 _patch_pytorch_tile_numpy_contract()
 _patch_pytorch_copy_numpy_contract()
+_patch_pytorch_broadcast_arrays_numpy_contract()
 _patch_pytorch_clip_numpy_contract()
 _patch_pytorch_broadcast_to_numpy_contract()
 _patch_jax_outer_numpy_contract()
