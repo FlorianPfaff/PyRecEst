@@ -249,10 +249,17 @@ def _solve_subproblem(  # pylint: disable=too-many-locals
     for row_index, col_index in subproblem.forbidden_pairs:
         modified_cost_matrix[row_index, col_index] = large_cost
 
+    forbidden_pairs = set(subproblem.forbidden_pairs)
     forced_rows = set()
     forced_cols = set()
     for row_index, col_index in subproblem.forced_pairs:
-        if row_index in forced_rows or col_index in forced_cols:
+        if (
+            row_index in forced_rows
+            or col_index in forced_cols
+            or (row_index, col_index) in forbidden_pairs
+        ):
+            return None
+        if bool(augmented_cost_matrix[row_index, col_index] >= large_cost / 2.0):
             return None
         forced_rows.add(row_index)
         forced_cols.add(col_index)
