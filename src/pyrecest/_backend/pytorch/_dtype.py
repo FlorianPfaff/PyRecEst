@@ -15,8 +15,8 @@ from pyrecest._backend._dtype_utils import (
 from pyrecest._backend._dtype_utils import (
     get_default_dtype as _shared_get_default_dtype,
 )
+from torch import bool as torch_bool
 from torch import (
-    bool as torch_bool,
     complex64,
     complex128,
     float32,
