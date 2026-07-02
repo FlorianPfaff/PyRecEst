@@ -22,6 +22,7 @@ _REJECTED_OBJECT_VALUE_TYPES = (
     str,
     bytes,
     bytearray,
+    type(None),
     complex,
     np.complexfloating,
     np.datetime64,
