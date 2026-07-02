@@ -67,6 +67,30 @@ def test_custom_gradient_supports_multiple_arguments_and_keyword_calls():
     assert jnp.allclose(grad_scale, -1.0)
 
 
+def test_custom_gradient_contracts_vector_output_for_scalar_argument():
+    @autodiff.custom_gradient(lambda x: jnp.array([2.0, 3.0]))
+    def affine_pair(x):
+        return jnp.array([2.0 * x, 3.0 * x])
+
+    _, pullback = jax.vjp(affine_pair, 4.0)
+    (gradient,) = pullback(jnp.array([10.0, 1.0]))
+
+    assert jnp.allclose(gradient, 23.0)
+
+
+def test_custom_gradient_contracts_full_jacobian_with_cotangent():
+    jacobian_matrix = jnp.array([[1.0, 2.0], [3.0, 4.0]])
+
+    @autodiff.custom_gradient(lambda x: jacobian_matrix)
+    def linear_map(x):
+        return jacobian_matrix @ x
+
+    _, pullback = jax.vjp(linear_map, jnp.array([1.0, 1.0]))
+    (gradient,) = pullback(jnp.array([5.0, 7.0]))
+
+    assert jnp.allclose(gradient, jnp.array([26.0, 38.0]))
+
+
 @pytest.mark.parametrize(
     "function_name",
     [
