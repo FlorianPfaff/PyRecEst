@@ -20,6 +20,69 @@ from pyrecest.backend_support._pytorch_minmax_device_contract import (
 )
 
 
+def _patch_pytorch_raw_comparison_arraylike_contract() -> None:
+    """Patch raw/public PyTorch comparisons to accept array-like operands."""
+
+    try:
+        import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
+        import torch  # pylint: disable=import-outside-toplevel
+    except ModuleNotFoundError:  # pragma: no cover - PyTorch backend may be unavailable
+        return
+
+    active_pytorch_backend = getattr(backend, "__backend_name__", None) == "pytorch"
+    helper_names = ("greater", "less", "logical_or")
+    if all(
+        getattr(getattr(raw_pytorch, helper_name, None), "_pyrecest_arraylike_contract", False)
+        for helper_name in helper_names
+    ):
+        if active_pytorch_backend:
+            for helper_name in helper_names:
+                setattr(backend, helper_name, getattr(raw_pytorch, helper_name))
+        return
+
+    def _preferred_pytorch_device(*values):
+        for value in values:
+            if torch.is_tensor(value) and value.device.type != "cpu":
+                return value.device
+        for value in values:
+            if torch.is_tensor(value):
+                return value.device
+        return None
+
+    def _coerce_binary_args(x, y):
+        device = _preferred_pytorch_device(x, y)
+        if not torch.is_tensor(x):
+            x = torch.as_tensor(x, device=device)
+        elif device is not None and x.device != device:
+            x = x.to(device=device)
+        if not torch.is_tensor(y):
+            y = torch.as_tensor(y, device=device)
+        elif device is not None and y.device != device:
+            y = y.to(device=device)
+        return x, y
+
+    def _wrap_comparison(helper_name, torch_func):
+        def comparison(x, y, **kwargs):
+            x, y = _coerce_binary_args(x, y)
+            return torch_func(x, y, **kwargs)
+
+        comparison.__name__ = helper_name
+        comparison.__doc__ = getattr(torch_func, "__doc__", None)
+        comparison._pyrecest_arraylike_contract = True
+        return comparison
+
+    helpers = {
+        "greater": _wrap_comparison("greater", torch.greater),
+        "less": _wrap_comparison("less", torch.less),
+        "logical_or": _wrap_comparison("logical_or", torch.logical_or),
+    }
+    for helper_name, helper in helpers.items():
+        setattr(raw_pytorch, helper_name, helper)
+        if active_pytorch_backend:
+            setattr(backend, helper_name, helper)
+
+
 def _patch_pytorch_diag_numpy_contract() -> None:
     """Patch raw/public PyTorch ``diag`` to accept NumPy-style inputs."""
     try:
@@ -50,6 +113,7 @@ def _patch_pytorch_diag_numpy_contract() -> None:
 
 _patch_pytorch_allclose_device_contract()
 _patch_pytorch_diag_numpy_contract()
+_patch_pytorch_raw_comparison_arraylike_contract()
 _patch_pytorch_dot_outer_device_contract()
 _patch_pytorch_matmul_device_contract()
 _patch_pytorch_minmax_device_contract()
