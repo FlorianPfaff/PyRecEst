@@ -416,14 +416,16 @@ def is_single_matrix_pd(mat):
     if mat.ndim != 2 or mat.shape[0] != mat.shape[1]:
         return False
     if mat.dtype in [_torch.complex64, _torch.complex128]:
-        is_hermitian = _torch.all(
-            _torch.abs(mat - _torch.conj(_torch.transpose(mat, 0, 1))) < atol
+        is_hermitian = bool(
+            _torch.all(
+                _torch.abs(mat - _torch.conj(_torch.transpose(mat, 0, 1))) < atol
+            )
         )
         if not is_hermitian:
             return False
         eigvals = _torch.linalg.eigvalsh(mat)
-        return _torch.min(_torch.real(eigvals)) > 0
-    if not _torch.all(_torch.abs(mat - mat.transpose(-2, -1)) < atol):
+        return bool(_torch.min(_torch.real(eigvals)) > 0)
+    if not bool(_torch.all(_torch.abs(mat - mat.transpose(-2, -1)) < atol)):
         return False
     try:
         _torch.linalg.cholesky(mat)
