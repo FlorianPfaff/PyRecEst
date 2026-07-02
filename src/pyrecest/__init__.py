@@ -430,6 +430,44 @@ def _patch_pytorch_linear_helpers_facade() -> None:
     backend.outer = pytorch_backend.outer = outer
 
 
+def _patch_pytorch_extrema_out_facade() -> None:
+    """Make PyTorch ``maximum`` and ``minimum`` accept NumPy's ``out`` keyword."""
+
+    import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
+
+    if getattr(backend, "__backend_name__", None) != "pytorch":
+        return
+
+    try:
+        import pyrecest._backend.pytorch as pytorch_backend  # pylint: disable=import-outside-toplevel
+    except ModuleNotFoundError:  # pragma: no cover - backend import fails first
+        return
+
+    def _copy_to_out(result, out):
+        copy_ = getattr(out, "copy_", None)
+        if copy_ is not None:
+            copy_(result)
+            return out
+        out[...] = result
+        return out
+
+    def _wrap_extremum(original):
+        def extremum(a, b, out=None):
+            result = original(a, b)
+            if out is not None:
+                return _copy_to_out(result, out)
+            return result
+
+        extremum.__name__ = getattr(original, "__name__", "extremum")
+        extremum.__doc__ = getattr(original, "__doc__", None)
+        return extremum
+
+    maximum = _wrap_extremum(pytorch_backend.maximum)
+    minimum = _wrap_extremum(pytorch_backend.minimum)
+    backend.maximum = pytorch_backend.maximum = maximum
+    backend.minimum = pytorch_backend.minimum = minimum
+
+
 def _patch_raw_pytorch_trace_facade() -> None:
     """Make raw PyTorch ``trace`` follow NumPy's trace signature."""
 
@@ -566,6 +604,7 @@ _patch_pytorch_clip_facade()
 _patch_pytorch_tile_facade()
 _patch_pytorch_stack_helpers_facade()
 _patch_pytorch_linear_helpers_facade()
+_patch_pytorch_extrema_out_facade()
 _patch_raw_pytorch_trace_facade()
 _patch_jax_std_out_facade()
 _patch_jax_matmul_out_facade()
