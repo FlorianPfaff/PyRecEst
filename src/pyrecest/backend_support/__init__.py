@@ -148,6 +148,51 @@ def _patch_pytorch_outer_numpy_contract() -> None:
         backend.outer = outer
 
 
+def _patch_pytorch_kron_numpy_contract() -> None:
+    """Make PyTorch kron accept NumPy-style array-like inputs."""
+    try:
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
+    except ModuleNotFoundError:  # pragma: no cover - import fails before this module
+        return
+
+    active_pytorch_backend = getattr(backend, "__backend_name__", None) == "pytorch"
+
+    try:
+        import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
+        import torch  # pylint: disable=import-outside-toplevel
+    except (
+        ModuleNotFoundError
+    ):  # pragma: no cover - PyTorch backend import failed earlier
+        return
+
+    original_kron = raw_pytorch.kron
+    if getattr(original_kron, "_pyrecest_numpy_contract", False):
+        return
+
+    def kron(a, b, out=None):
+        a = raw_pytorch.array(a)
+        b = raw_pytorch.array(b)
+        dtype = torch.promote_types(a.dtype, b.dtype)
+        a = a.to(dtype=dtype)
+        b = b.to(dtype=dtype)
+        result = torch.kron(a, b)
+        if out is not None:
+            copy_ = getattr(out, "copy_", None)
+            if copy_ is not None:
+                copy_(result)
+                return out
+            out[...] = raw_pytorch.to_numpy(result)
+            return out
+        return result
+
+    kron.__name__ = getattr(original_kron, "__name__", "kron")
+    kron.__doc__ = getattr(original_kron, "__doc__", None)
+    kron._pyrecest_numpy_contract = True
+    raw_pytorch.kron = kron
+    if active_pytorch_backend:
+        backend.kron = kron
+
+
 def _pytorch_tile_repetition(repetition) -> int:
     """Return one NumPy-style tile repetition as an integer."""
 
@@ -499,6 +544,7 @@ _patch_raw_pytorch_assignment_scalar_tensor_indices()
 _patch_pytorch_dtype_promotion_contract()
 _patch_pytorch_dot_numpy_contract()
 _patch_pytorch_outer_numpy_contract()
+_patch_pytorch_kron_numpy_contract()
 _patch_pytorch_tile_numpy_contract()
 _patch_pytorch_copy_numpy_contract()
 _patch_pytorch_clip_numpy_contract()
