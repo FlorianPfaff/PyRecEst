@@ -3,6 +3,8 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
+import numpy as np
+
 MeanExtractorFactory = Callable[[str, bool], Callable[[Any], Any]]
 _EXTRACT_MEAN_FACTORIES: dict[str, MeanExtractorFactory] = {}
 
@@ -11,6 +13,16 @@ def _normalize_registry_name(manifold_name: str) -> str:
     if not isinstance(manifold_name, str) or not manifold_name.strip():
         raise ValueError("manifold_name must be a non-empty string")
     return manifold_name.strip().lower()
+
+
+def _coerce_mtt_scenario_flag(value: Any) -> bool:
+    try:
+        value_array = np.asarray(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("mtt_scenario must be a bool") from exc
+    if value_array.shape == () and np.issubdtype(value_array.dtype, np.bool_):
+        return bool(value_array.item())
+    raise ValueError("mtt_scenario must be a bool")
 
 
 def register_extract_mean(
@@ -76,7 +88,7 @@ def _extract_mtt_mean(filter_state):
 
 def get_extract_mean(manifold_name, mtt_scenario=False):
     normalized_name = _normalize_registry_name(manifold_name)
-    is_mtt_scenario = bool(mtt_scenario) or "mtt" in normalized_name
+    is_mtt_scenario = _coerce_mtt_scenario_flag(mtt_scenario) or "mtt" in normalized_name
     registered_factory = _EXTRACT_MEAN_FACTORIES.get(normalized_name)
     if registered_factory is not None:
         return registered_factory(manifold_name, is_mtt_scenario)
