@@ -1,3 +1,5 @@
+from decimal import Decimal
+from fractions import Fraction
 import runpy
 from pathlib import Path
 
@@ -9,12 +11,22 @@ d = runpy.run_path(
 o = d["_optional_int_candidate"]
 
 
+def _fractional_exact_number(v):
+    if isinstance(v, Decimal):
+        return v != v.to_integral_value()
+    if isinstance(v, Fraction):
+        return v.denominator != 1
+    return False
+
+
 def f(v):
     if isinstance(v, np.ndarray):
         if v.ndim != 0:
             return d["_MISSING"]
         v = v.item()
     if isinstance(v, (bool, np.bool_)):
+        return d["_MISSING"]
+    if _fractional_exact_number(v):
         return d["_MISSING"]
     return o(v)
 
