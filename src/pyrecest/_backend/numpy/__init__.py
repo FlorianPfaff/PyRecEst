@@ -121,7 +121,6 @@ from .._shared_numpy import (
     arctanh,
     array_from_sparse,
     assignment,
-    assignment_by_sum,
     ceil,
     copy,
     cos,
@@ -188,6 +187,57 @@ from ._common import (
     to_ndarray,
     zeros,
 )
+
+
+def _assignment_by_sum_is_iterable(value):
+    if isinstance(value, (list, tuple)):
+        return True
+    if is_array(value):
+        return value.ndim > 0
+    return False
+
+
+def _assignment_by_sum_is_boolean(value):
+    if isinstance(value, (bool, _np.bool_)):
+        return True
+    if isinstance(value, (tuple, list)):
+        if not value:
+            return False
+        return _assignment_by_sum_is_boolean(value[0])
+    if is_array(value):
+        return value.dtype == bool
+    return False
+
+
+def assignment_by_sum(x, values, indices, axis=0):
+    """Add values at given indices, accumulating duplicate advanced indices."""
+    x_new = _np.copy(array(x))
+
+    if _assignment_by_sum_is_iterable(indices) and len(indices) == 0:
+        return x_new
+
+    use_vectorization = hasattr(indices, "__len__") and len(indices) < ndim(x_new)
+    if _assignment_by_sum_is_boolean(indices):
+        x_new[indices] += values
+        return x_new
+
+    zip_indices = _assignment_by_sum_is_iterable(
+        indices
+    ) and _assignment_by_sum_is_iterable(indices[0])
+    if zip_indices:
+        indices = tuple(zip(*indices))
+
+    if not use_vectorization:
+        len_indices = len(indices) if _assignment_by_sum_is_iterable(indices) else 1
+        len_values = len(values) if _assignment_by_sum_is_iterable(values) else 1
+        if len_values > 1 and len_values != len_indices:
+            raise ValueError("Either one value or as many values as indices")
+        _np.add.at(x_new, indices, values)
+    else:
+        indices = tuple(list(indices[:axis]) + [slice(None)] + list(indices[axis:]))
+        x_new[indices] += values
+    return x_new
+
 
 ones = _modify_func_default_dtype(target=_np.ones)
 linspace = _dyn_update_dtype(target=_np.linspace, dtype_pos=5)

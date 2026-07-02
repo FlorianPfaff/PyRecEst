@@ -72,6 +72,15 @@ class BackendContractTest(unittest.TestCase):
         npt.assert_allclose(to_numpy(assigned), [[0.0, 4.0], [5.0, 0.0]])
         npt.assert_allclose(to_numpy(added), [2.0, 0.0, 3.0])
 
+    def test_assignment_by_sum_accumulates_duplicate_indices(self):
+        added = backend.assignment_by_sum(
+            [0.0, 0.0, 0.0],
+            [1.0, 2.0, 4.0],
+            [0, 0, 2],
+        )
+
+        npt.assert_allclose(to_numpy(added), [3.0, 0.0, 4.0])
+
     def test_assignment_empty_indices_coerces_array_like_inputs(self):
         assigned = backend.assignment([1.0, 2.0, 3.0], 99.0, [])
         added = backend.assignment_by_sum([1.0, 2.0, 3.0], 99.0, [])
