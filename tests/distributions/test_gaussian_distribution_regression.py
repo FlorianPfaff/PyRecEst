@@ -16,6 +16,18 @@ def _scalar(value):
     return float(np.asarray(to_numpy(value)).reshape(-1)[0])
 
 
+def _subprocess_env(backend_name):
+    env = os.environ.copy()
+    env["PYRECEST_BACKEND"] = backend_name
+    src_path = os.path.abspath("src")
+    env["PYTHONPATH"] = (
+        src_path
+        if not env.get("PYTHONPATH")
+        else os.pathsep.join([src_path, env["PYTHONPATH"]])
+    )
+    return env
+
+
 class GaussianDistributionRegressionTest(unittest.TestCase):
     def test_standard_normal_pdf_and_log_pdf_match_reference_values(self):
         distribution = GaussianDistribution(array([0.0]), array([[1.0]]))
@@ -65,18 +77,42 @@ def test_marginalize_out_uses_backend_index_arrays():
 
 
 @pytest.mark.backend_portable
+@pytest.mark.parametrize(
+    ("backend_name", "module_name"),
+    [("pytorch", "torch"), ("jax", "jax")],
+)
+def test_scalar_gaussian_log_pdf_preserves_scalar_shape_across_backends(
+    backend_name, module_name
+):
+    if importlib.util.find_spec(module_name) is None:
+        pytest.skip(f"{module_name} is not installed")
+
+    code = """
+import numpy as np
+from pyrecest.backend import array, to_numpy
+from pyrecest.distributions import GaussianDistribution
+
+distribution = GaussianDistribution(array([0.0]), array([[1.0]]))
+log_pdf = distribution.ln_pdf(array(0.0))
+pdf = distribution.pdf(array(0.0))
+assert np.asarray(to_numpy(log_pdf)).shape == ()
+assert np.asarray(to_numpy(pdf)).shape == ()
+np.testing.assert_allclose(
+    np.asarray(to_numpy(log_pdf)),
+    np.array(-0.5 * np.log(2.0 * np.pi)),
+)
+np.testing.assert_allclose(
+    np.asarray(to_numpy(pdf)),
+    np.array(1.0 / np.sqrt(2.0 * np.pi)),
+)
+"""
+    subprocess.run([sys.executable, "-c", code], check=True, env=_subprocess_env(backend_name))
+
+
+@pytest.mark.backend_portable
 def test_jax_marginalize_out_accepts_list_dimensions():
     if importlib.util.find_spec("jax") is None:
         pytest.skip("jax is not installed")
-
-    env = os.environ.copy()
-    env["PYRECEST_BACKEND"] = "jax"
-    src_path = os.path.abspath("src")
-    env["PYTHONPATH"] = (
-        src_path
-        if not env.get("PYTHONPATH")
-        else os.pathsep.join([src_path, env["PYTHONPATH"]])
-    )
 
     code = """
 import numpy as np
@@ -93,7 +129,7 @@ np.testing.assert_allclose(
     to_numpy(marginalized.C), np.array([[4.0, 0.2], [0.2, 6.0]])
 )
 """
-    subprocess.run([sys.executable, "-c", code], check=True, env=env)
+    subprocess.run([sys.executable, "-c", code], check=True, env=_subprocess_env("jax"))
 
 
 if __name__ == "__main__":

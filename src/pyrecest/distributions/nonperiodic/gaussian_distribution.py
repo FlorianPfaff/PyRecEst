@@ -181,6 +181,7 @@ class GaussianDistribution(AbstractLinearDistribution):
         many likelihoods are accumulated or when densities may underflow.
         """
         xs = self._validate_evaluation_points(xs)
+        xs_was_scalar = ndim(xs) == 0
         if pyrecest.backend.__backend_name__ == "numpy":
             from scipy.stats import multivariate_normal as mvn
 
@@ -195,6 +196,8 @@ class GaussianDistribution(AbstractLinearDistribution):
                 # that torch.distributions.MultivariateNormal sees event dim 1.
                 xs = _torch.reshape(xs, (-1, 1))
             log_pdf_vals = distribution.log_prob(xs)
+            if xs_was_scalar:
+                log_pdf_vals = reshape(log_pdf_vals, ())
         elif pyrecest.backend.__backend_name__ == "jax":
             from jax.scipy.stats import (  # pylint: disable=import-error
                 multivariate_normal,
@@ -204,6 +207,8 @@ class GaussianDistribution(AbstractLinearDistribution):
                 xs = reshape(xs, (-1, 1))
 
             log_pdf_vals = multivariate_normal.logpdf(xs, self.mu, self.C)
+            if xs_was_scalar:
+                log_pdf_vals = reshape(log_pdf_vals, ())
         else:
             raise NotImplementedError("Backend not supported")
 
