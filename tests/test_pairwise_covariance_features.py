@@ -67,7 +67,7 @@ class TestPairwiseCovarianceFeatures(unittest.TestCase):
         means = array([[0.0], [0.0]])
         covariance = zeros((2, 2, 1))
 
-        for bad_regularization in (True, array([1.0])):
+        for bad_regularization in (True, "1.0", b"1.0", array([1.0])):
             with self.subTest(bad_regularization=bad_regularization):
                 with self.assertRaisesRegex(ValueError, "regularization"):
                     pairwise_mahalanobis_distances(
@@ -134,7 +134,7 @@ class TestPairwiseCovarianceFeatures(unittest.TestCase):
     def test_pairwise_covariance_shape_components_rejects_ambiguous_epsilon(self):
         covariances = zeros((2, 2, 1))
 
-        for bad_epsilon in (True, array([1e-6])):
+        for bad_epsilon in (True, "1e-6", b"1e-6", array([1e-6])):
             with self.subTest(bad_epsilon=bad_epsilon):
                 with self.assertRaisesRegex(ValueError, "epsilon"):
                     pairwise_covariance_shape_components(

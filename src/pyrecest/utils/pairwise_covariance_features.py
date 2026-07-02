@@ -196,6 +196,8 @@ def _validate_control_scalar(value: Any, name: str, *, allow_zero: bool) -> floa
 
     if isinstance(scalar_value, bool):
         raise ValueError(f"{name} must be numeric, not boolean")
+    if isinstance(scalar_value, (str, bytes, bytearray)):
+        raise ValueError(f"{name} must be numeric")
 
     try:
         value_float = float(scalar_value)
