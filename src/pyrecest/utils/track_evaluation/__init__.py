@@ -3,6 +3,8 @@ from pathlib import Path
 
 import numpy as np
 
+from ._identity_f1 import patch_identity_f1
+
 d = runpy.run_path(
     str(Path(__file__).resolve().parents[1] / "track_evaluation.py"), run_name=__name__
 )
@@ -20,6 +22,7 @@ def f(v):
 
 
 d["_optional_int_candidate"] = f
+patch_identity_f1(d)
 for n in d["__all__"]:
     globals()[n] = d[n]
 __all__ = d["__all__"]
