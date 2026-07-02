@@ -320,7 +320,10 @@ def _maybe_call(value: Any, *, allow_methods: bool) -> Any:
 def _positive_int_or_none(value: Any) -> int | None:
     if isinstance(value, (bool, np.bool_)):
         return None
-    value_array = np.asarray(value)
+    try:
+        value_array = np.asarray(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
     if value_array.shape != () or value_array.dtype == np.bool_:
         return None
     scalar = value_array.item()
