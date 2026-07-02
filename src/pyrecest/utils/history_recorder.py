@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from math import nan
 from typing import Any
 
+import numpy as np
+
 from pyrecest import backend
 
 # pylint: disable=no-name-in-module,no-member
@@ -46,6 +48,13 @@ _INVALID_PADDED_HISTORY_DTYPE_PREFIXES = (
 
 
 def _is_invalid_padded_history_dtype(dtype: Any) -> bool:
+    try:
+        dtype_kind = np.dtype(dtype).kind
+    except (TypeError, ValueError):
+        dtype_kind = None
+    if dtype_kind is not None:
+        return dtype_kind in {"b", "c", "O", "U", "S", "M", "m"}
+
     dtype_name = str(dtype).lower()
     return (
         "bool" in dtype_name
