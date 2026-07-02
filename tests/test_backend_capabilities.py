@@ -20,6 +20,15 @@ def test_api_backend_capability_rows_have_valid_support_levels() -> None:
         assert support.get("notes")
 
 
+def test_iter_api_backend_capabilities_returns_row_copies() -> None:
+    api_name, support = iter_api_backend_capabilities()[0]
+    original_notes = API_BACKEND_CAPABILITIES[api_name]["notes"]
+
+    support["notes"] = "mutated by caller"
+
+    assert API_BACKEND_CAPABILITIES[api_name]["notes"] == original_notes
+
+
 def test_cli_backends_reports_machine_readable_capabilities(capsys) -> None:
     assert cli_main(["backends"]) == 0
     payload = json.loads(capsys.readouterr().out)
