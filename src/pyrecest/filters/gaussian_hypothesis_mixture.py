@@ -7,8 +7,18 @@ from typing import Any
 
 import numpy as np
 
-_TEXT_OR_BOOL_KINDS = {"b", "S", "U"}
-_TEXT_OR_BOOL_SCALAR_TYPES = (bool, np.bool_, str, bytes, bytearray, np.str_, np.bytes_)
+_INVALID_FLOAT_ARRAY_KINDS = {"b", "S", "U", "c"}
+_INVALID_FLOAT_ARRAY_SCALAR_TYPES = (
+    bool,
+    np.bool_,
+    str,
+    bytes,
+    bytearray,
+    np.str_,
+    np.bytes_,
+    complex,
+    np.complexfloating,
+)
 
 
 @dataclass(frozen=True)
@@ -91,16 +101,16 @@ def _as_float_array(value: Any, name: str) -> np.ndarray:
     try:
         array = np.asarray(value)
     except (TypeError, ValueError, OverflowError) as exc:
-        raise ValueError(f"{name} must contain numeric values") from exc
-    if array.dtype.kind in _TEXT_OR_BOOL_KINDS or (
+        raise ValueError(f"{name} must contain real numeric values") from exc
+    if array.dtype.kind in _INVALID_FLOAT_ARRAY_KINDS or (
         array.dtype.kind == "O"
-        and any(isinstance(item, _TEXT_OR_BOOL_SCALAR_TYPES) for item in array.flat)
+        and any(isinstance(item, _INVALID_FLOAT_ARRAY_SCALAR_TYPES) for item in array.flat)
     ):
-        raise ValueError(f"{name} must contain numeric values")
+        raise ValueError(f"{name} must contain real numeric values")
     try:
         return array.astype(float, copy=False)
     except (TypeError, ValueError, OverflowError) as exc:
-        raise ValueError(f"{name} must contain numeric values") from exc
+        raise ValueError(f"{name} must contain real numeric values") from exc
 
 
 def _as_log_weight(value: Any) -> float:

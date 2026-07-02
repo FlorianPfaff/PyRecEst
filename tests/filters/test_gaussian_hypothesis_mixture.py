@@ -52,6 +52,23 @@ class GaussianHypothesisMixtureTest(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "log_weights"):
                     normalize_log_weights(log_weights)
 
+    def test_complex_numeric_inputs_are_rejected_without_dropping_imaginary_parts(self):
+        with self.assertRaisesRegex(ValueError, "mean"):
+            WeightedGaussianHypothesis(np.array([1.0 + 2.0j]), np.array([[1.0]]))
+
+        with self.assertRaisesRegex(ValueError, "covariance"):
+            WeightedGaussianHypothesis(
+                np.array([0.0]), np.array([[1.0 + 2.0j]])
+            )
+
+        with self.assertRaisesRegex(ValueError, "log_weight"):
+            WeightedGaussianHypothesis(
+                np.array([0.0]), np.array([[1.0]]), log_weight=1.0 + 2.0j
+            )
+
+        with self.assertRaisesRegex(ValueError, "log_weights"):
+            normalize_log_weights([0.0, 1.0 + 2.0j])
+
     def test_hypotheses_reject_nonfinite_mean_and_covariance(self):
         with self.assertRaisesRegex(ValueError, "mean"):
             WeightedGaussianHypothesis(np.array([np.nan]), np.array([[1.0]]))
