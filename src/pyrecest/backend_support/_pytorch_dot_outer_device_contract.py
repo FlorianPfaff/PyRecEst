@@ -53,8 +53,8 @@ def patch_pytorch_dot_outer_device_contract() -> None:
         a, b = _promoted_pair(raw_pytorch, torch, a, b)
         if a.ndim == 0 or b.ndim == 0:
             return torch.multiply(a, b)
-        if a.ndim == 1 and b.ndim == 1:
-            return torch.dot(a, b)
+        if a.ndim <= 2 and b.ndim <= 2:
+            return torch.matmul(a, b)
         if b.ndim == 1:
             return torch.einsum("...i,i->...", a, b)
         if a.ndim == 1:
