@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 
+# Keep this hook aligned with the backend dot tests.
 def _preferred_pytorch_device(torch_module, *values):
     """Return a non-CPU tensor device when mixed-device operands are present."""
     for value in values:
