@@ -74,7 +74,9 @@ def _patch_pytorch_dot_outer_device_contract() -> None:
 
     helper_names = ("dot", "outer")
     if all(
-        getattr(getattr(raw_pytorch, helper_name, None), "_pyrecest_device_contract", False)
+        getattr(
+            getattr(raw_pytorch, helper_name, None), "_pyrecest_device_contract", False
+        )
         for helper_name in helper_names
     ):
         if getattr(backend, "__backend_name__", None) == "pytorch":

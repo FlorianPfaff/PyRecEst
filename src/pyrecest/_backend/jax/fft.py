@@ -30,11 +30,15 @@ def _normalize_real_fft_axis(axis):
 
 
 def rfft(a, n=None, axis=-1, norm=None):
-    return _fft.rfft(_jnp.asarray(a), n=n, axis=_normalize_real_fft_axis(axis), norm=norm)
+    return _fft.rfft(
+        _jnp.asarray(a), n=n, axis=_normalize_real_fft_axis(axis), norm=norm
+    )
 
 
 def irfft(a, n=None, axis=-1, norm=None):
-    return _fft.irfft(_jnp.asarray(a), n=n, axis=_normalize_real_fft_axis(axis), norm=norm)
+    return _fft.irfft(
+        _jnp.asarray(a), n=n, axis=_normalize_real_fft_axis(axis), norm=norm
+    )
 
 
 def fftn(a, s=None, axes=None, norm=None):
