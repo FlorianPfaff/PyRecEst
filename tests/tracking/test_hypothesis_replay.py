@@ -81,12 +81,34 @@ def test_score_config_rejects_invalid_scalar_controls() -> None:
             InnovationConsistencyScoreConfig(**{field_name: value})
 
 
+def test_score_config_rejects_text_scalar_controls() -> None:
+    invalid_cases = (
+        ("residual_weight", "1.0", "residual_weight must be finite"),
+        ("nis_clip", b"50", "nis_clip must be finite"),
+    )
+
+    for field_name, value, message in invalid_cases:
+        with pytest.raises(ValueError, match=message):
+            InnovationConsistencyScoreConfig(**{field_name: value})
+
+
 def test_hypothesis_replay_rejects_fractional_count_fields() -> None:
     with pytest.raises(
         ValueError,
         match="track_switches must be a nonnegative integer",
     ):
         HypothesisReplay(hypothesis_id="bad-count", records=[], track_switches=1.5)
+
+
+def test_hypothesis_replay_rejects_text_count_fields() -> None:
+    invalid_cases = (
+        ("track_switches", "1", "track_switches must be a nonnegative integer"),
+        ("coverage_count", b"2", "coverage_count must be a nonnegative integer"),
+    )
+
+    for field_name, value, message in invalid_cases:
+        with pytest.raises(ValueError, match=message):
+            HypothesisReplay(hypothesis_id="bad-count", records=[], **{field_name: value})
 
 
 def test_rank_replayed_hypotheses_calls_replay_function() -> None:
@@ -98,5 +120,4 @@ def test_rank_replayed_hypotheses_calls_replay_function() -> None:
         )
 
     scores = rank_replayed_hypotheses([3, 1, 2], replay_fn)
-
     assert [score.hypothesis_id for score in scores] == [1, 2, 3]

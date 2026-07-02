@@ -20,6 +20,8 @@ try:  # Optional only so this module can be used without event_records imports a
 except Exception:  # pragma: no cover - defensive for partial downstream copies
     TrackingRecord = object  # type: ignore[misc,assignment]
 
+_TEXT_TYPES = (str, bytes, bytearray, np.str_, np.bytes_)
+
 
 @dataclass(frozen=True)
 class InnovationConsistencyScoreConfig:
@@ -360,7 +362,7 @@ def _finite_float(value: Any, name: str) -> float:
     if value_array.shape != () or value_array.dtype == np.bool_:
         raise ValueError(f"{name} must be finite")
     scalar = value_array.item()
-    if isinstance(scalar, (bool, np.bool_)):
+    if isinstance(scalar, (bool, np.bool_)) or isinstance(scalar, _TEXT_TYPES):
         raise ValueError(f"{name} must be finite")
     try:
         parsed = float(scalar)
@@ -390,7 +392,7 @@ def _nonnegative_int(value: Any, name: str) -> int:
     if value_array.shape != () or value_array.dtype == np.bool_:
         raise ValueError(f"{name} must be a nonnegative integer")
     scalar = value_array.item()
-    if isinstance(scalar, (bool, np.bool_)):
+    if isinstance(scalar, (bool, np.bool_)) or isinstance(scalar, _TEXT_TYPES):
         raise ValueError(f"{name} must be a nonnegative integer")
     if isinstance(scalar, (int, np.integer)):
         parsed = int(scalar)
