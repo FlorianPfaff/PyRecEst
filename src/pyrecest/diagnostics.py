@@ -243,7 +243,10 @@ class EvidenceSupport:
     diagnostics: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        if self.support_type not in _EVIDENCE_SUPPORT_TYPES:
+        if (
+            not isinstance(self.support_type, str)
+            or self.support_type not in _EVIDENCE_SUPPORT_TYPES
+        ):
             raise ValueError(
                 f"unsupported evidence support type {self.support_type!r}; "
                 f"expected one of {sorted(_EVIDENCE_SUPPORT_TYPES)}"
