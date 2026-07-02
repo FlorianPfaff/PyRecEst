@@ -33,7 +33,11 @@ def _patch_pytorch_raw_comparison_arraylike_contract() -> None:
     active_pytorch_backend = getattr(backend, "__backend_name__", None) == "pytorch"
     helper_names = ("greater", "less", "logical_or")
     if all(
-        getattr(getattr(raw_pytorch, helper_name, None), "_pyrecest_arraylike_contract", False)
+        getattr(
+            getattr(raw_pytorch, helper_name, None),
+            "_pyrecest_arraylike_contract",
+            False,
+        )
         for helper_name in helper_names
     ):
         if active_pytorch_backend:
