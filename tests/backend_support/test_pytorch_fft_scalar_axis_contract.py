@@ -17,7 +17,9 @@ def test_raw_pytorch_real_fft_accepts_numpy_scalar_array_axis_alias():
         npt.assert_allclose(spectrum.numpy(), np.fft.rfft(vector, axis=axis))
 
         reconstructed = pytorch_fft.irfft(spectrum, n=vector.size, axis=axis)
-        expected = np.fft.irfft(np.fft.rfft(vector, axis=axis), n=vector.size, axis=axis)
+        expected = np.fft.irfft(
+            np.fft.rfft(vector, axis=axis), n=vector.size, axis=axis
+        )
         npt.assert_allclose(reconstructed.numpy(), expected)
 
 

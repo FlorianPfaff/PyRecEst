@@ -384,7 +384,9 @@ def infer_state_dim_from_distribution(
 
     if hasattr(distribution, "d"):
         try:
-            support = _maybe_call(getattr(distribution, "d"), allow_methods=allow_methods)
+            support = _maybe_call(
+                getattr(distribution, "d"), allow_methods=allow_methods
+            )
             support = validate_matrix(support, name="distribution.d")
             return _shape_tuple(support)[1]
         except (TypeError, ValueError):

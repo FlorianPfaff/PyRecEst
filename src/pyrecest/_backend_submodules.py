@@ -573,7 +573,9 @@ def _adapt_pytorch_cross_contract(backend: ModuleType) -> None:
                 "(dimension must be 2 or 3)"
             )
 
-        leading_shape = numpy_module.broadcast_shapes(tuple(a.shape[:-1]), tuple(b.shape[:-1]))
+        leading_shape = numpy_module.broadcast_shapes(
+            tuple(a.shape[:-1]), tuple(b.shape[:-1])
+        )
         if tuple(a.shape[:-1]) != leading_shape:
             a = torch_module.broadcast_to(a, leading_shape + (a_dim,))
         if tuple(b.shape[:-1]) != leading_shape:
