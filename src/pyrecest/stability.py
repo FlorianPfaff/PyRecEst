@@ -111,8 +111,10 @@ def stability(
     return decorator
 
 
-def get_public_api_status(name: str) -> PublicAPIStatus | None:
+def get_public_api_status(name: object) -> PublicAPIStatus | None:
     """Return registered stability metadata for a public API name."""
+    if not isinstance(name, str):
+        return None
     return _PUBLIC_API_STATUS.get(name)
 
 

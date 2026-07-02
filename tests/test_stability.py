@@ -14,6 +14,11 @@ def test_registered_public_api_status():
     assert list(iter_public_api_status())
 
 
+@pytest.mark.parametrize("name", (None, 1, ["KalmanFilter"], {"name": "KalmanFilter"}))
+def test_public_api_status_non_string_names_are_unknown(name):
+    assert get_public_api_status(name) is None
+
+
 def test_public_api_status_rejects_unknown_stability_level():
     with pytest.raises(ValueError, match="Unknown stability level"):
         PublicAPIStatus("ExampleAPI", "public")  # type: ignore[arg-type]
