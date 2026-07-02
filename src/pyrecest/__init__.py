@@ -430,6 +430,43 @@ def _patch_pytorch_linear_helpers_facade() -> None:
     backend.outer = pytorch_backend.outer = outer
 
 
+def _patch_raw_pytorch_cumulative_facade() -> None:
+    """Make raw PyTorch cumulative helpers accept NumPy's ``out`` argument."""
+
+    try:
+        import pyrecest._backend.pytorch as pytorch_backend  # pylint: disable=import-outside-toplevel
+        from pyrecest._backend_submodules import _copy_result_to_out  # pylint: disable=import-outside-toplevel
+    except ModuleNotFoundError:  # pragma: no cover - only relevant without PyTorch
+        return
+
+    def _wrap_cumulative(cumulative):
+        if getattr(cumulative, "_pyrecest_out_contract", False):
+            return cumulative
+
+        def wrapped_cumulative(x, axis=None, dtype=None, out=None):
+            result = cumulative(x, axis=axis, dtype=dtype)
+            if out is not None:
+                return _copy_result_to_out(result, out)
+            return result
+
+        wrapped_cumulative.__name__ = getattr(cumulative, "__name__", "cumulative")
+        wrapped_cumulative.__doc__ = getattr(cumulative, "__doc__", None)
+        wrapped_cumulative._pyrecest_out_contract = True
+        return wrapped_cumulative
+
+    import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
+
+    selected_backend_is_pytorch = getattr(backend, "__backend_name__", None) == "pytorch"
+    for helper_name in ("cumsum", "cumprod"):
+        cumulative = getattr(pytorch_backend, helper_name, None)
+        if cumulative is None:
+            continue
+        wrapped_cumulative = _wrap_cumulative(cumulative)
+        setattr(pytorch_backend, helper_name, wrapped_cumulative)
+        if selected_backend_is_pytorch:
+            setattr(backend, helper_name, wrapped_cumulative)
+
+
 def _patch_raw_pytorch_trace_facade() -> None:
     """Make raw PyTorch ``trace`` follow NumPy's trace signature."""
 
@@ -566,6 +603,7 @@ _patch_pytorch_clip_facade()
 _patch_pytorch_tile_facade()
 _patch_pytorch_stack_helpers_facade()
 _patch_pytorch_linear_helpers_facade()
+_patch_raw_pytorch_cumulative_facade()
 _patch_raw_pytorch_trace_facade()
 _patch_jax_std_out_facade()
 _patch_jax_matmul_out_facade()
