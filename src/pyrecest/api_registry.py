@@ -93,8 +93,10 @@ PUBLIC_API_REGISTRY: Final = {
 }
 
 
-def get_public_api_registry_entry(api_name: str) -> dict[str, str]:
+def get_public_api_registry_entry(api_name: object) -> dict[str, str]:
     """Return a copy of one public API registry row."""
+    if not isinstance(api_name, str):
+        return {}
     return dict(PUBLIC_API_REGISTRY.get(api_name, {}))
 
 
