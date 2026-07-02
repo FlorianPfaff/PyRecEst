@@ -9,9 +9,12 @@ def _coerce_axis(axis):
         axis_array = _np.asarray(axis)
     except (TypeError, ValueError) as exc:
         raise TypeError(_AXIS_TYPE_ERROR) from exc
-    if axis_array.shape != () or axis_array.dtype.kind not in "iu":
+    if axis_array.shape != ():
         raise TypeError(_AXIS_TYPE_ERROR)
-    return int(axis_array.item())
+    try:
+        return int(axis_array.item().__index__())
+    except AttributeError as exc:
+        raise TypeError(_AXIS_TYPE_ERROR) from exc
 
 
 def _is_scalar_axis_argument(value):

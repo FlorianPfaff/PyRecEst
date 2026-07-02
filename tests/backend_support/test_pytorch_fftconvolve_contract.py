@@ -108,6 +108,21 @@ def test_pytorch_fftconvolve_scalar_empty_axes_matches_scipy():
     assert np.allclose(actual, expected)
 
 
+def test_pytorch_fftconvolve_boolean_axes_match_scipy():
+    if backend.__backend_name__ != "pytorch":
+        pytest.skip("PyTorch-specific signal backend contract")
+
+    first = backend.asarray([1.0, 2.0])
+    second = backend.asarray([3.0, 4.0])
+
+    actual = _as_numpy(backend.signal.fftconvolve(first, second, axes=False))
+    expected = scipy_fftconvolve(_as_numpy(first), _as_numpy(second), axes=False)
+
+    assert np.allclose(actual, expected)
+    with pytest.raises(ValueError, match="out of bounds"):
+        backend.signal.fftconvolve(first, second, axes=True)
+
+
 def test_pytorch_fft_helpers_accept_array_like_inputs():
     if backend.__backend_name__ != "pytorch":
         pytest.skip("PyTorch-specific FFT backend contract")
