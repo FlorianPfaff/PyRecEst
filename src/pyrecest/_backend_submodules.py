@@ -202,6 +202,28 @@ def _adapt_pytorch_minmax_binary_contract(backend: ModuleType) -> None:
             setattr(backend, helper_name, current)
 
 
+def _adapt_raw_pytorch_copy_contract(backend: ModuleType) -> None:
+    """Adapt raw/public PyTorch ``copy`` to return backend tensors."""
+
+    try:
+        import pyrecest._backend.pytorch as pytorch_backend  # pylint: disable=import-outside-toplevel
+    except ModuleNotFoundError:  # pragma: no cover - PyTorch may be unavailable
+        return
+
+    copy = getattr(pytorch_backend, "copy", None)
+    if copy is None or getattr(copy, "_pyrecest_copy_contract", False):
+        return
+
+    @wraps(copy)
+    def wrapped_copy(x):
+        return pytorch_backend.array(x).clone()
+
+    wrapped_copy._pyrecest_copy_contract = True
+    setattr(pytorch_backend, "copy", wrapped_copy)
+    if getattr(backend, "__backend_name__", None) == "pytorch":
+        setattr(backend, "copy", wrapped_copy)
+
+
 def _pytorch_repeat_count(repetition) -> int:
     """Return one NumPy-style repeat count as a non-negative integer."""
     try:
@@ -620,6 +642,7 @@ def register_backend_submodules(backend: ModuleType | None = None) -> None:
     if backend is None:
         import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
 
+    _adapt_raw_pytorch_copy_contract(backend)
     _adapt_cumulative_out_contract(backend)
     _adapt_pytorch_allclose_keyword_contract(backend)
     _adapt_pytorch_isclose_keyword_contract(backend)
