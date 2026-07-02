@@ -26,6 +26,35 @@ class TestSummarizeFilterResultsWarnings(unittest.TestCase):
         pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
         reason="Not supported on this backend",
     )
+    def test_accepts_last_estimates_without_explicit_mtt_flag(self):
+        groundtruths = np.empty((2, 2), dtype=object)
+        for index in np.ndindex(groundtruths.shape):
+            groundtruths[index] = np.zeros(2)
+
+        last_estimates = np.zeros((1, 2, 2))
+        runtimes = np.ones((1, 2))
+        run_failed = np.zeros((1, 2), dtype=bool)
+        filter_configs = [{"name": "estimate-only", "parameter": None}]
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            results = summarize_filter_results(
+                scenario_config={"manifold": "Euclidean"},
+                filter_configs=filter_configs,
+                runtimes=runtimes,
+                groundtruths=groundtruths,
+                run_failed=run_failed,
+                last_estimates=last_estimates,
+            )
+
+        self.assertIs(results, filter_configs)
+        self.assertAlmostEqual(float(results[0]["error_mean"]), 0.0)
+        self.assertAlmostEqual(float(results[0]["failure_rate"]), 0.0)
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
+        reason="Not supported on this backend",
+    )
     def test_run_count_warning_uses_run_axis(self):
         n_runs = 1000
         n_timesteps = 2
