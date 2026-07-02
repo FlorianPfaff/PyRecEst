@@ -168,7 +168,51 @@ def _patch_logistic_pairwise_backend_standardization() -> None:
     LogisticPairwiseAssociationModel._fit_standardization = _fit_standardization
 
 
+def _patch_logistic_pairwise_scalar_prediction() -> None:
+    """Make scalar prediction inputs valid for fitted one-feature models."""
+    original_prepare_prediction_features = (
+        LogisticPairwiseAssociationModel._prepare_prediction_features
+    )
+    if getattr(
+        original_prepare_prediction_features,
+        "_pyrecest_scalar_prediction_contract",
+        False,
+    ):
+        return
+
+    def _prepare_prediction_features(features, expected_feature_dimension):
+        import pyrecest.backend as _backend  # pylint: disable=import-outside-toplevel
+
+        features = _backend.asarray(features, dtype=_backend.float64)
+        if features.ndim == 0:
+            if expected_feature_dimension != 1:
+                raise ValueError(
+                    "A scalar prediction input is only valid for a fitted one-feature model"
+                )
+            flattened = features.reshape(1, 1)
+            if not _backend.all(_backend.isfinite(flattened)):
+                raise ValueError("features must be finite")
+            return flattened, ()
+        return original_prepare_prediction_features(features, expected_feature_dimension)
+
+    _prepare_prediction_features.__name__ = getattr(
+        original_prepare_prediction_features,
+        "__name__",
+        "_prepare_prediction_features",
+    )
+    _prepare_prediction_features.__doc__ = getattr(
+        original_prepare_prediction_features,
+        "__doc__",
+        None,
+    )
+    _prepare_prediction_features._pyrecest_scalar_prediction_contract = True
+    LogisticPairwiseAssociationModel._prepare_prediction_features = staticmethod(
+        _prepare_prediction_features
+    )
+
+
 _patch_logistic_pairwise_backend_standardization()
+_patch_logistic_pairwise_scalar_prediction()
 
 from .candidate_pruning import (
     CandidatePruningConfig,
