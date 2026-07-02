@@ -6,6 +6,9 @@ from collections.abc import Callable, Iterable
 from dataclasses import asdict, dataclass
 from typing import Final, Literal, ParamSpec, TypeVar
 
+from pyrecest.backend_support._jax_assignment_numpy_index_contract import (
+    patch_jax_assignment_numpy_index_contract as _patch_jax_assignment_numpy_index_contract,
+)
 from pyrecest.backend_support._pytorch_allclose_device_contract import (
     patch_pytorch_allclose_device_contract as _patch_pytorch_allclose_device_contract,
 )
@@ -111,6 +114,7 @@ def _patch_pytorch_diag_numpy_contract() -> None:
         backend.diag = diag
 
 
+_patch_jax_assignment_numpy_index_contract()
 _patch_pytorch_allclose_device_contract()
 _patch_pytorch_diag_numpy_contract()
 _patch_pytorch_raw_comparison_arraylike_contract()
