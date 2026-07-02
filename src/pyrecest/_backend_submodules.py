@@ -321,11 +321,13 @@ def _pytorch_reshape_shape(shape, torch_module) -> tuple[int, ...]:
 
 def _adapt_pytorch_reshape_contract(backend: ModuleType) -> None:
     """Adapt PyTorch reshape to accept array-like inputs and NumPy-style shapes."""
-    if getattr(backend, "__backend_name__", None) != "pytorch":
-        return
+    active_pytorch_backend = getattr(backend, "__backend_name__", None) == "pytorch"
 
-    import pyrecest._backend.pytorch as pytorch_backend  # pylint: disable=import-outside-toplevel
-    import torch as torch_module  # pylint: disable=import-outside-toplevel
+    try:
+        import pyrecest._backend.pytorch as pytorch_backend  # pylint: disable=import-outside-toplevel
+        import torch as torch_module  # pylint: disable=import-outside-toplevel
+    except ModuleNotFoundError:  # pragma: no cover - PyTorch backend may be unavailable
+        return
 
     reshape = getattr(pytorch_backend, "reshape", None)
     if reshape is None or getattr(reshape, "_pyrecest_reshape_contract", False):
@@ -333,11 +335,15 @@ def _adapt_pytorch_reshape_contract(backend: ModuleType) -> None:
 
     @wraps(reshape)
     def wrapped_reshape(x, shape):
-        return reshape(backend.array(x), _pytorch_reshape_shape(shape, torch_module))
+        return reshape(
+            pytorch_backend.array(x),
+            _pytorch_reshape_shape(shape, torch_module),
+        )
 
     wrapped_reshape._pyrecest_reshape_contract = True
     setattr(pytorch_backend, "reshape", wrapped_reshape)
-    setattr(backend, "reshape", wrapped_reshape)
+    if active_pytorch_backend:
+        setattr(backend, "reshape", wrapped_reshape)
 
 
 def _adapt_pytorch_stack_helpers_contract(backend: ModuleType) -> None:
