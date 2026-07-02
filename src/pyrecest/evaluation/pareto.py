@@ -260,6 +260,12 @@ def _pareto_front_position_mask(
     front = np.zeros(len(candidates), dtype=bool)
     rows = [row for _, row in candidates.iterrows()]
     for position, row in enumerate(rows):
+        if not _has_front_eligible_objectives(
+            row,
+            objectives,
+            allow_missing=allow_missing,
+        ):
+            continue
         dominated = False
         for other_position, other in enumerate(rows):
             if position == other_position:
@@ -276,6 +282,19 @@ def _pareto_front_position_mask(
                 break
         front[position] = not dominated
     return front
+
+
+def _has_front_eligible_objectives(
+    record: Mapping[str, Any] | pd.Series,
+    objectives: Sequence[str],
+    *,
+    allow_missing: bool,
+) -> bool:
+    present = [
+        not _is_missing(_lookup_numeric(record, objective))
+        for objective in objectives
+    ]
+    return any(present) if allow_missing else all(present)
 
 
 def _validate_objectives(objectives: Sequence[str]) -> tuple[str, ...]:
