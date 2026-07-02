@@ -128,13 +128,14 @@ def perform_predict_update_cycles(
             raise NotImplementedError("Cumulative updates not implemented yet.")
 
         all_meas_curr_time_step = atleast_2d(array(measurements[t]))
-        if _is_empty_measurement_set(all_meas_curr_time_step):
+        measurement_set_empty = _is_empty_measurement_set(all_meas_curr_time_step)
+        if measurement_set_empty:
             n_updates = 0
         else:
             n_updates = all_meas_curr_time_step.shape[0]
 
         if scenario_config.get("eot", False):
-            if n_updates > 0:
+            if not measurement_set_empty or all_meas_curr_time_step.shape[0] == 0:
                 meas_matrix = scenario_config.get("eot_meas_matrix")
                 filter_obj.update(
                     all_meas_curr_time_step.T, meas_matrix, meas_noise_for_filter
