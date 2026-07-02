@@ -67,6 +67,93 @@ def _patch_raw_pytorch_assignment_scalar_tensor_indices() -> None:
         backend.assignment_by_sum = raw_pytorch.assignment_by_sum
 
 
+def _patch_pytorch_asarray_numpy_contract() -> None:
+    """Make PyTorch asarray accept NumPy dtype aliases and strided views."""
+    try:
+        import numpy as np  # pylint: disable=import-outside-toplevel
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
+        import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
+        import torch  # pylint: disable=import-outside-toplevel
+        from pyrecest._backend.pytorch._common import (  # pylint: disable=import-outside-toplevel
+            _normalize_dtype,
+        )
+    except ModuleNotFoundError:  # pragma: no cover - PyTorch backend may be unavailable
+        return
+
+    original_asarray = raw_pytorch.asarray
+    if getattr(original_asarray, "_pyrecest_numpy_contract", False):
+        return
+
+    def _asarray_kwargs(dtype, device, copy, requires_grad):
+        kwargs = {"requires_grad": requires_grad}
+        if dtype is not None:
+            kwargs["dtype"] = dtype
+        if device is not None:
+            kwargs["device"] = device
+        if copy is not None:
+            kwargs["copy"] = copy
+        return kwargs
+
+    def asarray(
+        a,
+        dtype=None,
+        order=None,
+        *,
+        device=None,
+        copy=None,
+        like=None,
+        requires_grad=False,
+    ):
+        if like is not None:
+            raise TypeError("The PyTorch backend does not support asarray(like=...).")
+        if order not in (None, "K", "A", "C"):
+            raise NotImplementedError(
+                "The PyTorch backend only supports C-contiguous asarray results."
+            )
+
+        dtype = _normalize_dtype(dtype)
+        if torch.is_tensor(a):
+            result = a
+            to_kwargs = {}
+            if dtype is not None:
+                to_kwargs["dtype"] = dtype
+            if device is not None:
+                to_kwargs["device"] = device
+            if to_kwargs:
+                result = result.to(**to_kwargs)
+            if copy is True:
+                result = result.clone()
+            if requires_grad and not result.requires_grad:
+                result = result.requires_grad_(True)
+            return result
+
+        if isinstance(a, np.ndarray):
+            source = a.copy() if copy is True else a
+            result = raw_pytorch.from_numpy(source)
+            to_kwargs = {}
+            if dtype is not None:
+                to_kwargs["dtype"] = dtype
+            if device is not None:
+                to_kwargs["device"] = device
+            if to_kwargs:
+                result = result.to(**to_kwargs)
+            if requires_grad and not result.requires_grad:
+                result = result.requires_grad_(True)
+            return result
+
+        return original_asarray(
+            a,
+            **_asarray_kwargs(dtype, device, copy, requires_grad),
+        )
+
+    asarray.__name__ = getattr(original_asarray, "__name__", "asarray")
+    asarray.__doc__ = getattr(original_asarray, "__doc__", None)
+    asarray._pyrecest_numpy_contract = True
+    raw_pytorch.asarray = asarray
+    if getattr(backend, "__backend_name__", None) == "pytorch":
+        backend.asarray = asarray
+
+
 def _patch_pytorch_dot_numpy_contract() -> None:
     """Make PyTorch dot follow the backend batched inner-product contract."""
     try:
@@ -181,7 +268,6 @@ def _patch_pytorch_tile_numpy_contract() -> None:
         import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
     except ModuleNotFoundError:  # pragma: no cover - import fails before this module
         return
-
     active_pytorch_backend = getattr(backend, "__backend_name__", None) == "pytorch"
 
     try:
@@ -221,14 +307,12 @@ def _patch_pytorch_copy_numpy_contract() -> None:
         import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
     except ModuleNotFoundError:  # pragma: no cover - import fails before this module
         return
-
     active_pytorch_backend = getattr(backend, "__backend_name__", None) == "pytorch"
 
     try:
         import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
     except ModuleNotFoundError:  # pragma: no cover - PyTorch backend import failed earlier
         return
-
     original_copy = raw_pytorch.copy
     if getattr(original_copy, "_pyrecest_numpy_contract", False):
         return
@@ -252,7 +336,6 @@ def _patch_pytorch_clip_numpy_contract() -> None:
         import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
     except ModuleNotFoundError:  # pragma: no cover - import fails before this module
         return
-
     active_pytorch_backend = getattr(backend, "__backend_name__", None) == "pytorch"
 
     try:
@@ -260,7 +343,6 @@ def _patch_pytorch_clip_numpy_contract() -> None:
         import torch  # pylint: disable=import-outside-toplevel
     except ModuleNotFoundError:  # pragma: no cover - PyTorch backend import failed earlier
         return
-
     original_clip = raw_pytorch.clip
     if getattr(original_clip, "_pyrecest_numpy_contract", False):
         return
@@ -377,7 +459,6 @@ def _patch_jax_outer_numpy_contract() -> None:
         import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
     except ModuleNotFoundError:  # pragma: no cover - import fails before this module
         return
-
     active_jax_backend = getattr(backend, "__backend_name__", None) == "jax"
 
     try:
@@ -385,7 +466,6 @@ def _patch_jax_outer_numpy_contract() -> None:
         import pyrecest._backend.jax as raw_jax  # pylint: disable=import-outside-toplevel
     except ModuleNotFoundError:  # pragma: no cover - JAX backend import failed earlier
         return
-
     original_outer = raw_jax.outer
     if getattr(original_outer, "_pyrecest_numpy_contract", False):
         return
@@ -497,6 +577,7 @@ def _patch_jax_take_out_contract() -> None:
 
 _patch_raw_pytorch_assignment_scalar_tensor_indices()
 _patch_pytorch_dtype_promotion_contract()
+_patch_pytorch_asarray_numpy_contract()
 _patch_pytorch_dot_numpy_contract()
 _patch_pytorch_outer_numpy_contract()
 _patch_pytorch_tile_numpy_contract()
