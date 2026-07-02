@@ -53,6 +53,7 @@ class GeneralizedKSineSkewedVonMisesDistribution(AbstractCircularDistribution):
         self.m = _validate_sine_power(self.m, "m")
 
     def pdf(self, xs):
+        xs = array(xs)
         # Evaluate the von Mises distribution and multiply by (1 + lambda_ * sin(xa - mu))
         if self.k != 1:
             raise NotImplementedError("Currently, only k=1 is supported")
@@ -170,6 +171,8 @@ class AbstractSineSkewedDistribution(AbstractCircularDistribution):
         """
         Compute the skewed probability density function (PDF) for the distribution.
         """
+        xs = array(xs)
+
         # Calculate the base pdf from the wrapped distribution
         base_pdf = self.base_pdf(xs)
 
@@ -237,6 +240,7 @@ class GeneralizedKSineSkewedWrappedCauchyDistribution(AbstractCircularDistributi
         self.m = _validate_sine_power(self.m, "m")
 
     def pdf(self, xs):
+        xs = array(xs)
         if self.k != 1:
             raise NotImplementedError("Currently, only k=1 is supported")
         # Use the WC pdf formula directly to ensure correct centering at mu
