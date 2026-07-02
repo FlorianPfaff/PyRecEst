@@ -147,6 +147,61 @@ def _adapt_pytorch_isclose_keyword_contract(backend: ModuleType) -> None:
         setattr(backend, "isclose", wrapped_isclose)
 
 
+def _coerce_pytorch_binary_tensor_args(pytorch_backend, torch_module, x, y):
+    """Return PyTorch binary operands on a common device and dtype."""
+    device = next(
+        (value.device for value in (x, y) if torch_module.is_tensor(value)),
+        None,
+    )
+    if not torch_module.is_tensor(x):
+        x = torch_module.as_tensor(x, device=device)
+    elif device is not None and x.device != device:
+        x = x.to(device=device)
+    if not torch_module.is_tensor(y):
+        y = torch_module.as_tensor(y, device=device)
+    elif device is not None and y.device != device:
+        y = y.to(device=device)
+    x, y = pytorch_backend.convert_to_wider_dtype([x, y])
+    return x, y
+
+
+def _adapt_pytorch_minmax_binary_contract(backend: ModuleType) -> None:
+    """Adapt raw and public PyTorch maximum/minimum to array-like inputs."""
+    try:
+        import pyrecest._backend.pytorch as pytorch_backend  # pylint: disable=import-outside-toplevel
+        import torch as torch_module  # pylint: disable=import-outside-toplevel
+    except ModuleNotFoundError:  # pragma: no cover - PyTorch may be unavailable
+        return
+
+    def _wrap_binary_minmax(torch_func, name):
+        def wrapped_minmax(x, y):
+            x, y = _coerce_pytorch_binary_tensor_args(
+                pytorch_backend,
+                torch_module,
+                x,
+                y,
+            )
+            return torch_func(x, y)
+
+        wrapped_minmax.__name__ = name
+        wrapped_minmax.__doc__ = getattr(torch_func, "__doc__", None)
+        wrapped_minmax._pyrecest_binary_minmax_contract = True
+        return wrapped_minmax
+
+    for helper_name, torch_func in {
+        "maximum": torch_module.maximum,
+        "minimum": torch_module.minimum,
+    }.items():
+        current = getattr(pytorch_backend, helper_name, None)
+        if current is None:
+            continue
+        if not getattr(current, "_pyrecest_binary_minmax_contract", False):
+            current = _wrap_binary_minmax(torch_func, helper_name)
+            setattr(pytorch_backend, helper_name, current)
+        if getattr(backend, "__backend_name__", None) == "pytorch":
+            setattr(backend, helper_name, current)
+
+
 def _pytorch_repeat_count(repetition) -> int:
     """Return one NumPy-style repeat count as a non-negative integer."""
     try:
@@ -568,6 +623,7 @@ def register_backend_submodules(backend: ModuleType | None = None) -> None:
     _adapt_cumulative_out_contract(backend)
     _adapt_pytorch_allclose_keyword_contract(backend)
     _adapt_pytorch_isclose_keyword_contract(backend)
+    _adapt_pytorch_minmax_binary_contract(backend)
     _adapt_pytorch_repeat_contract(backend)
     _adapt_pytorch_reshape_contract(backend)
     _adapt_pytorch_stack_helpers_contract(backend)
