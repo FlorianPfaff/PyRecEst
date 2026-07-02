@@ -178,8 +178,10 @@ def resolve_evidence_computation_mode(
         return EvidenceComputationMode.from_return_smoothed(
             True if return_smoothed is None else return_smoothed
         )
+    if not isinstance(mode, str):
+        raise ValueError(f"unknown evidence computation mode {mode!r}")
 
-    key = str(mode).strip().lower().replace("-", "_")
+    key = mode.strip().lower().replace("-", "_")
     if key in {"full", "full_smoothing", "smoothed", "smoothing"}:
         return _require_return_smoothed_agreement(
             EvidenceComputationMode.full_smoothing(), return_smoothed
