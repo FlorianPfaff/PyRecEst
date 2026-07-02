@@ -224,7 +224,7 @@ def _validate_tolerance(tolerance) -> float:
         raise ValueError("tolerance must be a finite non-negative scalar.")
 
     tolerance_scalar = tolerance_array.item()
-    if isinstance(tolerance_scalar, bool):
+    if isinstance(tolerance_scalar, (bool, str, bytes, bytearray)):
         raise ValueError("tolerance must be a finite non-negative scalar.")
 
     try:

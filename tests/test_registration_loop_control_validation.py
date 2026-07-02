@@ -49,6 +49,24 @@ class TestRegistrationLoopControlValidation(unittest.TestCase):
         pyrecest.backend.__backend_name__ == "jax",
         reason="Not supported on this backend",
     )
+    def test_joint_registration_assignment_rejects_text_tolerance(self):
+        reference = array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
+        moving = reference + array([1.0, -1.0])
+
+        for bad_value in ("0.1", b"0.1"):
+            with self.subTest(bad_value=bad_value):
+                with self.assertRaisesRegex(ValueError, "tolerance"):
+                    joint_registration_assignment(
+                        reference,
+                        moving,
+                        model="translation",
+                        tolerance=bad_value,
+                    )
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ == "jax",
+        reason="Not supported on this backend",
+    )
     def test_joint_tps_registration_assignment_rejects_invalid_max_iterations(self):
         reference = array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
         moving = reference + array([0.5, -0.25])
