@@ -5,6 +5,8 @@ _AXIS_TYPE_ERROR = "axes must be None, an integer, or a sequence of integers"
 
 
 def _coerce_axis(axis):
+    if isinstance(axis, bool):
+        return int(axis)
     try:
         axis_array = _np.asarray(axis)
     except (TypeError, ValueError) as exc:
