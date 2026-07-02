@@ -78,7 +78,7 @@ class HypersphericalUniformDistributionTest(unittest.TestCase):
     def test_sample_rejects_invalid_count(self):
         hud = HypersphericalUniformDistribution(2)
 
-        for n in (0, -1, 2.5, True, [3]):
+        for n in (0, -1, 2.5, True, [3], "3", b"3"):
             with self.subTest(n=n):
                 with self.assertRaises(ValueError):
                     hud.sample(n)
