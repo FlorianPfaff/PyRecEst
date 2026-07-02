@@ -4,10 +4,9 @@
 from __future__ import annotations
 
 import argparse
-import importlib.util
+import ast
 import sys
 from pathlib import Path
-from types import ModuleType
 from typing import Any
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
@@ -17,26 +16,38 @@ CAPABILITIES_PATH = (
 )
 
 
-def _load_module(path: Path, name: str) -> ModuleType:
-    spec = importlib.util.spec_from_file_location(name, path)
-    if spec is None or spec.loader is None:
-        raise RuntimeError(f"Cannot load {path}")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    spec.loader.exec_module(module)
-    return module
+def _load_literal_constant(path: Path, name: str) -> Any:
+    module_ast = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    for node in module_ast.body:
+        value = None
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name) and target.id == name:
+                    value = node.value
+                    break
+        elif (
+            isinstance(node, ast.AnnAssign)
+            and isinstance(node.target, ast.Name)
+            and node.target.id == name
+        ):
+            value = node.value
+
+        if value is not None:
+            return ast.literal_eval(value)
+
+    raise RuntimeError(f"{name} is not defined in {path}")
 
 
 def _load_registry() -> tuple[dict[str, dict[str, str]], tuple[str, ...]]:
-    module = _load_module(API_REGISTRY_PATH, "_pyrecest_api_registry_for_docs")
-    registry: Any = getattr(module, "PUBLIC_API_REGISTRY")
-    categories: Any = getattr(module, "PUBLIC_API_CATEGORIES")
+    registry: Any = _load_literal_constant(API_REGISTRY_PATH, "PUBLIC_API_REGISTRY")
+    categories: Any = _load_literal_constant(API_REGISTRY_PATH, "PUBLIC_API_CATEGORIES")
     return dict(registry), tuple(categories)
 
 
 def _load_backend_capabilities() -> dict[str, dict[str, str]]:
-    module = _load_module(CAPABILITIES_PATH, "_pyrecest_capabilities_for_registry")
-    capabilities: Any = getattr(module, "API_BACKEND_CAPABILITIES")
+    capabilities: Any = _load_literal_constant(
+        CAPABILITIES_PATH, "API_BACKEND_CAPABILITIES"
+    )
     return dict(capabilities)
 
 
@@ -133,13 +144,14 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+
     errors = validate_registry()
     if errors:
         for error in errors:
             print(f"::error::{error}")
         return 1
 
-    args = build_parser().parse_args(argv)
     if args.check:
         return check_document(args.check)
 
