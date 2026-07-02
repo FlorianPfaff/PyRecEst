@@ -3,6 +3,7 @@ from typing import Union
 # pylint: disable=no-name-in-module,no-member
 import numpy as np
 from pyrecest.backend import (
+    all as backend_all,
     asarray,
     int32,
     int64,
@@ -113,6 +114,11 @@ def _validate_boundary(name: str, value, dim: int):
     return value
 
 
+def _validate_boundary_order(left, right) -> None:
+    if not bool(backend_all(right >= left)):
+        raise ValueError("integration boundaries must be increasing in every dimension")
+
+
 class HypertoroidalUniformDistribution(
     AbstractUniformDistribution, AbstractHypertoroidalDistribution
 ):
@@ -198,6 +204,7 @@ class HypertoroidalUniformDistribution(
             left, right = integration_boundaries
         left = _validate_boundary("left", left, self.dim)
         right = _validate_boundary("right", right, self.dim)
+        _validate_boundary_order(left, right)
 
         volume = prod(right - left)
         return 1.0 / (2.0 * pi) ** self.dim * volume
