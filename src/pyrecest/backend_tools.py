@@ -331,6 +331,97 @@ def _patch_pytorch_stack_helpers_numpy_contract() -> None:
             setattr(backend, helper_name, helper)
 
 
+def _normalize_pytorch_reduction_axis(axis):
+    """Return Python int axes for scalar integer array/tensor axes."""
+
+    if axis is None:
+        return None
+    try:
+        return _operator_index(axis)
+    except TypeError:
+        return axis
+
+
+def _wrap_pytorch_reduction_axis_helper(original_reduction):
+    """Normalize scalar array axes before PyTorch reduction helpers see them."""
+
+    if getattr(original_reduction, "_pyrecest_scalar_array_axis_contract", False):
+        return original_reduction
+
+    def reduction(a, axis=None, *args, **kwargs):
+        if "dim" in kwargs:
+            kwargs = dict(kwargs)
+            kwargs["dim"] = _normalize_pytorch_reduction_axis(kwargs["dim"])
+        axis = _normalize_pytorch_reduction_axis(axis)
+        return original_reduction(a, axis, *args, **kwargs)
+
+    reduction.__name__ = getattr(original_reduction, "__name__", "reduction")
+    reduction.__doc__ = getattr(original_reduction, "__doc__", None)
+    reduction._pyrecest_scalar_array_axis_contract = True
+    return reduction
+
+
+def _wrap_pytorch_quantile_axis_helper(original_quantile):
+    """Normalize scalar array axes before PyTorch quantile helpers see them."""
+
+    if getattr(original_quantile, "_pyrecest_scalar_array_axis_contract", False):
+        return original_quantile
+
+    def quantile(a, q, axis=None, *args, **kwargs):
+        if "dim" in kwargs:
+            kwargs = dict(kwargs)
+            kwargs["dim"] = _normalize_pytorch_reduction_axis(kwargs["dim"])
+        axis = _normalize_pytorch_reduction_axis(axis)
+        return original_quantile(a, q, axis, *args, **kwargs)
+
+    quantile.__name__ = getattr(original_quantile, "__name__", "quantile")
+    quantile.__doc__ = getattr(original_quantile, "__doc__", None)
+    quantile._pyrecest_scalar_array_axis_contract = True
+    return quantile
+
+
+def _patch_pytorch_reduction_axis_numpy_contract() -> None:
+    """Make PyTorch reductions accept NumPy-style scalar array axes."""
+
+    try:
+        import pyrecest._backend.pytorch as pytorch_backend  # pylint: disable=import-outside-toplevel
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
+    except ModuleNotFoundError:  # pragma: no cover - PyTorch backend may be unavailable
+        return
+
+    active_pytorch_backend = getattr(backend, "__backend_name__", None) == "pytorch"
+    for helper_name in (
+        "all",
+        "amax",
+        "amin",
+        "any",
+        "argmax",
+        "argmin",
+        "count_nonzero",
+        "max",
+        "mean",
+        "min",
+        "prod",
+        "std",
+        "sum",
+    ):
+        helper = _wrap_pytorch_reduction_axis_helper(
+            getattr(pytorch_backend, helper_name)
+        )
+        setattr(pytorch_backend, helper_name, helper)
+        if active_pytorch_backend:
+            setattr(
+                backend,
+                helper_name,
+                _wrap_pytorch_reduction_axis_helper(getattr(backend, helper_name)),
+            )
+
+    quantile = _wrap_pytorch_quantile_axis_helper(pytorch_backend.quantile)
+    pytorch_backend.quantile = quantile
+    if active_pytorch_backend:
+        backend.quantile = _wrap_pytorch_quantile_axis_helper(backend.quantile)
+
+
 def _patch_raw_pytorch_comparison_numpy_contract() -> None:
     """Make raw PyTorch comparison helpers accept NumPy-style array-like inputs."""
 
@@ -418,6 +509,7 @@ _patch_pytorch_broadcast_arrays_numpy_contract()
 _patch_pytorch_round_numpy_contract()
 _patch_pytorch_special_numpy_contract()
 _patch_pytorch_stack_helpers_numpy_contract()
+_patch_pytorch_reduction_axis_numpy_contract()
 _patch_raw_pytorch_comparison_numpy_contract()
 _patch_raw_pytorch_isclose_equal_nan_contract()
 
