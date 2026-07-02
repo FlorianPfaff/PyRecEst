@@ -139,8 +139,13 @@ def test_assert_covariance_matrix_validates_dimension_argument():
         np.asarray(assert_covariance_matrix(matrix, dim=2)), matrix
     )
 
-    with pytest.raises(DimensionMismatchError, match="dimension 2"):
+    with pytest.raises(DimensionMismatchError, match="covariance has dimension 2") as exc_info:
         assert_covariance_matrix(matrix, dim=3)
+    error = exc_info.value
+    assert error.left_name == "covariance"
+    assert error.left_dim == 2
+    assert error.right_name == "expected"
+    assert error.right_dim == 3
 
     for invalid_dim in (-1, 2.0, True, np.array([2])):
         with pytest.raises(ValueError, match="dim"):

@@ -239,7 +239,10 @@ def assert_covariance_matrix(
         raise ShapeError(f"{name} must be a square matrix, got shape {arr.shape}.")
     if dim is not None and arr.shape[0] != dim:
         raise DimensionMismatchError(
-            f"{name} dimension {arr.shape[0]} does not match expected dimension {dim}."
+            name,
+            arr.shape[0],
+            "expected",
+            dim,
         )
     _raise_if_nonfinite_matrix(arr, name)
     if not is_symmetric(arr, atol=atol):
