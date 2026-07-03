@@ -21,6 +21,7 @@ def patch_pytorch_dtype_promotion_contract() -> None:
 
     _patch_pytorch_repeat_numpy_contract(raw_pytorch, torch)
     _patch_pytorch_diff_numpy_contract(raw_pytorch, torch)
+    _patch_pytorch_roll_numpy_contract(raw_pytorch, torch, np)
     _patch_pytorch_transpose_numpy_axes_contract(raw_pytorch, np)
     _patch_pytorch_pad_constant_values_contract(raw_pytorch, torch, np)
     _patch_pytorch_creation_numpy_contract(raw_pytorch, torch, np, _normalize_dtype)
@@ -201,6 +202,110 @@ def _patch_pytorch_diff_numpy_contract(raw_pytorch, torch) -> None:
     raw_pytorch.diff = diff
     if backend is not None and getattr(backend, "__backend_name__", None) == "pytorch":
         backend.diff = diff
+
+
+def _pytorch_roll_int_tuple(value, np, torch, name) -> tuple[int, ...]:
+    """Return a scalar or 1-D sequence of NumPy-style roll values."""
+    if torch.is_tensor(value):
+        value = value.detach().cpu().numpy()
+    value_array = np.asarray(value)
+    if value_array.ndim == 0:
+        try:
+            return (_operator_index(value_array.item()),)
+        except TypeError as exc:
+            raise TypeError(f"{name} must contain integers") from exc
+    if value_array.ndim != 1:
+        raise ValueError(f"{name} must be a scalar or 1-D sequence")
+    try:
+        return tuple(_operator_index(one_value) for one_value in value_array.tolist())
+    except TypeError as exc:
+        raise TypeError(f"{name} must contain integers") from exc
+
+
+def _pytorch_roll_axes(axis, ndim: int, np, torch) -> tuple[int, ...]:
+    """Normalize NumPy-style roll axes and validate bounds."""
+    axes = _pytorch_roll_int_tuple(axis, np, torch, "axis")
+    normalized_axes = tuple(
+        one_axis + ndim if one_axis < 0 else one_axis for one_axis in axes
+    )
+    for original_axis, normalized_axis in zip(axes, normalized_axes):
+        if normalized_axis < 0 or normalized_axis >= ndim:
+            raise IndexError(
+                f"axis {original_axis} is out of bounds for array of dimension {ndim}"
+            )
+    return normalized_axes
+
+
+def _pytorch_roll_pairs(shift, axis, ndim: int, np, torch):
+    """Broadcast NumPy-style roll shifts and axes, accumulating duplicate axes."""
+    shifts = _pytorch_roll_int_tuple(shift, np, torch, "shift")
+    axes = _pytorch_roll_axes(axis, ndim, np, torch)
+    if not shifts or not axes:
+        return (), ()
+
+    try:
+        broadcast = np.broadcast(shifts, axes)
+    except ValueError as exc:
+        raise ValueError("shift and axis are not broadcast-compatible") from exc
+
+    shift_by_axis: dict[int, int] = {}
+    for one_shift, one_axis in broadcast:
+        shift_by_axis[one_axis] = shift_by_axis.get(one_axis, 0) + int(one_shift)
+    return tuple(shift_by_axis.values()), tuple(shift_by_axis.keys())
+
+
+def _patch_pytorch_roll_numpy_contract(raw_pytorch, torch, np) -> None:
+    """Make raw/public PyTorch roll accept NumPy-style array-like inputs."""
+    try:
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
+    except ModuleNotFoundError:  # pragma: no cover - import fails before this module
+        backend = None
+
+    active_pytorch_backend = (
+        backend is not None and getattr(backend, "__backend_name__", None) == "pytorch"
+    )
+    original_roll = raw_pytorch.roll
+    if getattr(original_roll, "_pyrecest_numpy_contract", False):
+        if active_pytorch_backend:
+            backend.roll = original_roll
+        return
+
+    def roll(a, shift=None, axis=None, *, shifts=None, dims=None):
+        if shifts is not None:
+            if shift is not None:
+                raise TypeError("roll() got both 'shift' and 'shifts'")
+            shift = shifts
+        if shift is None:
+            raise TypeError("roll() missing required argument 'shift'")
+        if dims is not None:
+            if axis is not None:
+                axis_values = _pytorch_roll_int_tuple(axis, np, torch, "axis")
+                dims_values = _pytorch_roll_int_tuple(dims, np, torch, "dims")
+                if axis_values != dims_values:
+                    raise TypeError("roll() got both 'axis' and 'dims'")
+            axis = dims
+
+        values = raw_pytorch.array(a)
+        if axis is None:
+            shift_values = _pytorch_roll_int_tuple(shift, np, torch, "shift")
+            if not shift_values:
+                return values.clone()
+            flattened = values.reshape(-1)
+            return torch.roll(flattened, sum(shift_values), 0).reshape(
+                tuple(values.shape)
+            )
+
+        roll_shifts, roll_axes = _pytorch_roll_pairs(shift, axis, values.ndim, np, torch)
+        if not roll_shifts:
+            return values.clone()
+        return torch.roll(values, roll_shifts, roll_axes)
+
+    roll.__name__ = getattr(original_roll, "__name__", "roll")
+    roll.__doc__ = getattr(original_roll, "__doc__", None)
+    roll._pyrecest_numpy_contract = True
+    raw_pytorch.roll = roll
+    if active_pytorch_backend:
+        backend.roll = roll
 
 
 def _normalize_transpose_axes(axes, np):
