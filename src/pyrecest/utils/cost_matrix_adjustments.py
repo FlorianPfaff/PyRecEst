@@ -114,9 +114,16 @@ def compose_cost_matrix_adjustments(
 
     matrix = _as_cost_matrix(cost_matrix)
     diagnostics: dict[str, Any] = {"adjustment_order": []}
+    diagnostic_keys: set[str] = set()
     current = matrix
     for index, adjustment in enumerate(adjustments):
-        name = _adjustment_name(adjustment, index=index)
+        base_name = _adjustment_name(adjustment, index=index)
+        name = base_name
+        suffix = 2
+        while name in diagnostic_keys:
+            name = f"{base_name}_{suffix}"
+            suffix += 1
+        diagnostic_keys.add(name)
         result = apply_cost_matrix_adjustment(
             current,
             adjustment,
