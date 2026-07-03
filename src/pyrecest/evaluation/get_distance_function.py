@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from math import pi
 from typing import Any
 
@@ -192,6 +192,14 @@ def _validate_mtt_cutoff_distance(value: Any) -> float:
     return cutoff_distance
 
 
+def _coerce_additional_params(additional_params: Any) -> Mapping[str, Any]:
+    if additional_params is None:
+        return {}
+    if not isinstance(additional_params, Mapping):
+        raise ValueError("additional_params must be a mapping or None")
+    return additional_params
+
+
 def _euclidean_mtt_distance(x1, x2, *, cutoff_distance: float) -> float:
     first = _as_target_matrix(x1, "x1")
     second = _as_target_matrix(x2, "x2")
@@ -304,7 +312,7 @@ def get_distance_function(
             return linalg.norm(asarray(x1) - asarray(x2))
 
     elif "euclidean" in normalized_name and "mtt" in normalized_name:
-        params = additional_params or {}
+        params = _coerce_additional_params(additional_params)
         cutoff_distance = _validate_mtt_cutoff_distance(
             params.get("cutoff_distance", 1000000.0)
         )
