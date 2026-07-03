@@ -370,6 +370,8 @@ def _patch_raw_pytorch_comparison_numpy_contract() -> None:
     except ModuleNotFoundError:  # pragma: no cover - PyTorch backend may be unavailable
         return
 
+    active_pytorch_backend = getattr(backend, "__backend_name__", None) == "pytorch"
+
     def _coerce_binary_args(x, y):
         device = _preferred_pytorch_device(_torch, x, y)
         if not _torch.is_tensor(x):
@@ -383,6 +385,12 @@ def _patch_raw_pytorch_comparison_numpy_contract() -> None:
         return x, y
 
     def _wrap_comparison(helper_name, torch_func):
+        existing = getattr(pytorch_backend, helper_name, None)
+        if getattr(existing, "_pyrecest_numpy_contract", False):
+            if active_pytorch_backend:
+                setattr(backend, helper_name, existing)
+            return existing
+
         def comparison(x, y, **kwargs):
             x, y = _coerce_binary_args(x, y)
             return torch_func(x, y, **kwargs)
@@ -393,14 +401,16 @@ def _patch_raw_pytorch_comparison_numpy_contract() -> None:
         return comparison
 
     for helper_name, torch_func in (
+        ("equal", _torch.eq),
         ("greater", _torch.greater),
         ("less", _torch.less),
+        ("less_equal", _torch.le),
         ("logical_or", _torch.logical_or),
         ("logical_and", _torch.logical_and),
     ):
         helper = _wrap_comparison(helper_name, torch_func)
         setattr(pytorch_backend, helper_name, helper)
-        if getattr(backend, "__backend_name__", None) == "pytorch":
+        if active_pytorch_backend:
             setattr(backend, helper_name, helper)
 
 
