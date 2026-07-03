@@ -25,9 +25,11 @@ class TestMultiSessionAssignmentProblem(unittest.TestCase):
         self.assertEqual(run.n_matched_edges, 2)
         self.assertEqual(run.n_tracks, 2)
         self.assertEqual(
-            run.result.matched_edges,
-            [((0, 0), (1, 0), 0.1), ((0, 1), (1, 1), 0.2)],
+            [(edge[0], edge[1]) for edge in run.result.matched_edges],
+            [((0, 0), (1, 0)), ((0, 1), (1, 1))],
         )
+        self.assertAlmostEqual(run.result.matched_edges[0][2], 0.1)
+        self.assertAlmostEqual(run.result.matched_edges[1][2], 0.2)
 
     def test_run_solve_classmethod_and_summary(self):
         problem = MultiSessionAssignmentProblem(
