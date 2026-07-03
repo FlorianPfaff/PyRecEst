@@ -18,6 +18,9 @@ from pyrecest.backend_support._pytorch_matmul_device_contract import (
 from pyrecest.backend_support._pytorch_minmax_device_contract import (
     patch_pytorch_minmax_device_contract as _patch_pytorch_minmax_device_contract,
 )
+from pyrecest.backend_support._pytorch_raw_reshape_contract import (
+    patch_pytorch_raw_reshape_contract as _patch_pytorch_raw_reshape_contract,
+)
 
 
 def _patch_pytorch_raw_comparison_arraylike_contract() -> None:
@@ -117,6 +120,7 @@ _patch_pytorch_raw_comparison_arraylike_contract()
 _patch_pytorch_dot_outer_device_contract()
 _patch_pytorch_matmul_device_contract()
 _patch_pytorch_minmax_device_contract()
+_patch_pytorch_raw_reshape_contract()
 
 P = ParamSpec("P")
 R = TypeVar("R")
