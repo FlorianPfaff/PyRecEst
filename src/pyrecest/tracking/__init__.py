@@ -138,6 +138,22 @@ __all__ += [
     "select_residual_hypothesis",
 ]
 
+from .residual_hypothesis_diagnostics import (
+    candidate_to_dict,
+    candidates_to_dicts,
+    hypotheses_to_diagnostic_dicts,
+    hypothesis_diagnostic_to_dict,
+    selection_ledger_to_dicts,
+)
+
+__all__ += [
+    "candidate_to_dict",
+    "candidates_to_dicts",
+    "hypotheses_to_diagnostic_dicts",
+    "hypothesis_diagnostic_to_dict",
+    "selection_ledger_to_dicts",
+]
+
 from .ellipse_geometry import (
     canonicalize_ellipse_axes,
     canonicalize_ellipse_shape,
