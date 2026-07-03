@@ -8,6 +8,7 @@ module gives tests and documentation a single source of truth.
 
 from __future__ import annotations
 
+from operator import index as _operator_index
 from typing import Any, Final, cast
 
 BACKEND_NAMES: Final = ("numpy", "pytorch", "jax")
@@ -162,7 +163,6 @@ def _patch_jax_backend_contracts() -> None:
         )
     except ModuleNotFoundError:  # pragma: no cover - backend support may be unavailable
         return
-
     patch_jax_randint_empty_size_contract()
 
 
@@ -177,8 +177,86 @@ def _patch_random_backend_contracts() -> None:
     patch_random_uniform_empty_bounds_contract()
 
 
+def _resolve_pytorch_argsort_axis(axis, dim) -> int | None:
+    """Resolve NumPy ``axis`` and PyTorch ``dim`` aliases for argsort."""
+    if dim is not None:
+        if axis is not None and axis != dim:
+            raise TypeError("argsort() got both 'axis' and 'dim'")
+        axis = dim
+    if axis is None:
+        return None
+    return _operator_index(axis)
+
+
+def _patch_pytorch_argsort_contracts() -> None:
+    try:
+        import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
+        import torch  # pylint: disable=import-outside-toplevel
+    except ModuleNotFoundError:  # pragma: no cover - PyTorch backend may be unavailable
+        return
+
+    original_argsort = getattr(raw_pytorch, "argsort", None)
+    if original_argsort is None:
+        return
+    if getattr(original_argsort, "_pyrecest_numpy_contract", False):
+        if getattr(backend, "__backend_name__", None) == "pytorch":
+            backend.argsort = original_argsort
+        return
+
+    def argsort(
+        a,
+        axis=-1,
+        kind=None,
+        order=None,
+        *,
+        stable=None,
+        dim=None,
+        descending=False,
+    ):
+        axis_value = _resolve_pytorch_argsort_axis(axis, dim)
+        if order is not None:
+            raise ValueError("order is not supported by the PyTorch backend")
+        if kind is not None:
+            if kind in {"stable", "mergesort"}:
+                if stable is False:
+                    raise TypeError(
+                        "argsort() got conflicting 'kind' and 'stable' arguments"
+                    )
+                stable = True
+            elif kind in {"quicksort", "heapsort"}:
+                if stable is True:
+                    raise TypeError(
+                        "argsort() got conflicting 'kind' and 'stable' arguments"
+                    )
+                stable = False
+            else:
+                raise ValueError(
+                    "sort kind must be one of 'quicksort', 'heapsort', 'stable', or 'mergesort'"
+                )
+
+        values = raw_pytorch.array(a)
+        if axis_value is None:
+            values = values.reshape(-1)
+            axis_value = 0
+        return torch.argsort(
+            values,
+            dim=axis_value,
+            descending=descending,
+            stable=bool(stable) if stable is not None else False,
+        )
+
+    argsort.__name__ = getattr(original_argsort, "__name__", "argsort")
+    argsort.__doc__ = getattr(original_argsort, "__doc__", None)
+    argsort._pyrecest_numpy_contract = True
+    raw_pytorch.argsort = argsort
+    if getattr(backend, "__backend_name__", None) == "pytorch":
+        backend.argsort = argsort
+
+
 _patch_jax_backend_contracts()
 _patch_random_backend_contracts()
+_patch_pytorch_argsort_contracts()
 
 
 def get_unsupported_functions(
