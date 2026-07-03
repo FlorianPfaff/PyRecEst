@@ -33,7 +33,11 @@ def _patch_pytorch_raw_comparison_arraylike_contract() -> None:
     active_pytorch_backend = getattr(backend, "__backend_name__", None) == "pytorch"
     helper_names = ("greater", "less", "logical_or")
     if all(
-        getattr(getattr(raw_pytorch, helper_name, None), "_pyrecest_arraylike_contract", False)
+        getattr(
+            getattr(raw_pytorch, helper_name, None),
+            "_pyrecest_arraylike_contract",
+            False,
+        )
         for helper_name in helper_names
     ):
         if active_pytorch_backend:
@@ -177,7 +181,9 @@ def _patch_jax_squeeze_numpy_contract() -> None:
         if not axes:
             return a
 
-        normalized_axes = tuple(one_axis + a.ndim if one_axis < 0 else one_axis for one_axis in axes)
+        normalized_axes = tuple(
+            one_axis + a.ndim if one_axis < 0 else one_axis for one_axis in axes
+        )
         for one_axis, normalized_axis in zip(axes, normalized_axes):
             if normalized_axis < 0 or normalized_axis >= a.ndim:
                 raise ValueError(
@@ -188,7 +194,9 @@ def _patch_jax_squeeze_numpy_contract() -> None:
         if any(a.shape[one_axis] != 1 for one_axis in normalized_axes):
             return a
 
-        squeeze_axis = normalized_axes[0] if len(normalized_axes) == 1 else normalized_axes
+        squeeze_axis = (
+            normalized_axes[0] if len(normalized_axes) == 1 else normalized_axes
+        )
         return original_squeeze(a, axis=squeeze_axis)
 
     squeeze.__name__ = getattr(original_squeeze, "__name__", "squeeze")

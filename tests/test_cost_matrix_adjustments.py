@@ -2,7 +2,6 @@ import unittest
 
 import numpy as np
 import numpy.testing as npt
-
 from pyrecest.utils.cost_matrix_adjustments import (
     CallableCostMatrixAdjustment,
     CostMatrixAdjustmentResult,
@@ -151,7 +150,9 @@ class TestCostMatrixAdjustments(unittest.TestCase):
 
     def test_named_adjustment_validation(self):
         with self.assertRaises(ValueError):
-            CallableCostMatrixAdjustment(name="", function=lambda matrix, metadata: matrix)
+            CallableCostMatrixAdjustment(
+                name="", function=lambda matrix, metadata: matrix
+            )
         with self.assertRaises(ValueError):
             CallableCostMatrixAdjustment(name="bad", function=None)  # type: ignore[arg-type]
 
