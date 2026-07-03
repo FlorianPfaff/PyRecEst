@@ -154,6 +154,30 @@ __all__ += [
     "selection_ledger_to_dicts",
 ]
 
+from .audit_guards import (
+    ForbiddenKeyAccessError,
+    GuardedMapping,
+    assert_selector_invariant_under_forbidden_key_changes,
+    guarded_mapping,
+    guarded_mappings,
+    poison_forbidden_keys,
+    poison_forbidden_keys_in_mappings,
+    strip_forbidden_keys,
+    strip_forbidden_keys_from_mappings,
+)
+
+__all__ += [
+    "ForbiddenKeyAccessError",
+    "GuardedMapping",
+    "assert_selector_invariant_under_forbidden_key_changes",
+    "guarded_mapping",
+    "guarded_mappings",
+    "poison_forbidden_keys",
+    "poison_forbidden_keys_in_mappings",
+    "strip_forbidden_keys",
+    "strip_forbidden_keys_from_mappings",
+]
+
 from .ellipse_geometry import (
     canonicalize_ellipse_axes,
     canonicalize_ellipse_shape,
