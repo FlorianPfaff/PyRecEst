@@ -36,6 +36,15 @@ def _coerce_binary_args(torch_module, x, y):
     return x, y
 
 
+def _coerce_array_to_device(pytorch_backend, value, *, device):
+    """Return one backend tensor on the preferred existing tensor device."""
+
+    tensor = pytorch_backend.array(value)
+    if device is not None and tensor.device != device:
+        tensor = tensor.to(device=device)
+    return tensor
+
+
 def _patch_pytorch_linalg_logm_arraylike_contract() -> None:
     """Patch raw/public PyTorch ``linalg.logm`` to normalize array-like inputs."""
 
@@ -101,15 +110,8 @@ def _patch_pytorch_flip_numpy_axis_contract() -> None:
         backend.flip = flip
 
 
-def patch_pytorch_allclose_device_contract() -> None:
+def _patch_allclose(pytorch_backend, backend, torch_module) -> None:
     """Patch raw/public PyTorch ``allclose`` to preserve non-CPU operands."""
-
-    try:
-        import pyrecest._backend.pytorch as pytorch_backend  # pylint: disable=import-outside-toplevel
-        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
-        import torch as torch_module  # pylint: disable=import-outside-toplevel
-    except ModuleNotFoundError:  # pragma: no cover - PyTorch backend may be unavailable
-        return
 
     _patch_pytorch_creation_shape_contract()
     _patch_pytorch_linalg_logm_arraylike_contract()
@@ -118,8 +120,9 @@ def patch_pytorch_allclose_device_contract() -> None:
     original_allclose = getattr(pytorch_backend, "allclose", None)
     if original_allclose is None:
         return
+    active_pytorch_backend = getattr(backend, "__backend_name__", None) == "pytorch"
     if getattr(original_allclose, "_pyrecest_equal_nan_device_contract", False):
-        if getattr(backend, "__backend_name__", None) == "pytorch":
+        if active_pytorch_backend:
             backend.allclose = original_allclose
         return
 
@@ -139,5 +142,61 @@ def patch_pytorch_allclose_device_contract() -> None:
     allclose.__doc__ = getattr(original_allclose, "__doc__", None)
     allclose._pyrecest_equal_nan_device_contract = True
     pytorch_backend.allclose = allclose
-    if getattr(backend, "__backend_name__", None) == "pytorch":
+    if active_pytorch_backend:
         backend.allclose = allclose
+
+
+def _patch_broadcast_arrays(pytorch_backend, backend, torch_module) -> None:
+    """Patch raw/public PyTorch ``broadcast_arrays`` to preserve tensor devices."""
+
+    original_broadcast_arrays = getattr(pytorch_backend, "broadcast_arrays", None)
+    if original_broadcast_arrays is None:
+        return
+    active_pytorch_backend = getattr(backend, "__backend_name__", None) == "pytorch"
+    if getattr(
+        original_broadcast_arrays,
+        "_pyrecest_broadcast_arrays_device_contract",
+        False,
+    ):
+        if active_pytorch_backend:
+            backend.broadcast_arrays = original_broadcast_arrays
+        return
+
+    def broadcast_arrays(*arrays):
+        device = _preferred_pytorch_device(torch_module, *arrays)
+        tensors = tuple(
+            _coerce_array_to_device(
+                pytorch_backend,
+                value,
+                device=device,
+            )
+            for value in arrays
+        )
+        return original_broadcast_arrays(*tensors)
+
+    broadcast_arrays.__name__ = getattr(
+        original_broadcast_arrays,
+        "__name__",
+        "broadcast_arrays",
+    )
+    broadcast_arrays.__doc__ = getattr(original_broadcast_arrays, "__doc__", None)
+    broadcast_arrays._pyrecest_numpy_contract = True
+    broadcast_arrays._pyrecest_broadcast_arrays_device_contract = True
+    broadcast_arrays._pyrecest_device_contract = True
+    pytorch_backend.broadcast_arrays = broadcast_arrays
+    if active_pytorch_backend:
+        backend.broadcast_arrays = broadcast_arrays
+
+
+def patch_pytorch_allclose_device_contract() -> None:
+    """Patch raw/public PyTorch helpers to preserve existing tensor devices."""
+
+    try:
+        import pyrecest._backend.pytorch as pytorch_backend  # pylint: disable=import-outside-toplevel
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
+        import torch as torch_module  # pylint: disable=import-outside-toplevel
+    except ModuleNotFoundError:  # pragma: no cover - PyTorch backend may be unavailable
+        return
+
+    _patch_allclose(pytorch_backend, backend, torch_module)
+    _patch_broadcast_arrays(pytorch_backend, backend, torch_module)
