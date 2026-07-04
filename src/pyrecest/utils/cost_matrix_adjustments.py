@@ -81,7 +81,11 @@ class CallableCostMatrixAdjustment:
 
 def apply_cost_matrix_adjustment(
     cost_matrix: Any,
-    adjustment: CostMatrixAdjustment | Callable[[np.ndarray], Any] | CallableCostMatrixAdjustment,
+    adjustment: (
+        CostMatrixAdjustment
+        | Callable[[np.ndarray], Any]
+        | CallableCostMatrixAdjustment
+    ),
     *,
     metadata: Mapping[str, Any] | None = None,
 ) -> CostMatrixAdjustmentResult:
@@ -105,7 +109,9 @@ def apply_cost_matrix_adjustment(
 def compose_cost_matrix_adjustments(
     cost_matrix: Any,
     adjustments: Sequence[
-        CostMatrixAdjustment | Callable[[np.ndarray], Any] | CallableCostMatrixAdjustment
+        CostMatrixAdjustment
+        | Callable[[np.ndarray], Any]
+        | CallableCostMatrixAdjustment
     ],
     *,
     metadata: Mapping[str, Any] | None = None,
@@ -146,7 +152,9 @@ def additive_cost_matrix_adjustment(
     penalty = _as_cost_matrix(penalty_matrix)
     stored_diagnostics = dict(diagnostics or {})
 
-    def _add(matrix: np.ndarray, _metadata: Mapping[str, Any]) -> CostMatrixAdjustmentResult:
+    def _add(
+        matrix: np.ndarray, _metadata: Mapping[str, Any]
+    ) -> CostMatrixAdjustmentResult:
         if matrix.shape != penalty.shape:
             raise ValueError(
                 f"penalty_matrix shape {penalty.shape} does not match cost_matrix shape {matrix.shape}"
