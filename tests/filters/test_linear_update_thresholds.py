@@ -1,9 +1,10 @@
 from dataclasses import dataclass
 
 import numpy as np
-
-from pyrecest.filters.linear_update_planning import gate_threshold_for_measurement
-from pyrecest.filters.linear_update_planning import plan_linear_measurement_update
+from pyrecest.filters.linear_update_planning import (
+    gate_threshold_for_measurement,
+    plan_linear_measurement_update,
+)
 
 
 @dataclass

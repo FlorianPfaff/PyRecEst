@@ -58,13 +58,17 @@ def _patch_shared_numpy_uniform_empty_bounds_contract() -> None:
             return None
         dtype = kwargs.get("dtype", None)
         numpy_module = raw_random._np  # pylint: disable=protected-access
-        low_array = raw_random._validate_uniform_bound(  # pylint: disable=protected-access
-            low,
-            "low",
+        low_array = (
+            raw_random._validate_uniform_bound(  # pylint: disable=protected-access
+                low,
+                "low",
+            )
         )
-        high_array = raw_random._validate_uniform_bound(  # pylint: disable=protected-access
-            high,
-            "high",
+        high_array = (
+            raw_random._validate_uniform_bound(  # pylint: disable=protected-access
+                high,
+                "high",
+            )
         )
         sample_shape = _sample_shape_from_numpy_size(
             raw_random._normalize_size(size),  # pylint: disable=protected-access
@@ -121,23 +125,29 @@ def _patch_pytorch_uniform_empty_bounds_contract() -> None:
         return
 
     def _empty_result(low, high, size, dtype):
-        dtype = raw_random._normalize_random_dtype(dtype, default=None)  # pylint: disable=protected-access
+        dtype = raw_random._normalize_random_dtype(
+            dtype, default=None
+        )  # pylint: disable=protected-access
         device = None
         if torch.is_tensor(low):
             device = low.device
         elif torch.is_tensor(high):
             device = high.device
-        low_tensor = raw_random._validate_uniform_bound(  # pylint: disable=protected-access
-            low,
-            "low",
-            dtype=dtype,
-            device=device,
+        low_tensor = (
+            raw_random._validate_uniform_bound(  # pylint: disable=protected-access
+                low,
+                "low",
+                dtype=dtype,
+                device=device,
+            )
         )
-        high_tensor = raw_random._validate_uniform_bound(  # pylint: disable=protected-access
-            high,
-            "high",
-            dtype=dtype,
-            device=device,
+        high_tensor = (
+            raw_random._validate_uniform_bound(  # pylint: disable=protected-access
+                high,
+                "high",
+                dtype=dtype,
+                device=device,
+            )
         )
         sample_shape = raw_random._uniform_size(  # pylint: disable=protected-access
             size,
@@ -191,20 +201,24 @@ def _patch_jax_uniform_empty_bounds_contract() -> None:
     def _empty_result(low, high, size, args, kwargs):
         if args:
             return None
-        low_value, high_value = raw_random._validate_uniform_bounds(  # pylint: disable=protected-access
-            low,
-            high,
+        low_value, high_value = (
+            raw_random._validate_uniform_bounds(  # pylint: disable=protected-access
+                low,
+                high,
+            )
         )
-        sample_shape = raw_random._bounded_sampler_shape(  # pylint: disable=protected-access
-            size,
-            low_value,
-            high_value,
+        sample_shape = (
+            raw_random._bounded_sampler_shape(  # pylint: disable=protected-access
+                size,
+                low_value,
+                high_value,
+            )
         )
         if not _shape_has_no_samples(sample_shape):
             return None
-        state, has_state, remaining_kwargs = raw_random._get_state(  # pylint: disable=protected-access
+        state, has_state, remaining_kwargs = raw_random._get_state(
             **kwargs
-        )
+        )  # pylint: disable=protected-access
         state, _ = raw_random.jax.random.split(state)
         dtype = remaining_kwargs.get("dtype", None)
         result = jnp.empty(sample_shape, dtype=dtype)
