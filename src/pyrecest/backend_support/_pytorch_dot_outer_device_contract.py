@@ -1,4 +1,4 @@
-"""PyTorch ``dot``/``outer`` device compatibility hook."""
+"""PyTorch ``dot``/``outer``/``cross`` device compatibility hook."""
 
 from __future__ import annotations
 
@@ -26,7 +26,7 @@ def _promoted_pair(raw_pytorch, torch_module, left, right):
 
 
 def patch_pytorch_dot_outer_device_contract() -> None:
-    """Patch raw/public PyTorch ``dot`` and ``outer`` to preserve non-CPU operands."""
+    """Patch raw/public PyTorch vector-product helpers to preserve non-CPU operands."""
     try:
         import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
         import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
@@ -36,16 +36,30 @@ def patch_pytorch_dot_outer_device_contract() -> None:
 
     original_dot = getattr(raw_pytorch, "dot", None)
     original_outer = getattr(raw_pytorch, "outer", None)
+    original_cross = getattr(raw_pytorch, "cross", None)
     if original_dot is None or original_outer is None:
         return
-    if getattr(original_dot, "_pyrecest_dot_outer_device_contract", False) and getattr(
+
+    dot_outer_patched = getattr(
+        original_dot,
+        "_pyrecest_dot_outer_device_contract",
+        False,
+    ) and getattr(
         original_outer,
         "_pyrecest_dot_outer_device_contract",
         False,
-    ):
+    )
+    cross_patched = original_cross is None or getattr(
+        original_cross,
+        "_pyrecest_cross_device_contract",
+        False,
+    )
+    if dot_outer_patched and cross_patched:
         if getattr(backend, "__backend_name__", None) == "pytorch":
             backend.dot = original_dot
             backend.outer = original_outer
+            if original_cross is not None:
+                backend.cross = original_cross
         return
 
     def dot(a, b):
@@ -78,3 +92,35 @@ def patch_pytorch_dot_outer_device_contract() -> None:
         setattr(raw_pytorch, helper_name, helper)
         if getattr(backend, "__backend_name__", None) == "pytorch":
             setattr(backend, helper_name, helper)
+
+    if original_cross is None:
+        return
+
+    def cross(a, b, axisa=-1, axisb=-1, axisc=-1, axis=None):
+        a, b = _promoted_pair(raw_pytorch, torch, a, b)
+        return original_cross(
+            a,
+            b,
+            axisa=axisa,
+            axisb=axisb,
+            axisc=axisc,
+            axis=axis,
+        )
+
+    cross.__name__ = getattr(original_cross, "__name__", "cross")
+    cross.__doc__ = getattr(original_cross, "__doc__", None)
+    cross._pyrecest_cross_contract = getattr(
+        original_cross,
+        "_pyrecest_cross_contract",
+        True,
+    )
+    cross._pyrecest_cross_device_contract = True
+    cross._pyrecest_device_contract = True
+    cross._pyrecest_numpy_contract = getattr(
+        original_cross,
+        "_pyrecest_numpy_contract",
+        True,
+    )
+    setattr(raw_pytorch, "cross", cross)
+    if getattr(backend, "__backend_name__", None) == "pytorch":
+        backend.cross = cross
