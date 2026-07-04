@@ -14,6 +14,12 @@ from typing import Any, Literal
 
 import numpy as np
 
+from pyrecest.backend_support._pytorch_minmax_device_contract import (
+    patch_pytorch_minmax_device_contract as _patch_pytorch_minmax_device_contract,
+)
+
+_patch_pytorch_minmax_device_contract()
+
 EvidenceComputationKind = Literal["full_smoothing", "evidence_only"]
 _RESERVED_DIAGNOSTIC_METADATA_KEYS = frozenset(
     {
