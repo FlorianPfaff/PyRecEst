@@ -17,6 +17,7 @@ _FEATURE_ROW_COUNT_ERROR = (
 )
 _REJECTED_NUMERIC_KINDS = frozenset("bUScMm")
 _REJECTED_OBJECT_VALUE_TYPES = (
+    type(None),
     bool,
     np.bool_,
     str,
