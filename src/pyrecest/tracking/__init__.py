@@ -122,9 +122,11 @@ from .residual_hypothesis_mht import (
     ResidualEditCandidate,
     ResidualHypothesis,
     ResidualMHTConfig,
+    ResidualMHTPreset,
     enumerate_residual_hypotheses,
     hypotheses_to_dicts,
     hypothesis_to_dict,
+    residual_mht_config_for_preset,
     select_residual_hypothesis,
 )
 
@@ -132,9 +134,11 @@ __all__ += [
     "ResidualEditCandidate",
     "ResidualHypothesis",
     "ResidualMHTConfig",
+    "ResidualMHTPreset",
     "enumerate_residual_hypotheses",
     "hypotheses_to_dicts",
     "hypothesis_to_dict",
+    "residual_mht_config_for_preset",
     "select_residual_hypothesis",
 ]
 
