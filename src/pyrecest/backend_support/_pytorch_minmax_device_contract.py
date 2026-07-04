@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import sys
+import importlib
 
 
 def _preferred_pytorch_device(torch_module, *values):
@@ -31,8 +31,11 @@ def _minmax_operands(raw_pytorch, torch_module, left, right):
 
 
 def _raw_pytorch_module():
-    """Return the already-imported raw PyTorch backend module, if available."""
-    return sys.modules.get(".".join(("pyrecest", "_backend", "pytorch")))
+    """Return the raw PyTorch backend module, importing it when available."""
+    try:
+        return importlib.import_module("pyrecest._backend.pytorch")
+    except ModuleNotFoundError:
+        return None
 
 
 def patch_pytorch_minmax_device_contract() -> None:
