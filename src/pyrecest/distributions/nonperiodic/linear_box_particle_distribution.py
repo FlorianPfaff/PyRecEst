@@ -53,8 +53,8 @@ class LinearBoxParticleDistribution(AbstractLinearDistribution):
             raise ValueError("lower and upper must have the same shape")
         if lower.ndim != 2:
             raise ValueError("lower and upper must be arrays with shape (n_boxes, dim)")
-        if not bool(all(upper >= lower)):
-            raise ValueError("Each box must satisfy upper >= lower component-wise")
+        if not bool(all(upper > lower)):
+            raise ValueError("Each box must satisfy upper > lower component-wise")
 
         AbstractLinearDistribution.__init__(self, int(lower.shape[1]))
         self.lower = copy.copy(lower)

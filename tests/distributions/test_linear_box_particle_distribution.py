@@ -39,6 +39,17 @@ class LinearBoxParticleDistributionTest(unittest.TestCase):
 
         npt.assert_allclose(dist.integrate(array([1.0]), array([3.0])), 0.5)
 
+    def test_constructor_rejects_zero_volume_boxes(self):
+        invalid_boxes = (
+            (array([[0.0]]), array([[0.0]])),
+            (array([[0.0, 0.0]]), array([[1.0, 0.0]])),
+        )
+
+        for lower, upper in invalid_boxes:
+            with self.subTest(lower=lower, upper=upper):
+                with self.assertRaisesRegex(ValueError, "upper > lower"):
+                    LinearBoxParticleDistribution(lower, upper)
+
     def test_constructor_rejects_nonfinite_weights(self):
         invalid_weights = (
             ("nan", array([np.nan, 1.0])),
