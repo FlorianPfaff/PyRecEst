@@ -64,6 +64,34 @@ def test_jax_linalg_accepts_array_like_inputs_directly():
 
 
 @pytest.mark.backend_portable
+def test_jax_matrix_power_accepts_zero_dimensional_integer_scalars():
+    if importlib.util.find_spec("jax") is None:
+        pytest.skip("JAX is not installed")
+
+    result = run_backend_code(
+        "jax",
+        """
+import jax.numpy as jnp
+import numpy as np
+import pyrecest.backend as backend
+
+matrix = backend.array([[1.0, 1.0], [0.0, 1.0]])
+expected = backend.array([[1.0, 2.0], [0.0, 1.0]])
+
+np_scalar_result = backend.linalg.matrix_power(matrix, np.array(2))
+jax_scalar_result = backend.linalg.matrix_power(matrix, jnp.array(2))
+
+assert bool(jnp.allclose(np_scalar_result, expected))
+assert bool(jnp.allclose(jax_scalar_result, expected))
+print("ok")
+""",
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "ok" in result.stdout
+
+
+@pytest.mark.backend_portable
 def test_jax_qr_accepts_numpy_economic_mode():
     if importlib.util.find_spec("jax") is None:
         pytest.skip("JAX is not installed")
