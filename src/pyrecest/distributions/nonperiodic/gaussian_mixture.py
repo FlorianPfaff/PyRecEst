@@ -1,3 +1,5 @@
+import copy
+
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import array, ones, reshape, stack, sum
@@ -22,9 +24,11 @@ class GaussianMixture(LinearMixture, AbstractLinearDistribution):
         return sum(means * reshape(self.w, (-1, 1)), axis=0)
 
     def set_mean(self, new_mean):
+        new_mixture = copy.deepcopy(self)
         mean_offset = new_mean - self.mean()
-        for dist in self.dists:
+        for dist in new_mixture.dists:
             dist.mu += mean_offset  # type: ignore
+        return new_mixture
 
     def to_gaussian(self, check_validity=True):
         gauss_array = self.dists
