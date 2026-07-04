@@ -11,9 +11,16 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 
+def _decode_text_bytes(value: bytes | bytearray) -> str:
+    try:
+        return bytes(value).decode()
+    except UnicodeDecodeError:
+        return repr(bytes(value))
+
+
 def _normalize_backend_name(backend: object) -> str:
     if isinstance(backend, (bytes, bytearray)):
-        return backend.decode()
+        return _decode_text_bytes(backend)
     return str(backend)
 
 
@@ -25,7 +32,7 @@ def _normalize_supported_backends(
     if isinstance(supported_backends, str):
         return (supported_backends,)
     if isinstance(supported_backends, (bytes, bytearray)):
-        return (supported_backends.decode(),)
+        return (_decode_text_bytes(supported_backends),)
     return tuple(_normalize_backend_name(backend) for backend in supported_backends)
 
 
