@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 from pyrecest.filters.linear_update_planning import (
     chi_square_gate_threshold,
+    normalized_innovation_squared,
     plan_linear_measurement_update,
     robust_update_covariance_scale,
     student_t_covariance_scale,
@@ -81,6 +82,36 @@ def test_plan_rejects_nonfinite_threshold_parameters():
     for overrides in invalid_overrides:
         with pytest.raises(ValueError, match=next(iter(overrides))):
             plan_linear_measurement_update(**base_kwargs, **overrides)
+
+
+def test_plan_rejects_nonfinite_array_inputs():
+    base_kwargs = {
+        "mean": np.zeros(1),
+        "covariance_matrix": np.eye(1),
+        "measurement_vector": np.array([1.0]),
+        "measurement_covariance": np.eye(1),
+        "observation_matrix": np.eye(1),
+    }
+    invalid_overrides = (
+        {"measurement_vector": np.array([np.nan])},
+        {"measurement_covariance": np.array([[np.inf]])},
+        {"observation_matrix": np.array([[np.nan]])},
+        {"mean": np.array([np.inf])},
+        {"covariance_matrix": np.array([[np.nan]])},
+    )
+
+    for overrides in invalid_overrides:
+        invalid_name = next(iter(overrides))
+        with pytest.raises(ValueError, match=invalid_name):
+            plan_linear_measurement_update(**base_kwargs, **overrides)
+
+
+def test_normalized_innovation_squared_rejects_nonfinite_inputs():
+    with pytest.raises(ValueError, match="residual"):
+        normalized_innovation_squared(np.array([np.nan]), np.eye(1))
+
+    with pytest.raises(ValueError, match="innovation_covariance"):
+        normalized_innovation_squared(np.array([0.0]), np.array([[np.inf]]))
 
 
 def test_robust_scale_rejects_nonfinite_parameters():
