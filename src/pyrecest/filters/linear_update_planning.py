@@ -93,8 +93,11 @@ def normalized_innovation_squared(
 ) -> float:
     """Return ``residual.T @ inv(innovation_covariance) @ residual`` as a float."""
 
-    residual = np.asarray(residual, dtype=float).reshape(-1)
-    innovation_covariance = np.asarray(innovation_covariance, dtype=float)
+    residual = _as_finite_array(residual, "residual").reshape(-1)
+    innovation_covariance = _as_finite_array(
+        innovation_covariance,
+        "innovation_covariance",
+    )
     if innovation_covariance.shape != (residual.size, residual.size):
         raise ValueError(
             "innovation_covariance must have shape (residual_dim, residual_dim)"
@@ -214,12 +217,12 @@ def plan_linear_measurement_update(
 
     alpha = _as_positive_scalar(inflation_alpha, "inflation_alpha")
 
-    vector = np.asarray(measurement_vector, dtype=float).reshape(-1)
+    vector = _as_finite_array(measurement_vector, "measurement_vector").reshape(-1)
     measurement_dim = vector.size
-    covariance = np.asarray(measurement_covariance, dtype=float)
-    observation = np.asarray(observation_matrix, dtype=float)
-    state_mean = np.asarray(mean, dtype=float).reshape(-1)
-    state_covariance = np.asarray(covariance_matrix, dtype=float)
+    covariance = _as_finite_array(measurement_covariance, "measurement_covariance")
+    observation = _as_finite_array(observation_matrix, "observation_matrix")
+    state_mean = _as_finite_array(mean, "mean").reshape(-1)
+    state_covariance = _as_finite_array(covariance_matrix, "covariance_matrix")
 
     if measurement_dim <= 0:
         raise ValueError("measurement_vector must contain at least one element")
@@ -341,7 +344,7 @@ def gate_threshold_for_measurement(
         return None if value is None else _as_nonnegative_scalar(value, "gate_threshold")
     if gate_probabilities_by_source and source in gate_probabilities_by_source:
         probability = gate_probabilities_by_source[source]
-        vector = np.asarray(measurement.vector).reshape(-1)
+        vector = _as_finite_array(measurement.vector, "measurement.vector").reshape(-1)
         return chi_square_gate_threshold(probability, vector.size)
     return None
 
@@ -384,6 +387,16 @@ def _resolve_threshold(
 
 def _symmetrized(matrix: np.ndarray) -> np.ndarray:
     return 0.5 * (matrix + matrix.T)
+
+
+def _as_finite_array(value: Any, name: str) -> np.ndarray:
+    try:
+        array = np.asarray(value, dtype=float)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{name} must contain finite numeric values") from exc
+    if not np.all(np.isfinite(array)):
+        raise ValueError(f"{name} must contain only finite values")
+    return array
 
 
 def _as_finite_scalar(value: Any, name: str) -> float:
