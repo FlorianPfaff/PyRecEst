@@ -1,5 +1,4 @@
 import numpy as np
-
 from pyrecest.utils.assignment import murty_k_best_assignments
 
 
