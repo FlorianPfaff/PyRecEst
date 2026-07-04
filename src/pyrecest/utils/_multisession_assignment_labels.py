@@ -23,7 +23,10 @@ _TEXT_TYPES = (str, bytes, np.str_, np.bytes_)
 
 
 def _normalize_fill_value(fill_value: Any, track_count: int) -> int:
-    fill_value_array = np.asarray(fill_value)
+    try:
+        fill_value_array = np.asarray(fill_value)
+    except (TypeError, ValueError, OverflowError, RuntimeError) as exc:
+        raise ValueError("fill_value must be an integer.") from exc
     if (
         fill_value_array.shape != ()
         or fill_value_array.dtype == np.bool_

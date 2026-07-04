@@ -12,6 +12,12 @@ from pyrecest.backend import (  # pylint: disable=no-name-in-module
 from pyrecest.utils import MultiSessionAssignmentResult, tracks_to_session_labels
 
 
+class _UncoercibleFillValue:
+    def __array__(self, dtype=None):
+        del dtype
+        raise RuntimeError("array conversion failed")
+
+
 class TestMultiSessionAssignmentLabels(unittest.TestCase):
     @staticmethod
     def _converters():
@@ -86,6 +92,25 @@ class TestMultiSessionAssignmentLabels(unittest.TestCase):
                         "fill_value must be an integer",
                     ):
                         converter(tracks, session_sizes=[2], fill_value=fill_value)
+
+    @unittest.skipIf(
+        __backend_name__ == "jax",
+        reason="Not supported on this backend",
+    )
+    def test_uncoercible_fill_values_are_rejected_as_value_errors(self):
+        tracks = [{0: 0}]
+
+        for name, converter in self._converters():
+            with self.subTest(converter=name):
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "fill_value must be an integer",
+                ):
+                    converter(
+                        tracks,
+                        session_sizes=[1],
+                        fill_value=_UncoercibleFillValue(),
+                    )
 
     @unittest.skipIf(
         __backend_name__ == "jax",
