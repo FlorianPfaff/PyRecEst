@@ -30,7 +30,7 @@ def _coerce_bool_flag(value: bool, name: str) -> bool:
 
     try:
         value_array = np.asarray(value)
-    except (TypeError, ValueError) as exc:
+    except (TypeError, ValueError, RuntimeError) as exc:
         raise ValueError(f"{name} must be a bool") from exc
     if value_array.shape == () and np.issubdtype(value_array.dtype, np.bool_):
         return bool(value_array.item())
