@@ -102,6 +102,7 @@ def patch_pytorch_minmax_device_contract() -> None:
         {
             "equal": torch.eq,
             "less_equal": torch.le,
+            "logical_and": torch.logical_and,
         },
         "_pyrecest_comparison_device_contract",
     )
