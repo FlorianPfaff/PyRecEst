@@ -143,6 +143,7 @@ class TestCostMatrixAdjustments(unittest.TestCase):
             [["not-a-number"]],
             [1.0, 2.0],
             [[-np.inf]],
+            [[np.complex64(1.0 + 0.0j)]],
         )
         for value in invalid_inputs:
             with self.subTest(value=value):
