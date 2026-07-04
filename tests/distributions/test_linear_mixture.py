@@ -141,6 +141,19 @@ class LinearMixtureTest(unittest.TestCase):
         npt.assert_allclose(gmix.pdf(xs), expected, atol=1e-20)
         npt.assert_allclose(gmix.pdf(reshape(xs, (-1, 1))), expected, atol=1e-20)
 
+    def test_gaussian_mixture_set_mean_returns_shifted_copy(self):
+        gm1 = GaussianDistribution(array([0.0, 1.0]), diag(array([1.0, 2.0])))
+        gm2 = GaussianDistribution(array([2.0, 3.0]), diag(array([3.0, 4.0])))
+        gmix = GaussianMixture([gm1, gm2], array([0.25, 0.75]))
+
+        shifted = gmix.set_mean(array([10.0, -2.0]))
+
+        self.assertIsInstance(shifted, GaussianMixture)
+        npt.assert_allclose(shifted.mean(), array([10.0, -2.0]))
+        npt.assert_allclose(gmix.mean(), array([1.5, 2.5]))
+        npt.assert_allclose(shifted.w, gmix.w)
+        npt.assert_allclose(shifted.covariance(), gmix.covariance())
+
     def test_sample_accepts_flat_one_dimensional_dirac_components(self):
         dirac = LinearDiracDistribution(array([1.0, 2.0, 3.0]), array([0.2, 0.5, 0.3]))
         lm = LinearMixture([dirac], array([1.0]))
