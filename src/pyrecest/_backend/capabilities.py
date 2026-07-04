@@ -166,7 +166,19 @@ def _patch_jax_backend_contracts() -> None:
     patch_jax_randint_empty_size_contract()
 
 
+def _patch_random_backend_contracts() -> None:
+    try:
+        from pyrecest.backend_support._random_uniform_empty_contract import (  # pylint: disable=import-outside-toplevel
+            patch_random_uniform_empty_bounds_contract,
+        )
+    except ModuleNotFoundError:  # pragma: no cover - backend support may be unavailable
+        return
+
+    patch_random_uniform_empty_bounds_contract()
+
+
 _patch_jax_backend_contracts()
+_patch_random_backend_contracts()
 
 
 def get_unsupported_functions(
