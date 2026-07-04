@@ -334,7 +334,9 @@ def _patch_pytorch_tile_facade() -> None:
 
     import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
 
-    selected_backend_is_pytorch = getattr(backend, "__backend_name__", None) == "pytorch"
+    selected_backend_is_pytorch = (
+        getattr(backend, "__backend_name__", None) == "pytorch"
+    )
 
     try:
         import numpy as _np  # pylint: disable=import-outside-toplevel
