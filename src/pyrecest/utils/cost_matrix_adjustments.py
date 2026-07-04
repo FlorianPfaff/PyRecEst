@@ -188,13 +188,15 @@ def _coerce_adjustment_output(
 
 
 def _as_cost_matrix(value: Any) -> np.ndarray:
+    if _contains_invalid_values(value):
+        raise ValueError("cost_matrix must be real-valued numeric")
     try:
         matrix = np.asarray(value, dtype=float)
     except (TypeError, ValueError, OverflowError) as exc:
         raise ValueError("cost_matrix must be real-valued numeric") from exc
     if matrix.ndim != 2:
         raise ValueError("cost_matrix must be two-dimensional")
-    if matrix.dtype == np.bool_ or _contains_invalid_values(value):
+    if matrix.dtype == np.bool_:
         raise ValueError("cost_matrix must be real-valued numeric")
     if np.any(np.isneginf(matrix)):
         raise ValueError("cost_matrix may not contain negative infinity")
@@ -209,7 +211,7 @@ def _contains_invalid_values(value: Any) -> bool:
     for item in flat:
         if item is None or isinstance(item, (bool, np.bool_, str, bytes, bytearray)):
             return True
-        if isinstance(item, complex):
+        if isinstance(item, (complex, np.complexfloating)):
             return True
         if not isinstance(item, Real) and not np.isscalar(item):
             return True
