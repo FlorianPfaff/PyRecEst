@@ -48,6 +48,21 @@ class TestModelValidation(unittest.TestCase):
                 with self.assertRaisesRegex(TypeError, "integer or None"):
                     call()
 
+    def test_validate_vector_and_matrix_reject_boolean_arrays(self):
+        invalid_calls = [
+            lambda: validate_state_vector(array([True, False]), state_dim=2),
+            lambda: validate_measurement_vector(array([True]), meas_dim=1),
+            lambda: validate_covariance_matrix(array([[True]])),
+            lambda: validate_noise_covariance(array([[False]])),
+            lambda: validate_transition_matrix(array([[True]])),
+            lambda: validate_measurement_matrix(array([[False]])),
+        ]
+
+        for call in invalid_calls:
+            with self.subTest(call=call):
+                with self.assertRaisesRegex(ValueError, "numeric non-boolean"):
+                    call()
+
     def test_validate_measurement_vector_accepts_expected_shape(self):
         measurement = validate_measurement_vector(array([1.0]), meas_dim=1)
 

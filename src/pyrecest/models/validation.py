@@ -98,8 +98,21 @@ def _to_python_bool(value: Any) -> bool:
     return bool(value)
 
 
+def _dtype_name(value: Any) -> str:
+    dtype = getattr(value, "dtype", None)
+    return "" if dtype is None else str(dtype).lower()
+
+
+def _validate_numeric_nonboolean_entries(value: Any, name: str) -> None:
+    """Raise if a backend array is boolean-valued rather than numeric."""
+    dtype_name = _dtype_name(value)
+    if dtype_name in {"bool", "bool_", "torch.bool"}:
+        raise ValueError(f"{name} must contain numeric non-boolean values.")
+
+
 def _validate_finite_entries(value: Any, name: str) -> None:
     """Raise if a backend array contains NaN or infinite entries."""
+    _validate_numeric_nonboolean_entries(value, name)
     try:
         finite = backend.all(backend.isfinite(value))
     except Exception as exc:  # pragma: no cover - backend-specific exception type
