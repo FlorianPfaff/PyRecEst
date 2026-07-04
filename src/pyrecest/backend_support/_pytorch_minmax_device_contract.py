@@ -1,4 +1,4 @@
-"""PyTorch ``maximum``/``minimum`` device compatibility hook."""
+"""PyTorch binary helper device compatibility hooks."""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ def _preferred_pytorch_device(torch_module, *values):
     return None
 
 
-def _minmax_operands(raw_pytorch, torch_module, left, right):
+def _binary_operands(raw_pytorch, torch_module, left, right):
     """Return operands on a common dtype and an existing preferred device."""
     device = _preferred_pytorch_device(torch_module, left, right)
     left = raw_pytorch.array(left)
@@ -28,6 +28,11 @@ def _minmax_operands(raw_pytorch, torch_module, left, right):
     if device is None:
         return left.to(dtype=dtype), right.to(dtype=dtype)
     return left.to(device=device, dtype=dtype), right.to(device=device, dtype=dtype)
+
+
+def _minmax_operands(raw_pytorch, torch_module, left, right):
+    """Return operands on a common dtype and an existing preferred device."""
+    return _binary_operands(raw_pytorch, torch_module, left, right)
 
 
 def _raw_pytorch_module():
@@ -39,7 +44,7 @@ def _raw_pytorch_module():
 
 
 def patch_pytorch_minmax_device_contract() -> None:
-    """Patch raw/public PyTorch ``maximum`` and ``minimum`` to preserve device."""
+    """Patch selected raw/public PyTorch binary helpers to preserve device."""
     try:
         import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import torch  # pylint: disable=import-outside-toplevel
@@ -53,6 +58,7 @@ def patch_pytorch_minmax_device_contract() -> None:
     helpers = {
         "maximum": torch.maximum,
         "minimum": torch.minimum,
+        "logical_and": torch.logical_and,
     }
     if all(
         getattr(
@@ -70,14 +76,14 @@ def patch_pytorch_minmax_device_contract() -> None:
     for helper_name, torch_helper in helpers.items():
         original_helper = getattr(raw_pytorch, helper_name)
 
-        def minmax(left, right, _torch_helper=torch_helper):
-            left, right = _minmax_operands(raw_pytorch, torch, left, right)
+        def binary_helper(left, right, _torch_helper=torch_helper):
+            left, right = _binary_operands(raw_pytorch, torch, left, right)
             return _torch_helper(left, right)
 
-        minmax.__name__ = getattr(original_helper, "__name__", helper_name)
-        minmax.__doc__ = getattr(original_helper, "__doc__", None)
-        minmax._pyrecest_minmax_device_contract = True
-        minmax._pyrecest_device_contract = True
-        setattr(raw_pytorch, helper_name, minmax)
+        binary_helper.__name__ = getattr(original_helper, "__name__", helper_name)
+        binary_helper.__doc__ = getattr(original_helper, "__doc__", None)
+        binary_helper._pyrecest_minmax_device_contract = True
+        binary_helper._pyrecest_device_contract = True
+        setattr(raw_pytorch, helper_name, binary_helper)
         if getattr(backend, "__backend_name__", None) == "pytorch":
-            setattr(backend, helper_name, minmax)
+            setattr(backend, helper_name, binary_helper)
