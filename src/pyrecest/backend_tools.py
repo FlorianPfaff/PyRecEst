@@ -311,14 +311,29 @@ def _patch_pytorch_stack_helpers_numpy_contract() -> None:
     ):  # pragma: no cover - PyTorch backend import failed earlier
         return
 
-    if getattr(pytorch_backend.hstack, "_pyrecest_numpy_contract", False):
+    helper_names = ("stack", "hstack", "vstack", "column_stack", "dstack")
+    if all(
+        getattr(getattr(pytorch_backend, helper_name), "_pyrecest_numpy_contract", False)
+        for helper_name in helper_names
+    ):
         if active_pytorch_backend:
-            for helper_name in ("hstack", "vstack", "column_stack", "dstack"):
+            for helper_name in helper_names:
                 setattr(backend, helper_name, getattr(pytorch_backend, helper_name))
         return
 
     def _tensor_sequence(tup):
         return [pytorch_backend.array(item) for item in tup]
+
+    def stack(arrays, axis=0, out=None, *, dim=None):
+        if dim is not None:
+            if axis != 0 and axis != dim:
+                raise TypeError("stack() got both 'axis' and 'dim'")
+            axis = dim
+        tensors = _tensor_sequence(arrays)
+        if not tensors:
+            raise ValueError("need at least one array to stack")
+        tensors = pytorch_backend.convert_to_wider_dtype(tensors)
+        return _torch.stack(tensors, dim=_operator_index(axis), out=out)
 
     def hstack(tup):
         tensors = [_torch.atleast_1d(tensor) for tensor in _tensor_sequence(tup)]
@@ -343,6 +358,7 @@ def _patch_pytorch_stack_helpers_numpy_contract() -> None:
         return _torch.cat(tensors, dim=2)
 
     for helper_name, helper in {
+        "stack": stack,
         "hstack": hstack,
         "vstack": vstack,
         "column_stack": column_stack,
