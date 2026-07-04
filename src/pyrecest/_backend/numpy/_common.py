@@ -16,7 +16,6 @@ from .._shared_numpy._common import (
     _box_binary_scalar,
     _box_unary_scalar,
     _cast_fout_to_input_dtype,
-    _cast_out_from_dtype,
     _cast_out_to_input_dtype,
     _get_wider_dtype,
     _is_boolean,
@@ -52,7 +51,23 @@ def get_default_cdtype():
     return _normalize_numpy_dtype(_shared_get_default_cdtype(), _np.complex128)
 
 
-array = _cast_out_from_dtype(target=_np.array, dtype_pos=1)
+def _array_default_dtype_for(result):
+    if is_floating(result):
+        return get_default_dtype()
+    if is_complex(result):
+        return get_default_cdtype()
+    return None
+
+
+def array(object, dtype=None, *args, **kwargs):
+    result = _np.array(object, dtype=dtype, *args, **kwargs)
+    if dtype is None:
+        default_dtype = _array_default_dtype_for(result)
+        if default_dtype is not None and result.dtype != default_dtype:
+            return cast(result, default_dtype)
+    return result
+
+
 eye = _modify_func_default_dtype(target=_np.eye)
 
 
