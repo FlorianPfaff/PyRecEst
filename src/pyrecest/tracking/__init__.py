@@ -122,9 +122,11 @@ from .residual_hypothesis_mht import (
     ResidualEditCandidate,
     ResidualHypothesis,
     ResidualMHTConfig,
+    ResidualMHTPreset,
     enumerate_residual_hypotheses,
     hypotheses_to_dicts,
     hypothesis_to_dict,
+    residual_mht_config_for_preset,
     select_residual_hypothesis,
 )
 
@@ -132,10 +134,52 @@ __all__ += [
     "ResidualEditCandidate",
     "ResidualHypothesis",
     "ResidualMHTConfig",
+    "ResidualMHTPreset",
     "enumerate_residual_hypotheses",
     "hypotheses_to_dicts",
     "hypothesis_to_dict",
+    "residual_mht_config_for_preset",
     "select_residual_hypothesis",
+]
+
+from .residual_hypothesis_diagnostics import (
+    candidate_to_dict,
+    candidates_to_dicts,
+    hypotheses_to_diagnostic_dicts,
+    hypothesis_diagnostic_to_dict,
+    selection_ledger_to_dicts,
+)
+
+__all__ += [
+    "candidate_to_dict",
+    "candidates_to_dicts",
+    "hypotheses_to_diagnostic_dicts",
+    "hypothesis_diagnostic_to_dict",
+    "selection_ledger_to_dicts",
+]
+
+from .audit_guards import (
+    ForbiddenKeyAccessError,
+    GuardedMapping,
+    assert_selector_invariant_under_forbidden_key_changes,
+    guarded_mapping,
+    guarded_mappings,
+    poison_forbidden_keys,
+    poison_forbidden_keys_in_mappings,
+    strip_forbidden_keys,
+    strip_forbidden_keys_from_mappings,
+)
+
+__all__ += [
+    "ForbiddenKeyAccessError",
+    "GuardedMapping",
+    "assert_selector_invariant_under_forbidden_key_changes",
+    "guarded_mapping",
+    "guarded_mappings",
+    "poison_forbidden_keys",
+    "poison_forbidden_keys_in_mappings",
+    "strip_forbidden_keys",
+    "strip_forbidden_keys_from_mappings",
 ]
 
 from .ellipse_geometry import (
