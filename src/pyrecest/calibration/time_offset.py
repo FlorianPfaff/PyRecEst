@@ -145,8 +145,12 @@ def make_offset_grid(min_s: float, max_s: float, step_s: float) -> np.ndarray:
     return np.round(offsets, decimals=9)
 
 
+def _validate_time_offset(offset_s: float | None) -> float:
+    return 0.0 if offset_s is None else _as_finite_float(offset_s, "offset_s")
+
+
 def apply_time_offset(times_s: np.ndarray, offset_s: float | None) -> np.ndarray:
-    offset = 0.0 if offset_s is None else _as_finite_float(offset_s, "offset_s")
+    offset = _validate_time_offset(offset_s)
     return _as_real_numeric_array(times_s, "times_s") + offset
 
 
@@ -216,13 +220,14 @@ def interpolate_reference_values(reference_times_s: np.ndarray, reference_values
     return interpolated, valid
 
 
-def time_offset_error_summary(measurement_times_s: np.ndarray, measurement_values: np.ndarray, reference_times_s: np.ndarray, reference_values: np.ndarray, offset_s: float, *, max_time_delta_s: float | None = None) -> dict[str, float]:
+def time_offset_error_summary(measurement_times_s: np.ndarray, measurement_values: np.ndarray, reference_times_s: np.ndarray, reference_values: np.ndarray, offset_s: float | None, *, max_time_delta_s: float | None = None) -> dict[str, float]:
+    offset = _validate_time_offset(offset_s)
     measurement_values = _as_real_numeric_array(measurement_values, "measurement_values")
     if measurement_values.ndim == 1:
         measurement_values = measurement_values.reshape(-1, 1)
     elif measurement_values.ndim != 2:
         raise ValueError("measurement_values must be one- or two-dimensional")
-    query_times = apply_time_offset(measurement_times_s, offset_s)
+    query_times = apply_time_offset(measurement_times_s, offset)
     if query_times.size != measurement_values.shape[0]:
         raise ValueError("measurement_times_s length must match measurement_values rows")
     reference_at_query, valid = interpolate_reference_values(reference_times_s, reference_values, query_times, max_time_delta_s=max_time_delta_s)
@@ -230,14 +235,14 @@ def time_offset_error_summary(measurement_times_s: np.ndarray, measurement_value
         raise ValueError("measurement_values and reference_values must have the same value dimension")
     valid &= np.isfinite(measurement_values).all(axis=1)
     errors = np.linalg.norm(measurement_values[valid] - reference_at_query[valid], axis=1)
-    return _error_stats(float(offset_s), errors, total_count=len(measurement_values))
+    return _error_stats(offset, errors, total_count=len(measurement_values))
 
 
-def time_offset_sweep(measurement_times_s: np.ndarray, measurement_values: np.ndarray, reference_times_s: np.ndarray, reference_values: np.ndarray, offsets_s: Iterable[float], *, max_time_delta_s: float | None = None) -> list[dict[str, float]]:
+def time_offset_sweep(measurement_times_s: np.ndarray, measurement_values: np.ndarray, reference_times_s: np.ndarray, reference_values: np.ndarray, offsets_s: Iterable[float | None], *, max_time_delta_s: float | None = None) -> list[dict[str, float]]:
     return [time_offset_error_summary(measurement_times_s, measurement_values, reference_times_s, reference_values, offset, max_time_delta_s=max_time_delta_s) for offset in offsets_s]
 
 
-def fit_time_offset(measurement_times_s: np.ndarray, measurement_values: np.ndarray, reference_times_s: np.ndarray, reference_values: np.ndarray, offsets_s: Iterable[float], *, metric: str = "rmse", max_time_delta_s: float | None = None, metadata: Mapping[str, Any] | None = None) -> TimeOffsetFitResult:
+def fit_time_offset(measurement_times_s: np.ndarray, measurement_values: np.ndarray, reference_times_s: np.ndarray, reference_values: np.ndarray, offsets_s: Iterable[float | None], *, metric: str = "rmse", max_time_delta_s: float | None = None, metadata: Mapping[str, Any] | None = None) -> TimeOffsetFitResult:
     metric = _validate_error_metric(metric)
     summaries = time_offset_sweep(measurement_times_s, measurement_values, reference_times_s, reference_values, offsets_s, max_time_delta_s=max_time_delta_s)
     offsets = np.array([row["time_offset_s"] for row in summaries], dtype=float)
