@@ -93,6 +93,15 @@ class VonMisesDistribution(AbstractCircularDistribution):
         new_dist.mu = mu
         return new_dist
 
+    def set_mode(self, mode):
+        """Return a copy with a replaced mode direction.
+
+        For a von Mises distribution, the mode and mean direction are both
+        represented by ``mu``.  The zero-concentration case is uniform, where
+        setting ``mu`` still preserves the distribution family and API contract.
+        """
+        return self.set_mean(mode)
+
     @staticmethod
     def besselratio(nu, kappa):
         return ive(nu + 1, kappa) / ive(nu, kappa)
