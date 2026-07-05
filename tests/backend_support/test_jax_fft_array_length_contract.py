@@ -14,10 +14,20 @@ def test_jax_real_fft_accepts_singleton_array_lengths():
     samples = np.arange(6.0).reshape(2, 3)
     backend_samples = backend.asarray(samples)
     expected_spectrum = np.fft.rfft(samples, n=samples.shape[1], axis=1)
+    lengths = (
+        np.array(samples.shape[1]),
+        np.array([samples.shape[1]]),
+        np.int64(samples.shape[1]),
+        backend.asarray(samples.shape[1]),
+    )
 
-    for length in (np.array(samples.shape[1]), np.array([samples.shape[1]]), np.int64(samples.shape[1]), backend.asarray(samples.shape[1])):
-        actual_spectrum = _as_numpy(backend.fft.rfft(backend_samples, n=length, axis=1))
+    for length in lengths:
+        actual_spectrum = _as_numpy(
+            backend.fft.rfft(backend_samples, n=length, axis=1)
+        )
         assert np.allclose(actual_spectrum, expected_spectrum)
 
-        actual_roundtrip = _as_numpy(backend.fft.irfft(actual_spectrum, n=length, axis=1))
+        actual_roundtrip = _as_numpy(
+            backend.fft.irfft(actual_spectrum, n=length, axis=1)
+        )
         assert np.allclose(actual_roundtrip, samples)
