@@ -4,6 +4,10 @@ from __future__ import annotations
 
 from operator import index as _operator_index
 
+from pyrecest.backend_support._jax_one_hot_bounds_contract import (
+    patch_jax_one_hot_bounds_contract as _patch_jax_one_hot_bounds_contract,
+)
+
 
 def _is_boolean_take_axis(axis, torch_module) -> bool:
     """Return whether ``axis`` is a boolean scalar, not an integer axis."""
@@ -104,6 +108,7 @@ def patch_pytorch_one_hot_scalar_contract() -> None:
         torch_module,
     )
     _patch_pytorch_take_axis_contract(pytorch_backend, torch_module)
+    _patch_jax_one_hot_bounds_contract()
 
 
 __all__ = ["patch_pytorch_one_hot_scalar_contract"]
