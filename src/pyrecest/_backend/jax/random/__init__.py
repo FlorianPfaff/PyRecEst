@@ -26,6 +26,9 @@ def _validate_multivariate_normal_check_valid(check_valid):
 
 def _validate_multivariate_normal_tol(tol):
     message = "tol must be a finite non-negative scalar"
+    if isinstance(tol, (str, bytes, bytearray)):
+        raise ValueError(message)
+
     try:
         tol_array = _np.asarray(tol)
     except (TypeError, ValueError) as exc:
@@ -33,7 +36,7 @@ def _validate_multivariate_normal_tol(tol):
     if tol_array.shape != () or _np.issubdtype(tol_array.dtype, _np.bool_):
         raise ValueError(message)
     scalar = tol_array.item()
-    if isinstance(scalar, (bool, _np.bool_)):
+    if isinstance(scalar, (bool, _np.bool_, str, bytes, bytearray)):
         raise ValueError(message)
     try:
         tol_value = float(scalar)
