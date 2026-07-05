@@ -24,6 +24,18 @@ class GaussianMixture(LinearMixture, AbstractLinearDistribution):
         return sum(means * reshape(self.w, (-1, 1)), axis=0)
 
     def set_mean(self, new_mean):
+        new_mean = array(new_mean)
+        if new_mean.ndim == 0:
+            if self.dim != 1:
+                raise ValueError(
+                    f"new_mean must have shape ({self.dim},), got scalar."
+                )
+            new_mean = reshape(new_mean, (1,))
+        elif new_mean.shape != (self.dim,):
+            raise ValueError(
+                f"new_mean must have shape ({self.dim},), got {new_mean.shape}."
+            )
+
         new_mixture = copy.deepcopy(self)
         mean_offset = new_mean - self.mean()
         for dist in new_mixture.dists:
