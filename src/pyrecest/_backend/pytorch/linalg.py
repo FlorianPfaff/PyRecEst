@@ -236,7 +236,9 @@ class _Logm(_torch.autograd.Function):
         return _Logm._logm(backward_tensor).to(tensor.dtype)[..., :n, n:]
 
 
-logm = _Logm.apply
+def logm(x):
+    """Compute the matrix logarithm after PyRecEst-style array-like promotion."""
+    return _Logm.apply(_as_linalg_tensor(x))
 
 
 def sqrtm(x):
