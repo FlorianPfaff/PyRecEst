@@ -1,4 +1,6 @@
 # pylint: disable=no-name-in-module,no-member
+from operator import index as _operator_index
+
 from pyrecest.backend import array, cos, linspace, pi, random, sin, to_numpy
 from shapely.geometry import LineString, MultiLineString, Point, Polygon
 from shapely.ops import unary_union
@@ -14,6 +16,21 @@ def _points_to_array(points):
     return array([(point.x, point.y) for point in points])
 
 
+def _validate_nonnegative_sample_count(num_points) -> int:
+    message = "num_points must be a nonnegative integer."
+    if isinstance(num_points, bool):
+        raise ValueError(message)
+
+    try:
+        count = _operator_index(num_points)
+    except (OverflowError, TypeError, ValueError) as exc:
+        raise ValueError(message) from exc
+
+    if count < 0:
+        raise ValueError(message)
+    return int(count)
+
+
 class PolygonWithSampling(Polygon):  # pylint: disable=abstract-method
     __slots__ = Polygon.__slots__
 
@@ -24,6 +41,7 @@ class PolygonWithSampling(Polygon):  # pylint: disable=abstract-method
         return polygon
 
     def sample_on_boundary(self, num_points: int):
+        num_points = _validate_nonnegative_sample_count(num_points)
         points = []
         perimeter = self.length
 
@@ -48,6 +66,7 @@ class PolygonWithSampling(Polygon):  # pylint: disable=abstract-method
         return _points_to_array(points)
 
     def sample_within(self, num_points: int):
+        num_points = _validate_nonnegative_sample_count(num_points)
         min_x, min_y, max_x, max_y = self.bounds
         points = []
 
