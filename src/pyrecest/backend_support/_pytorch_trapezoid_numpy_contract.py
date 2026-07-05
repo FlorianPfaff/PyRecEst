@@ -74,3 +74,92 @@ def patch_pytorch_trapezoid_numpy_contract() -> None:
     raw_pytorch.trapezoid = trapezoid
     if getattr(backend, "__backend_name__", None) == "pytorch":
         backend.trapezoid = trapezoid
+
+
+def _patch_rectangular_pytorch_triangular_vector_contract() -> None:
+    """Patch PyTorch triangular vector helpers for rectangular matrices."""
+    try:
+        import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
+        import torch  # pylint: disable=import-outside-toplevel
+    except ModuleNotFoundError:  # pragma: no cover - PyTorch backend may be unavailable
+        return
+
+    active_pytorch_backend = getattr(backend, "__backend_name__", None) == "pytorch"
+
+    def _make_triangular_to_vec(helper_name, torch_index_helper, original_helper):
+        def triangular_to_vec(x, k=0):
+            x = raw_pytorch.array(x)
+            if x.ndim < 2:
+                raise ValueError("triangular vector helpers require at least two dimensions")
+            rows, cols = torch_index_helper(
+                row=x.shape[-2],
+                col=x.shape[-1],
+                offset=_operator_index(k),
+                device=x.device,
+            )
+            return x[..., rows, cols]
+
+        triangular_to_vec.__name__ = getattr(original_helper, "__name__", helper_name)
+        triangular_to_vec.__doc__ = getattr(original_helper, "__doc__", None)
+        triangular_to_vec._pyrecest_numpy_contract = True
+        triangular_to_vec._pyrecest_arraylike_contract = True
+        return triangular_to_vec
+
+    for helper_name, torch_index_helper in (
+        ("tril_to_vec", torch.tril_indices),
+        ("triu_to_vec", torch.triu_indices),
+    ):
+        original_helper = getattr(raw_pytorch, helper_name, None)
+        if original_helper is None:
+            continue
+        helper = _make_triangular_to_vec(helper_name, torch_index_helper, original_helper)
+        setattr(raw_pytorch, helper_name, helper)
+        if active_pytorch_backend:
+            setattr(backend, helper_name, helper)
+
+
+def _patch_rectangular_jax_triangular_vector_contract() -> None:
+    """Patch JAX triangular vector helpers for rectangular matrices."""
+    try:
+        import jax.numpy as jnp  # pylint: disable=import-outside-toplevel
+        import pyrecest._backend.jax as raw_jax  # pylint: disable=import-outside-toplevel
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
+    except ModuleNotFoundError:  # pragma: no cover - JAX backend may be unavailable
+        return
+
+    active_jax_backend = getattr(backend, "__backend_name__", None) == "jax"
+
+    def _make_triangular_to_vec(helper_name, jax_index_helper, original_helper):
+        def triangular_to_vec(x, k=0):
+            x = jnp.asarray(x)
+            if x.ndim < 2:
+                raise ValueError("triangular vector helpers require at least two dimensions")
+            rows, cols = jax_index_helper(
+                n=x.shape[-2],
+                k=_operator_index(k),
+                m=x.shape[-1],
+            )
+            return x[..., rows, cols]
+
+        triangular_to_vec.__name__ = getattr(original_helper, "__name__", helper_name)
+        triangular_to_vec.__doc__ = getattr(original_helper, "__doc__", None)
+        triangular_to_vec._pyrecest_numpy_contract = True
+        triangular_to_vec._pyrecest_arraylike_contract = True
+        return triangular_to_vec
+
+    for helper_name, jax_index_helper in (
+        ("tril_to_vec", jnp.tril_indices),
+        ("triu_to_vec", jnp.triu_indices),
+    ):
+        original_helper = getattr(raw_jax, helper_name, None)
+        if original_helper is None:
+            continue
+        helper = _make_triangular_to_vec(helper_name, jax_index_helper, original_helper)
+        setattr(raw_jax, helper_name, helper)
+        if active_jax_backend:
+            setattr(backend, helper_name, helper)
+
+
+_patch_rectangular_pytorch_triangular_vector_contract()
+_patch_rectangular_jax_triangular_vector_contract()
