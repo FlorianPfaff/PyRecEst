@@ -60,6 +60,29 @@ def from_numpy(x):
     return _torch_from_numpy(x)
 
 
+def _iter_nested_tensors(value):
+    if _torch_is_tensor(value):
+        yield value
+    elif isinstance(value, (list, tuple)):
+        for item in value:
+            yield from _iter_nested_tensors(item)
+
+
+def _preferred_tensor_device(value):
+    for tensor in _iter_nested_tensors(value):
+        if tensor.device.type != "cpu":
+            return tensor.device
+    for tensor in _iter_nested_tensors(value):
+        return tensor.device
+    return None
+
+
+def _move_tensors_to_device(tensors, device):
+    if device is None:
+        return tensors
+    return [tensor.to(device=device) if tensor.device != device else tensor for tensor in tensors]
+
+
 def array(val, dtype=None):
     dtype = _normalize_dtype(dtype)
     if _torch_is_tensor(val):
@@ -76,7 +99,9 @@ def array(val, dtype=None):
         return tensor.clone()
 
     if isinstance(val, (list, tuple)) and len(val):
+        device = _preferred_tensor_device(val)
         tensors = [array(tensor, dtype=dtype) for tensor in val]
+        tensors = _move_tensors_to_device(tensors, device)
         return _torch_stack(tensors)
 
     return _torch_tensor(val, dtype=dtype)

@@ -41,3 +41,28 @@ assert backend.to_numpy(sparse_array).tolist() == [[0.0, 5.0], [7.0, 0.0]]
     )
 
     assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.backend_portable
+def test_pytorch_array_stacks_mixed_device_nested_inputs():
+    if importlib.util.find_spec("torch") is None:
+        pytest.skip("PyTorch is not installed")
+
+    result = run_backend_code(
+        "pytorch",
+        """
+import torch
+import pyrecest._backend.pytorch as pytorch_backend
+
+cpu_row = torch.tensor([1.0, 2.0])
+accelerator_row = torch.ones(2, dtype=cpu_row.dtype, device="meta")
+
+stacked = pytorch_backend.array([cpu_row, accelerator_row])
+
+assert stacked.device.type == "meta"
+assert stacked.dtype == cpu_row.dtype
+assert stacked.shape == torch.Size([2, 2])
+""",
+    )
+
+    assert result.returncode == 0, result.stderr
