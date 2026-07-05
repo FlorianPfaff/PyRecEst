@@ -66,6 +66,7 @@ def _patch_pytorch_linalg_logm_arraylike_contract() -> None:
 
 def _patch_pytorch_flip_numpy_axis_contract() -> None:
     """Patch raw/public PyTorch ``flip`` to accept NumPy integer axes."""
+
     try:
         import numpy as np  # pylint: disable=import-outside-toplevel
         import pyrecest._backend.pytorch as pytorch_backend  # pylint: disable=import-outside-toplevel
@@ -101,6 +102,72 @@ def _patch_pytorch_flip_numpy_axis_contract() -> None:
         backend.flip = flip
 
 
+def _patch_pytorch_stack_helpers_arraylike_contract() -> None:
+    """Patch raw/public PyTorch stack helpers to accept array-like sequences."""
+
+    try:
+        import numpy as np  # pylint: disable=import-outside-toplevel
+        import pyrecest._backend.pytorch as pytorch_backend  # pylint: disable=import-outside-toplevel
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
+        import torch  # pylint: disable=import-outside-toplevel
+    except ModuleNotFoundError:  # pragma: no cover - PyTorch backend may be unavailable
+        return
+
+    helper_names = ("hstack", "vstack", "column_stack", "dstack")
+    active_pytorch_backend = getattr(backend, "__backend_name__", None) == "pytorch"
+    if all(
+        getattr(
+            getattr(pytorch_backend, helper_name, None),
+            "_pyrecest_arraylike_contract",
+            False,
+        )
+        for helper_name in helper_names
+    ):
+        if active_pytorch_backend:
+            for helper_name in helper_names:
+                setattr(backend, helper_name, getattr(pytorch_backend, helper_name))
+        return
+
+    def _tensor_sequence(seq):
+        return [pytorch_backend.array(item) for item in seq]
+
+    def hstack(tup):
+        tensors = [torch.atleast_1d(tensor) for tensor in _tensor_sequence(tup)]
+        if not tensors:
+            return torch.cat(tensors, dim=0)
+        return torch.cat(tensors, dim=0 if tensors[0].ndim == 1 else 1)
+
+    def vstack(tup):
+        tensors = [torch.atleast_2d(tensor) for tensor in _tensor_sequence(tup)]
+        return torch.cat(tensors, dim=0)
+
+    def column_stack(tup):
+        tensors = []
+        for tensor in _tensor_sequence(tup):
+            if tensor.ndim < 2:
+                tensor = tensor.reshape(-1, 1)
+            tensors.append(tensor)
+        return torch.cat(tensors, dim=1)
+
+    def dstack(tup):
+        tensors = [torch.atleast_3d(tensor) for tensor in _tensor_sequence(tup)]
+        return torch.cat(tensors, dim=2)
+
+    helpers = {
+        "hstack": hstack,
+        "vstack": vstack,
+        "column_stack": column_stack,
+        "dstack": dstack,
+    }
+    for helper_name, helper in helpers.items():
+        helper.__name__ = helper_name
+        helper.__doc__ = getattr(np, helper_name).__doc__
+        helper._pyrecest_arraylike_contract = True
+        setattr(pytorch_backend, helper_name, helper)
+        if active_pytorch_backend:
+            setattr(backend, helper_name, helper)
+
+
 def patch_pytorch_allclose_device_contract() -> None:
     """Patch raw/public PyTorch ``allclose`` to preserve non-CPU operands."""
 
@@ -114,6 +181,7 @@ def patch_pytorch_allclose_device_contract() -> None:
     _patch_pytorch_creation_shape_contract()
     _patch_pytorch_linalg_logm_arraylike_contract()
     _patch_pytorch_flip_numpy_axis_contract()
+    _patch_pytorch_stack_helpers_arraylike_contract()
 
     original_allclose = getattr(pytorch_backend, "allclose", None)
     if original_allclose is None:
