@@ -93,3 +93,49 @@ assert backend.to_numpy(converted).tolist() == [0.0, 1.0, 2.0]
     )
 
     assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.backend_portable
+def test_raw_pytorch_asarray_accepts_numpy_dtype_and_negative_stride_views():
+    if importlib.util.find_spec("torch") is None:
+        pytest.skip("PyTorch is not installed")
+
+    result = run_backend_code(
+        "numpy",
+        """
+import numpy as np
+import torch
+import pyrecest.backend_support  # noqa: F401
+import pyrecest._backend.pytorch as raw_pytorch
+
+view = np.arange(5.0)[::-1]
+converted = raw_pytorch.asarray(view, dtype=np.float64)
+assert converted.dtype is torch.float64
+assert raw_pytorch.to_numpy(converted).tolist() == [4.0, 3.0, 2.0, 1.0, 0.0]
+""",
+    )
+
+    assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.backend_portable
+def test_public_pytorch_asarray_accepts_numpy_dtype_and_negative_stride_views():
+    if importlib.util.find_spec("torch") is None:
+        pytest.skip("PyTorch is not installed")
+
+    result = run_backend_code(
+        "pytorch",
+        """
+import numpy as np
+import torch
+import pyrecest
+import pyrecest.backend as backend
+
+view = np.arange(4.0)[::-1]
+converted = backend.asarray(view, dtype=np.float64)
+assert converted.dtype is torch.float64
+assert backend.to_numpy(converted).tolist() == [3.0, 2.0, 1.0, 0.0]
+""",
+    )
+
+    assert result.returncode == 0, result.stderr
