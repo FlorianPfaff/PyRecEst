@@ -102,8 +102,9 @@ def test_plan_rejects_nonfinite_array_inputs():
 
     for overrides in invalid_overrides:
         invalid_name = next(iter(overrides))
+        kwargs = {**base_kwargs, **overrides}
         with pytest.raises(ValueError, match=invalid_name):
-            plan_linear_measurement_update(**base_kwargs, **overrides)
+            plan_linear_measurement_update(**kwargs)
 
 
 def test_normalized_innovation_squared_rejects_nonfinite_inputs():
