@@ -19,6 +19,7 @@ def test_jax_real_fft_accepts_singleton_array_lengths():
         np.array([samples.shape[1]]),
         np.int64(samples.shape[1]),
         backend.asarray(samples.shape[1]),
+        backend.asarray([samples.shape[1]]),
     )
 
     for length in lengths:
