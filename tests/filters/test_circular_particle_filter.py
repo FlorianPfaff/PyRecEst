@@ -127,6 +127,22 @@ class CircularParticleFilterTest(unittest.TestCase):
 
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
+        reason="Von Mises update regression uses the NumPy SciPy-backed pdf.",
+    )
+    def test_update_identity_accepts_von_mises_noise(self):
+        random.seed(0)
+        self.filter.filter_state = self.dist
+        measurement_noise = VonMisesDistribution(array(0.0), array(2.0))
+
+        self.filter.update_identity(measurement_noise, array(1.0))
+
+        updated = self.filter.filter_state
+        self.assertIsInstance(updated, CircularDiracDistribution)
+        self.assertEqual(updated.dim, 1)
+        npt.assert_array_almost_equal(measurement_noise.mu, array(0.0))
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
         reason="Not supported on current backend",
     )
     def test_association_likelihood(self):
