@@ -167,6 +167,20 @@ def _is_random_array_parameter(value):
     )
 
 
+def _is_binary_array_operand(value):
+    return (
+        isinstance(value, (list, tuple))
+        or (not isinstance(value, (str, bytes)) and hasattr(value, "__array__"))
+    )
+
+
+def _binary_tensor_operand(value, reference):
+    kwargs = {}
+    if _torch.is_tensor(reference):
+        kwargs["device"] = reference.device
+    return _torch.tensor(value, **kwargs)
+
+
 def _is_real_numeric_dtype(dtype):
     return dtype.is_floating_point or dtype in {
         _torch.uint8,
@@ -225,7 +239,6 @@ def _preserve_input_dtype(target=None):
     -------------
     Only acts on input. Assumes dtype is kwarg and function accepts dtype.
     Passes dtype as input dtype.
-
     Use together with `_add_default_dtype_by_casting`.
     """
 
@@ -284,7 +297,9 @@ def _box_binary_scalar(target=None, box_x1=True, box_x2=True):
             if box_x1 and not _torch.is_tensor(x1):
                 x1 = _torch.tensor(x1)
             if box_x2 and not _torch.is_tensor(x2):
-                x2 = _torch.tensor(x2)
+                x2 = _binary_tensor_operand(x2, x1)
+            elif not box_x2 and not _torch.is_tensor(x2) and _is_binary_array_operand(x2):
+                x2 = _binary_tensor_operand(x2, x1)
 
             return func(x1, x2, *args, **kwargs)
 
