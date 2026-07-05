@@ -1,19 +1,62 @@
-"""PyTorch ``one_hot`` scalar-label compatibility hook."""
+"""PyTorch ``one_hot`` and ``take`` compatibility hooks."""
 
 from __future__ import annotations
 
 from operator import index as _operator_index
 
 
-def patch_pytorch_one_hot_scalar_contract() -> None:
-    """Patch raw/public PyTorch ``one_hot`` to handle scalar labels correctly."""
-    try:
-        import pyrecest._backend.pytorch as pytorch_backend  # pylint: disable=import-outside-toplevel
-        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
-        import torch as torch_module  # pylint: disable=import-outside-toplevel
-    except ModuleNotFoundError:  # pragma: no cover - PyTorch backend may be unavailable
+def _is_boolean_take_axis(axis, torch_module) -> bool:
+    """Return whether ``axis`` is a boolean scalar, not an integer axis."""
+    if isinstance(axis, bool) or type(axis).__name__ == "bool_":
+        return True
+    return bool(
+        torch_module.is_tensor(axis)
+        and axis.ndim == 0
+        and axis.dtype == torch_module.bool
+    )
+
+
+def _patch_pytorch_take_axis_contract(pytorch_backend, torch_module) -> None:
+    """Patch raw/public PyTorch ``take`` to reject non-integer axes."""
+    original_normalizer = getattr(pytorch_backend, "_normalize_take_axis", None)
+    if original_normalizer is None:
+        return
+    if getattr(original_normalizer, "_pyrecest_axis_contract", False):
         return
 
+    def _normalize_take_axis(axis, ndim_):
+        if axis is None:
+            return None
+        if _is_boolean_take_axis(axis, torch_module):
+            raise TypeError("an integer is required for the axis")
+        try:
+            axis = _operator_index(axis)
+        except TypeError as exc:
+            raise TypeError("an integer is required for the axis") from exc
+        if axis < 0:
+            axis += ndim_
+        if axis < 0 or axis >= ndim_:
+            raise IndexError(
+                f"axis {axis} is out of bounds for array of dimension {ndim_}"
+            )
+        return axis
+
+    _normalize_take_axis.__name__ = getattr(
+        original_normalizer,
+        "__name__",
+        "_normalize_take_axis",
+    )
+    _normalize_take_axis.__doc__ = getattr(original_normalizer, "__doc__", None)
+    _normalize_take_axis._pyrecest_axis_contract = True
+    pytorch_backend._normalize_take_axis = _normalize_take_axis
+
+
+def _patch_pytorch_one_hot_scalar_contract(
+    pytorch_backend,
+    backend,
+    torch_module,
+) -> None:
+    """Patch raw/public PyTorch ``one_hot`` to handle scalar labels correctly."""
     original_one_hot = getattr(pytorch_backend, "one_hot", None)
     if original_one_hot is None:
         return
@@ -44,6 +87,23 @@ def patch_pytorch_one_hot_scalar_contract() -> None:
     pytorch_backend.one_hot = one_hot
     if getattr(backend, "__backend_name__", None) == "pytorch":
         backend.one_hot = one_hot
+
+
+def patch_pytorch_one_hot_scalar_contract() -> None:
+    """Patch small PyTorch backend compatibility contracts."""
+    try:
+        import pyrecest._backend.pytorch as pytorch_backend  # pylint: disable=import-outside-toplevel
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
+        import torch as torch_module  # pylint: disable=import-outside-toplevel
+    except ModuleNotFoundError:  # pragma: no cover - PyTorch backend may be unavailable
+        return
+
+    _patch_pytorch_one_hot_scalar_contract(
+        pytorch_backend,
+        backend,
+        torch_module,
+    )
+    _patch_pytorch_take_axis_contract(pytorch_backend, torch_module)
 
 
 __all__ = ["patch_pytorch_one_hot_scalar_contract"]
