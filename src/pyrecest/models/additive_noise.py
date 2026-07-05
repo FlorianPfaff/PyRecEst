@@ -82,7 +82,10 @@ def _reject_unexpected_kwargs(kwargs: dict[str, Any]) -> None:
 
 
 def _validate_bool_flag(value: Any, name: str) -> bool:
-    value_array = np.asarray(value)
+    try:
+        value_array = np.asarray(value)
+    except (TypeError, ValueError, RuntimeError) as exc:
+        raise TypeError(f"{name} must be a boolean") from exc
     if value_array.shape != () or not np.issubdtype(value_array.dtype, np.bool_):
         raise TypeError(f"{name} must be a boolean")
     return bool(value_array.item())
