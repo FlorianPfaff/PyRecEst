@@ -16,6 +16,16 @@ def _preferred_pytorch_device(torch_module, *values):
     return None
 
 
+def _trapezoid_axis(axis) -> int:
+    """Return a NumPy-style integer axis while rejecting boolean axes."""
+    if isinstance(axis, bool) or type(axis).__name__ == "bool_":
+        raise TypeError("axis must be an integer")
+    try:
+        return _operator_index(axis)
+    except TypeError as exc:
+        raise TypeError("axis must be an integer") from exc
+
+
 def _as_trapezoid_tensor(value, torch_module, *, device=None, dtype=None):
     """Coerce one trapezoid argument without moving existing tensors unnecessarily."""
     if torch_module.is_tensor(value):
@@ -52,7 +62,7 @@ def patch_pytorch_trapezoid_numpy_contract() -> None:
         return
 
     def trapezoid(y, x=None, dx=1.0, axis=-1):
-        dim = _operator_index(axis)
+        dim = _trapezoid_axis(axis)
         device = _preferred_pytorch_device(torch, y, x)
         y = _as_trapezoid_tensor(y, torch, device=device)
 

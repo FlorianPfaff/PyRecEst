@@ -36,6 +36,32 @@ print("ok")
 
 
 @pytest.mark.backend_portable
+def test_pytorch_trapezoid_rejects_boolean_axis_like_numpy():
+    if importlib.util.find_spec("torch") is None:
+        pytest.skip("PyTorch is not installed")
+
+    result = run_backend_code(
+        "pytorch",
+        """
+import pyrecest.backend as backend
+import pyrecest._backend.pytorch as raw_pytorch
+
+for target_name, target in (("backend", backend), ("raw_pytorch", raw_pytorch)):
+    for axis in (True, False):
+        try:
+            target.trapezoid([[1.0, 2.0], [3.0, 4.0]], axis=axis)
+        except TypeError:
+            continue
+        raise AssertionError(f"{target_name}.trapezoid accepted boolean axis {axis!r}")
+print("ok")
+""",
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "ok" in result.stdout
+
+
+@pytest.mark.backend_portable
 def test_raw_pytorch_trapezoid_accepts_array_like_inputs_after_pyrecest_import():
     if importlib.util.find_spec("torch") is None:
         pytest.skip("PyTorch is not installed")
