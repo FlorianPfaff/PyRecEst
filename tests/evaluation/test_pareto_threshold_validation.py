@@ -6,9 +6,9 @@ import pytest
 from pyrecest.evaluation import constraint_mask
 
 
-def test_constraint_threshold_rejects_bool_and_non_scalar_values() -> None:
+def test_constraint_threshold_rejects_non_scalar_values() -> None:
     table = pd.DataFrame([{"score": 1.0}])
-    invalid_thresholds = (True, np.array([1.0]))
+    invalid_thresholds = (np.array([1.0]),)
 
     for threshold in invalid_thresholds:
         with pytest.raises(
