@@ -21,6 +21,12 @@ class UncoercibleArray:
         raise RuntimeError("cannot convert")
 
 
+class OverflowingArray:
+    def __array__(self, dtype=None):
+        del dtype
+        raise OverflowError("cannot convert")
+
+
 def test_symmetrize_matrix_and_psd_projection():
     matrix = np.array([[1.0, 2.0], [0.0, -0.1]])
     symmetric = np.asarray(symmetrize_matrix(matrix))
@@ -79,8 +85,9 @@ def test_covariance_helpers_reject_bool_text_temporal_and_none_matrices(matrix):
         jittered_cholesky(matrix)
 
 
-def test_covariance_helpers_reject_uncoercible_array_like_inputs():
-    matrix = UncoercibleArray()
+@pytest.mark.parametrize("array_like_factory", [UncoercibleArray, OverflowingArray])
+def test_covariance_helpers_reject_uncoercible_array_like_inputs(array_like_factory):
+    matrix = array_like_factory()
 
     assert not is_symmetric(matrix)
     assert not is_positive_semidefinite(matrix)
@@ -95,8 +102,9 @@ def test_covariance_helpers_reject_uncoercible_array_like_inputs():
         jittered_cholesky(matrix)
 
 
-def test_covariance_helpers_reject_uncoercible_scalar_controls():
-    value = UncoercibleArray()
+@pytest.mark.parametrize("array_like_factory", [UncoercibleArray, OverflowingArray])
+def test_covariance_helpers_reject_uncoercible_scalar_controls(array_like_factory):
+    value = array_like_factory()
     matrix = np.eye(2)
 
     with pytest.raises(ValueError, match="atol"):
