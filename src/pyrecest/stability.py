@@ -213,6 +213,49 @@ def _patch_pytorch_vec_to_diag_numpy_contract() -> None:
         backend.vec_to_diag = vec_to_diag
 
 
+def _patch_pytorch_triangular_vec_numpy_contract() -> None:
+    """Patch raw/public PyTorch triangular-vector helpers for array-like inputs."""
+    try:
+        import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
+    except ModuleNotFoundError:  # pragma: no cover - PyTorch backend may be unavailable
+        return
+
+    active_pytorch_backend = getattr(backend, "__backend_name__", None) == "pytorch"
+
+    def _make_triangular_to_vec(helper_name, index_helper, original_helper):
+        def triangular_to_vec(x, k=0):
+            x = raw_pytorch.array(x)
+            n = x.shape[-1]
+            rows, cols = index_helper(n, k=k)
+            rows = rows.to(device=x.device)
+            cols = cols.to(device=x.device)
+            return x[..., rows, cols]
+
+        triangular_to_vec.__name__ = getattr(original_helper, "__name__", helper_name)
+        triangular_to_vec.__doc__ = getattr(original_helper, "__doc__", None)
+        triangular_to_vec._pyrecest_numpy_contract = True
+        return triangular_to_vec
+
+    for helper_name, index_helper_name in (
+        ("tril_to_vec", "tril_indices"),
+        ("triu_to_vec", "triu_indices"),
+    ):
+        original_helper = getattr(raw_pytorch, helper_name, None)
+        index_helper = getattr(raw_pytorch, index_helper_name, None)
+        if original_helper is None or index_helper is None:
+            continue
+        if getattr(original_helper, "_pyrecest_numpy_contract", False):
+            if active_pytorch_backend:
+                setattr(backend, helper_name, original_helper)
+            continue
+
+        helper = _make_triangular_to_vec(helper_name, index_helper, original_helper)
+        setattr(raw_pytorch, helper_name, helper)
+        if active_pytorch_backend:
+            setattr(backend, helper_name, helper)
+
+
 def _patch_pytorch_arctan_numpy_contract() -> None:
     """Patch raw/public PyTorch ``arctan`` to accept NumPy-style inputs."""
     try:
@@ -529,6 +572,7 @@ def _patch_jax_triangular_vector_helpers_arraylike_contract() -> None:
 _patch_pytorch_allclose_device_contract()
 _patch_pytorch_diag_numpy_contract()
 _patch_pytorch_vec_to_diag_numpy_contract()
+_patch_pytorch_triangular_vec_numpy_contract()
 _patch_pytorch_arctan_numpy_contract()
 _patch_pytorch_special_arraylike_contract()
 _patch_pytorch_raw_comparison_arraylike_contract()
