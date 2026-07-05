@@ -69,7 +69,7 @@ for module in (backend, pytorch_backend):
     assert module.to_numpy(lower_tall).tolist() == [3, 5, 6]
 
     upper_tall = module.triu_to_vec(tall)
-    assert module.to_numpy(upper_tall).tolist() == [1, 2, 4, 6]
+    assert module.to_numpy(upper_tall).tolist() == [1, 2, 4]
 """
     subprocess.run(
         [sys.executable, "-c", code],
