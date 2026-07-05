@@ -60,22 +60,22 @@ def _validate_positive_sample_count(n) -> int:
     return count_int
 
 
-def _validate_positive_finite_scalar(value, name: str) -> float:
+def _validate_nonnegative_finite_scalar(value, name: str) -> float:
     scalar_array = np.asarray(value)
     if scalar_array.shape != ():
         raise ValueError(f"{name} must be a scalar")
 
     scalar = scalar_array.item()
     if isinstance(scalar, (bool, np.bool_)):
-        raise ValueError(f"{name} must be a positive finite scalar")
+        raise ValueError(f"{name} must be a nonnegative finite scalar")
 
     try:
         scalar_float = float(scalar)
     except (OverflowError, TypeError, ValueError) as exc:
-        raise ValueError(f"{name} must be a positive finite scalar") from exc
+        raise ValueError(f"{name} must be a nonnegative finite scalar") from exc
 
-    if not np.isfinite(scalar_float) or scalar_float <= 0.0:
-        raise ValueError(f"{name} must be a positive finite scalar")
+    if not np.isfinite(scalar_float) or scalar_float < 0.0:
+        raise ValueError(f"{name} must be a nonnegative finite scalar")
     return scalar_float
 
 
@@ -118,7 +118,7 @@ class GaussVonMisesDistribution(AbstractHypercylindricalDistribution):
             raise ValueError("Gamma and mu must have matching size")
         if not bool(allclose(Gamma, Gamma.T)):
             raise ValueError("Gamma must be symmetric")
-        kappa = _validate_positive_finite_scalar(kappa, "kappa")
+        kappa = _validate_nonnegative_finite_scalar(kappa, "kappa")
 
         AbstractHypercylindricalDistribution.__init__(self, bound_dim=1, lin_dim=n)
 
@@ -271,6 +271,10 @@ class GaussVonMisesDistribution(AbstractHypercylindricalDistribution):
             raise NotImplementedError(
                 "sample_deterministic_horwood is not supported on the JAX backend."
             )
+        if self.kappa == 0.0:
+            raise ValueError(
+                "sample_deterministic_horwood requires positive circular concentration."
+            )
         lin_dim = self.lin_dim
 
         def B(p_val, kappa_val):
@@ -336,6 +340,8 @@ class GaussVonMisesDistribution(AbstractHypercylindricalDistribution):
 
         See Horwood, Section 4.6.
         """
+        if self.kappa == 0.0:
+            raise ValueError("to_gaussian requires positive circular concentration.")
         mtmp = concatenate([array([self.alpha]), self.mu])
         top_row = hstack(
             [array([[1.0 / sqrt(array(self.kappa))]]), self.beta.reshape(1, -1)]
