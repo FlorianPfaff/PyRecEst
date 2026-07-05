@@ -66,6 +66,7 @@ def _patch_pytorch_linalg_logm_arraylike_contract() -> None:
 
 def _patch_pytorch_flip_numpy_axis_contract() -> None:
     """Patch raw/public PyTorch ``flip`` to accept NumPy integer axes."""
+
     try:
         import numpy as np  # pylint: disable=import-outside-toplevel
         import pyrecest._backend.pytorch as pytorch_backend  # pylint: disable=import-outside-toplevel
@@ -101,6 +102,58 @@ def _patch_pytorch_flip_numpy_axis_contract() -> None:
         backend.flip = flip
 
 
+def _patch_pytorch_unique_return_contract() -> None:
+    """Patch raw/public PyTorch ``unique`` for NumPy-style return flags."""
+
+    try:
+        import pyrecest._backend.pytorch as pytorch_backend  # pylint: disable=import-outside-toplevel
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
+        import torch as torch_module  # pylint: disable=import-outside-toplevel
+    except ModuleNotFoundError:  # pragma: no cover - PyTorch backend may be unavailable
+        return
+
+    original_unique = getattr(pytorch_backend, "unique", None)
+    if original_unique is None:
+        return
+    if getattr(original_unique, "_pyrecest_return_contract", False):
+        if getattr(backend, "__backend_name__", None) == "pytorch":
+            backend.unique = original_unique
+        return
+
+    def unique(
+        ar,
+        return_index=False,
+        return_inverse=False,
+        return_counts=False,
+        axis=None,
+        *,
+        equal_nan=True,
+        sorted=True,
+    ):
+        if return_index:
+            raise NotImplementedError(
+                "PyTorch unique does not support return_index through this backend."
+            )
+        if not equal_nan:
+            raise NotImplementedError(
+                "PyTorch unique does not support equal_nan=False through this backend."
+            )
+        return torch_module.unique(
+            pytorch_backend.array(ar),
+            sorted=sorted,
+            return_inverse=return_inverse,
+            return_counts=return_counts,
+            dim=axis,
+        )
+
+    unique.__name__ = getattr(original_unique, "__name__", "unique")
+    unique.__doc__ = getattr(original_unique, "__doc__", None)
+    unique._pyrecest_return_contract = True
+    pytorch_backend.unique = unique
+    if getattr(backend, "__backend_name__", None) == "pytorch":
+        backend.unique = unique
+
+
 def patch_pytorch_allclose_device_contract() -> None:
     """Patch raw/public PyTorch ``allclose`` to preserve non-CPU operands."""
 
@@ -114,6 +167,7 @@ def patch_pytorch_allclose_device_contract() -> None:
     _patch_pytorch_creation_shape_contract()
     _patch_pytorch_linalg_logm_arraylike_contract()
     _patch_pytorch_flip_numpy_axis_contract()
+    _patch_pytorch_unique_return_contract()
 
     original_allclose = getattr(pytorch_backend, "allclose", None)
     if original_allclose is None:
