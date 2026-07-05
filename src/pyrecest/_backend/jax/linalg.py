@@ -17,8 +17,15 @@ def _as_integer_scalar(value, name):
     """Return a Python integer for JAX static integer arguments."""
     try:
         return _operator_index(value)
-    except TypeError as exc:
-        raise TypeError(f"{name} must be an integer scalar") from exc
+    except TypeError:
+        pass
+
+    value_array = _jnp.asarray(value)
+    if value_array.shape != () or value_array.dtype == _jnp.bool_:
+        raise TypeError(f"{name} must be an integer scalar")
+    if not _jnp.issubdtype(value_array.dtype, _jnp.integer):
+        raise TypeError(f"{name} must be an integer scalar")
+    return int(value_array.item())
 
 
 def cholesky(a, *args, **kwargs):
