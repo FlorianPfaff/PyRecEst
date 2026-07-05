@@ -5,11 +5,15 @@ _AXIS_TYPE_ERROR = "axes must be None, an integer, or a sequence of integers"
 
 
 def _coerce_axis(axis):
+    if isinstance(axis, (bool, _np.bool_)):
+        raise TypeError(_AXIS_TYPE_ERROR)
     try:
         axis_array = _np.asarray(axis)
     except (TypeError, ValueError) as exc:
         raise TypeError(_AXIS_TYPE_ERROR) from exc
     if axis_array.shape != ():
+        raise TypeError(_AXIS_TYPE_ERROR)
+    if _np.issubdtype(axis_array.dtype, _np.bool_):
         raise TypeError(_AXIS_TYPE_ERROR)
     try:
         return int(axis_array.item().__index__())
