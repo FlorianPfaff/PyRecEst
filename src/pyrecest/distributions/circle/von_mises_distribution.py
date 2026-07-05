@@ -1,4 +1,5 @@
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
+import copy
 import math
 from numbers import Integral
 
@@ -81,14 +82,16 @@ class VonMisesDistribution(AbstractCircularDistribution):
         )
 
     def set_mean(self, mu):
-        """
-        Set the mean direction of the distribution.
+        """Return a copy with a replaced mean direction.
 
-        Parameters:
+        Parameters
+        ----------
         mu : scalar
-            New mean direction to set.
+            New mean direction.
         """
-        self.mu = mu
+        new_dist = copy.deepcopy(self)
+        new_dist.mu = mu
+        return new_dist
 
     @staticmethod
     def besselratio(nu, kappa):
