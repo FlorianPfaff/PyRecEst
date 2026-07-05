@@ -25,8 +25,17 @@ class TimeOffsetFitResult:
     metadata: Mapping[str, Any] = field(default_factory=dict)
 
     def summary(self) -> dict[str, Any]:
-        out: dict[str, Any] = {"metric": self.metric, "best_offset_s": self.best_offset_s, "evaluated_offsets": int(len(self.offsets_s))}
-        best_index = _best_metric_index(self.offsets_s, self.metric_values, self.counts, self.best_offset_s)
+        out: dict[str, Any] = {
+            "metric": self.metric,
+            "best_offset_s": self.best_offset_s,
+            "evaluated_offsets": int(len(self.offsets_s)),
+        }
+        best_index = _best_metric_index(
+            self.offsets_s,
+            self.metric_values,
+            self.counts,
+            self.best_offset_s,
+        )
         if best_index is not None:
             out["best_metric_value"] = float(self.metric_values[best_index])
             out["best_count"] = int(self.counts[best_index])
@@ -34,7 +43,12 @@ class TimeOffsetFitResult:
         return out
 
 
-def _best_metric_index(offsets_s: np.ndarray, metric_values: np.ndarray, counts: np.ndarray, best_offset_s: float | None) -> int | None:
+def _best_metric_index(
+    offsets_s: np.ndarray,
+    metric_values: np.ndarray,
+    counts: np.ndarray,
+    best_offset_s: float | None,
+) -> int | None:
     if best_offset_s is None:
         return None
     offsets = np.asarray(offsets_s, dtype=float).reshape(-1)
@@ -97,7 +111,7 @@ def _as_real_numeric_array(value: Any, name: str) -> np.ndarray:
         raise ValueError(f"{name} must contain real numeric values")
     if arr.dtype == object:
         for item in arr.reshape(-1):
-            if isinstance(item, (bool, np.bool_, str, bytes, bytearray)):
+            if item is None or isinstance(item, (bool, np.bool_, str, bytes, bytearray)):
                 raise ValueError(f"{name} must contain real numeric values")
     try:
         return np.asarray(value, dtype=float)
@@ -158,7 +172,10 @@ def _validate_max_time_delta(max_time_delta_s: float | None) -> float | None:
     return None if max_time_delta_s is None else _as_nonnegative_time_delta(max_time_delta_s, "max_time_delta_s")
 
 
-def _finite_reference_rows(reference_times_s: np.ndarray, reference_values: np.ndarray | None = None) -> np.ndarray:
+def _finite_reference_rows(
+    reference_times_s: np.ndarray,
+    reference_values: np.ndarray | None = None,
+) -> np.ndarray:
     reference_times = _as_real_numeric_array(reference_times_s, "reference_times_s").reshape(-1)
     finite = np.isfinite(reference_times)
     if reference_values is not None:
@@ -187,12 +204,20 @@ def nearest_time_indices(reference_times_s: np.ndarray, query_times_s: np.ndarra
     insertion = np.searchsorted(sorted_reference, finite_query_values)
     right = np.clip(insertion, 0, sorted_reference.size - 1)
     left = np.clip(insertion - 1, 0, sorted_reference.size - 1)
-    use_right = np.abs(sorted_reference[right] - finite_query_values) < np.abs(sorted_reference[left] - finite_query_values)
+    use_right = np.abs(sorted_reference[right] - finite_query_values) < np.abs(
+        sorted_reference[left] - finite_query_values
+    )
     nearest[finite_query] = original_indices[order[np.where(use_right, right, left)]]
     return nearest
 
 
-def interpolate_reference_values(reference_times_s: np.ndarray, reference_values: np.ndarray, query_times_s: np.ndarray, *, max_time_delta_s: float | None = None) -> tuple[np.ndarray, np.ndarray]:
+def interpolate_reference_values(
+    reference_times_s: np.ndarray,
+    reference_values: np.ndarray,
+    query_times_s: np.ndarray,
+    *,
+    max_time_delta_s: float | None = None,
+) -> tuple[np.ndarray, np.ndarray]:
     max_time_delta = _validate_max_time_delta(max_time_delta_s)
     reference_times = _as_real_numeric_array(reference_times_s, "reference_times_s").reshape(-1)
     reference_values = _as_real_numeric_array(reference_values, "reference_values")
@@ -211,7 +236,12 @@ def interpolate_reference_values(reference_times_s: np.ndarray, reference_values
     order = np.argsort(reference_times)
     reference_times = reference_times[order]
     reference_values = reference_values[order]
-    interpolated = np.column_stack([np.interp(query_times, reference_times, reference_values[:, dim]) for dim in range(reference_values.shape[1])])
+    interpolated = np.column_stack(
+        [
+            np.interp(query_times, reference_times, reference_values[:, dim])
+            for dim in range(reference_values.shape[1])
+        ]
+    )
     valid = np.isfinite(query_times) & (query_times >= reference_times[0]) & (query_times <= reference_times[-1])
     if max_time_delta is not None:
         nearest = nearest_time_indices(reference_times, query_times)
@@ -220,7 +250,15 @@ def interpolate_reference_values(reference_times_s: np.ndarray, reference_values
     return interpolated, valid
 
 
-def time_offset_error_summary(measurement_times_s: np.ndarray, measurement_values: np.ndarray, reference_times_s: np.ndarray, reference_values: np.ndarray, offset_s: float | None, *, max_time_delta_s: float | None = None) -> dict[str, float]:
+def time_offset_error_summary(
+    measurement_times_s: np.ndarray,
+    measurement_values: np.ndarray,
+    reference_times_s: np.ndarray,
+    reference_values: np.ndarray,
+    offset_s: float | None,
+    *,
+    max_time_delta_s: float | None = None,
+) -> dict[str, float]:
     offset = _validate_time_offset(offset_s)
     measurement_values = _as_real_numeric_array(measurement_values, "measurement_values")
     if measurement_values.ndim == 1:
@@ -230,7 +268,12 @@ def time_offset_error_summary(measurement_times_s: np.ndarray, measurement_value
     query_times = apply_time_offset(measurement_times_s, offset)
     if query_times.size != measurement_values.shape[0]:
         raise ValueError("measurement_times_s length must match measurement_values rows")
-    reference_at_query, valid = interpolate_reference_values(reference_times_s, reference_values, query_times, max_time_delta_s=max_time_delta_s)
+    reference_at_query, valid = interpolate_reference_values(
+        reference_times_s,
+        reference_values,
+        query_times,
+        max_time_delta_s=max_time_delta_s,
+    )
     if measurement_values.shape[1] != reference_at_query.shape[1]:
         raise ValueError("measurement_values and reference_values must have the same value dimension")
     valid &= np.isfinite(measurement_values).all(axis=1)
@@ -238,22 +281,69 @@ def time_offset_error_summary(measurement_times_s: np.ndarray, measurement_value
     return _error_stats(offset, errors, total_count=len(measurement_values))
 
 
-def time_offset_sweep(measurement_times_s: np.ndarray, measurement_values: np.ndarray, reference_times_s: np.ndarray, reference_values: np.ndarray, offsets_s: Iterable[float | None], *, max_time_delta_s: float | None = None) -> list[dict[str, float]]:
-    return [time_offset_error_summary(measurement_times_s, measurement_values, reference_times_s, reference_values, offset, max_time_delta_s=max_time_delta_s) for offset in offsets_s]
+def time_offset_sweep(
+    measurement_times_s: np.ndarray,
+    measurement_values: np.ndarray,
+    reference_times_s: np.ndarray,
+    reference_values: np.ndarray,
+    offsets_s: Iterable[float | None],
+    *,
+    max_time_delta_s: float | None = None,
+) -> list[dict[str, float]]:
+    return [
+        time_offset_error_summary(
+            measurement_times_s,
+            measurement_values,
+            reference_times_s,
+            reference_values,
+            offset,
+            max_time_delta_s=max_time_delta_s,
+        )
+        for offset in offsets_s
+    ]
 
 
-def fit_time_offset(measurement_times_s: np.ndarray, measurement_values: np.ndarray, reference_times_s: np.ndarray, reference_values: np.ndarray, offsets_s: Iterable[float | None], *, metric: str = "rmse", max_time_delta_s: float | None = None, metadata: Mapping[str, Any] | None = None) -> TimeOffsetFitResult:
+def fit_time_offset(
+    measurement_times_s: np.ndarray,
+    measurement_values: np.ndarray,
+    reference_times_s: np.ndarray,
+    reference_values: np.ndarray,
+    offsets_s: Iterable[float | None],
+    *,
+    metric: str = "rmse",
+    max_time_delta_s: float | None = None,
+    metadata: Mapping[str, Any] | None = None,
+) -> TimeOffsetFitResult:
     metric = _validate_error_metric(metric)
-    summaries = time_offset_sweep(measurement_times_s, measurement_values, reference_times_s, reference_values, offsets_s, max_time_delta_s=max_time_delta_s)
+    summaries = time_offset_sweep(
+        measurement_times_s,
+        measurement_values,
+        reference_times_s,
+        reference_values,
+        offsets_s,
+        max_time_delta_s=max_time_delta_s,
+    )
     offsets = np.array([row["time_offset_s"] for row in summaries], dtype=float)
     values = np.array([row[metric] for row in summaries], dtype=float)
     counts = np.array([row.get("count", 0.0) for row in summaries], dtype=float)
     finite = np.isfinite(values) & (counts > 0)
     best = None if not finite.any() else float(offsets[np.where(finite)[0][int(np.nanargmin(values[finite]))]])
-    return TimeOffsetFitResult(best_offset_s=best, metric=metric, offsets_s=offsets, metric_values=values, counts=counts.astype(int), summaries=summaries, metadata={} if metadata is None else dict(metadata))
+    return TimeOffsetFitResult(
+        best_offset_s=best,
+        metric=metric,
+        offsets_s=offsets,
+        metric_values=values,
+        counts=counts.astype(int),
+        summaries=summaries,
+        metadata={} if metadata is None else dict(metadata),
+    )
 
 
-def aggregate_time_offset_sweeps(sweeps: Iterable[Iterable[Mapping[str, float]]], *, metric: str = "rmse") -> list[dict[str, float]]:
+def aggregate_time_offset_sweeps(
+    sweeps: Iterable[Iterable[Mapping[str, float]]],
+    *,
+    metric: str = "rmse",
+) -> list[dict[str, float]]:
     metric = _validate_error_metric(metric)
     by_offset: dict[float, list[Mapping[str, float]]] = {}
     for sweep in sweeps:
@@ -262,12 +352,21 @@ def aggregate_time_offset_sweeps(sweeps: Iterable[Iterable[Mapping[str, float]]]
             by_offset.setdefault(offset, []).append(row)
     rows: list[dict[str, float]] = []
     for offset, parts in sorted(by_offset.items()):
-        counts = np.array([_as_nonnegative_summary_count(part.get("count", 0.0), "count") for part in parts], dtype=float)
+        counts = np.array(
+            [_as_nonnegative_summary_count(part.get("count", 0.0), "count") for part in parts],
+            dtype=float,
+        )
         row = {"time_offset_s": float(offset), "count": float(np.sum(counts))}
         for key in dict.fromkeys(("mean", "std", "rmse", "p95", "max", metric)):
-            values = np.array([_as_summary_scalar(part.get(key, np.nan), str(key), allow_nan=True) for part in parts], dtype=float)
+            values = np.array(
+                [_as_summary_scalar(part.get(key, np.nan), str(key), allow_nan=True) for part in parts],
+                dtype=float,
+            )
             if key == "std":
-                means = np.array([_as_summary_scalar(part.get("mean", np.nan), "mean", allow_nan=True) for part in parts], dtype=float)
+                means = np.array(
+                    [_as_summary_scalar(part.get("mean", np.nan), "mean", allow_nan=True) for part in parts],
+                    dtype=float,
+                )
                 row[key] = _aggregate_std_metric(values, means, counts)
             else:
                 row[key] = _aggregate_summary_metric(key, values, counts)
@@ -300,8 +399,36 @@ def _error_stats(offset_s: float, errors: np.ndarray, *, total_count: int) -> di
     errors = np.asarray(errors, dtype=float).reshape(-1)
     errors = errors[np.isfinite(errors)]
     if errors.size == 0:
-        return {"time_offset_s": float(offset_s), "count": 0.0, "coverage": 0.0 if total_count else float("nan"), "mean": float("nan"), "std": float("nan"), "rmse": float("nan"), "p95": float("nan"), "max": float("nan")}
-    return {"time_offset_s": float(offset_s), "count": float(errors.size), "coverage": float(errors.size / total_count) if total_count > 0 else float("nan"), "mean": float(np.mean(errors)), "std": float(np.std(errors)), "rmse": float(np.sqrt(np.mean(errors**2))), "p95": float(np.percentile(errors, 95)), "max": float(np.max(errors))}
+        return {
+            "time_offset_s": float(offset_s),
+            "count": 0.0,
+            "coverage": 0.0 if total_count else float("nan"),
+            "mean": float("nan"),
+            "std": float("nan"),
+            "rmse": float("nan"),
+            "p95": float("nan"),
+            "max": float("nan"),
+        }
+    return {
+        "time_offset_s": float(offset_s),
+        "count": float(errors.size),
+        "coverage": float(errors.size / total_count) if total_count > 0 else float("nan"),
+        "mean": float(np.mean(errors)),
+        "std": float(np.std(errors)),
+        "rmse": float(np.sqrt(np.mean(errors**2))),
+        "p95": float(np.percentile(errors, 95)),
+        "max": float(np.max(errors)),
+    }
 
 
-__all__ = ["TimeOffsetFitResult", "aggregate_time_offset_sweeps", "apply_time_offset", "fit_time_offset", "interpolate_reference_values", "make_offset_grid", "nearest_time_indices", "time_offset_error_summary", "time_offset_sweep"]
+__all__ = [
+    "TimeOffsetFitResult",
+    "aggregate_time_offset_sweeps",
+    "apply_time_offset",
+    "fit_time_offset",
+    "interpolate_reference_values",
+    "make_offset_grid",
+    "nearest_time_indices",
+    "time_offset_error_summary",
+    "time_offset_sweep",
+]
