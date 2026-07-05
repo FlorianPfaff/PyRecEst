@@ -52,6 +52,33 @@ class WrappedNormalDistributionTest(unittest.TestCase):
             )
         )
 
+    def test_pdf_honors_series_order(self):
+        wn = WrappedNormalDistribution(array(0.0), array(2.0))
+        x = array(2.0 * pi - 0.1)
+        norm_const = 1.0 / sqrt(2.0 * pi) / wn.sigma
+        central_term = norm_const * exp(-(x**2) / (2.0 * wn.sigma**2))
+        one_wrap_terms = norm_const * (
+            exp(-((x + 2.0 * pi) ** 2) / (2.0 * wn.sigma**2))
+            + exp(-((x - 2.0 * pi) ** 2) / (2.0 * wn.sigma**2))
+        )
+
+        self.assertTrue(allclose(wn.pdf(x, m=0), central_term, atol=1e-12, rtol=1e-10))
+        self.assertTrue(
+            allclose(
+                wn.pdf(x, m=1),
+                central_term + one_wrap_terms,
+                atol=1e-12,
+                rtol=1e-10,
+            )
+        )
+        self.assertFalse(allclose(wn.pdf(x, m=0), wn.pdf(x, m=1), rtol=1e-5))
+
+    def test_pdf_rejects_invalid_series_order(self):
+        for m in (-1, 1.5, True):
+            with self.subTest(m=m):
+                with self.assertRaisesRegex(ValueError, "non-negative integer"):
+                    self.wn.pdf(self.mu, m=m)
+
     def test_constructor_rejects_invalid_mu(self):
         for mu in (float("nan"), float("inf"), -float("inf")):
             with self.subTest(mu=mu):

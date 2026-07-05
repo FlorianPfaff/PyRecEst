@@ -29,6 +29,7 @@ from scipy.special import erf  # pylint: disable=no-name-in-module
 from ..hypertorus._input_validation import as_shift_vector
 from ..hypertorus.hypertoroidal_wrapped_normal_distribution import (
     HypertoroidalWrappedNormalDistribution,
+    _validate_series_order,
 )
 from .abstract_circular_distribution import AbstractCircularDistribution
 from .von_mises_distribution import VonMisesDistribution
@@ -80,7 +81,7 @@ class WrappedNormalDistribution(
 
     # pylint: disable=too-many-locals
     def pdf(self, xs, m: Union[int, int32, int64] = 3):
-        _ = m
+        m = _validate_series_order(m)
         sigma = self.sigma
         mu = self.scalar_mu
         if sigma <= 0:
@@ -94,7 +95,6 @@ class WrappedNormalDistribution(
         x = mod(xs, 2.0 * pi)
         x = where(x < 0, x + 2.0 * pi, x)
         x -= mu
-        max_iterations = 1000
         if pyrecest.backend.__backend_name__ != "jax":
             n_inputs = xs.shape[0]
             result = zeros(n_inputs)
@@ -105,7 +105,7 @@ class WrappedNormalDistribution(
             for i in range(n_inputs):
                 result[i] = squeeze(exp(x[i] * x[i] * tmp))
 
-                for k in range(1, max_iterations + 1):
+                for k in range(1, m + 1):
                     xp = x[i] + 2 * pi * k
                     xm = x[i] - 2 * pi * k
                     tp = xp * xp * tmp
@@ -141,7 +141,7 @@ class WrappedNormalDistribution(
                 # The accumulated density is positive and may keep changing by
                 # tiny floating-point amounts for a long time. Stop based on the
                 # latest wrapped contribution instead.
-                return logical_and(any(last_increment > 1e-10), i <= max_iterations)
+                return logical_and(any(last_increment > 1e-10), i <= m)
 
             initial_val = (
                 1,
@@ -290,5 +290,5 @@ class WrappedNormalDistribution(
 
     @staticmethod
     def sigma_to_kappa(sigma):
-        # Approximate conversion from sigma to kappa for a Von Mises distribution
+        # Approximate conversion from sigma to a Von Mises distribution
         return 1.0 / sigma**2
