@@ -311,3 +311,26 @@ def _box_binary_scalar(target=None, box_x1=True, box_x2=True):
         return _decorator
 
     return _decorator(target)
+
+
+def _patch_parent_log1p_arraylike_contract() -> None:
+    """Make PyTorch backend ``log1p`` accept NumPy-style array-like inputs."""
+    try:
+        import pyrecest._backend.pytorch as pytorch_backend  # pylint: disable=import-outside-toplevel
+    except ModuleNotFoundError:  # pragma: no cover - parent backend import failed earlier
+        return
+
+    original_log1p = getattr(pytorch_backend, "log1p", None)
+    if original_log1p is None or getattr(
+        original_log1p, "_pyrecest_arraylike_contract", False
+    ):
+        return
+
+    log1p = _box_unary_scalar(target=_torch.log1p)
+    log1p.__name__ = getattr(original_log1p, "__name__", "log1p")
+    log1p.__doc__ = getattr(original_log1p, "__doc__", None)
+    log1p._pyrecest_arraylike_contract = True
+    pytorch_backend.log1p = log1p
+
+
+_patch_parent_log1p_arraylike_contract()
