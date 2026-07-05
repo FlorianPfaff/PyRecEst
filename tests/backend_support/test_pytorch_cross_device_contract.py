@@ -19,7 +19,7 @@ def _assert_cross_prefers_symbolic_operand_device(cross):
 
     assert result.device.type == "meta"
     assert result.shape == symbolic_operand.shape
-    assert result.dtype == torch.float32
+    assert result.dtype == torch.result_type(cpu_operand, symbolic_operand)
 
 
 def test_raw_pytorch_cross_prefers_meta_operand_device():
