@@ -4,9 +4,12 @@ from pyrecest.evidence import EvidenceComputationMode, resolve_evidence_computat
 
 
 class FailingArrayConversion:
+    def __init__(self, error_type):
+        self.error_type = error_type
+
     def __array__(self, dtype=None):
         del dtype
-        raise RuntimeError("array conversion failed")
+        raise self.error_type("array conversion failed")
 
 
 @pytest.mark.parametrize(
@@ -18,6 +21,7 @@ class FailingArrayConversion:
         lambda value: resolve_evidence_computation_mode(return_smoothed=value),
     ],
 )
-def test_evidence_bool_flags_normalize_array_conversion_errors(factory):
+@pytest.mark.parametrize("error_type", [RuntimeError, OverflowError])
+def test_evidence_bool_flags_normalize_array_conversion_errors(factory, error_type):
     with pytest.raises(ValueError, match="must be a bool"):
-        factory(FailingArrayConversion())
+        factory(FailingArrayConversion(error_type))
