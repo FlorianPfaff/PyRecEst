@@ -1,6 +1,7 @@
 """Numpy based computation backend."""
 
 import builtins as _builtins
+from operator import index as _operator_index
 
 import numpy as _np
 from numpy import (  # The ones below are for pyrecest; For Riemannian score-based SDE
@@ -242,6 +243,40 @@ def assignment_by_sum(x, values, indices, axis=0):
 ones = _modify_func_default_dtype(target=_np.ones)
 linspace = _dyn_update_dtype(target=_np.linspace, dtype_pos=5)
 empty = _dyn_update_dtype(target=_np.empty, dtype_pos=1)
+
+
+def squeeze(x, axis=None):
+    """Squeeze singleton axes while reporting invalid axes consistently."""
+
+    x = _np.asarray(x)
+    if axis is None:
+        return _np.squeeze(x)
+
+    if isinstance(axis, (int, _np.integer)):
+        axes = (int(axis),)
+    else:
+        axis_array = _np.asarray(axis)
+        if axis_array.shape == ():
+            axes = (_operator_index(axis_array),)
+        else:
+            axes = tuple(axis)
+    if not axes:
+        return x
+
+    normalized_axes = tuple(
+        one_axis + x.ndim if one_axis < 0 else one_axis for one_axis in axes
+    )
+    if len(set(normalized_axes)) != len(normalized_axes):
+        raise ValueError("duplicate value in 'axis'")
+    for one_axis, normalized_axis in zip(axes, normalized_axes):
+        if normalized_axis < 0 or normalized_axis >= x.ndim:
+            raise ValueError(
+                f"axis {one_axis} is out of bounds for array of dimension {x.ndim}"
+            )
+    if _builtins.any(x.shape[one_axis] != 1 for one_axis in normalized_axes):
+        return x
+    squeeze_axis = normalized_axes[0] if len(normalized_axes) == 1 else normalized_axes
+    return _np.squeeze(x, axis=squeeze_axis)
 
 
 def trace(a, offset=0, axis1=-2, axis2=-1, dtype=None, out=None):
