@@ -338,7 +338,9 @@ def gate_threshold_for_measurement(
     source = str(measurement.source)
     if gate_thresholds_by_source and source in gate_thresholds_by_source:
         value = gate_thresholds_by_source[source]
-        return None if value is None else _as_nonnegative_scalar(value, "gate_threshold")
+        return (
+            None if value is None else _as_nonnegative_scalar(value, "gate_threshold")
+        )
     if gate_probabilities_by_source and source in gate_probabilities_by_source:
         probability = gate_probabilities_by_source[source]
         vector = np.asarray(measurement.vector).reshape(-1)
