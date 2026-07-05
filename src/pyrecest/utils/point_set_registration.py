@@ -124,10 +124,9 @@ class AffineTransform:
 
     def homogeneous_matrix(self) -> Any:
         """Return the homogeneous representation of the affine transform."""
-        transform = eye(self.dim + 1)
-        transform[: self.dim, : self.dim] = self.matrix
-        transform[: self.dim, -1] = self.offset
-        return transform
+        upper = concatenate([self.matrix, self.offset.reshape(-1, 1)], axis=1)
+        lower = concatenate([zeros((1, self.dim)), asarray([[1.0]])], axis=1)
+        return concatenate([upper, lower], axis=0)
 
 
 @dataclass(frozen=True)
