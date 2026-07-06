@@ -56,13 +56,85 @@ def _pytorch_numpy_index_array(index, numpy_module, torch_module):
     return index
 
 
+def _is_pytorch_scalar_coordinate_index(index, torch_module, numpy_module):
+    """Return whether ``index`` is an integer scalar coordinate component."""
+    if isinstance(index, (bool, numpy_module.bool_)):
+        return False
+
+    if torch_module.is_tensor(index):
+        if index.ndim != 0:
+            return False
+        if (
+            index.dtype in {torch_module.bool, torch_module.uint8}
+            or index.dtype.is_floating_point
+            or index.dtype.is_complex
+        ):
+            return False
+        return True
+
+    if isinstance(index, numpy_module.ndarray):
+        if index.shape != ():
+            return False
+        if (
+            numpy_module.issubdtype(index.dtype, numpy_module.bool_)
+            or numpy_module.issubdtype(index.dtype, numpy_module.floating)
+            or numpy_module.issubdtype(index.dtype, numpy_module.complexfloating)
+        ):
+            return False
+        index = index.item()
+
+    try:
+        _operator_index(index)
+    except TypeError:
+        return False
+    return True
+
+
+def _pytorch_scalar_coordinate_index(index, torch_module, numpy_module) -> int:
+    """Return a Python int coordinate component."""
+    if torch_module.is_tensor(index):
+        index = index.item()
+    elif isinstance(index, numpy_module.ndarray):
+        index = index.item()
+    return _operator_index(index)
+
+
+def _pytorch_singleton_coordinate_sequence(indices, torch_module, numpy_module):
+    """Normalize ``[(i, j, ...)]`` to ``(i, j, ...)`` before vectorization checks."""
+    if not isinstance(indices, (list, tuple)) or len(indices) != 1:
+        return None
+
+    coordinate = indices[0]
+    if not isinstance(coordinate, (list, tuple)) or not coordinate:
+        return None
+
+    if not all(
+        _is_pytorch_scalar_coordinate_index(component, torch_module, numpy_module)
+        for component in coordinate
+    ):
+        return None
+
+    return tuple(
+        _pytorch_scalar_coordinate_index(component, torch_module, numpy_module)
+        for component in coordinate
+    )
+
+
 def _wrap_assignment_numpy_index_helper(original_helper, torch_module, numpy_module):
     """Normalize NumPy index arrays before assignment helper len() checks."""
     if getattr(original_helper, "_pyrecest_numpy_index_contract", False):
         return original_helper
 
     def assignment(x, values, indices, axis=0):
-        indices = _pytorch_numpy_index_array(indices, numpy_module, torch_module)
+        singleton_coordinate = _pytorch_singleton_coordinate_sequence(
+            indices,
+            torch_module,
+            numpy_module,
+        )
+        if singleton_coordinate is not None:
+            indices = singleton_coordinate
+        else:
+            indices = _pytorch_numpy_index_array(indices, numpy_module, torch_module)
         return original_helper(x, values, indices, axis=axis)
 
     assignment.__name__ = getattr(original_helper, "__name__", "assignment")
@@ -82,7 +154,6 @@ def _patch_pytorch_assignment_numpy_index_contract(raw_pytorch, backend, torch, 
             for helper_name in helper_names:
                 setattr(backend, helper_name, getattr(raw_pytorch, helper_name))
         return
-
     for helper_name in helper_names:
         wrapped_helper = _wrap_assignment_numpy_index_helper(
             getattr(raw_pytorch, helper_name),
@@ -131,7 +202,6 @@ def _patch_pytorch_logical_device_contract(raw_pytorch, backend, torch) -> None:
             for helper_name in helper_names:
                 setattr(backend, helper_name, getattr(raw_pytorch, helper_name))
         return
-
     original_logical_and = raw_pytorch.logical_and
     original_where = raw_pytorch.where
 
@@ -232,7 +302,6 @@ def _patch_pytorch_comparison_device_contract(raw_pytorch, backend, torch) -> No
             for helper_name in helper_names:
                 setattr(backend, helper_name, getattr(raw_pytorch, helper_name))
         return
-
     for helper_name in helper_names:
         wrapped_helper = _wrap_tensor_binary_device_helper(
             getattr(raw_pytorch, helper_name),
@@ -317,7 +386,6 @@ def _patch_pytorch_linspace_integer_dtype_contract(raw_pytorch, backend, torch) 
         if getattr(backend, "__backend_name__", None) == "pytorch":
             backend.linspace = original_linspace
         return
-
     def linspace(start, stop, num=50, endpoint=True, dtype=None):
         integer_dtype = _integer_torch_dtype(dtype, raw_pytorch, torch)
         if integer_dtype is None:
