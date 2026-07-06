@@ -39,8 +39,17 @@ def _patch_sort_axis_none_contract(raw_pytorch, backend, torch_module) -> None:
             setattr(backend, "sort", original_sort)
         return
 
-    def sort(a, axis=-1):
-        return _sort_axis_none(raw_pytorch, torch_module, a, axis=axis)
+    def sort(a, axis=-1, kind=None, order=None, *, stable=None, descending=False):
+        return _sort_axis_none(
+            raw_pytorch,
+            torch_module,
+            a,
+            axis=axis,
+            kind=kind,
+            order=order,
+            stable=stable,
+            descending=descending,
+        )
 
     sort.__name__ = getattr(original_sort, "__name__", "sort")
     sort.__doc__ = getattr(original_sort, "__doc__", None)
