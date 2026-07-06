@@ -1,5 +1,6 @@
 import unittest
 
+import numpy as np
 import numpy.testing as npt
 
 # pylint: disable=no-name-in-module,no-member
@@ -66,6 +67,31 @@ class TestHypercylindricalDiracDistribution(TestAbstractDiracDistribution):
         self.assertEqual(dist.bound_dim, 1)
         self.assertEqual(dist.lin_dim, 1)
 
+    def test_constructor_accepts_scalar_integer_bound_dim(self):
+        dist = HypercylindricalDiracDistribution(
+            np.array(1, dtype=np.int64), self.d, self.w
+        )
+
+        self.assertEqual(dist.bound_dim, 1)
+        self.assertEqual(dist.lin_dim, 2)
+        self.assertIsInstance(dist.bound_dim, int)
+        self.assertIsInstance(dist.lin_dim, int)
+
+    def test_constructor_rejects_invalid_bound_dim_counts(self):
+        invalid_counts = (True, np.bool_(True), np.array(True), 1.5, np.array([1]), -1)
+        for bound_dim in invalid_counts:
+            with self.subTest(bound_dim=bound_dim):
+                with self.assertRaisesRegex(
+                    ValueError, "bound_dim must be a non-negative integer"
+                ):
+                    HypercylindricalDiracDistribution(bound_dim, self.d, self.w)
+
+    def test_constructor_rejects_negative_inferred_linear_dimension(self):
+        with self.assertRaisesRegex(
+            ValueError, "lin_dim must be a non-negative integer"
+        ):
+            HypercylindricalDiracDistribution(4, self.d, self.w)
+
     def test_apply_function_identity(self):
         same = self.pwd.apply_function(lambda x: x)
         npt.assert_array_equal(self.pwd.d, same.d)
@@ -125,9 +151,7 @@ class TestHypercylindricalDiracDistribution(TestAbstractDiracDistribution):
         self.assertTrue(all(s < 2 * pi * ones_like(s)))
 
     def test_from_distribution(self):
-        import numpy as _np
-
-        random_gen = _np.random.default_rng(0)  # Could fail randomly otherwise
+        random_gen = np.random.default_rng(0)  # Could fail randomly otherwise
         df = 4
         scale = eye(4)
         # Call array(...) to be compatibel with all backends
