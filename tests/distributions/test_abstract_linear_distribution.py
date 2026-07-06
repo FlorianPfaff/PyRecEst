@@ -43,6 +43,26 @@ class TestAbstractLinearDistribution(unittest.TestCase):
             integration_result, 1.0, rtol=1e-5
         ), f"Expected 1.0, but got {integration_result}"
 
+    def test_integrate_1d_accepts_scalar_bounds(self):
+        """Test that scalar bounds are accepted for one-dimensional densities."""
+        dist = GaussianDistribution(array([0.0]), array([[1.0]]))
+
+        scalar_result = dist.integrate_numerically(-float("inf"), float("inf"))
+        wrapped_result = dist.integrate_numerically([-float("inf")], [float("inf")])
+
+        assert isclose(scalar_result, 1.0, rtol=1e-5)
+        assert isclose(scalar_result, wrapped_result, rtol=1e-12)
+
+    def test_integrate_rejects_wrong_bound_shape(self):
+        """Test that ambiguous bound vectors are rejected early."""
+        dist = GaussianDistribution(array([0.0, 0.0]), diag(array([1.0, 1.0])))
+
+        with self.assertRaisesRegex(ValueError, "left integration bound"):
+            dist.integrate_numerically([0.0], [1.0, 1.0])
+
+        with self.assertRaisesRegex(ValueError, "right integration bound"):
+            dist.integrate_numerically([0.0, 0.0], [1.0])
+
     def test_integrate_fun_over_domain_1d_accepts_sequence_bounds(self):
         dist = GaussianDistribution(array([0.0]), array([[1.0]]))
 
@@ -53,6 +73,23 @@ class TestAbstractLinearDistribution(unittest.TestCase):
         assert isclose(
             integration_result, 1.0, rtol=1e-5
         ), f"Expected 1.0, but got {integration_result}"
+
+    def test_integrate_fun_over_domain_1d_accepts_scalar_bounds(self):
+        dist = GaussianDistribution(array([0.0]), array([[1.0]]))
+
+        integration_result = AbstractLinearDistribution.integrate_fun_over_domain(
+            lambda x: dist.pdf(x), 1, -float("inf"), float("inf")
+        )
+
+        assert isclose(
+            integration_result, 1.0, rtol=1e-5
+        ), f"Expected 1.0, but got {integration_result}"
+
+    def test_integrate_fun_over_domain_rejects_wrong_bound_shape(self):
+        with self.assertRaisesRegex(ValueError, "left integration bound"):
+            AbstractLinearDistribution.integrate_fun_over_domain(
+                lambda x: x[0], 2, [0.0], [1.0, 1.0]
+            )
 
     def test_integrate_fun_over_domain(self):
         dist = GaussianDistribution(array([1.0, 2.0]), diag(array([1.0, 2.0])))
