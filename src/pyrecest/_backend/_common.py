@@ -45,6 +45,16 @@ def _normalize_size_axis(axis):
 
 def _normalize_diagonal_integer(value):
     """Return NumPy-style integer scalar arguments for stricter tensor APIs."""
+    if isinstance(value, _AXIS_FLAG_TYPES):
+        raise TypeError("an integer is required")
+    if isinstance(value, _np.ndarray):
+        if value.shape != ():
+            return value
+        if value.dtype.kind == "b":
+            raise TypeError("an integer is required")
+        if value.dtype.kind in "iu":
+            return int(value.item())
+        return value
     try:
         return _operator.index(value)
     except TypeError:
