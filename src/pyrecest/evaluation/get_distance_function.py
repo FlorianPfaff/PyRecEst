@@ -46,9 +46,19 @@ def available_distance_functions() -> tuple[str, ...]:
 
 
 def _is_hypersphere_symmetric_name(normalized_name: str) -> bool:
+    tokens = tuple(
+        token for token in normalized_name.replace("-", "_").split("_") if token
+    )
+    if "hypersphere" in tokens and any(
+        token in {"symmetric", "symm"} for token in tokens
+    ):
+        return True
+
+    compact = "".join(tokens)
     return (
-        "hyperspheresymmetric" in normalized_name
-        or "hypersphere_symmetric" in normalized_name
+        "hyperspheresymmetric" in compact
+        or "hyperspheresymm" in compact
+        or compact in {"symmetrichypersphere", "symmhypersphere"}
     )
 
 
