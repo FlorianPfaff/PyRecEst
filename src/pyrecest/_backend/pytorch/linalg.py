@@ -237,7 +237,7 @@ class _Logm(_torch.autograd.Function):
 
 
 def logm(x):
-    """Compute the matrix logarithm after PyRecEst-style array-like promotion."""
+    """Compute the matrix logarithm after array-like input promotion."""
     return _Logm.apply(_as_linalg_tensor(x))
 
 
@@ -265,13 +265,19 @@ def _normalize_norm_axis(axis):
     """Return a PyTorch-compatible norm dimension from NumPy-style axis input."""
     if axis is None:
         return None
+    if isinstance(axis, (bool, _np.bool_)):
+        raise TypeError("axis must be None, an integer, or a tuple of integers")
     if _torch.is_tensor(axis):
+        if axis.dtype == _torch.bool:
+            raise TypeError("axis must be None, an integer, or a tuple of integers")
         if axis.ndim == 0:
             return _operator_index(axis.item())
         if axis.ndim != 1:
             raise TypeError("axis must be None, an integer, or a tuple of integers")
         axis = axis.detach().cpu().tolist()
     elif isinstance(axis, _np.ndarray):
+        if axis.dtype == _np.bool_:
+            raise TypeError("axis must be None, an integer, or a tuple of integers")
         if axis.ndim == 0:
             return _operator_index(axis.item())
         if axis.ndim != 1:
@@ -362,102 +368,7 @@ def solve_sylvester(a, b, q):
     a = a.to(dtype=common_dtype)
     b = b.to(dtype=common_dtype)
     q = q.to(dtype=common_dtype)
-    is_shared_factor = a.shape == b.shape and _torch.allclose(
-        a, b, atol=1e-6, rtol=1e-6
+    result = _scipy.linalg.solve_sylvester(
+        _as_numpy_no_grad(a), _as_numpy_no_grad(b), _as_numpy_no_grad(q)
     )
-    is_shared_hermitian_factor = is_shared_factor and _torch.all(
-        _torch.abs(a - a.transpose(-2, -1).conj()) < 1e-6
-    )
-    if is_shared_hermitian_factor:
-        eigvals, eigvecs = eigh(a)
-        if _torch.all(eigvals >= 1e-6):
-            adjoint_eigvecs = eigvecs.transpose(-2, -1).conj()
-            tilde_q = adjoint_eigvecs @ q @ eigvecs
-            tilde_x = tilde_q / (eigvals[..., :, None] + eigvals[..., None, :])
-            return eigvecs @ tilde_x @ adjoint_eigvecs
-
-    is_real_shared_symmetric_factor = (
-        is_shared_factor
-        and not is_complex(a)
-        and _torch.all(_torch.abs(a - a.transpose(-2, -1)) < 1e-6)
-    )
-    if is_real_shared_symmetric_factor:
-        eigvals, eigvecs = eigh(a)
-        conditions = _torch.all(eigvals >= 1e-6) or (
-            a.shape[-1] >= 2.0
-            and _torch.all(eigvals[..., 0] > -1e-6)
-            and _torch.all(eigvals[..., 1] >= 1e-6)
-            and _torch.all(_torch.abs(q + q.transpose(-2, -1)) < 1e-6)
-        )
-        if conditions:
-            tilde_q = eigvecs.transpose(-2, -1) @ q @ eigvecs
-            denominators = eigvals[..., :, None] + eigvals[..., None, :]
-            safe_denominators = _torch.where(
-                _torch.abs(denominators) < 1e-12,
-                _torch.ones((), dtype=denominators.dtype, device=denominators.device),
-                denominators,
-            )
-            tilde_x = tilde_q / safe_denominators
-            tilde_x = _torch.where(
-                _torch.abs(denominators) < 1e-12,
-                _torch.zeros((), dtype=tilde_x.dtype, device=tilde_x.device),
-                tilde_x,
-            )
-            return eigvecs @ tilde_x @ eigvecs.transpose(-2, -1)
-
-    solution = _np.vectorize(
-        _scipy.linalg.solve_sylvester, signature="(m,m),(n,n),(m,n)->(m,n)"
-    )(_as_numpy_no_grad(a), _as_numpy_no_grad(b), _as_numpy_no_grad(q))
-    return _torch_as_like(solution, q)
-
-
-# (TODO) (sait) _torch.linalg.cholesky_ex for even faster way
-def is_single_matrix_pd(mat):
-    """Check if 2D square matrix is positive definite."""
-    mat = _as_linalg_tensor(mat)
-    if mat.ndim != 2 or mat.shape[0] != mat.shape[1]:
-        return False
-    if mat.dtype in [_torch.complex64, _torch.complex128]:
-        is_hermitian = bool(
-            _torch.all(
-                _torch.abs(mat - _torch.conj(_torch.transpose(mat, 0, 1))) < atol
-            )
-        )
-        if not is_hermitian:
-            return False
-        eigvals = _torch.linalg.eigvalsh(mat)
-        return bool(_torch.min(_torch.real(eigvals)) > 0)
-    if not bool(_torch.all(_torch.abs(mat - mat.transpose(-2, -1)) < atol)):
-        return False
-    try:
-        _torch.linalg.cholesky(mat)
-        return True
-    except RuntimeError:
-        return False
-
-
-def fractional_matrix_power(A, t):
-    """Compute the fractional power of a matrix."""
-    A = _as_linalg_tensor(A)
-    A_np = _as_numpy_no_grad(A)
-    out = _np.vectorize(
-        lambda one_matrix: _scipy.linalg.fractional_matrix_power(one_matrix, t),
-        signature="(n,n)->(n,n)",
-    )(A_np)
-
-    if out.dtype.kind == "c":
-        target_complex_dtype = _COMPLEX_DTYPE_FOR_TENSOR_DTYPE.get(A.dtype)
-        if target_complex_dtype is not None:
-            out = out.astype(target_complex_dtype, copy=False)
-
-    return _torch_as_like(out, A)
-
-
-def polar(a, side="right"):
-    """Polar decomposition of a square or rectangular matrix."""
-    a = _as_linalg_tensor(a)
-    signature = "(m,n)->(m,n),(m,m)" if side == "left" else "(m,n)->(m,n),(n,n)"
-    func = _np.vectorize(_scipy.linalg.polar, signature=signature, excluded=["side"])
-    unitary, hermitian = func(_as_numpy_no_grad(a), side=side)
-
-    return _torch_as_like(unitary, a), _torch_as_like(hermitian, a)
+    return _torch.as_tensor(result, dtype=common_dtype, device=a.device)
