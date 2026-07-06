@@ -8,6 +8,8 @@ import numpy as _np
 
 from .._backend_config import jax_atol as atol
 
+_AXIS_TYPE_ERROR = "axis must be None, an integer, or a tuple of integers"
+
 
 def _as_linalg_array(value):
     """Convert PyRecEst array-like inputs before calling raw JAX linalg."""
@@ -29,6 +31,38 @@ def _as_integer_scalar(value, name):
     if not _jnp.issubdtype(value_array.dtype, _jnp.integer):
         raise TypeError(f"{name} must be an integer scalar")
     return int(value_array.item())
+
+
+def _norm_axis_entry(axis) -> int:
+    """Return one non-boolean NumPy-style linalg.norm axis."""
+    if isinstance(axis, (bool, _np.bool_)):
+        raise TypeError(_AXIS_TYPE_ERROR)
+    try:
+        return _operator_index(axis)
+    except TypeError:
+        pass
+
+    axis_array = _jnp.asarray(axis)
+    if axis_array.shape != () or axis_array.dtype == _jnp.bool_:
+        raise TypeError(_AXIS_TYPE_ERROR)
+    if not _jnp.issubdtype(axis_array.dtype, _jnp.integer):
+        raise TypeError(_AXIS_TYPE_ERROR)
+    return int(axis_array.item())
+
+
+def _normalize_norm_axis(axis):
+    """Normalize JAX linalg.norm axes before they become static arguments."""
+    if axis is None:
+        return None
+    if isinstance(axis, (list, tuple)):
+        return tuple(_norm_axis_entry(one_axis) for one_axis in axis)
+
+    axis_array = _jnp.asarray(axis)
+    if axis_array.shape == ():
+        return _norm_axis_entry(axis)
+    if axis_array.ndim == 1:
+        return tuple(_norm_axis_entry(one_axis) for one_axis in axis_array.tolist())
+    raise TypeError(_AXIS_TYPE_ERROR)
 
 
 def cholesky(a, *args, **kwargs):
@@ -63,8 +97,13 @@ def matrix_rank(a, *args, **kwargs):
     return _jnp.linalg.matrix_rank(_as_linalg_array(a), *args, **kwargs)
 
 
-def norm(x, *args, **kwargs):
-    return _jnp.linalg.norm(_as_linalg_array(x), *args, **kwargs)
+def norm(x, ord=None, axis=None, keepdims=False):
+    return _jnp.linalg.norm(
+        _as_linalg_array(x),
+        ord=ord,
+        axis=_normalize_norm_axis(axis),
+        keepdims=keepdims,
+    )
 
 
 def pinv(a, *args, **kwargs):
