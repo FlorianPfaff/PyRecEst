@@ -27,15 +27,18 @@ class CustomLinearDistributionTest(unittest.TestCase):
         cld = CustomLinearDistribution.from_distribution(self.gm)
         self.assertAlmostEqual(cld.integrate(), 0.5, delta=1e-8)
 
-    def test_set_mean_shifts_distribution(self):
+    def test_set_mean_returns_shifted_distribution_copy(self):
         g = GaussianDistribution(array([1.0]), eye(1))
         cld = CustomLinearDistribution.from_distribution(g)
 
-        cld.set_mean(array([3.0]))
+        shifted = cld.set_mean(array([3.0]))
 
-        npt.assert_allclose(cld.mean(), array([3.0]))
-        npt.assert_allclose(cld.shift_by, array([2.0]))
-        npt.assert_allclose(cld.pdf(array([3.0])), g.pdf(array([1.0])))
+        self.assertIsNot(shifted, cld)
+        npt.assert_allclose(cld.shift_by, array([0.0]))
+        npt.assert_allclose(shifted.mean(), array([3.0]))
+        npt.assert_allclose(shifted.shift_by, array([2.0]))
+        npt.assert_allclose(shifted.pdf(array([3.0])), g.pdf(array([1.0])))
+        npt.assert_allclose(cld.pdf(array([1.0])), g.pdf(array([1.0])))
 
     def test_pdf_accepts_scalar_and_list_inputs(self):
         cld = CustomLinearDistribution(
@@ -90,7 +93,3 @@ class CustomLinearDistributionTest(unittest.TestCase):
             dist2.pdf(concatenate((x, y)).reshape(2, -1).T),
             atol=tol,
         )
-
-
-if __name__ == "__main__":
-    unittest.main()
