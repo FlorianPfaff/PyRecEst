@@ -60,6 +60,17 @@ class CircularGridDistributionTest(unittest.TestCase):
         indices = array([0, 3, 7])
         npt.assert_allclose(dist.get_grid_point(indices), dist.get_grid()[indices])
 
+    def test_enforced_nonnegative_interpolation_rejects_negative_grid_values(self):
+        with self.assertRaisesRegex(ValueError, "nonnegative"):
+            CircularGridDistribution(
+                array([1.0, -0.1, 0.2]), enforce_pdf_nonnegative=True
+            )
+
+        dist = CircularGridDistribution(
+            array([1.0, -0.1, 0.2]), enforce_pdf_nonnegative=False
+        )
+        npt.assert_allclose(dist.grid_values, array([1.0, -0.1, 0.2]))
+
     def test_from_function_rejects_invalid_gridpoint_count(self):
         invalid_counts = (True, False, 0, -1, 1.5)
 

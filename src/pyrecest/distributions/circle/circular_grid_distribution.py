@@ -2,6 +2,7 @@ from numbers import Integral
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
 from pyrecest.backend import (
+    any,
     arange,
     array,
     atleast_1d,
@@ -47,6 +48,11 @@ class CircularGridDistribution(AbstractCircularDistribution, AbstractGridDistrib
                 "You gave a distribution as the first argument. "
                 "To convert distributions to a distribution in grid representation, "
                 "use from_distribution."
+            )
+        if enforce_pdf_nonnegative and any(grid_values < 0):
+            raise ValueError(
+                "grid_values must be nonnegative when "
+                "enforce_pdf_nonnegative=True."
             )
         n = grid_values.shape[0]
         grid = linspace(0.0, 2.0 * pi, n, endpoint=False)
