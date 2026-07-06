@@ -224,7 +224,9 @@ def _cmd_run_scenario(args: argparse.Namespace) -> int:
                         f"expected {len(expected_estimate_values)}, got {len(actual_estimate_values)}"
                     )
                 else:
-                    max_error = _max_abs_error(actual_estimate_values, expected_estimate_values)
+                    max_error = _max_abs_error(
+                        actual_estimate_values, expected_estimate_values
+                    )
                     if max_error > tolerance:
                         failures.append(
                             f"final_estimate mismatch: max_abs_error={max_error:.6g} > tolerance={tolerance:.6g}"
