@@ -18,6 +18,61 @@ _sys.modules[_LEGACY_MODULE_NAME] = _LEGACY
 _LEGACY_SPEC.loader.exec_module(_LEGACY)
 
 _BOOLEAN_SCALAR_TYPES = (bool, _np.bool_)
+_PROBABILITY_SUM_ERROR = "probabilities do not sum to a positive value"
+
+
+def _probability_accumulation_dtype(probabilities):
+    torch = _LEGACY._torch
+    if probabilities.dtype.is_floating_point:
+        return torch.promote_types(probabilities.dtype, torch.get_default_dtype())
+    return torch.get_default_dtype()
+
+
+def _normalize_nonnegative_probabilities(probabilities):
+    torch = _LEGACY._torch
+    probabilities = probabilities.to(dtype=_probability_accumulation_dtype(probabilities))
+    if bool(torch.any(probabilities < 0)):
+        raise ValueError(_PROBABILITY_SUM_ERROR)
+    scale = probabilities.max()
+    if not bool(torch.isfinite(scale)) or bool(scale <= 0):
+        raise ValueError(_PROBABILITY_SUM_ERROR)
+    scaled = probabilities / scale
+    total = scaled.sum()
+    if not bool(torch.isfinite(total)) or bool(total <= 0):
+        raise ValueError(_PROBABILITY_SUM_ERROR)
+    return scaled / total
+
+
+def _validate_choice_probabilities(p, population_size, device):
+    if _LEGACY._contains_boolean_value(p):
+        raise TypeError("p must be real numeric, not boolean")
+    try:
+        p = _LEGACY._torch.as_tensor(p, device=device)
+    except (TypeError, ValueError, RuntimeError) as exc:
+        raise TypeError("p must be real numeric") from exc
+    if not _LEGACY._is_real_numeric_dtype(p.dtype):
+        raise TypeError("p must be real numeric")
+    if p.ndim != 1 or p.shape[0] != population_size:
+        raise ValueError("p must be 1-dimensional with one entry per population item")
+    return _normalize_nonnegative_probabilities(p)
+
+
+def _validate_multinomial_pvals(pvals, device):
+    if _LEGACY._contains_boolean_value(pvals):
+        raise TypeError("pvals must be real numeric, not boolean")
+    try:
+        pvals = _LEGACY._torch.as_tensor(pvals, device=device)
+    except (TypeError, ValueError, RuntimeError) as exc:
+        raise TypeError("pvals must be real numeric") from exc
+    if not _LEGACY._is_real_numeric_dtype(pvals.dtype):
+        raise TypeError("pvals must be real numeric")
+    if pvals.numel() == 0:
+        return pvals.to(dtype=_probability_accumulation_dtype(pvals))
+    return _normalize_nonnegative_probabilities(pvals)
+
+
+_LEGACY._validate_choice_probabilities = _validate_choice_probabilities
+_LEGACY._validate_multinomial_pvals = _validate_multinomial_pvals
 
 
 def _validate_multivariate_normal_check_valid(check_valid):
