@@ -1,8 +1,8 @@
 """Compatibility package for shared NumPy RNG helpers."""
 
+import sys as _sys
 from importlib import util as _importlib_util
 from pathlib import Path as _Path
-import sys as _sys
 
 import numpy as _np
 
