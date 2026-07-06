@@ -1,7 +1,6 @@
 import numpy as np
 import numpy.testing as npt
 import pytest
-
 from pyrecest._backend import _common as common
 
 

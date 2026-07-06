@@ -1,8 +1,7 @@
 """Regression tests for PyTorch linalg.logm input normalization."""
 
-import pytest
-
 import pyrecest.backend as backend
+import pytest
 
 pytorch_backend = pytest.importorskip("pyrecest._backend.pytorch")
 pytorch_linalg = pytest.importorskip("pyrecest._backend.pytorch.linalg")

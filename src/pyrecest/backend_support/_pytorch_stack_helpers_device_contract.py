@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import importlib
 
-
 _STACK_HELPER_NAMES = ("hstack", "vstack", "column_stack", "dstack")
 
 

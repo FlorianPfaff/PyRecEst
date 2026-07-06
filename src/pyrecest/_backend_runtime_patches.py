@@ -7,8 +7,8 @@ def patch_pytorch_close_equal_nan_device_contract() -> None:
     """Preserve ``equal_nan`` while keeping PyTorch close operands on one device."""
 
     try:
-        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import torch  # pylint: disable=import-outside-toplevel
     except ModuleNotFoundError:  # pragma: no cover - PyTorch backend may be unavailable
         return
