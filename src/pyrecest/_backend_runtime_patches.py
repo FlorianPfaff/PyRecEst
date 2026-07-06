@@ -312,6 +312,57 @@ def patch_pytorch_edge_pad_contract() -> None:
         backend.pad = pad
 
 
+def patch_raw_pytorch_reduction_alias_contract() -> None:
+    """Expose PyTorch ``dim``/``keepdim`` aliases on raw reductions always."""
+
+    try:
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
+        import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
+        from pyrecest._backend_submodules import (  # pylint: disable=import-outside-toplevel
+            _wrap_pytorch_axis_keepdim_reduction,
+            _wrap_pytorch_count_nonzero_reduction,
+            _wrap_pytorch_prod_reduction,
+        )
+    except ModuleNotFoundError:  # pragma: no cover - PyTorch backend may be unavailable
+        return
+
+    active_pytorch_backend = getattr(backend, "__backend_name__", None) == "pytorch"
+    for reduction_name in ("all", "any", "max", "min"):
+        reduction = getattr(raw_pytorch, reduction_name, None)
+        if reduction is None:
+            continue
+        if not getattr(reduction, "_pyrecest_reduction_alias_contract", False):
+            reduction = _wrap_pytorch_axis_keepdim_reduction(reduction, reduction_name)
+            setattr(raw_pytorch, reduction_name, reduction)
+        if active_pytorch_backend:
+            setattr(backend, reduction_name, reduction)
+
+    prod = getattr(raw_pytorch, "prod", None)
+    if prod is not None:
+        if not getattr(prod, "_pyrecest_reduction_alias_contract", False):
+            prod = _wrap_pytorch_prod_reduction(prod)
+            setattr(raw_pytorch, "prod", prod)
+        if active_pytorch_backend:
+            setattr(backend, "prod", prod)
+
+    count_nonzero = getattr(raw_pytorch, "count_nonzero", None)
+    if count_nonzero is not None:
+        if not getattr(count_nonzero, "_pyrecest_reduction_alias_contract", False):
+            count_nonzero = _wrap_pytorch_count_nonzero_reduction(count_nonzero)
+            setattr(raw_pytorch, "count_nonzero", count_nonzero)
+        if active_pytorch_backend:
+            setattr(backend, "count_nonzero", count_nonzero)
+
+    if hasattr(raw_pytorch, "max"):
+        raw_pytorch.amax = raw_pytorch.max
+        if active_pytorch_backend:
+            backend.amax = raw_pytorch.max
+    if hasattr(raw_pytorch, "min"):
+        raw_pytorch.amin = raw_pytorch.min
+        if active_pytorch_backend:
+            backend.amin = raw_pytorch.min
+
+
 def patch_pytorch_transpose_boolean_axes_contract() -> None:
     """Make PyTorch ``transpose`` reject boolean axes sequences like NumPy."""
 
