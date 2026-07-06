@@ -110,12 +110,25 @@ def _patch_pytorch_flip_numpy_axis_contract() -> None:
         backend.flip = flip
 
 
+def _close_operands(pytorch_backend, torch_module, a, b):
+    """Return close-comparison operands on a common device and dtype."""
+
+    a, b = _coerce_binary_args(torch_module, a, b)
+    a, b = pytorch_backend.convert_to_wider_dtype([a, b])
+    return torch_module.broadcast_tensors(a, b)
+
+
+def _mark_close_contract(helper):
+    """Mark a patched close helper as satisfying both device and NaN contracts."""
+
+    helper._pyrecest_device_contract = True
+    helper._pyrecest_equal_nan_device_contract = True
+    helper._pyrecest_missing_value_contract = True
+    return helper
+
+
 def _patch_allclose(pytorch_backend, backend, torch_module) -> None:
     """Patch raw/public PyTorch ``allclose`` to preserve non-CPU operands."""
-
-    _patch_pytorch_creation_shape_contract()
-    _patch_pytorch_linalg_logm_arraylike_contract()
-    _patch_pytorch_flip_numpy_axis_contract()
 
     original_allclose = getattr(pytorch_backend, "allclose", None)
     if original_allclose is None:
@@ -133,17 +146,45 @@ def _patch_allclose(pytorch_backend, backend, torch_module) -> None:
         rtol=pytorch_backend.rtol,
         equal_nan=False,
     ):
-        a, b = _coerce_binary_args(torch_module, a, b)
-        a, b = pytorch_backend.convert_to_wider_dtype([a, b])
-        a, b = torch_module.broadcast_tensors(a, b)
+        a, b = _close_operands(pytorch_backend, torch_module, a, b)
         return torch_module.allclose(a, b, rtol=rtol, atol=atol, equal_nan=equal_nan)
 
     allclose.__name__ = getattr(original_allclose, "__name__", "allclose")
     allclose.__doc__ = getattr(original_allclose, "__doc__", None)
-    allclose._pyrecest_equal_nan_device_contract = True
+    _mark_close_contract(allclose)
     pytorch_backend.allclose = allclose
     if active_pytorch_backend:
         backend.allclose = allclose
+
+
+def _patch_isclose(pytorch_backend, backend, torch_module) -> None:
+    """Patch raw/public PyTorch ``isclose`` to preserve non-CPU operands."""
+
+    original_isclose = getattr(pytorch_backend, "isclose", None)
+    if original_isclose is None:
+        return
+    active_pytorch_backend = getattr(backend, "__backend_name__", None) == "pytorch"
+    if getattr(original_isclose, "_pyrecest_equal_nan_device_contract", False):
+        if active_pytorch_backend:
+            backend.isclose = original_isclose
+        return
+
+    def isclose(
+        a,
+        b,
+        rtol=pytorch_backend.rtol,
+        atol=pytorch_backend.atol,
+        equal_nan=False,
+    ):
+        a, b = _close_operands(pytorch_backend, torch_module, a, b)
+        return torch_module.isclose(a, b, rtol=rtol, atol=atol, equal_nan=equal_nan)
+
+    isclose.__name__ = getattr(original_isclose, "__name__", "isclose")
+    isclose.__doc__ = getattr(original_isclose, "__doc__", None)
+    _mark_close_contract(isclose)
+    pytorch_backend.isclose = isclose
+    if active_pytorch_backend:
+        backend.isclose = isclose
 
 
 def _patch_broadcast_arrays(pytorch_backend, backend, torch_module) -> None:
@@ -189,7 +230,7 @@ def _patch_broadcast_arrays(pytorch_backend, backend, torch_module) -> None:
 
 
 def patch_pytorch_allclose_device_contract() -> None:
-    """Patch raw/public PyTorch helpers to preserve existing tensor devices."""
+    """Patch raw/public PyTorch close helpers to preserve existing tensor devices."""
 
     try:
         import pyrecest._backend.pytorch as pytorch_backend  # pylint: disable=import-outside-toplevel
@@ -198,5 +239,9 @@ def patch_pytorch_allclose_device_contract() -> None:
     except ModuleNotFoundError:  # pragma: no cover - PyTorch backend may be unavailable
         return
 
+    _patch_pytorch_creation_shape_contract()
+    _patch_pytorch_linalg_logm_arraylike_contract()
+    _patch_pytorch_flip_numpy_axis_contract()
     _patch_allclose(pytorch_backend, backend, torch_module)
+    _patch_isclose(pytorch_backend, backend, torch_module)
     _patch_broadcast_arrays(pytorch_backend, backend, torch_module)
