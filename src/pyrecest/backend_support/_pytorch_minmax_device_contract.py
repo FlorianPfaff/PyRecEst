@@ -3,6 +3,11 @@
 from __future__ import annotations
 
 import importlib
+from operator import index as _operator_index
+
+import numpy as _np
+
+_AXIS_TYPE_ERROR = "axis must be None, an integer, or a tuple of integers"
 
 
 def _preferred_pytorch_device(torch_module, *values):
@@ -50,6 +55,88 @@ def _raw_pytorch_module():
         return importlib.import_module("pyrecest._backend.pytorch")
     except ModuleNotFoundError:
         return None
+
+
+def _pytorch_norm_axis_entry(axis, torch_module) -> int:
+    """Return one non-boolean NumPy-style norm axis."""
+    if isinstance(axis, (bool, _np.bool_)):
+        raise TypeError(_AXIS_TYPE_ERROR)
+    if torch_module.is_tensor(axis):
+        if axis.dtype == torch_module.bool:
+            raise TypeError(_AXIS_TYPE_ERROR)
+        if axis.ndim != 0:
+            raise TypeError(_AXIS_TYPE_ERROR)
+        return _operator_index(axis.item())
+    if isinstance(axis, _np.ndarray):
+        if axis.dtype == _np.bool_:
+            raise TypeError(_AXIS_TYPE_ERROR)
+        if axis.shape != ():
+            raise TypeError(_AXIS_TYPE_ERROR)
+        return _operator_index(axis.item())
+    return _operator_index(axis)
+
+
+def _normalize_pytorch_norm_axis(axis, torch_module):
+    """Normalize PyTorch ``linalg.norm`` axes without accepting booleans."""
+    if axis is None:
+        return None
+    if isinstance(axis, (bool, _np.bool_)):
+        raise TypeError(_AXIS_TYPE_ERROR)
+    if torch_module.is_tensor(axis):
+        if axis.dtype == torch_module.bool:
+            raise TypeError(_AXIS_TYPE_ERROR)
+        if axis.ndim == 0:
+            return _operator_index(axis.item())
+        if axis.ndim != 1:
+            raise TypeError(_AXIS_TYPE_ERROR)
+        axis = axis.detach().cpu().tolist()
+    elif isinstance(axis, _np.ndarray):
+        if axis.dtype == _np.bool_:
+            raise TypeError(_AXIS_TYPE_ERROR)
+        if axis.ndim == 0:
+            return _operator_index(axis.item())
+        if axis.ndim != 1:
+            raise TypeError(_AXIS_TYPE_ERROR)
+        axis = axis.tolist()
+    elif isinstance(axis, (int, _np.integer)):
+        return int(axis)
+
+    if isinstance(axis, (list, tuple)):
+        return tuple(_pytorch_norm_axis_entry(one_axis, torch_module) for one_axis in axis)
+    return _pytorch_norm_axis_entry(axis, torch_module)
+
+
+def _patch_pytorch_linalg_norm_axis_contract(raw_pytorch, backend, torch_module) -> None:
+    """Patch PyTorch linalg.norm axis normalization for boolean sequences."""
+    raw_linalg = getattr(raw_pytorch, "linalg", None)
+    if raw_linalg is None:
+        return
+    original_norm = getattr(raw_linalg, "norm", None)
+    if original_norm is None:
+        return
+    if getattr(original_norm, "_pyrecest_bool_sequence_axis_contract", False):
+        if getattr(backend, "__backend_name__", None) == "pytorch":
+            try:
+                backend_linalg = importlib.import_module("pyrecest.backend.linalg")
+            except ModuleNotFoundError:  # pragma: no cover - backend import failed first
+                return
+            backend_linalg.norm = original_norm
+        return
+
+    def norm(x, ord=None, axis=None, keepdims=False):
+        axis = _normalize_pytorch_norm_axis(axis, torch_module)
+        return original_norm(x, ord=ord, axis=axis, keepdims=keepdims)
+
+    norm.__name__ = getattr(original_norm, "__name__", "norm")
+    norm.__doc__ = getattr(original_norm, "__doc__", None)
+    norm._pyrecest_bool_sequence_axis_contract = True
+    raw_linalg.norm = norm
+    if getattr(backend, "__backend_name__", None) == "pytorch":
+        try:
+            backend_linalg = importlib.import_module("pyrecest.backend.linalg")
+        except ModuleNotFoundError:  # pragma: no cover - backend import failed first
+            return
+        backend_linalg.norm = norm
 
 
 def _patch_binary_helpers(
@@ -103,7 +190,7 @@ def _patch_binary_helpers(
 
 
 def patch_pytorch_minmax_device_contract() -> None:
-    """Patch raw/public PyTorch binary helpers to preserve device placement."""
+    """Patch raw/public PyTorch helpers to preserve backend contracts."""
     try:
         import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import torch  # pylint: disable=import-outside-toplevel
@@ -113,7 +200,6 @@ def patch_pytorch_minmax_device_contract() -> None:
     raw_pytorch = _raw_pytorch_module()
     if raw_pytorch is None:  # pragma: no cover - backend import failed earlier
         return
-
     _patch_binary_helpers(
         raw_pytorch,
         backend,
@@ -136,3 +222,4 @@ def patch_pytorch_minmax_device_contract() -> None:
         },
         "_pyrecest_comparison_device_contract",
     )
+    _patch_pytorch_linalg_norm_axis_contract(raw_pytorch, backend, torch)
