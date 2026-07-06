@@ -26,6 +26,18 @@ class LinearDiracDistribution(AbstractDiracDistribution, AbstractLinearDistribut
         return self.w @ self.d
 
     def set_mean(self, new_mean):
+        new_mean = asarray(new_mean)
+        if new_mean.ndim == 0:
+            if self.dim != 1:
+                raise ValueError(
+                    f"new_mean must have shape ({self.dim},), got {new_mean.shape}."
+                )
+            new_mean = reshape(new_mean, (1,))
+        elif new_mean.ndim != 1 or new_mean.shape[0] != self.dim:
+            raise ValueError(
+                f"new_mean must have shape ({self.dim},), got {new_mean.shape}."
+            )
+
         mean_offset = new_mean - self.mean()
         if self.d.ndim == 1:
             self.d += mean_offset
