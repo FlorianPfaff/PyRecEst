@@ -1,6 +1,8 @@
 """Tangent-space Gaussian distribution on Cartesian products of SO(3)."""
 
 # pylint: disable=no-name-in-module,no-member
+from numbers import Integral
+
 import numpy as np
 from pyrecest.backend import (
     abs,
@@ -68,6 +70,45 @@ def _to_python_bool(value) -> bool:
     if hasattr(value, "item"):
         return bool(value.item())
     return bool(value)
+
+
+def _normalize_rotation_indices(rotation_indices, num_rotations: int) -> list[int]:
+    message = "rotation_indices must contain valid zero-based integer indices."
+    if isinstance(rotation_indices, (bool, np.bool_)):
+        raise ValueError(message)
+
+    if isinstance(rotation_indices, Integral):
+        raw_indices = [rotation_indices]
+    else:
+        try:
+            indices_array = np.asarray(rotation_indices)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(message) from exc
+
+        if indices_array.ndim == 0:
+            raw_indices = [indices_array.item()]
+        elif indices_array.ndim == 1:
+            raw_indices = list(indices_array)
+        else:
+            raise ValueError(message)
+
+    if not raw_indices:
+        raise ValueError("rotation_indices must contain at least one index.")
+
+    normalized_indices = []
+    for index in raw_indices:
+        if isinstance(index, (bool, np.bool_)) or not isinstance(index, Integral):
+            raise ValueError(message)
+        parsed_index = int(index)
+        if parsed_index < 0 or parsed_index >= num_rotations:
+            raise ValueError(
+                f"rotation_indices must be in [0, {num_rotations - 1}]."
+            )
+        normalized_indices.append(parsed_index)
+
+    if len(set(normalized_indices)) != len(normalized_indices):
+        raise ValueError("rotation_indices must not contain duplicates.")
+    return normalized_indices
 
 
 class SO3ProductTangentGaussianDistribution(AbstractBoundedDomainDistribution):
@@ -429,8 +470,9 @@ class SO3ProductTangentGaussianDistribution(AbstractBoundedDomainDistribution):
 
     def marginalize_rotations(self, rotation_indices):
         """Return the marginal over selected SO(3) components."""
-        if isinstance(rotation_indices, int):
-            rotation_indices = [rotation_indices]
+        rotation_indices = _normalize_rotation_indices(
+            rotation_indices, self.num_rotations
+        )
         rotation_indices_array = array(rotation_indices)
         tangent_indices = [
             3 * rotation_index + offset
