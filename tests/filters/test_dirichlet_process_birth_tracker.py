@@ -1,8 +1,15 @@
 import numpy as np
+import pytest
 
+import pyrecest.backend
 from pyrecest.filters.dirichlet_process_birth_tracker import (
     DPBirthMultiBernoulliTracker,
     DirichletProcessBirthMultiBernoulliTracker,
+)
+
+pytestmark = pytest.mark.skipif(
+    pyrecest.backend.__backend_name__ != "numpy",
+    reason="DP birth multi-Bernoulli tracker inherits the NumPy-only MultiBernoulliTracker.",
 )
 
 
