@@ -45,17 +45,31 @@ class HypertoroidalGridSmoother(AbstractSmoother):
             Backward information messages. Their scale is arbitrary.
         """
 
-        filtered_states = self._as_grid_distribution_list(filtered_states, "filtered_states")
+        filtered_states = self._as_grid_distribution_list(
+            filtered_states, "filtered_states"
+        )
         likelihoods = self._as_grid_distribution_list(likelihoods, "likelihoods")
 
         if len(likelihoods) != len(filtered_states):
-            raise ValueError("likelihoods must have the same length as filtered_states.")
+            raise ValueError(
+                "likelihoods must have the same length as filtered_states."
+            )
 
         n_steps = len(filtered_states)
         reference = filtered_states[0]
-        filtered_states = [self._ensure_compatible_distribution(dist, reference, f"filtered_states[{idx}]") for idx, dist in enumerate(filtered_states)]
-        likelihoods = [self._ensure_compatible_distribution(dist, reference, f"likelihoods[{idx}]") for idx, dist in enumerate(likelihoods)]
-        transitions = self._normalize_transition_sequence(transitions, max(n_steps - 1, 0), reference)
+        filtered_states = [
+            self._ensure_compatible_distribution(
+                dist, reference, f"filtered_states[{idx}]"
+            )
+            for idx, dist in enumerate(filtered_states)
+        ]
+        likelihoods = [
+            self._ensure_compatible_distribution(dist, reference, f"likelihoods[{idx}]")
+            for idx, dist in enumerate(likelihoods)
+        ]
+        transitions = self._normalize_transition_sequence(
+            transitions, max(n_steps - 1, 0), reference
+        )
 
         backward_messages: list[HypertoroidalGridDistribution | None] = [None] * n_steps
         smoothed_states: list[HypertoroidalGridDistribution | None] = [None] * n_steps
@@ -68,9 +82,13 @@ class HypertoroidalGridSmoother(AbstractSmoother):
             next_backward = backward_messages[t + 1]
             assert next_backward is not None
 
-            future_values = self._flat_grid_values(likelihoods[t + 1]) * self._flat_grid_values(next_backward)
+            future_values = self._flat_grid_values(
+                likelihoods[t + 1]
+            ) * self._flat_grid_values(next_backward)
             beta_values = transitions[t].grid_values.T @ (cell_volume * future_values)
-            backward_messages[t] = self._make_grid_distribution_like(beta_values, reference)
+            backward_messages[t] = self._make_grid_distribution_like(
+                beta_values, reference
+            )
             smoothed_states[t] = filtered_states[t].multiply(backward_messages[t])
 
         return (
@@ -79,12 +97,16 @@ class HypertoroidalGridSmoother(AbstractSmoother):
         )
 
     @staticmethod
-    def constant_message_like(reference: HypertoroidalGridDistribution) -> HypertoroidalGridDistribution:
+    def constant_message_like(
+        reference: HypertoroidalGridDistribution,
+    ) -> HypertoroidalGridDistribution:
         """Return a constant backward message compatible with ``reference``."""
 
         if not isinstance(reference, HypertoroidalGridDistribution):
             raise TypeError("reference must be a HypertoroidalGridDistribution.")
-        return HypertoroidalGridSmoother._make_grid_distribution_like(ones(reference.grid_values.shape), reference)
+        return HypertoroidalGridSmoother._make_grid_distribution_like(
+            ones(reference.grid_values.shape), reference
+        )
 
     @staticmethod
     def _flat_grid_values(distribution: HypertoroidalGridDistribution):
@@ -92,10 +114,14 @@ class HypertoroidalGridSmoother(AbstractSmoother):
 
     @staticmethod
     def _cell_volume(reference: HypertoroidalGridDistribution) -> float:
-        return float((2.0 * pi) ** reference.dim / math.prod(reference.grid_values.shape))
+        return float(
+            (2.0 * pi) ** reference.dim / math.prod(reference.grid_values.shape)
+        )
 
     @staticmethod
-    def _make_grid_distribution_like(values, reference: HypertoroidalGridDistribution) -> HypertoroidalGridDistribution:
+    def _make_grid_distribution_like(
+        values, reference: HypertoroidalGridDistribution
+    ) -> HypertoroidalGridDistribution:
         return HypertoroidalGridDistribution(
             grid_values=reshape(values, reference.grid_values.shape),
             grid_type=reference.grid_type,
@@ -105,19 +131,25 @@ class HypertoroidalGridSmoother(AbstractSmoother):
         )
 
     @staticmethod
-    def _as_grid_distribution_list(distributions, name: str) -> list[HypertoroidalGridDistribution]:
+    def _as_grid_distribution_list(
+        distributions, name: str
+    ) -> list[HypertoroidalGridDistribution]:
         if isinstance(distributions, HypertoroidalGridDistribution):
             raise ValueError(f"{name} must be a sequence, not a single distribution.")
         try:
             distribution_list = list(distributions)
         except TypeError as exc:
-            raise TypeError(f"{name} must be a sequence of HypertoroidalGridDistribution instances.") from exc
+            raise TypeError(
+                f"{name} must be a sequence of HypertoroidalGridDistribution instances."
+            ) from exc
 
         if len(distribution_list) == 0:
             raise ValueError(f"{name} must contain at least one distribution.")
         for idx, distribution in enumerate(distribution_list):
             if not isinstance(distribution, HypertoroidalGridDistribution):
-                raise TypeError(f"{name}[{idx}] must be a HypertoroidalGridDistribution.")
+                raise TypeError(
+                    f"{name}[{idx}] must be a HypertoroidalGridDistribution."
+                )
         return distribution_list
 
     @staticmethod
@@ -127,19 +159,31 @@ class HypertoroidalGridSmoother(AbstractSmoother):
         name: str,
     ) -> HypertoroidalGridDistribution:
         if distribution.dim != reference.dim:
-            raise ValueError(f"{name} has dimension {distribution.dim}, expected {reference.dim}.")
+            raise ValueError(
+                f"{name} has dimension {distribution.dim}, expected {reference.dim}."
+            )
         if distribution.grid_type != reference.grid_type:
-            raise ValueError(f"{name} has grid type {distribution.grid_type!r}, expected {reference.grid_type!r}.")
+            raise ValueError(
+                f"{name} has grid type {distribution.grid_type!r}, expected {reference.grid_type!r}."
+            )
         if distribution.grid_values.shape != reference.grid_values.shape:
             raise ValueError(
                 f"{name} has grid value shape {distribution.grid_values.shape}, expected {reference.grid_values.shape}."
             )
         if distribution.enforce_pdf_nonnegative != reference.enforce_pdf_nonnegative:
-            raise ValueError(f"{name} must agree with the reference distribution on enforce_pdf_nonnegative.")
+            raise ValueError(
+                f"{name} must agree with the reference distribution on enforce_pdf_nonnegative."
+            )
         if (distribution.grid is None) != (reference.grid is None):
-            raise ValueError(f"{name} and the reference distribution must either both store grids or both omit them.")
-        if distribution.grid is not None and not allclose(distribution.grid, reference.grid):
-            raise ValueError(f"{name} has grid coordinates that differ from the reference distribution.")
+            raise ValueError(
+                f"{name} and the reference distribution must either both store grids or both omit them."
+            )
+        if distribution.grid is not None and not allclose(
+            distribution.grid, reference.grid
+        ):
+            raise ValueError(
+                f"{name} has grid coordinates that differ from the reference distribution."
+            )
         return distribution
 
     @classmethod
@@ -158,13 +202,19 @@ class HypertoroidalGridSmoother(AbstractSmoother):
             try:
                 transition_list = list(transitions)
             except TypeError as exc:
-                raise TypeError("transitions must be a TdCondTdGridDistribution or a sequence of them.") from exc
+                raise TypeError(
+                    "transitions must be a TdCondTdGridDistribution or a sequence of them."
+                ) from exc
 
         if len(transition_list) != expected_length:
-            raise ValueError("transitions must be a single distribution or contain one distribution per transition.")
+            raise ValueError(
+                "transitions must be a single distribution or contain one distribution per transition."
+            )
 
         for idx, transition in enumerate(transition_list):
-            cls._ensure_compatible_transition(transition, reference, f"transitions[{idx}]")
+            cls._ensure_compatible_transition(
+                transition, reference, f"transitions[{idx}]"
+            )
         return transition_list
 
     @staticmethod
@@ -182,10 +232,14 @@ class HypertoroidalGridSmoother(AbstractSmoother):
                 f"{name}.grid_values must have shape {(n_points, n_points)}, got {transition.grid_values.shape}."
             )
         if transition.grid.shape != (n_points, reference.dim):
-            raise ValueError(f"{name}.grid must have shape {(n_points, reference.dim)}, got {transition.grid.shape}.")
+            raise ValueError(
+                f"{name}.grid must have shape {(n_points, reference.dim)}, got {transition.grid.shape}."
+            )
         reference_grid = reference.get_grid()
         if not allclose(transition.grid, reference_grid):
-            raise ValueError(f"{name}.grid must match the grid of the state distributions.")
+            raise ValueError(
+                f"{name}.grid must match the grid of the state distributions."
+            )
 
 
 HypertoroidalGridBackwardInformationSmoother = HypertoroidalGridSmoother
