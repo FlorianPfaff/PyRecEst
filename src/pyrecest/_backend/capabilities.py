@@ -174,22 +174,37 @@ def _patch_random_backend_contracts() -> None:
         )
     except ModuleNotFoundError:  # pragma: no cover - backend support may be unavailable
         return
-
     patch_random_uniform_empty_bounds_contract()
 
 
-def _resolve_pytorch_argsort_axis(axis, dim) -> int | None:
+def _normalize_pytorch_argsort_axis(axis, torch_module) -> int:
+    """Return one NumPy-style argsort axis without bool-as-int coercion."""
+    if isinstance(axis, bool):
+        raise TypeError("an integer is required for the axis")
+    if torch_module.is_tensor(axis):
+        if axis.ndim != 0 or axis.dtype == torch_module.bool:
+            raise TypeError("an integer is required for the axis")
+    try:
+        return _operator_index(axis)
+    except TypeError as exc:
+        raise TypeError("an integer is required for the axis") from exc
+
+
+def _resolve_pytorch_argsort_axis(axis, dim, torch_module) -> int | None:
     """Resolve NumPy ``axis`` and PyTorch ``dim`` aliases for argsort."""
     axis_was_omitted = axis is _PYTORCH_ARGSORT_DEFAULT_AXIS
     if axis_was_omitted:
         axis = -1
     if dim is not None:
-        if not axis_was_omitted and axis is not None and axis != dim:
-            raise TypeError("argsort() got both 'axis' and 'dim'")
-        axis = dim
+        dim_value = _normalize_pytorch_argsort_axis(dim, torch_module)
+        if not axis_was_omitted and axis is not None:
+            axis_value = _normalize_pytorch_argsort_axis(axis, torch_module)
+            if axis_value != dim_value:
+                raise TypeError("argsort() got both 'axis' and 'dim'")
+        return dim_value
     if axis is None:
         return None
-    return _operator_index(axis)
+    return _normalize_pytorch_argsort_axis(axis, torch_module)
 
 
 def _patch_pytorch_argsort_contracts() -> None:
@@ -218,7 +233,7 @@ def _patch_pytorch_argsort_contracts() -> None:
         dim=None,
         descending=False,
     ):
-        axis_value = _resolve_pytorch_argsort_axis(axis, dim)
+        axis_value = _resolve_pytorch_argsort_axis(axis, dim, torch)
         if order is not None:
             raise ValueError("order is not supported by the PyTorch backend")
         if kind is not None:
