@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from math import prod, sqrt
+from numbers import Integral
 
 import numpy as np
 
@@ -12,10 +13,31 @@ from .abstract_hypertoroidal_distribution import AbstractHypertoroidalDistributi
 from .hypertoroidal_fourier_distribution import HypertoroidalFourierDistribution
 
 
-def _as_shape(shape):
-    normalized = tuple(int(n) for n in shape)
+def _as_shape(shape, *, dim=None):
+    if dim is not None:
+        dim = int(dim)
+        if dim < 1:
+            raise ValueError("dim must be positive when provided.")
+
+    if isinstance(shape, bool):
+        raise ValueError("Fourier coefficient side lengths must be positive and odd.")
+    if isinstance(shape, Integral):
+        normalized = (int(shape),) * (dim if dim is not None else 1)
+    else:
+        try:
+            values = []
+            for axis_size in shape:
+                if isinstance(axis_size, bool):
+                    raise ValueError("Fourier coefficient side lengths must be positive and odd.")
+                values.append(int(axis_size))
+            normalized = tuple(values)
+        except TypeError as exc:
+            raise TypeError("shape must be an integer or a sequence of integers.") from exc
+
     if not normalized:
         raise ValueError("shape must contain at least one dimension.")
+    if dim is not None and len(normalized) != dim:
+        raise ValueError(f"shape must contain {dim} dimensions.")
     if any(n < 1 or n % 2 != 1 for n in normalized):
         raise ValueError("Fourier coefficient side lengths must be positive and odd.")
     return normalized
@@ -63,7 +85,7 @@ class LowRankHypertoroidalFourierDistribution(AbstractHypertoroidalDistribution)
 
     @classmethod
     def uniform(cls, shape, transformation="identity"):
-        shape = _as_shape(shape if not isinstance(shape, int) else (shape,))
+        shape = _as_shape(shape)
         coefficient = (2.0 * np.pi) ** (-len(shape))
         if transformation == "sqrt":
             coefficient = sqrt(coefficient)
@@ -175,7 +197,7 @@ class LowRankHypertoroidalFourierDistribution(AbstractHypertoroidalDistribution)
     def multiply(self, other, n_coefficients=None, *, max_rank=None, rtol=0.0):
         other = self._ensure_low_rank(other)
         self._check_compatible(other)
-        target_shape = self.coeff_shape if n_coefficients is None else _as_shape(n_coefficients)
+        target_shape = self.coeff_shape if n_coefficients is None else _as_shape(n_coefficients, dim=self.dim)
         coeffs = self.coefficients.coefficient_convolution(other.coefficients, target_shape=target_shape)
         coeffs = coeffs.round(max_rank=max_rank, rtol=rtol)
         return LowRankHypertoroidalFourierDistribution(coeffs, self.transformation)
@@ -185,7 +207,7 @@ class LowRankHypertoroidalFourierDistribution(AbstractHypertoroidalDistribution)
         self._check_compatible(other)
         if self.transformation != "identity":
             raise NotImplementedError("Low-rank SqFF prediction is not implemented yet.")
-        if n_coefficients is not None and _as_shape(n_coefficients) != self.coeff_shape:
+        if n_coefficients is not None and _as_shape(n_coefficients, dim=self.dim) != self.coeff_shape:
             raise NotImplementedError("Changing coefficient shape during low-rank prediction is not implemented.")
         coeffs = self.coefficients.hadamard_product(other.coefficients)
         coeffs = coeffs.scaled((2.0 * np.pi) ** self.dim)
