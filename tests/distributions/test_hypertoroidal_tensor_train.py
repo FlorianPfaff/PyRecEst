@@ -1,0 +1,39 @@
+import unittest
+
+import numpy as np
+import numpy.testing as npt
+
+from pyrecest.distributions.hypertorus._tensor_train import TensorTrain
+
+
+class TestHypertoroidalTensorTrain(unittest.TestCase):
+    def test_dense_roundtrip_and_entry_access(self):
+        tensor = np.arange(27, dtype=float).reshape(3, 3, 3) + 1j
+        tt = TensorTrain.from_dense(tensor)
+        npt.assert_allclose(tt.to_dense(), tensor, atol=1e-12)
+        self.assertEqual(tt.shape, (3, 3, 3))
+        npt.assert_allclose(tt.entry((1, 2, 0)), tensor[1, 2, 0], atol=1e-12)
+
+    def test_frobenius_norm(self):
+        tensor = np.arange(9, dtype=float).reshape(3, 3) - 2.0
+        tt = TensorTrain.from_dense(tensor)
+        npt.assert_allclose(tt.norm_squared(), np.vdot(tensor, tensor).real, atol=1e-12)
+
+    def test_hadamard_product_matches_dense(self):
+        left = np.arange(9, dtype=float).reshape(3, 3)
+        right = np.arange(9, dtype=float).reshape(3, 3) + 1.0
+        product = TensorTrain.from_dense(left).hadamard_product(TensorTrain.from_dense(right))
+        npt.assert_allclose(product.to_dense(), left * right, atol=1e-12)
+
+    def test_centered_coefficient_convolution_matches_dense_1d(self):
+        left = np.array([1.0, 2.0, 3.0])
+        right = np.array([0.5, 1.0, -0.5])
+        result = TensorTrain.from_dense(left).coefficient_convolution(
+            TensorTrain.from_dense(right), target_shape=(3,)
+        )
+        expected = np.convolve(left, right, mode="same")
+        npt.assert_allclose(result.to_dense(), expected, atol=1e-12)
+
+
+if __name__ == "__main__":
+    unittest.main()
