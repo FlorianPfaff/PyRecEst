@@ -7,6 +7,25 @@ from math import prod, sqrt
 import numpy as np
 
 
+def _choose_rank(singular_values, max_rank, local_tolerance):
+    full_rank = singular_values.size
+    if local_tolerance <= 0:
+        rank = full_rank
+    else:
+        squared_tail = np.cumsum(singular_values[::-1] ** 2)[::-1]
+        rank = full_rank
+        for candidate in range(1, full_rank + 1):
+            tail = 0.0 if candidate == full_rank else sqrt(float(squared_tail[candidate]))
+            if tail <= local_tolerance:
+                rank = candidate
+                break
+    if max_rank is not None:
+        if max_rank < 1:
+            raise ValueError("max_rank must be positive when provided.")
+        rank = min(rank, max_rank)
+    return max(1, rank)
+
+
 class TensorTrain:
     """Minimal complex tensor-train representation."""
 
@@ -43,6 +62,35 @@ class TensorTrain:
     @property
     def storage_size(self):
         return int(sum(core.size for core in self.cores))
+
+    @classmethod
+    def from_dense(cls, tensor, *, max_rank=None, rtol=0.0, atol=0.0):
+        array = np.asarray(tensor, dtype=np.complex128)
+        if array.ndim < 1:
+            raise ValueError("A tensor with at least one axis is required.")
+        if any(axis_size < 1 for axis_size in array.shape):
+            raise ValueError("All tensor axes must be non-empty.")
+        if rtol < 0 or atol < 0:
+            raise ValueError("rtol and atol must be non-negative.")
+        if array.ndim == 1:
+            return cls((array.reshape(1, array.shape[0], 1),))
+
+        norm = float(np.linalg.norm(array.ravel()))
+        global_tolerance = max(float(atol), float(rtol) * norm)
+        local_tolerance = global_tolerance / sqrt(array.ndim - 1) if global_tolerance > 0 else 0.0
+
+        cores = []
+        unfolding = array
+        left_rank = 1
+        for mode_size in array.shape[:-1]:
+            matrix = unfolding.reshape(left_rank * mode_size, -1)
+            u, singular_values, vh = np.linalg.svd(matrix, full_matrices=False)
+            rank = _choose_rank(singular_values, max_rank, local_tolerance)
+            cores.append(u[:, :rank].reshape(left_rank, mode_size, rank))
+            unfolding = singular_values[:rank, None] * vh[:rank, :]
+            left_rank = rank
+        cores.append(unfolding.reshape(left_rank, array.shape[-1], 1))
+        return cls(cores)
 
     def copy(self):
         return TensorTrain(tuple(core.copy() for core in self.cores))
