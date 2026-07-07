@@ -1,3 +1,4 @@
+from math import isfinite as _isfinite
 from math import isinf as _isinf
 
 from . import model_comparison as _model_comparison
@@ -71,6 +72,7 @@ from .simulation_database import simulation_database
 from .summarize_filter_results import summarize_filter_results
 
 _original_classify_evidence_margin = classify_evidence_margin
+_original_paired_model_margin_decisions = paired_model_margin_decisions
 
 
 def _classify_evidence_margin(delta_log_evidence: float) -> str:
@@ -80,8 +82,42 @@ def _classify_evidence_margin(delta_log_evidence: float) -> str:
     return _original_classify_evidence_margin(delta_log_evidence)
 
 
+def _validated_margin_threshold(margin_threshold):
+    threshold = float(margin_threshold)
+    if threshold < 0.0 or not _isfinite(threshold):
+        raise ValueError("margin_threshold must be finite and non-negative")
+    return threshold
+
+
+def _paired_model_margin_decisions(
+    scores,
+    *,
+    positive_model,
+    reference_model,
+    margin_threshold=0.0,
+    group_cols=("session", "event_index"),
+    evidence_col="log_evidence",
+    model_col="model",
+    true_model_col=None,
+    positive_true_label=None,
+):
+    return _original_paired_model_margin_decisions(
+        scores,
+        positive_model=positive_model,
+        reference_model=reference_model,
+        margin_threshold=_validated_margin_threshold(margin_threshold),
+        group_cols=group_cols,
+        evidence_col=evidence_col,
+        model_col=model_col,
+        true_model_col=true_model_col,
+        positive_true_label=positive_true_label,
+    )
+
+
 _model_comparison.classify_evidence_margin = _classify_evidence_margin
 classify_evidence_margin = _classify_evidence_margin
+_model_comparison.paired_model_margin_decisions = _paired_model_margin_decisions
+paired_model_margin_decisions = _paired_model_margin_decisions
 
 __all__ = [
     "generate_groundtruth",
