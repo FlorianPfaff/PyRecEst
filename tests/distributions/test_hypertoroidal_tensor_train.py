@@ -34,6 +34,23 @@ class TestHypertoroidalTensorTrain(unittest.TestCase):
         expected = np.convolve(left, right, mode="same")
         npt.assert_allclose(result.to_dense(), expected, atol=1e-12)
 
+    def test_round_without_truncation_preserves_tensor(self):
+        rng = np.random.default_rng(0)
+        tensor = rng.normal(size=(3, 4, 2)) + 1j * rng.normal(size=(3, 4, 2))
+        tt = TensorTrain.from_dense(tensor)
+        rounded = tt.round()
+        npt.assert_allclose(rounded.to_dense(), tensor, atol=1e-12)
+        npt.assert_allclose(rounded.norm_squared(), tt.norm_squared(), atol=1e-12)
+
+    def test_round_truncates_ranks_without_dense_guard(self):
+        rng = np.random.default_rng(1)
+        tensor = rng.normal(size=(3, 3, 3)) + 1j * rng.normal(size=(3, 3, 3))
+        tt = TensorTrain.from_dense(tensor)
+        rounded = tt.round(max_rank=1, max_dense_entries=1)
+        self.assertEqual(rounded.ranks, (1, 1, 1, 1))
+        self.assertEqual(rounded.shape, tt.shape)
+        self.assertTrue(np.isfinite(rounded.norm_squared()))
+
 
 if __name__ == "__main__":
     unittest.main()

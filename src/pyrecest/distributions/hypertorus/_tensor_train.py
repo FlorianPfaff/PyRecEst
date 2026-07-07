@@ -166,12 +166,56 @@ class TensorTrain:
         ]
         return TensorTrain(cores)
 
-    def round(self, *, max_rank=None, rtol=0.0, atol=0.0, max_dense_entries=1_000_000):
-        if self.size > max_dense_entries and (max_rank is not None or rtol > 0 or atol > 0):
-            raise ValueError("Dense TT-SVD fallback would exceed max_dense_entries.")
-        if self.size > max_dense_entries:
+    def round(self, *, max_rank=None, rtol=0.0, atol=0.0, max_dense_entries=None):
+        """Return a rank-rounded TT without materializing the full tensor.
+
+        The optional ``max_dense_entries`` argument is accepted for backward
+        compatibility with the first prototype but is no longer used. Rounding
+        is performed by right-orthogonalization followed by left-to-right SVD
+        truncation. With the default parameters, the operation preserves the
+        represented tensor up to numerical roundoff while canonicalizing ranks.
+        """
+
+        del max_dense_entries
+        if rtol < 0 or atol < 0:
+            raise ValueError("rtol and atol must be non-negative.")
+        if self.ndim == 1:
             return self.copy()
-        return TensorTrain.from_dense(self.to_dense(), max_rank=max_rank, rtol=rtol, atol=atol)
+
+        norm = self.norm()
+        global_tolerance = max(float(atol), float(rtol) * norm)
+        local_tolerance = global_tolerance / sqrt(self.ndim - 1) if global_tolerance > 0 else 0.0
+
+        cores = [core.copy() for core in self.cores]
+
+        # Right-orthogonalize cores 1, ..., d-1. The R factors are absorbed
+        # into the preceding core so that the left-to-right truncation sweep can
+        # use ordinary matrix SVDs at each bond.
+        for axis in range(self.ndim - 1, 0, -1):
+            core = cores[axis]
+            left_rank, mode_size, right_rank = core.shape
+            matrix = core.reshape(left_rank, mode_size * right_rank)
+            q_trans, r_trans = np.linalg.qr(matrix.T, mode="reduced")
+            new_left_rank = q_trans.shape[1]
+            cores[axis] = q_trans.T.reshape(new_left_rank, mode_size, right_rank)
+            transfer = r_trans.T
+            cores[axis - 1] = np.tensordot(
+                cores[axis - 1], transfer, axes=([2], [0])
+            )
+
+        # Sweep left to right, truncate every bond, and absorb singular values
+        # into the following core.
+        for axis in range(self.ndim - 1):
+            core = cores[axis]
+            left_rank, mode_size, right_rank = core.shape
+            matrix = core.reshape(left_rank * mode_size, right_rank)
+            u, singular_values, vh = np.linalg.svd(matrix, full_matrices=False)
+            rank = _choose_rank(singular_values, max_rank, local_tolerance)
+            cores[axis] = u[:, :rank].reshape(left_rank, mode_size, rank)
+            transfer = singular_values[:rank, None] * vh[:rank, :]
+            cores[axis + 1] = np.tensordot(transfer, cores[axis + 1], axes=([1], [0]))
+
+        return TensorTrain(cores)
 
 
 def _convolve_cores_centered(left_core, right_core, target_mode_size):
