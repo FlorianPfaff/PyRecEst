@@ -143,22 +143,47 @@ def _is_real_numeric_dtype(dtype):
     return dtype.is_floating_point or dtype in _INTEGER_DTYPES
 
 
-def _validate_choice_probabilities(p, population_size, device):
-    if _contains_boolean_value(p):
-        raise TypeError("p must be real numeric, not boolean")
+def _coerce_probability_tensor(value, name, device):
+    if _contains_boolean_value(value):
+        raise TypeError(f"{name} must be real numeric, not boolean")
     try:
-        p = _torch.as_tensor(p, device=device)
+        if _torch.is_tensor(value):
+            values = value.to(device=device) if device is not None else value
+        else:
+            value_array = _np.asarray(value)
+            if value_array.dtype.kind not in "iuf":
+                raise TypeError
+            values = _torch.as_tensor(value_array, dtype=_torch.float64, device=device)
     except (TypeError, ValueError, RuntimeError) as exc:
-        raise TypeError("p must be real numeric") from exc
-    if not _is_real_numeric_dtype(p.dtype):
-        raise TypeError("p must be real numeric")
-    p = p.to(dtype=_torch.float32)
+        raise TypeError(f"{name} must be real numeric") from exc
+    if not _is_real_numeric_dtype(values.dtype):
+        raise TypeError(f"{name} must be real numeric")
+    return values.to(dtype=_torch.float64)
+
+
+def _normalize_probability_tensor(values):
+    if values.numel() == 0:
+        scale = values.new_tensor(0.0)
+    else:
+        scale = values.max()
+    if (
+        bool(_torch.any(values < 0))
+        or not bool(_torch.isfinite(scale))
+        or bool(scale <= 0)
+    ):
+        raise ValueError("probabilities do not sum to a positive value")
+    scaled = values / scale
+    total = scaled.sum()
+    if not bool(_torch.isfinite(total)) or bool(total <= 0):
+        raise ValueError("probabilities do not sum to a positive value")
+    return scaled / total
+
+
+def _validate_choice_probabilities(p, population_size, device):
+    p = _coerce_probability_tensor(p, "p", device)
     if p.ndim != 1 or p.shape[0] != population_size:
         raise ValueError("p must be 1-dimensional with one entry per population item")
-    p_sum = p.sum()
-    if bool(_torch.any(p < 0)) or not bool(_torch.isfinite(p_sum)) or bool(p_sum <= 0):
-        raise ValueError("probabilities do not sum to a positive value")
-    return p / p_sum
+    return _normalize_probability_tensor(p)
 
 
 def _randint_size(size):
@@ -480,15 +505,7 @@ def _multinomial_sample_count(sample_shape):
 
 
 def _validate_multinomial_pvals(pvals, device):
-    if _contains_boolean_value(pvals):
-        raise TypeError("pvals must be real numeric, not boolean")
-    try:
-        pvals = _torch.as_tensor(pvals, device=device)
-    except (TypeError, ValueError, RuntimeError) as exc:
-        raise TypeError("pvals must be real numeric") from exc
-    if not _is_real_numeric_dtype(pvals.dtype):
-        raise TypeError("pvals must be real numeric")
-    return pvals.to(dtype=_torch.float32)
+    return _coerce_probability_tensor(pvals, "pvals", device)
 
 
 def multinomial(n, pvals, size=None):
@@ -506,14 +523,7 @@ def multinomial(n, pvals, size=None):
     if pvals.numel() == 0:
         raise ValueError("pvals must contain at least one probability")
 
-    p_sum = pvals.sum()
-    if (
-        bool(_torch.any(pvals < 0))
-        or not bool(_torch.isfinite(p_sum))
-        or bool(p_sum <= 0)
-    ):
-        raise ValueError("probabilities do not sum to a positive value")
-    pvals = pvals / p_sum
+    pvals = _normalize_probability_tensor(pvals)
 
     output_shape = (*sample_shape, pvals.shape[0])
     sample_count = _multinomial_sample_count(sample_shape)
