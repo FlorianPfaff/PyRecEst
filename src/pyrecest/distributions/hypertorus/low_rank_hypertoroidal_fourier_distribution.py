@@ -194,8 +194,14 @@ class LowRankHypertoroidalFourierDistribution(AbstractHypertoroidalDistribution)
     def multiply(self, other, n_coefficients=None, *, max_rank=None, rtol=0.0):
         other = self._ensure_low_rank(other)
         self._check_compatible(other)
-        target_shape = self.coeff_shape if n_coefficients is None else _as_shape(n_coefficients, dim=self.dim)
-        coeffs = self.coefficients.coefficient_convolution(other.coefficients, target_shape=target_shape)
+        target_shape = (
+            self.coeff_shape
+            if n_coefficients is None
+            else _as_shape(n_coefficients, dim=self.dim)
+        )
+        coeffs = self.coefficients.coefficient_convolution(
+            other.coefficients, target_shape=target_shape
+        )
         coeffs = coeffs.round(max_rank=max_rank, rtol=rtol)
         return LowRankHypertoroidalFourierDistribution(coeffs, self.transformation)
 
@@ -204,8 +210,12 @@ class LowRankHypertoroidalFourierDistribution(AbstractHypertoroidalDistribution)
         self._check_compatible(other)
         if self.transformation != "identity":
             raise NotImplementedError("Low-rank SqFF prediction is not implemented yet.")
-        if n_coefficients is not None and _as_shape(n_coefficients, dim=self.dim) != self.coeff_shape:
-            raise NotImplementedError("Changing coefficient shape during low-rank prediction is not implemented.")
+        if n_coefficients is not None:
+            target_shape = _as_shape(n_coefficients, dim=self.dim)
+            if target_shape != self.coeff_shape:
+                raise NotImplementedError(
+                    "Changing coefficient shape during low-rank prediction is not implemented."
+                )
         coeffs = self.coefficients.hadamard_product(other.coefficients)
         coeffs = coeffs.scaled((2.0 * np.pi) ** self.dim)
         coeffs = coeffs.round(max_rank=max_rank, rtol=rtol)
