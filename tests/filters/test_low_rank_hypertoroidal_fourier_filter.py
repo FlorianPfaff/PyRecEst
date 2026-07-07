@@ -56,6 +56,23 @@ class TestLowRankHypertoroidalFourierFilter(unittest.TestCase):
             low_rank_filter.filter_state.to_dense(), dense_filter.filter_state.coeff_mat, atol=1e-10
         )
 
+    def test_update_identity_accepts_scalar_1d_measurement(self):
+        vector_filter = LowRankHypertoroidalFourierFilter((5,), "identity")
+        scalar_filter = LowRankHypertoroidalFourierFilter((5,), "identity")
+        prior = HypertoroidalFourierDistribution(_identity_coefficients_1d(), "identity")
+        noise = HypertoroidalFourierDistribution(_identity_coefficients_1d(0.5), "identity")
+        vector_filter.filter_state = prior
+        scalar_filter.filter_state = prior
+
+        vector_filter.update_identity(noise, np.array([1.5]))
+        scalar_filter.update_identity(noise, 1.5)
+
+        npt.assert_allclose(
+            scalar_filter.filter_state.to_dense(),
+            vector_filter.filter_state.to_dense(),
+            atol=1e-10,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

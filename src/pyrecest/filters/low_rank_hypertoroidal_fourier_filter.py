@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import warnings
 
-import numpy as np
-
 import pyrecest.backend
+from pyrecest.distributions.hypertorus._input_validation import as_shift_vector
 from pyrecest.distributions.hypertorus.abstract_hypertoroidal_distribution import (
     AbstractHypertoroidalDistribution,
 )
@@ -104,9 +103,7 @@ class LowRankHypertoroidalFourierFilter(AbstractFilter, HypertoroidalFilterMixin
         """Update for z = x + v mod 2*pi."""
 
         d_meas = self._convert_noise(d_meas)
-        z = np.asarray(z)
-        if z.shape != (self._filter_state.dim,):
-            raise ValueError(f"z must have shape ({self._filter_state.dim},), got {z.shape}")
+        z = as_shift_vector(z, self._filter_state.dim, name="z")
         likelihood = d_meas.shift(z)
         self._filter_state = self._filter_state.multiply(
             likelihood, max_rank=self.max_rank, rtol=self.rtol
