@@ -5,6 +5,7 @@ from __future__ import annotations
 from math import prod, sqrt
 
 import numpy as np
+from scipy import signal
 
 
 def _choose_rank(singular_values, max_rank, local_tolerance):
@@ -110,7 +111,8 @@ class TensorTrain:
         return complex(value.reshape(()))
 
     def norm_squared(self):
-        value = np.vdot(self.to_dense().ravel(), self.to_dense().ravel())
+        dense = self.to_dense().ravel()
+        value = np.vdot(dense, dense)
         return float(np.real_if_close(value, tol=1000).real)
 
     def norm(self):
@@ -120,3 +122,37 @@ class TensorTrain:
         cores = [core.copy() for core in self.cores]
         cores[0] = cores[0] * factor
         return TensorTrain(cores)
+
+    def multiply_axis_factors(self, factors):
+        if len(factors) != self.ndim:
+            raise ValueError("factors must contain one vector per TT core.")
+        cores = []
+        for core, factor in zip(self.cores, factors):
+            vector = np.asarray(factor, dtype=np.complex128)
+            if vector.shape != (core.shape[1],):
+                raise ValueError("Each factor vector must match the corresponding mode size.")
+            cores.append(core * vector[None, :, None])
+        return TensorTrain(cores)
+
+    def hadamard_product(self, other):
+        if self.shape != other.shape:
+            raise ValueError("Hadamard products require identical tensor shapes.")
+        return TensorTrain.from_dense(self.to_dense() * other.to_dense())
+
+    def coefficient_convolution(self, other, *, target_shape=None):
+        if self.ndim != other.ndim:
+            raise ValueError("Convolution operands must have the same number of dimensions.")
+        if target_shape is None:
+            target_shape = self.shape
+        conv = signal.fftconvolve(self.to_dense(), other.to_dense(), mode="same")
+        if tuple(conv.shape) != tuple(target_shape):
+            slices = tuple(slice(0, int(n)) for n in target_shape)
+            conv = conv[slices]
+        return TensorTrain.from_dense(conv)
+
+    def round(self, *, max_rank=None, rtol=0.0, atol=0.0, max_dense_entries=1_000_000):
+        if self.size > max_dense_entries and (max_rank is not None or rtol > 0 or atol > 0):
+            raise ValueError("Dense TT-SVD fallback would exceed max_dense_entries.")
+        if self.size > max_dense_entries:
+            return self.copy()
+        return TensorTrain.from_dense(self.to_dense(), max_rank=max_rank, rtol=rtol, atol=atol)
