@@ -104,7 +104,10 @@ def track_survival_prior_components(
 ) -> list[TrackSurvivalPriorComponents]:
     """Resolve survival-aware prior factors for every track."""
     cfg = _as_config(config)
-    return [_components_for_track(tracks, i, current_step=current_step, config=cfg) for i in range(len(tracks))]
+    return [
+        _components_for_track(tracks, i, current_step=current_step, config=cfg)
+        for i in range(len(tracks))
+    ]
 
 
 def survival_aware_missed_detection_costs(
@@ -115,7 +118,12 @@ def survival_aware_missed_detection_costs(
 ) -> np.ndarray:
     """Return per-track costs for leaving tracks unmatched."""
     return np.asarray(
-        [component.missed_detection_cost for component in track_survival_prior_components(tracks, current_step=current_step, config=config)]
+        [
+            component.missed_detection_cost
+            for component in track_survival_prior_components(
+                tracks, current_step=current_step, config=config
+            )
+        ]
     )
 
 
@@ -164,16 +172,28 @@ def apply_survival_association_prior(
 ) -> list[AssociationHypothesis]:
     """Fold survival-aware prior factors into pairwise hypothesis scores."""
     _validate_cost_mode(cost_mode)
-    components = track_survival_prior_components(tracks, current_step=current_step, config=config)
+    components = track_survival_prior_components(
+        tracks, current_step=current_step, config=config
+    )
     adjusted = []
     for hypothesis in hypotheses:
         if hypothesis.is_missed_detection:
             adjusted.append(hypothesis)
             continue
-        component = components[_valid_track_index(hypothesis.track_index, len(components))]
+        component = components[
+            _valid_track_index(hypothesis.track_index, len(components))
+        ]
         log_weight = component.log_assignment_weight
-        adjusted_log_likelihood = None if hypothesis.log_likelihood is None else float(hypothesis.log_likelihood) + log_weight
-        adjusted_probability = None if hypothesis.probability is None else float(hypothesis.probability) * component.assignment_weight
+        adjusted_log_likelihood = (
+            None
+            if hypothesis.log_likelihood is None
+            else float(hypothesis.log_likelihood) + log_weight
+        )
+        adjusted_probability = (
+            None
+            if hypothesis.probability is None
+            else float(hypothesis.probability) * component.assignment_weight
+        )
         metadata = dict(hypothesis.metadata or {})
         metadata["survival_prior"] = {
             "track_mass": component.track_mass,
@@ -188,7 +208,9 @@ def apply_survival_association_prior(
         adjusted.append(
             replace(
                 hypothesis,
-                cost=_adjusted_cost(hypothesis, log_weight, adjusted_log_likelihood, cost_mode),
+                cost=_adjusted_cost(
+                    hypothesis, log_weight, adjusted_log_likelihood, cost_mode
+                ),
                 log_likelihood=adjusted_log_likelihood,
                 probability=adjusted_probability,
                 metadata=metadata,
@@ -237,11 +259,17 @@ def build_survival_aware_linear_gaussian_associator(
             config=cfg,
             cost_mode=eff_cost_mode,
         )
-        measurement_vectors = _coerce_measurements(measurements, measurement_axis=eff_axis, measurement_dim=measurement_dim)
+        measurement_vectors = _coerce_measurements(
+            measurements, measurement_axis=eff_axis, measurement_dim=measurement_dim
+        )
         track_cost = kwargs.get("unassigned_track_cost", unassigned_track_cost)
         if track_cost is None:
-            track_cost = survival_aware_missed_detection_costs(tracks, current_step=eff_step, config=cfg)
-        measurement_cost = kwargs.get("unassigned_measurement_cost", unassigned_measurement_cost)
+            track_cost = survival_aware_missed_detection_costs(
+                tracks, current_step=eff_step, config=cfg
+            )
+        measurement_cost = kwargs.get(
+            "unassigned_measurement_cost", unassigned_measurement_cost
+        )
         if measurement_cost is None:
             measurement_cost = survival_aware_birth_costs(
                 measurement_vectors,
@@ -274,12 +302,57 @@ def _components_for_track(tracks, track_index, *, current_step, config):
     track = tracks[track_index]
     miss_count = _misses(track)
     steps_since_seen = _steps_since_seen(track, current_step=current_step)
-    base_mass = _resolve_track_nonnegative(config.track_mass, tracks, track_index, "track_mass", current_step=current_step, default_value=max(float(_hits(track)), 1.0))
-    track_mass = max(base_mass * float(config.track_mass_decay) ** miss_count, float(config.minimum_track_mass))
-    survival = _resolve_track_probability(config.survival_probability, tracks, track_index, "survival_probability", current_step=current_step, default_value=1.0) ** steps_since_seen
-    existence = _resolve_track_probability(config.existence_probability, tracks, track_index, "existence_probability", current_step=current_step, attr_name="existence_probability", metadata_key="existence_probability", default_value=1.0)
-    detection = _resolve_track_probability(config.detection_probability, tracks, track_index, "detection_probability", current_step=current_step, metadata_key="detection_probability", default_value=1.0)
-    visibility = _resolve_track_probability(config.visibility_probability, tracks, track_index, "visibility_probability", current_step=current_step, metadata_key="visibility_probability", default_value=1.0)
+    base_mass = _resolve_track_nonnegative(
+        config.track_mass,
+        tracks,
+        track_index,
+        "track_mass",
+        current_step=current_step,
+        default_value=max(float(_hits(track)), 1.0),
+    )
+    track_mass = max(
+        base_mass * float(config.track_mass_decay) ** miss_count,
+        float(config.minimum_track_mass),
+    )
+    survival = (
+        _resolve_track_probability(
+            config.survival_probability,
+            tracks,
+            track_index,
+            "survival_probability",
+            current_step=current_step,
+            default_value=1.0,
+        )
+        ** steps_since_seen
+    )
+    existence = _resolve_track_probability(
+        config.existence_probability,
+        tracks,
+        track_index,
+        "existence_probability",
+        current_step=current_step,
+        attr_name="existence_probability",
+        metadata_key="existence_probability",
+        default_value=1.0,
+    )
+    detection = _resolve_track_probability(
+        config.detection_probability,
+        tracks,
+        track_index,
+        "detection_probability",
+        current_step=current_step,
+        metadata_key="detection_probability",
+        default_value=1.0,
+    )
+    visibility = _resolve_track_probability(
+        config.visibility_probability,
+        tracks,
+        track_index,
+        "visibility_probability",
+        current_step=current_step,
+        metadata_key="visibility_probability",
+        default_value=1.0,
+    )
     return TrackSurvivalPriorComponents(
         track_mass=track_mass,
         existence_probability=existence,
@@ -292,27 +365,61 @@ def _components_for_track(tracks, track_index, *, current_step, config):
 
 
 def _adjusted_cost(hypothesis, log_weight, adjusted_log_likelihood, cost_mode):
-    if cost_mode == "log_likelihood" or (cost_mode == "auto" and adjusted_log_likelihood is not None):
+    if cost_mode == "log_likelihood" or (
+        cost_mode == "auto" and adjusted_log_likelihood is not None
+    ):
         if adjusted_log_likelihood is not None:
             return -float(adjusted_log_likelihood)
     return hypothesis_cost(hypothesis) - log_weight
 
 
-def _resolve_track_probability(value, tracks, index, name, *, current_step, attr_name=None, metadata_key=None, default_value):
+def _resolve_track_probability(
+    value,
+    tracks,
+    index,
+    name,
+    *,
+    current_step,
+    attr_name=None,
+    metadata_key=None,
+    default_value,
+):
     return _as_probability(
-        _resolve_track_value(value, tracks, index, name, current_step=current_step, attr_name=attr_name, metadata_key=metadata_key, default_value=default_value),
+        _resolve_track_value(
+            value,
+            tracks,
+            index,
+            name,
+            current_step=current_step,
+            attr_name=attr_name,
+            metadata_key=metadata_key,
+            default_value=default_value,
+        ),
         name,
     )
 
 
-def _resolve_track_nonnegative(value, tracks, index, name, *, current_step, default_value):
+def _resolve_track_nonnegative(
+    value, tracks, index, name, *, current_step, default_value
+):
     return _as_nonnegative_scalar(
-        _resolve_track_value(value, tracks, index, name, current_step=current_step, attr_name=None, metadata_key=None, default_value=default_value),
+        _resolve_track_value(
+            value,
+            tracks,
+            index,
+            name,
+            current_step=current_step,
+            attr_name=None,
+            metadata_key=None,
+            default_value=default_value,
+        ),
         name,
     )
 
 
-def _resolve_track_value(value, tracks, index, name, *, current_step, attr_name, metadata_key, default_value):
+def _resolve_track_value(
+    value, tracks, index, name, *, current_step, attr_name, metadata_key, default_value
+):
     track = tracks[index]
     if value is None:
         metadata = _metadata(track)
@@ -327,22 +434,30 @@ def _resolve_track_value(value, tracks, index, name, *, current_step, attr_name,
     if values.shape == ():
         return values.item()
     if values.size != len(tracks):
-        raise ValueError(f"{name} must be scalar, callable, or have length {len(tracks)}")
+        raise ValueError(
+            f"{name} must be scalar, callable, or have length {len(tracks)}"
+        )
     return values.reshape(-1)[index]
 
 
-def _resolve_measurement_probability(value, measurements, index, name, *, current_step, default_value):
+def _resolve_measurement_probability(
+    value, measurements, index, name, *, current_step, default_value
+):
     if value is None:
         resolved = default_value
     elif callable(value):
-        resolved = value(measurements[index], measurement_index=index, current_step=current_step)
+        resolved = value(
+            measurements[index], measurement_index=index, current_step=current_step
+        )
     else:
         values = np.asarray(value)
         if values.shape == ():
             resolved = values.item()
         else:
             if values.size != len(measurements):
-                raise ValueError(f"{name} must be scalar, callable, or have length {len(measurements)}")
+                raise ValueError(
+                    f"{name} must be scalar, callable, or have length {len(measurements)}"
+                )
             resolved = values.reshape(-1)[index]
     return _as_probability(resolved, name)
 
@@ -380,7 +495,11 @@ def _valid_track_index(value, num_tracks):
         raise ValueError("hypothesis.track_index must be a nonnegative integer")
     if isinstance(scalar, (int, np.integer)):
         index = int(scalar)
-    elif isinstance(scalar, (float, np.floating)) and np.isfinite(scalar) and float(scalar).is_integer():
+    elif (
+        isinstance(scalar, (float, np.floating))
+        and np.isfinite(scalar)
+        and float(scalar).is_integer()
+    ):
         index = int(scalar)
     else:
         raise ValueError("hypothesis.track_index must be a nonnegative integer")

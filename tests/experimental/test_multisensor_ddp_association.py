@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.experimental.multisensor_ddp_association import (
     BIRTH_LABEL,
     CLUTTER_LABEL,
@@ -34,12 +33,25 @@ def test_multisensor_update_shares_target_atoms_across_sensors():
         prior_strength=0.5,
     )
 
-    assert result.assignment_labels == ("target-a", "target-b", BIRTH_LABEL, CLUTTER_LABEL)
-    assert result.posterior_for_sensor("radar").hard_assignments == ("target-a", "target-b")
-    assert result.posterior_for_sensor("camera").hard_assignments == ("target-a", "target-b")
+    assert result.assignment_labels == (
+        "target-a",
+        "target-b",
+        BIRTH_LABEL,
+        CLUTTER_LABEL,
+    )
+    assert result.posterior_for_sensor("radar").hard_assignments == (
+        "target-a",
+        "target-b",
+    )
+    assert result.posterior_for_sensor("camera").hard_assignments == (
+        "target-a",
+        "target-b",
+    )
     assert result.posterior_for_sensor("radar").responsibilities[0, 0] > 0.90
     assert result.posterior_for_sensor("camera").responsibilities[1, 1] > 0.85
-    assert np.isclose(result.updated_target_weights.sum() + result.updated_birth_weight, 1.0)
+    assert np.isclose(
+        result.updated_target_weights.sum() + result.updated_birth_weight, 1.0
+    )
     assert result.expected_clutter_count < 0.2
 
 
@@ -52,7 +64,9 @@ def test_clutter_evidence_competes_with_existing_target_and_birth_atoms():
         concentration=1.0,
     )
 
-    result = multisensor_ddp_association_update([0.45, 0.45], [block], birth_weight=0.10)
+    result = multisensor_ddp_association_update(
+        [0.45, 0.45], [block], birth_weight=0.10
+    )
 
     posterior = result.posterior_for_sensor("lidar")
     assert posterior.hard_assignments == (CLUTTER_LABEL,)
@@ -69,8 +83,12 @@ def test_point_target_projection_allows_each_existing_target_once_per_sensor():
         concentration=5.0,
     )
 
-    result = multisensor_ddp_association_update([0.5, 0.5], [block], birth_weight=0.05, point_target=True)
-    target_responsibilities = result.posterior_for_sensor("radar").target_responsibilities
+    result = multisensor_ddp_association_update(
+        [0.5, 0.5], [block], birth_weight=0.05, point_target=True
+    )
+    target_responsibilities = result.posterior_for_sensor(
+        "radar"
+    ).target_responsibilities
 
     assert np.all(target_responsibilities.sum(axis=0) <= 1.0)
     assert result.posterior_for_sensor("radar").hard_assignments.count(0) == 1
@@ -105,5 +123,8 @@ def test_input_validation_rejects_shape_and_probability_errors():
     with pytest.raises(ValueError, match="duplicate sensor_id"):
         multisensor_ddp_association_update(
             [1.0],
-            [SensorAssociationBlock("camera", [[0.0]]), SensorAssociationBlock("camera", [[0.0]])],
+            [
+                SensorAssociationBlock("camera", [[0.0]]),
+                SensorAssociationBlock("camera", [[0.0]]),
+            ],
         )
