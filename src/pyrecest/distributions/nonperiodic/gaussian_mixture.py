@@ -27,9 +27,7 @@ class GaussianMixture(LinearMixture, AbstractLinearDistribution):
         new_mean = array(new_mean)
         if new_mean.ndim == 0:
             if self.dim != 1:
-                raise ValueError(
-                    f"new_mean must have shape ({self.dim},), got scalar."
-                )
+                raise ValueError(f"new_mean must have shape ({self.dim},), got scalar.")
             new_mean = reshape(new_mean, (1,))
         elif new_mean.shape != (self.dim,):
             raise ValueError(

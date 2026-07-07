@@ -1,7 +1,8 @@
 import pytest
-
 from pyrecest.backend import array
-from pyrecest.distributions.hypertorus.hypertoroidal_uniform_distribution import HypertoroidalUniformDistribution
+from pyrecest.distributions.hypertorus.hypertoroidal_uniform_distribution import (
+    HypertoroidalUniformDistribution,
+)
 
 
 def test_uniform_moment_rejects_invalid_order():
