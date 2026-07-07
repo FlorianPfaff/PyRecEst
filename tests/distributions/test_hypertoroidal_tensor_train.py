@@ -51,6 +51,22 @@ class TestHypertoroidalTensorTrain(unittest.TestCase):
         self.assertEqual(rounded.shape, tt.shape)
         self.assertTrue(np.isfinite(rounded.norm_squared()))
 
+    def test_max_rank_requires_positive_integer(self):
+        tensor = np.arange(8, dtype=float).reshape(2, 2, 2)
+        tt = TensorTrain.from_dense(tensor)
+        for invalid in (True, np.bool_(False), 1.5, "1"):
+            with self.subTest(invalid=invalid):
+                with self.assertRaises(TypeError):
+                    TensorTrain.from_dense(tensor, max_rank=invalid)
+                with self.assertRaises(TypeError):
+                    tt.round(max_rank=invalid)
+        for invalid in (0, -1):
+            with self.subTest(invalid=invalid):
+                with self.assertRaises(ValueError):
+                    TensorTrain.from_dense(tensor, max_rank=invalid)
+                with self.assertRaises(ValueError):
+                    tt.round(max_rank=invalid)
+
 
 if __name__ == "__main__":
     unittest.main()

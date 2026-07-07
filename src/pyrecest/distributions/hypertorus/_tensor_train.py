@@ -8,7 +8,22 @@ from operator import index as _operator_index
 import numpy as np
 
 
+def _normalize_max_rank(max_rank):
+    if max_rank is None:
+        return None
+    if isinstance(max_rank, (bool, np.bool_)):
+        raise TypeError("max_rank must be an integer when provided.")
+    try:
+        normalized = _operator_index(max_rank)
+    except TypeError as exc:
+        raise TypeError("max_rank must be an integer when provided.") from exc
+    if normalized < 1:
+        raise ValueError("max_rank must be positive when provided.")
+    return normalized
+
+
 def _choose_rank(singular_values, max_rank, local_tolerance):
+    max_rank = _normalize_max_rank(max_rank)
     full_rank = singular_values.size
     if local_tolerance <= 0:
         rank = full_rank
@@ -21,8 +36,6 @@ def _choose_rank(singular_values, max_rank, local_tolerance):
                 rank = candidate
                 break
     if max_rank is not None:
-        if max_rank < 1:
-            raise ValueError("max_rank must be positive when provided.")
         rank = min(rank, max_rank)
     return max(1, rank)
 
@@ -77,6 +90,7 @@ class TensorTrain:
 
     @classmethod
     def from_dense(cls, tensor, *, max_rank=None, rtol=0.0, atol=0.0):
+        max_rank = _normalize_max_rank(max_rank)
         array = np.asarray(tensor, dtype=np.complex128)
         if array.ndim < 1:
             raise ValueError("A tensor with at least one axis is required.")
@@ -191,6 +205,7 @@ class TensorTrain:
         """
 
         del max_dense_entries
+        max_rank = _normalize_max_rank(max_rank)
         if rtol < 0 or atol < 0:
             raise ValueError("rtol and atol must be non-negative.")
         if self.ndim == 1:

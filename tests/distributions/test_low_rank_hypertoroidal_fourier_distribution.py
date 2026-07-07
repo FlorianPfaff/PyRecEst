@@ -4,6 +4,7 @@ import numpy as np
 import numpy.testing as npt
 
 import pyrecest.backend
+from pyrecest.distributions.hypertorus._tensor_train import TensorTrain
 from pyrecest.distributions.hypertorus.hypertoroidal_fourier_distribution import (
     HypertoroidalFourierDistribution,
 )
@@ -83,6 +84,34 @@ class TestLowRankHypertoroidalFourierDistribution(unittest.TestCase):
         self.assertEqual(dist.tt_ranks, (1,) * 9)
         npt.assert_allclose(dist.integrate(), 1.0, atol=1e-12)
         self.assertTrue(np.isfinite(dist.pdf(np.zeros(8))))
+
+    def test_tensor_train_from_dense_validates_max_rank_before_one_dimensional_return(self):
+        for max_rank in (0, -1, np.array(0)):
+            with self.subTest(max_rank=repr(max_rank)):
+                with self.assertRaises(ValueError):
+                    TensorTrain.from_dense(np.ones(5), max_rank=max_rank)
+
+        for max_rank in (True, False, np.bool_(True), np.array(True), 1.5, "1"):
+            with self.subTest(max_rank=repr(max_rank)):
+                with self.assertRaises(TypeError):
+                    TensorTrain.from_dense(np.ones(5), max_rank=max_rank)
+
+    def test_tensor_train_round_validates_max_rank_before_one_dimensional_return(self):
+        tensor_train = TensorTrain.from_dense(np.ones(5))
+        for max_rank in (0, -1, np.array(0)):
+            with self.subTest(max_rank=repr(max_rank)):
+                with self.assertRaises(ValueError):
+                    tensor_train.round(max_rank=max_rank)
+
+        for max_rank in (True, False, np.bool_(True), np.array(True), 1.5, "1"):
+            with self.subTest(max_rank=repr(max_rank)):
+                with self.assertRaises(TypeError):
+                    tensor_train.round(max_rank=max_rank)
+
+    def test_tensor_train_accepts_integer_scalar_array_max_rank(self):
+        tensor_train = TensorTrain.from_dense(np.eye(3), max_rank=np.array(1))
+
+        self.assertEqual(tensor_train.ranks, (1, 1, 1))
 
 
 if __name__ == "__main__":
