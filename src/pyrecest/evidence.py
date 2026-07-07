@@ -211,8 +211,10 @@ def resolve_evidence_computation_mode(
 
 
 try:
-    from pyrecest._backend_runtime_patches import (  # pylint: disable=import-outside-toplevel
-        patch_pytorch_close_equal_nan_device_contract as _patch_pytorch_close_equal_nan_device_contract,
+    from pyrecest._backend_runtime_patches import (
+        patch_pytorch_close_equal_nan_device_contract as _patch_pytorch_close_equal_nan_device_contract,  # pylint: disable=import-outside-toplevel
+    )
+    from pyrecest._backend_runtime_patches import (
         patch_pytorch_repeat_numpy_contract as _patch_pytorch_repeat_numpy_contract,
     )
 except ModuleNotFoundError:  # pragma: no cover - source tree corruption only

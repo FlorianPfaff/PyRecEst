@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from operator import index as _operator_index
 
-
 _SORT_KIND_MESSAGE = (
     "sort kind must be one of 'quicksort', 'heapsort', 'stable', or 'mergesort'"
 )

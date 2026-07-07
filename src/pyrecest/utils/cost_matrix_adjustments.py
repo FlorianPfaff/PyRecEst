@@ -103,9 +103,11 @@ class CallableCostMatrixAdjustment:
 
 def apply_cost_matrix_adjustment(
     cost_matrix: Any,
-    adjustment: CostMatrixAdjustment
-    | Callable[[np.ndarray], Any]
-    | CallableCostMatrixAdjustment,
+    adjustment: (
+        CostMatrixAdjustment
+        | Callable[[np.ndarray], Any]
+        | CallableCostMatrixAdjustment
+    ),
     *,
     metadata: Mapping[str, Any] | None = None,
 ) -> CostMatrixAdjustmentResult:
@@ -129,7 +131,9 @@ def apply_cost_matrix_adjustment(
 def compose_cost_matrix_adjustments(
     cost_matrix: Any,
     adjustments: Sequence[
-        CostMatrixAdjustment | Callable[[np.ndarray], Any] | CallableCostMatrixAdjustment
+        CostMatrixAdjustment
+        | Callable[[np.ndarray], Any]
+        | CallableCostMatrixAdjustment
     ],
     *,
     metadata: Mapping[str, Any] | None = None,
