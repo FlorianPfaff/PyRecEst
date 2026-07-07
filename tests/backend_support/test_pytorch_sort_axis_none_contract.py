@@ -3,7 +3,27 @@ import os
 import subprocess
 import sys
 
+import numpy as np
 import pytest
+
+from pyrecest.backend_support._pytorch_sort_numpy_contract import (
+    resolve_sort_stability,
+)
+
+
+@pytest.mark.parametrize(
+    ("kind", "stable"),
+    [
+        ("stable", True),
+        ("stable", np.bool_(True)),
+        ("mergesort", False),
+        ("quicksort", False),
+        ("heapsort", np.bool_(False)),
+    ],
+)
+def test_sort_kind_and_stable_are_mutually_exclusive_like_numpy(kind, stable):
+    with pytest.raises(ValueError, match="kind.*stable"):
+        resolve_sort_stability(kind, stable)
 
 
 def _backend_subprocess_env(backend_name):

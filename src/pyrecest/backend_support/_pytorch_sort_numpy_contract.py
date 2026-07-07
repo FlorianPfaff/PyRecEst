@@ -8,7 +8,7 @@ from operator import index as _operator_index
 _SORT_KIND_MESSAGE = (
     "sort kind must be one of 'quicksort', 'heapsort', 'stable', or 'mergesort'"
 )
-_SORT_CONFLICT_MESSAGE = "sort() got conflicting 'kind' and 'stable' arguments"
+_SORT_CONFLICT_MESSAGE = "sort() got both 'kind' and 'stable' arguments"
 
 
 def normalize_sort_axis(axis):
@@ -20,15 +20,15 @@ def normalize_sort_axis(axis):
 
 def resolve_sort_stability(kind, stable):
     """Return the torch ``stable`` flag implied by NumPy-style options."""
+    # NumPy treats ``kind`` and ``stable`` as mutually exclusive sort-mode
+    # selectors, even when they would imply the same stable/unstable choice.
+    if kind is not None and stable is not None:
+        raise ValueError(_SORT_CONFLICT_MESSAGE)
     if kind is None:
         return stable
     if kind in {"stable", "mergesort"}:
-        if stable is False:
-            raise TypeError(_SORT_CONFLICT_MESSAGE)
         return True
     if kind in {"quicksort", "heapsort"}:
-        if stable is True:
-            raise TypeError(_SORT_CONFLICT_MESSAGE)
         return False
     raise ValueError(_SORT_KIND_MESSAGE)
 
