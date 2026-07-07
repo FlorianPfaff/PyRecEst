@@ -6,8 +6,10 @@ from pyrecest.backend import (
     arange,
     array,
     atleast_1d,
+    cast,
     ceil,
     floor,
+    int64,
     isclose,
     linspace,
     mod,
@@ -123,7 +125,7 @@ class CircularGridDistribution(AbstractCircularDistribution, AbstractGridDistrib
     def get_closest_point(self, xs):
         xs = array(xs)
         n = self.grid_values.shape[0]
-        indices = mod(round(xs / (2.0 * pi / n)), n).astype(int)
+        indices = cast(mod(round(xs / (2.0 * pi / n)), n), dtype=int64)
         points = indices * (2.0 * pi / n)
         return points, indices
 
