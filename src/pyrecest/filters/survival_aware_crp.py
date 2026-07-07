@@ -247,7 +247,7 @@ class SurvivalAwareCRPAssociationPrior:
 
         track_evidence = self._coerce_track_evidence(track_evidence)
         return track_evidence.mass * (
-            self.temporal_decay ** track_evidence.last_seen_steps
+            self.temporal_decay**track_evidence.last_seen_steps
         )
 
     def existing_track_weight(self, track_evidence):
@@ -328,7 +328,9 @@ class SurvivalAwareCRPAssociationPrior:
         )
         total_weight = sum(existing_weights) + birth_weight + clutter_weight
         if total_weight <= self.minimum_total_weight:
-            raise ValueError("At least one association alternative must have positive weight.")
+            raise ValueError(
+                "At least one association alternative must have positive weight."
+            )
 
         return SurvivalAwareAssociationProbabilities(
             existing_track_probabilities=tuple(
@@ -385,15 +387,12 @@ class SurvivalAwareCRPAssociationPrior:
             "visibility_probability",
         )
 
-        effective_detection_probability = (
-            detection_probability * visibility_probability
-        )
+        effective_detection_probability = detection_probability * visibility_probability
         numerator = predicted_existence_probability * (
             1.0 - effective_detection_probability
         )
         denominator = (
-            1.0
-            - predicted_existence_probability * effective_detection_probability
+            1.0 - predicted_existence_probability * effective_detection_probability
         )
         if denominator <= 0.0:
             return 0.0

@@ -96,7 +96,10 @@ def _preferred_tensor_device(value):
 def _move_tensors_to_device(tensors, device):
     if device is None:
         return tensors
-    return [tensor.to(device=device) if tensor.device != device else tensor for tensor in tensors]
+    return [
+        tensor.to(device=device) if tensor.device != device else tensor
+        for tensor in tensors
+    ]
 
 
 def array(val, dtype=None):

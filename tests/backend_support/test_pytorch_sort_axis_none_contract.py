@@ -5,7 +5,6 @@ import sys
 
 import numpy as np
 import pytest
-
 from pyrecest.backend_support._pytorch_sort_numpy_contract import (
     resolve_sort_stability,
 )

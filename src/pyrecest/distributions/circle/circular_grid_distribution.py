@@ -51,8 +51,7 @@ class CircularGridDistribution(AbstractCircularDistribution, AbstractGridDistrib
             )
         if enforce_pdf_nonnegative and any(grid_values < 0):
             raise ValueError(
-                "grid_values must be nonnegative when "
-                "enforce_pdf_nonnegative=True."
+                "grid_values must be nonnegative when " "enforce_pdf_nonnegative=True."
             )
         n = grid_values.shape[0]
         grid = linspace(0.0, 2.0 * pi, n, endpoint=False)
