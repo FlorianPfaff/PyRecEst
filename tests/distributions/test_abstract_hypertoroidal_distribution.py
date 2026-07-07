@@ -11,6 +11,10 @@ from pyrecest.distributions import AbstractHypertoroidalDistribution
 from pyrecest.distributions.circle.wrapped_normal_distribution import (
     WrappedNormalDistribution,
 )
+from pyrecest.distributions.hypertorus._input_validation import (
+    as_hypertoroidal_points,
+    as_shift_vector,
+)
 from pyrecest.distributions.hypertorus.toroidal_wrapped_normal_distribution import (
     ToroidalWrappedNormalDistribution,
 )
@@ -100,6 +104,27 @@ class TestAbstractHypertoroidalDistribution(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "undefined"):
             dist.mean_direction()
+
+    def test_input_validation_rejects_boolean_shift_angles(self):
+        yes = bool(1)
+        no = bool(0)
+        for value, dim in ((yes, 1), ([yes], 1), ([yes, no], 2)):
+            with self.subTest(value=value, dim=dim):
+                with self.assertRaisesRegex(ValueError, "boolean"):
+                    as_shift_vector(value, dim)
+
+    def test_input_validation_rejects_boolean_evaluation_points(self):
+        yes = bool(1)
+        no = bool(0)
+        for value, dim in (
+            (yes, 1),
+            ([yes], 1),
+            ([yes, no], 2),
+            ([[yes, no]], 2),
+        ):
+            with self.subTest(value=value, dim=dim):
+                with self.assertRaisesRegex(ValueError, "boolean"):
+                    as_hypertoroidal_points(value, dim)
 
     def test_setup_axis_circular_does_not_capture_axes_at_import(self):
         signature = inspect.signature(
