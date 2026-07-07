@@ -17,11 +17,15 @@ def _validate_sine_power(value, name):
     return int(value)
 
 
+def _validate_scalar_parameter(value, name):
+    parameter = array(value)
+    if ndim(parameter) != 0:
+        raise ValueError(f"{name} must be a scalar")
+    return parameter
+
+
 def _validate_scalar_angle(value):
-    angle = array(value)
-    if ndim(angle) != 0:
-        raise ValueError("angle must be a scalar")
-    return angle
+    return _validate_scalar_parameter(value, "angle")
 
 
 class GeneralizedKSineSkewedVonMisesDistribution(AbstractCircularDistribution):
@@ -48,6 +52,7 @@ class GeneralizedKSineSkewedVonMisesDistribution(AbstractCircularDistribution):
         self.validate_parameters()
 
     def validate_parameters(self):
+        self.lambda_ = _validate_scalar_parameter(self.lambda_, "lambda_")
         if not (-1.0 <= self.lambda_ <= 1.0):
             raise ValueError("lambda_ must be between -1 and 1 inclusive")
         self.m = _validate_sine_power(self.m, "m")
@@ -154,8 +159,7 @@ class AbstractSineSkewedDistribution(AbstractCircularDistribution):
 
     def validate_parameters(self):
         """Validate parameters common to first-order sine-skewed distributions."""
-        if ndim(self.lambda_) != 0:
-            raise ValueError("lambda_ must be a scalar")
+        self.lambda_ = _validate_scalar_parameter(self.lambda_, "lambda_")
 
         if not (-1.0 <= self.lambda_ <= 1.0):
             raise ValueError("lambda_ must be between -1 and 1 inclusive")
@@ -233,8 +237,10 @@ class GeneralizedKSineSkewedWrappedCauchyDistribution(AbstractCircularDistributi
         self.validate_parameters()
 
     def validate_parameters(self):
+        self.gamma = _validate_scalar_parameter(self.gamma, "gamma")
         if self.gamma <= 0:
             raise ValueError("gamma must be positive")
+        self.lambda_ = _validate_scalar_parameter(self.lambda_, "lambda_")
         if not (-1.0 <= self.lambda_ <= 1.0):
             raise ValueError("lambda_ must be between -1 and 1 inclusive")
         self.m = _validate_sine_power(self.m, "m")
