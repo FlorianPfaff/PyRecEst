@@ -105,6 +105,36 @@ assert raw_backend.to_numpy(raw_right).tolist() == [3.0, 3.0]
 
 @pytest.mark.backend_portable
 @pytest.mark.parametrize("backend_name", ("pytorch", "numpy"))
+def test_pytorch_stack_helpers_reject_empty_sequences_like_numpy(backend_name):
+    if importlib.util.find_spec("torch") is None:
+        pytest.skip("torch is not installed")
+
+    code = """
+import pyrecest.backend as backend
+import pyrecest._backend.pytorch as raw_backend
+
+helpers = (raw_backend,)
+if getattr(backend, "__backend_name__", None) == "pytorch":
+    helpers = (backend, raw_backend)
+
+for stack_backend in helpers:
+    for helper_name in ("hstack", "vstack", "column_stack", "dstack"):
+        helper = getattr(stack_backend, helper_name)
+        for empty_input in ((), []):
+            try:
+                helper(empty_input)
+            except ValueError as exc:
+                assert "need at least one array to concatenate" in str(exc), str(exc)
+            else:
+                raise AssertionError(f"{helper_name} accepted an empty sequence")
+"""
+    subprocess.run(
+        [sys.executable, "-c", code], check=True, env=_backend_test_env(backend_name)
+    )
+
+
+@pytest.mark.backend_portable
+@pytest.mark.parametrize("backend_name", ("pytorch", "numpy"))
 def test_pytorch_stack_helpers_preserve_non_cpu_tensor_device(backend_name):
     _skip_if_no_torch_meta_device()
 
