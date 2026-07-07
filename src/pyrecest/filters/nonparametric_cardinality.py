@@ -17,17 +17,26 @@ from scipy.special import gammaln
 
 
 def _as_float(value, name):
-    if not isinstance(value, Real):
+    if isinstance(value, bool) or not isinstance(value, Real):
         raise TypeError(f"{name} must be a real scalar.")
     return float(value)
 
 
 def _validate_nonnegative_integer(value, name):
-    if not isinstance(value, Integral):
+    if isinstance(value, bool) or not isinstance(value, Integral):
         raise TypeError(f"{name} must be an integer.")
     value = int(value)
     if value < 0:
         raise ValueError(f"{name} must be nonnegative.")
+    return value
+
+
+def _validate_positive_integer(value, name):
+    if isinstance(value, bool) or not isinstance(value, Integral):
+        raise TypeError(f"{name} must be an integer.")
+    value = int(value)
+    if value <= 0:
+        raise ValueError(f"{name} must be positive.")
     return value
 
 
@@ -101,13 +110,13 @@ class PitmanYorProcessCardinalityPrior:
     @staticmethod
     def _coerce_cluster_sizes(cluster_sizes):
         try:
-            sizes = tuple(int(size) for size in cluster_sizes)
+            raw_sizes = tuple(cluster_sizes)
         except TypeError as exc:
             raise TypeError("cluster_sizes must be an iterable of positive integers.") from exc
 
-        for size in sizes:
-            if size <= 0:
-                raise ValueError("cluster_sizes must contain positive integers only.")
+        sizes = tuple(
+            _validate_positive_integer(size, "cluster_sizes") for size in raw_sizes
+        )
         return sizes
 
     @staticmethod
