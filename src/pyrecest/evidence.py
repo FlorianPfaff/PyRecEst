@@ -217,6 +217,7 @@ try:
         patch_pytorch_repeat_numpy_contract as _patch_pytorch_repeat_numpy_contract,
         patch_pytorch_searchsorted_contract as _patch_pytorch_searchsorted_contract,
         patch_raw_pytorch_reduction_alias_contract as _patch_raw_pytorch_reduction_alias_contract,
+        patch_pytorch_take_axis_contract as _patch_pytorch_take_axis_contract,
         patch_pytorch_transpose_boolean_axes_contract as _patch_pytorch_transpose_boolean_axes_contract,
     )
     from pyrecest.backend_support._pytorch_one_hot_scalar_contract import (  # pylint: disable=import-outside-toplevel
@@ -230,5 +231,6 @@ else:
     _patch_pytorch_edge_pad_contract()
     _patch_pytorch_searchsorted_contract()
     _patch_raw_pytorch_reduction_alias_contract()
+    _patch_pytorch_take_axis_contract()
     _patch_pytorch_transpose_boolean_axes_contract()
     _patch_pytorch_one_hot_scalar_contract()
