@@ -523,6 +523,7 @@ def patch_pytorch_take_axis_contract() -> None:
     try:
         import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
+        import torch  # pylint: disable=import-outside-toplevel
     except ModuleNotFoundError:  # pragma: no cover - PyTorch backend may be unavailable
         return
 
@@ -535,8 +536,15 @@ def patch_pytorch_take_axis_contract() -> None:
             backend.take = original_take
         return
 
+    def _take_axis(axis):
+        if isinstance(axis, bool) or (
+            torch.is_tensor(axis) and axis.ndim == 0 and axis.dtype == torch.bool
+        ):
+            raise TypeError("an integer is required for the axis")
+        return _operator_index(axis)
+
     def take(a, indices, axis=None, out=None, mode=None):
-        axis = None if axis is None else _operator_index(axis)
+        axis = None if axis is None else _take_axis(axis)
         return original_take(a, indices, axis=axis, out=out, mode=mode)
 
     take.__name__ = getattr(original_take, "__name__", "take")
