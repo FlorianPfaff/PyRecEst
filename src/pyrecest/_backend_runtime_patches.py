@@ -76,6 +76,47 @@ def patch_pytorch_close_equal_nan_device_contract() -> None:
             setattr(backend, helper_name, helper)
 
 
+def _patch_pytorch_triangular_vector_rectangular_contract(
+    raw_pytorch,
+    backend,
+) -> None:
+    """Make PyTorch triangular-vector helpers use both matrix dimensions."""
+
+    active_pytorch_backend = getattr(backend, "__backend_name__", None) == "pytorch"
+
+    for helper_name, index_helper_name in (
+        ("tril_to_vec", "tril_indices"),
+        ("triu_to_vec", "triu_indices"),
+    ):
+        original_helper = getattr(raw_pytorch, helper_name, None)
+        index_helper = getattr(raw_pytorch, index_helper_name, None)
+        if original_helper is None or index_helper is None:
+            continue
+        if getattr(original_helper, "_pyrecest_rectangular_matrix_contract", False):
+            if active_pytorch_backend:
+                setattr(backend, helper_name, original_helper)
+            continue
+
+        def triangular_to_vec(x, k=0, *, _index=index_helper):
+            values = raw_pytorch.array(x)
+            if values.ndim < 2:
+                raise ValueError(
+                    "triangular vector helpers require at least two matrix dimensions"
+                )
+            rows, cols = _index(values.shape[-2], k=k, m=values.shape[-1])
+            rows = rows.to(device=values.device)
+            cols = cols.to(device=values.device)
+            return values[..., rows, cols]
+
+        triangular_to_vec.__name__ = getattr(original_helper, "__name__", helper_name)
+        triangular_to_vec.__doc__ = getattr(original_helper, "__doc__", None)
+        triangular_to_vec._pyrecest_arraylike_contract = True
+        triangular_to_vec._pyrecest_rectangular_matrix_contract = True
+        setattr(raw_pytorch, helper_name, triangular_to_vec)
+        if active_pytorch_backend:
+            setattr(backend, helper_name, triangular_to_vec)
+
+
 def patch_pytorch_repeat_numpy_contract() -> None:
     """Preserve the raw PyTorch repeat contract for non-PyTorch public backends."""
 
@@ -89,6 +130,8 @@ def patch_pytorch_repeat_numpy_contract() -> None:
         )
     except ModuleNotFoundError:  # pragma: no cover - PyTorch backend may be unavailable
         return
+
+    _patch_pytorch_triangular_vector_rectangular_contract(raw_pytorch, backend)
 
     active_pytorch_backend = getattr(backend, "__backend_name__", None) == "pytorch"
     original_repeat = getattr(raw_pytorch, "repeat", None)
