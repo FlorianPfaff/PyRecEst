@@ -6,6 +6,7 @@ import importlib
 
 
 _STACK_HELPER_NAMES = ("hstack", "vstack", "column_stack", "dstack")
+_EMPTY_STACK_HELPER_MESSAGE = "need at least one array to concatenate"
 
 
 def _raw_pytorch_module():
@@ -43,6 +44,12 @@ def _tensor_sequence(raw_pytorch, torch_module, values):
     return tensors
 
 
+def _require_nonempty_stack_sequence(tensors):
+    """Raise the NumPy stack-helper error for empty input sequences."""
+    if not tensors:
+        raise ValueError(_EMPTY_STACK_HELPER_MESSAGE)
+
+
 def _build_stack_helpers(raw_pytorch, torch_module):
     """Build NumPy-style PyTorch stack helpers with consistent devices."""
 
@@ -51,8 +58,7 @@ def _build_stack_helpers(raw_pytorch, torch_module):
             torch_module.atleast_1d(tensor)
             for tensor in _tensor_sequence(raw_pytorch, torch_module, tup)
         ]
-        if not tensors:
-            return torch_module.cat(tensors, dim=0)
+        _require_nonempty_stack_sequence(tensors)
         return torch_module.cat(tensors, dim=0 if tensors[0].ndim == 1 else 1)
 
     def vstack(tup):
@@ -60,6 +66,7 @@ def _build_stack_helpers(raw_pytorch, torch_module):
             torch_module.atleast_2d(tensor)
             for tensor in _tensor_sequence(raw_pytorch, torch_module, tup)
         ]
+        _require_nonempty_stack_sequence(tensors)
         return torch_module.cat(tensors, dim=0)
 
     def column_stack(tup):
@@ -68,6 +75,7 @@ def _build_stack_helpers(raw_pytorch, torch_module):
             if tensor.ndim < 2:
                 tensor = tensor.reshape(-1, 1)
             tensors.append(tensor)
+        _require_nonempty_stack_sequence(tensors)
         return torch_module.cat(tensors, dim=1)
 
     def dstack(tup):
@@ -75,6 +83,7 @@ def _build_stack_helpers(raw_pytorch, torch_module):
             torch_module.atleast_3d(tensor)
             for tensor in _tensor_sequence(raw_pytorch, torch_module, tup)
         ]
+        _require_nonempty_stack_sequence(tensors)
         return torch_module.cat(tensors, dim=2)
 
     return {
