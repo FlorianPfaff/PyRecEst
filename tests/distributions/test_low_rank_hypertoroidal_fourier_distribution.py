@@ -51,6 +51,40 @@ class TestLowRankHypertoroidalFourierDistribution(unittest.TestCase):
             low_rank.shift(shift).to_dense(), dense.shift(shift).coeff_mat, atol=1e-10
         )
 
+    def test_predict_additive_noise_matches_dense_2d(self):
+        prior_dense = HypertoroidalFourierDistribution.from_distribution(
+            ToroidalWrappedNormalDistribution(np.array([1.0, 2.0]), 0.4 * np.eye(2)),
+            (7, 7),
+            "identity",
+        )
+        noise_dense = HypertoroidalFourierDistribution.from_distribution(
+            ToroidalWrappedNormalDistribution(np.zeros(2), 0.2 * np.eye(2)),
+            (7, 7),
+            "identity",
+        )
+        predicted_dense = prior_dense.convolve(noise_dense)
+        predicted_low_rank = LowRankHypertoroidalFourierDistribution.from_dense(
+            prior_dense
+        ).convolve(LowRankHypertoroidalFourierDistribution.from_dense(noise_dense))
+        npt.assert_allclose(predicted_low_rank.to_dense(), predicted_dense.coeff_mat, atol=1e-10)
+
+    def test_update_multiply_matches_dense_1d(self):
+        prior_dense = HypertoroidalFourierDistribution.from_distribution(
+            WrappedNormalDistribution(np.array(1.0), np.array(0.5)),
+            (9,),
+            "identity",
+        )
+        likelihood_dense = HypertoroidalFourierDistribution.from_distribution(
+            WrappedNormalDistribution(np.array(0.0), np.array(1.0)),
+            (9,),
+            "identity",
+        ).shift(np.array([1.5]))
+        updated_dense = prior_dense.multiply(likelihood_dense)
+        updated_low_rank = LowRankHypertoroidalFourierDistribution.from_dense(
+            prior_dense
+        ).multiply(LowRankHypertoroidalFourierDistribution.from_dense(likelihood_dense))
+        npt.assert_allclose(updated_low_rank.to_dense(), updated_dense.coeff_mat, atol=1e-10)
+
     def test_high_dimensional_uniform_smoke(self):
         dist = LowRankHypertoroidalFourierDistribution.uniform((3,) * 8)
         self.assertEqual(dist.coeff_shape, (3,) * 8)
