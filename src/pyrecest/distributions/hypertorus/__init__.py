@@ -19,7 +19,9 @@ def _as_odd_coefficient_shape(shape):
         try:
             normalized = tuple(int(n) for n in shape)
         except TypeError as exc:
-            raise TypeError("shape must be an integer or a sequence of integers.") from exc
+            raise TypeError(
+                "shape must be an integer or a sequence of integers."
+            ) from exc
     if not normalized:
         raise ValueError("shape must contain at least one dimension.")
     if any(n < 1 or n % 2 != 1 for n in normalized):

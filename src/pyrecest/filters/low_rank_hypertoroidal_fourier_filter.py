@@ -5,7 +5,6 @@ from __future__ import annotations
 import warnings
 
 import numpy as np
-
 import pyrecest.backend
 from pyrecest.distributions.hypertorus.abstract_hypertoroidal_distribution import (
     AbstractHypertoroidalDistribution,
@@ -29,9 +28,13 @@ class LowRankHypertoroidalFourierFilter(AbstractFilter, HypertoroidalFilterMixin
     after prediction and is left for later work.
     """
 
-    def __init__(self, n_coefficients, transformation="identity", *, max_rank=None, rtol=0.0):
+    def __init__(
+        self, n_coefficients, transformation="identity", *, max_rank=None, rtol=0.0
+    ):
         if pyrecest.backend.__backend_name__ != "numpy":  # pylint: disable=no-member
-            raise NotImplementedError("LowRankHypertoroidalFourierFilter is NumPy-only.")
+            raise NotImplementedError(
+                "LowRankHypertoroidalFourierFilter is NumPy-only."
+            )
         if transformation != "identity":
             raise NotImplementedError(
                 "The first low-rank prototype supports only transformation='identity'."
@@ -68,7 +71,9 @@ class LowRankHypertoroidalFourierFilter(AbstractFilter, HypertoroidalFilterMixin
                 new_state, max_rank=self.max_rank, rtol=self.rtol
             )
         if new_state.transformation != "identity":
-            raise NotImplementedError("Only identity-transformed low-rank states are supported.")
+            raise NotImplementedError(
+                "Only identity-transformed low-rank states are supported."
+            )
         self._filter_state = new_state
 
     def _convert_noise(self, distribution):
@@ -106,7 +111,9 @@ class LowRankHypertoroidalFourierFilter(AbstractFilter, HypertoroidalFilterMixin
         d_meas = self._convert_noise(d_meas)
         z = np.asarray(z)
         if z.shape != (self._filter_state.dim,):
-            raise ValueError(f"z must have shape ({self._filter_state.dim},), got {z.shape}")
+            raise ValueError(
+                f"z must have shape ({self._filter_state.dim},), got {z.shape}"
+            )
         likelihood = d_meas.shift(z)
         self._filter_state = self._filter_state.multiply(
             likelihood, max_rank=self.max_rank, rtol=self.rtol

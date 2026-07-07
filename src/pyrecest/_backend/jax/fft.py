@@ -4,7 +4,6 @@ import jax.numpy as _jnp
 import numpy as _np
 from jax.numpy import fft as _fft
 
-
 _BOOLEAN_FFT_AXIS_ERROR = "axis must be an integer, not boolean"
 _BOOLEAN_FFT_LENGTH_ERROR = "n must be an integer length, not boolean"
 

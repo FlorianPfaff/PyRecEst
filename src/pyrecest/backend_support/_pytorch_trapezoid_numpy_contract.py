@@ -101,7 +101,9 @@ def _patch_rectangular_pytorch_triangular_vector_contract() -> None:
         def triangular_to_vec(x, k=0):
             x = raw_pytorch.array(x)
             if x.ndim < 2:
-                raise ValueError("triangular vector helpers require at least two dimensions")
+                raise ValueError(
+                    "triangular vector helpers require at least two dimensions"
+                )
             rows, cols = torch_index_helper(
                 row=x.shape[-2],
                 col=x.shape[-1],
@@ -123,7 +125,9 @@ def _patch_rectangular_pytorch_triangular_vector_contract() -> None:
         original_helper = getattr(raw_pytorch, helper_name, None)
         if original_helper is None:
             continue
-        helper = _make_triangular_to_vec(helper_name, torch_index_helper, original_helper)
+        helper = _make_triangular_to_vec(
+            helper_name, torch_index_helper, original_helper
+        )
         setattr(raw_pytorch, helper_name, helper)
         if active_pytorch_backend:
             setattr(backend, helper_name, helper)
@@ -144,7 +148,9 @@ def _patch_rectangular_jax_triangular_vector_contract() -> None:
         def triangular_to_vec(x, k=0):
             x = jnp.asarray(x)
             if x.ndim < 2:
-                raise ValueError("triangular vector helpers require at least two dimensions")
+                raise ValueError(
+                    "triangular vector helpers require at least two dimensions"
+                )
             rows, cols = jax_index_helper(
                 n=x.shape[-2],
                 k=_operator_index(k),
