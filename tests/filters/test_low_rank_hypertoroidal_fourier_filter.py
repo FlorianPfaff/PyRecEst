@@ -30,6 +30,24 @@ class TestLowRankHypertoroidalFourierFilter(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             LowRankHypertoroidalFourierFilter((5,), "sqrt")
 
+    def test_rejects_non_integral_coefficient_counts(self):
+        invalid_counts = [
+            True,
+            np.bool_(True),
+            5.0,
+            np.float64(5.0),
+            "5",
+            (True,),
+            (np.bool_(True),),
+            (5.0,),
+            (np.float64(5.0),),
+            ("5",),
+        ]
+        for n_coefficients in invalid_counts:
+            with self.subTest(n_coefficients=n_coefficients):
+                with self.assertRaises((TypeError, ValueError)):
+                    LowRankHypertoroidalFourierFilter(n_coefficients, "identity")
+
     def test_predict_identity_matches_dense_1d(self):
         dense_filter = HypertoroidalFourierFilter((5,), "identity")
         low_rank_filter = LowRankHypertoroidalFourierFilter((5,), "identity")
