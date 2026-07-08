@@ -9,6 +9,7 @@ from pyrecest.models import (
     WeakDimensionMeasurementModel,
     block_diag_measurement_covariance,
     diagonal_measurement_covariance,
+    selection_matrix,
 )
 
 _NON_REAL_STD_CASES = (
@@ -66,3 +67,31 @@ def test_measurement_noise_cov_rejects_non_real_values(measurement_noise_cov) ->
             np.eye(1),
             measurement_noise_cov=measurement_noise_cov,
         )
+
+
+@pytest.mark.parametrize(
+    "state_dim",
+    (
+        np.datetime64("2024-01-01T00:00:00", "ns"),
+        np.timedelta64(2, "ns"),
+        np.array(np.datetime64("2024-01-01T00:00:00", "ns"), dtype=object),
+        np.array(np.timedelta64(2, "ns"), dtype=object),
+    ),
+)
+def test_selection_matrix_rejects_temporal_state_dimension(state_dim) -> None:
+    with pytest.raises(ValueError, match="state_dim must be a nonnegative integer"):
+        selection_matrix(state_dim, [0])
+
+
+@pytest.mark.parametrize(
+    "observed_dim",
+    (
+        np.datetime64("2024-01-01T00:00:00", "ns"),
+        np.timedelta64(0, "ns"),
+        np.array(np.datetime64("2024-01-01T00:00:00", "ns"), dtype=object),
+        np.array(np.timedelta64(0, "ns"), dtype=object),
+    ),
+)
+def test_selection_matrix_rejects_temporal_observed_dimensions(observed_dim) -> None:
+    with pytest.raises(ValueError, match="observed_dims must be a nonnegative integer"):
+        selection_matrix(2, [observed_dim])

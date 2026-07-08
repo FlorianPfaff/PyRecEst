@@ -225,13 +225,16 @@ def _standard_deviations_array(stds: Sequence[float] | np.ndarray) -> np.ndarray
     return values
 
 
-def _contains_non_real_numeric_values(value: Any) -> bool:
-    array = np.asarray(value)
+def _array_contains_non_real_numeric_values(array: np.ndarray) -> bool:
     if array.dtype.kind in _NON_REAL_NUMERIC_KINDS:
         return True
     if array.dtype.kind != "O":
         return False
     return any(isinstance(item, _NON_REAL_NUMERIC_SCALAR_TYPES) for item in array.flat)
+
+
+def _contains_non_real_numeric_values(value: Any) -> bool:
+    return _array_contains_non_real_numeric_values(np.asarray(value))
 
 
 def _positive_int(value: int, name: str) -> int:
@@ -246,7 +249,7 @@ def _nonnegative_int(value: int, name: str) -> int:
         array_value = np.asarray(value)
     except (TypeError, ValueError) as exc:
         raise ValueError(f"{name} must be an integer") from exc
-    if array_value.ndim != 0 or array_value.dtype.kind == "b":
+    if array_value.ndim != 0 or _array_contains_non_real_numeric_values(array_value):
         raise ValueError(f"{name} must be a nonnegative integer")
     scalar = array_value.item()
     if type(scalar) is bool:
@@ -258,14 +261,3 @@ def _nonnegative_int(value: int, name: str) -> int:
     if parsed != scalar or parsed < 0:
         raise ValueError(f"{name} must be a nonnegative integer")
     return parsed
-
-
-__all__ = [
-    "MaskedLinearMeasurementModel",
-    "WeakDimensionMeasurementModel",
-    "block_diag_measurement_covariance",
-    "diagonal_measurement_covariance",
-    "masked_position_measurement_model",
-    "selection_matrix",
-    "weak_dimension_measurement_model",
-]
