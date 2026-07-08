@@ -207,7 +207,7 @@ class LowRankHypertoroidalFourierDistribution(AbstractHypertoroidalDistribution)
             normalize=False,
         )
 
-    def multiply(self, other, n_coefficients=None, *, max_rank=None, rtol=0.0):
+    def multiply(self, other, n_coefficients=None, *, max_rank=None, rtol=0.0, atol=0.0):
         other = self._ensure_low_rank(other)
         self._check_compatible(other)
         target_shape = (
@@ -218,10 +218,10 @@ class LowRankHypertoroidalFourierDistribution(AbstractHypertoroidalDistribution)
         coeffs = self.coefficients.coefficient_convolution(
             other.coefficients, target_shape=target_shape
         )
-        coeffs = coeffs.round(max_rank=max_rank, rtol=rtol)
+        coeffs = coeffs.round(max_rank=max_rank, rtol=rtol, atol=atol)
         return LowRankHypertoroidalFourierDistribution(coeffs, self.transformation)
 
-    def convolve(self, other, n_coefficients=None, *, max_rank=None, rtol=0.0):
+    def convolve(self, other, n_coefficients=None, *, max_rank=None, rtol=0.0, atol=0.0):
         other = self._ensure_low_rank(other)
         self._check_compatible(other)
         if self.transformation != "identity":
@@ -234,7 +234,7 @@ class LowRankHypertoroidalFourierDistribution(AbstractHypertoroidalDistribution)
                 )
         coeffs = self.coefficients.hadamard_product(other.coefficients)
         coeffs = coeffs.scaled((2.0 * np.pi) ** self.dim)
-        coeffs = coeffs.round(max_rank=max_rank, rtol=rtol)
+        coeffs = coeffs.round(max_rank=max_rank, rtol=rtol, atol=atol)
         return LowRankHypertoroidalFourierDistribution(coeffs, "identity")
 
     def mean_direction(self):
