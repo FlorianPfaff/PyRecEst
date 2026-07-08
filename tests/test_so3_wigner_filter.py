@@ -1,8 +1,15 @@
 import numpy as np
+import pytest
+import pyrecest.backend
 
 from pyrecest.distributions.so3_uniform_distribution import SO3UniformDistribution
 from pyrecest.distributions.so3_wigner_distribution import SO3WignerDistribution
 from pyrecest.filters.so3_wigner_filter import SO3WignerFilter
+
+pytestmark = pytest.mark.skipif(
+    pyrecest.backend.__backend_name__ != "numpy",
+    reason="SO3WignerDistribution currently requires the NumPy backend.",
+)
 
 
 def test_uniform_identity_coefficients_integrate_to_one():
