@@ -59,6 +59,22 @@ def test_block_diag_measurement_covariance_preserves_named_order() -> None:
     assert np.allclose(covariance, np.diag([1.0, 4.0, 10000.0]))
 
 
+def test_block_diag_measurement_covariance_rejects_overlapping_named_stds() -> None:
+    with pytest.raises(ValueError, match="overlapping dimensions"):
+        block_diag_measurement_covariance(
+            trusted_std={"x": 1.0},
+            weak_std={"x": 100.0},
+        )
+
+    with pytest.raises(ValueError, match="overlapping dimensions"):
+        WeakDimensionMeasurementModel(
+            np.eye(1),
+            trusted_std={"x": 1.0},
+            weak_std={"x": 100.0},
+            dimension_order=["x"],
+        )
+
+
 def test_block_diag_measurement_covariance_rejects_duplicate_dimension_order() -> None:
     with pytest.raises(ValueError, match="dimension_order"):
         block_diag_measurement_covariance(
