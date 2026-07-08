@@ -1,18 +1,16 @@
 # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
-"""Survival-aware association priors for explicit track management.
+"""Track-manager adapters for survival-aware CRP association priors.
 
-The utilities in this module implement a small, CRP-inspired prior for track-to-
-measurement association. They are intentionally framed as association scoring
-helpers rather than as a classical Dirichlet process: the resulting assignment
-scores depend on track state, lifecycle metadata, visibility, and survival, so the
-partition prior is not exchangeable.
+The mathematical prior lives in :mod:`pyrecest.filters.survival_aware_crp`.
+This module only resolves lifecycle metadata from managed tracks and translates
+those prior weights into association-hypothesis costs.
 """
 
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, replace
-from math import exp, log
+from math import log
 from typing import Any
 
 import numpy as np
@@ -23,6 +21,7 @@ from .association_hypotheses import (
     association_result_from_hypotheses,
     linear_gaussian_association_hypotheses,
 )
+from .survival_aware_crp import SurvivalAwareCRPAssociationPrior, SurvivalAwareTrackEvidence
 from .track_manager import AssociationResult
 
 FactorSpec = float | Callable[..., float]
@@ -30,22 +29,22 @@ FactorSpec = float | Callable[..., float]
 
 @dataclass(frozen=True)
 class SurvivalAwareAssociationConfig:
-    """Configuration for survival-aware track-attractiveness association.
+    """Configuration for the TrackManager survival-aware CRP adapter.
 
-    The existing-track score applied to a Gaussian association hypothesis is
-
-    ``track_mass * existence * survival * detection * visibility``.
-
-    ``track_mass`` is based on the managed track's hit count and is discounted by
-    ``mass_decay ** misses``. ``existence_probability=None`` means that the
-    helper first looks for ``track.metadata[metadata_existence_key]`` and then
-    falls back to one.
+    If ``crp_prior`` is omitted, a default
+    :class:`SurvivalAwareCRPAssociationPrior` is created with
+    ``temporal_decay=mass_decay`` so a managed track's ``misses`` count acts as
+    the CRP last-seen age. ``existence_probability=None`` first looks for
+    ``track.metadata[metadata_existence_key]``, then for
+    ``track.existence_probability``, and finally falls back to one.
     """
 
+    crp_prior: SurvivalAwareCRPAssociationPrior | None = None
     survival_probability: FactorSpec = 0.99
     detection_probability: FactorSpec = 0.95
     visibility_probability: FactorSpec = 1.0
     existence_probability: FactorSpec | None = None
+    appearance_likelihood: FactorSpec = 1.0
     mass_decay: float = 1.0
     mass_power: float = 1.0
     birth_weight: float = 1.0
@@ -54,9 +53,14 @@ class SurvivalAwareAssociationConfig:
     metadata_existence_key: str = "existence_probability"
 
     def __post_init__(self) -> None:
+        if self.crp_prior is not None and not isinstance(
+            self.crp_prior, SurvivalAwareCRPAssociationPrior
+        ):
+            raise TypeError("crp_prior must be a SurvivalAwareCRPAssociationPrior")
         _validate_probability_spec(self.survival_probability, "survival_probability")
         _validate_probability_spec(self.detection_probability, "detection_probability")
         _validate_probability_spec(self.visibility_probability, "visibility_probability")
+        _validate_nonnegative_likelihood_spec(self.appearance_likelihood, "appearance_likelihood")
         if self.existence_probability is not None:
             _validate_probability_spec(self.existence_probability, "existence_probability")
         _validate_probability(self.mass_decay, "mass_decay", allow_zero=True)
@@ -68,8 +72,7 @@ class SurvivalAwareAssociationConfig:
             raise ValueError("clutter_weight must be finite and nonnegative")
         if float(self.birth_weight) + float(self.clutter_weight) <= 0.0:
             raise ValueError("birth_weight and clutter_weight cannot both be zero")
-        if float(self.minimum_probability) <= 0.0 or not np.isfinite(float(self.minimum_probability)):
-            raise ValueError("minimum_probability must be finite and positive")
+        _validate_probability(self.minimum_probability, "minimum_probability", allow_zero=False)
         if not isinstance(self.metadata_existence_key, str):
             raise ValueError("metadata_existence_key must be a string")
 
@@ -81,17 +84,23 @@ def survival_aware_track_log_prior(
     measurement_index: int | None = None,
     step: int | None = None,
     config: SurvivalAwareAssociationConfig | None = None,
+    kinematic_likelihood: float = 1.0,
+    appearance_likelihood: float | None = None,
 ) -> float:
-    """Return the log prior attractiveness of assigning a measurement to a track."""
+    """Return the CRP-core log prior attractiveness of assigning to ``track``."""
 
     config = SurvivalAwareAssociationConfig() if config is None else config
-    mass = _effective_track_mass(track, config)
-    existence = _resolve_existence_probability(track, measurement, measurement_index=measurement_index, step=step, config=config)
-    survival = _resolve_probability(config.survival_probability, "survival_probability", track, measurement, measurement_index=measurement_index, step=step)
-    detection = _resolve_probability(config.detection_probability, "detection_probability", track, measurement, measurement_index=measurement_index, step=step)
-    visibility = _resolve_probability(config.visibility_probability, "visibility_probability", track, measurement, measurement_index=measurement_index, step=step)
-    score = max(float(config.minimum_probability), mass * existence * survival * detection * visibility)
-    return log(score)
+    evidence = _survival_aware_track_evidence(
+        track,
+        measurement,
+        measurement_index=measurement_index,
+        step=step,
+        config=config,
+        kinematic_likelihood=kinematic_likelihood,
+        appearance_likelihood=appearance_likelihood,
+    )
+    weight = _crp_prior(config).existing_track_weight(evidence)
+    return log(max(float(config.minimum_probability), weight))
 
 
 def survival_aware_missed_detection_costs(
@@ -102,28 +111,51 @@ def survival_aware_missed_detection_costs(
 ) -> np.ndarray:
     """Return per-track GNN costs for leaving tracks unassigned.
 
-    A missed detection is cheap when the target has low existence, low detection
-    probability, or low visibility. It is expensive when the target is likely to
-    exist and should have been visible.
+    The cost is ``-log(1 - r p_D v)``. A miss is therefore cheap for low
+    existence, low detection probability, or low visibility, and expensive for a
+    likely visible track.
     """
 
     config = SurvivalAwareAssociationConfig() if config is None else config
     costs = []
     for track in tracks:
-        existence = _resolve_existence_probability(track, None, measurement_index=None, step=step, config=config)
-        detection = _resolve_probability(config.detection_probability, "detection_probability", track, None, measurement_index=None, step=step)
-        visibility = _resolve_probability(config.visibility_probability, "visibility_probability", track, None, measurement_index=None, step=step)
+        existence = _resolve_existence_probability(
+            track, None, measurement_index=None, step=step, config=config
+        )
+        detection = _resolve_probability(
+            config.detection_probability,
+            "detection_probability",
+            track,
+            None,
+            measurement_index=None,
+            step=step,
+        )
+        visibility = _resolve_probability(
+            config.visibility_probability,
+            "visibility_probability",
+            track,
+            None,
+            measurement_index=None,
+            step=step,
+        )
         missed_probability = 1.0 - existence * detection * visibility
         missed_probability = max(float(config.minimum_probability), min(1.0, missed_probability))
         costs.append(-log(missed_probability))
     return np.asarray(costs, dtype=float)
 
 
-def survival_aware_unassigned_measurement_cost(config: SurvivalAwareAssociationConfig | None = None) -> float:
+def survival_aware_unassigned_measurement_cost(
+    config: SurvivalAwareAssociationConfig | None = None,
+    *,
+    num_existing_tracks: int = 0,
+) -> float:
     """Return the GNN cost for treating a measurement as birth or clutter."""
 
     config = SurvivalAwareAssociationConfig() if config is None else config
-    return -log(max(float(config.minimum_probability), float(config.birth_weight) + float(config.clutter_weight)))
+    birth_weight = _crp_prior(config).birth_weight(
+        num_existing_tracks, base_birth_weight=config.birth_weight
+    )
+    return -log(max(float(config.minimum_probability), birth_weight + float(config.clutter_weight)))
 
 
 def apply_survival_aware_prior_to_hypotheses(
@@ -134,7 +166,7 @@ def apply_survival_aware_prior_to_hypotheses(
     step: int | None = None,
     config: SurvivalAwareAssociationConfig | None = None,
 ) -> list[AssociationHypothesis]:
-    """Return hypotheses with survival-aware log priors folded into their costs."""
+    """Fold survival-aware CRP prior weights into association-hypothesis costs."""
 
     config = SurvivalAwareAssociationConfig() if config is None else config
     adjusted_hypotheses = []
@@ -153,22 +185,19 @@ def apply_survival_aware_prior_to_hypotheses(
             step=step,
             config=config,
         )
-        if hypothesis.log_likelihood is not None:
-            log_score = float(hypothesis.log_likelihood) + prior_log_score
-        elif hypothesis.probability is not None and float(hypothesis.probability) > 0.0:
-            log_score = log(float(hypothesis.probability)) + prior_log_score
-        elif hypothesis.cost is not None:
-            log_score = -float(hypothesis.cost) + prior_log_score
-        else:
-            log_score = prior_log_score
-
+        hypothesis_log_score = _hypothesis_log_score(hypothesis)
+        log_score = prior_log_score + hypothesis_log_score
         metadata = dict(hypothesis.metadata or {})
         metadata["survival_aware_log_prior"] = prior_log_score
+        metadata["survival_aware_measurement_log_score"] = hypothesis_log_score
+        metadata["survival_aware_log_score"] = log_score
+        metadata["survival_aware_crp_weight"] = float(np.exp(prior_log_score))
         adjusted_hypotheses.append(
             replace(
                 hypothesis,
                 cost=-log_score,
-                probability=exp(log_score) if log_score < 700.0 else float("inf"),
+                log_likelihood=log_score,
+                probability=None,
                 metadata=metadata,
             )
         )
@@ -189,9 +218,11 @@ def survival_aware_linear_gaussian_association_hypotheses(
     step: int | None = None,
     config: SurvivalAwareAssociationConfig | None = None,
 ) -> list[AssociationHypothesis]:
-    """Build linear/Gaussian hypotheses and apply a survival-aware prior."""
+    """Build linear/Gaussian hypotheses and apply the survival-aware CRP prior."""
 
-    measurement_vectors = _coerce_measurements_for_prior(measurements, measurement_matrix, measurement_axis)
+    measurement_vectors = _coerce_measurements_for_prior(
+        measurements, measurement_matrix, measurement_axis
+    )
     hypotheses = linear_gaussian_association_hypotheses(
         tracks,
         measurements,
@@ -204,11 +235,7 @@ def survival_aware_linear_gaussian_association_hypotheses(
         strict_backend=strict_backend,
     )
     return apply_survival_aware_prior_to_hypotheses(
-        hypotheses,
-        tracks,
-        measurement_vectors,
-        step=step,
-        config=config,
+        hypotheses, tracks, measurement_vectors, step=step, config=config
     )
 
 
@@ -244,12 +271,12 @@ def build_survival_aware_linear_gaussian_hypothesis_associator(
             config=effective_config,
         )
         measurement_vectors = _coerce_measurements_for_prior(
-            measurements,
-            effective_measurement_matrix,
-            effective_measurement_axis,
+            measurements, effective_measurement_matrix, effective_measurement_axis
         )
         if unassigned_measurement_cost is None:
-            default_unassigned_measurement_cost = survival_aware_unassigned_measurement_cost(effective_config)
+            default_unassigned_measurement_cost = survival_aware_unassigned_measurement_cost(
+                effective_config, num_existing_tracks=len(tracks)
+            )
         else:
             default_unassigned_measurement_cost = unassigned_measurement_cost
         return association_result_from_hypotheses(
@@ -259,19 +286,84 @@ def build_survival_aware_linear_gaussian_hypothesis_associator(
             missing_cost=kwargs.get("missing_cost", missing_cost),
             unassigned_track_cost=kwargs.get(
                 "unassigned_track_cost",
-                survival_aware_missed_detection_costs(tracks, step=kwargs.get("step", None), config=effective_config),
+                survival_aware_missed_detection_costs(
+                    tracks, step=kwargs.get("step", None), config=effective_config
+                ),
             ),
-            unassigned_measurement_cost=kwargs.get("unassigned_measurement_cost", default_unassigned_measurement_cost),
+            unassigned_measurement_cost=kwargs.get(
+                "unassigned_measurement_cost", default_unassigned_measurement_cost
+            ),
         )
 
     return associator
 
 
+def _crp_prior(config: SurvivalAwareAssociationConfig) -> SurvivalAwareCRPAssociationPrior:
+    if config.crp_prior is not None:
+        return config.crp_prior
+    return SurvivalAwareCRPAssociationPrior(
+        temporal_decay=float(config.mass_decay),
+        minimum_total_weight=float(config.minimum_probability),
+    )
+
+
+def _survival_aware_track_evidence(
+    track: Any,
+    measurement: Any | None,
+    *,
+    measurement_index: int | None,
+    step: int | None,
+    config: SurvivalAwareAssociationConfig,
+    kinematic_likelihood: float,
+    appearance_likelihood: float | None,
+) -> SurvivalAwareTrackEvidence:
+    return SurvivalAwareTrackEvidence(
+        mass=_effective_track_mass(track, config),
+        existence_probability=_resolve_existence_probability(
+            track, measurement, measurement_index=measurement_index, step=step, config=config
+        ),
+        survival_probability=_resolve_probability(
+            config.survival_probability,
+            "survival_probability",
+            track,
+            measurement,
+            measurement_index=measurement_index,
+            step=step,
+        ),
+        detection_probability=_resolve_probability(
+            config.detection_probability,
+            "detection_probability",
+            track,
+            measurement,
+            measurement_index=measurement_index,
+            step=step,
+        ),
+        visibility_probability=_resolve_probability(
+            config.visibility_probability,
+            "visibility_probability",
+            track,
+            measurement,
+            measurement_index=measurement_index,
+            step=step,
+        ),
+        kinematic_likelihood=_validate_nonnegative_likelihood(
+            kinematic_likelihood, "kinematic_likelihood"
+        ),
+        appearance_likelihood=_resolve_appearance_likelihood(
+            config,
+            track,
+            measurement,
+            measurement_index=measurement_index,
+            step=step,
+            override=appearance_likelihood,
+        ),
+        last_seen_steps=max(0, int(getattr(track, "misses", 0))),
+    )
+
+
 def _effective_track_mass(track: Any, config: SurvivalAwareAssociationConfig) -> float:
     hits = max(1, int(getattr(track, "hits", 1)))
-    misses = max(0, int(getattr(track, "misses", 0)))
     mass = float(hits) ** float(config.mass_power)
-    mass *= float(config.mass_decay) ** misses
     return max(float(config.minimum_probability), mass)
 
 
@@ -284,13 +376,28 @@ def _resolve_existence_probability(
     config: SurvivalAwareAssociationConfig,
 ) -> float:
     if config.existence_probability is not None:
-        return _resolve_probability(config.existence_probability, "existence_probability", track, measurement, measurement_index=measurement_index, step=step)
+        return _resolve_probability(
+            config.existence_probability,
+            "existence_probability",
+            track,
+            measurement,
+            measurement_index=measurement_index,
+            step=step,
+        )
 
     metadata = getattr(track, "metadata", None)
     if isinstance(metadata, dict) and config.metadata_existence_key in metadata:
-        return _validate_probability(metadata[config.metadata_existence_key], f"metadata[{config.metadata_existence_key!r}]", allow_zero=True)
+        return _validate_probability(
+            metadata[config.metadata_existence_key],
+            f"metadata[{config.metadata_existence_key!r}]",
+            allow_zero=True,
+        )
     if hasattr(track, "existence_probability"):
-        return _validate_probability(getattr(track, "existence_probability"), "track.existence_probability", allow_zero=True)
+        return _validate_probability(
+            getattr(track, "existence_probability"),
+            "track.existence_probability",
+            allow_zero=True,
+        )
     return 1.0
 
 
@@ -303,16 +410,51 @@ def _resolve_probability(
     measurement_index: int | None,
     step: int | None,
 ) -> float:
-    value = _resolve_value(spec, track, measurement, measurement_index=measurement_index, step=step)
+    value = _resolve_value(
+        spec, track, measurement, measurement_index=measurement_index, step=step
+    )
     return _validate_probability(value, name, allow_zero=True)
 
 
-def _resolve_value(spec: FactorSpec, track: Any, measurement: Any | None, *, measurement_index: int | None, step: int | None) -> float:
+def _resolve_appearance_likelihood(
+    config: SurvivalAwareAssociationConfig,
+    track: Any,
+    measurement: Any | None,
+    *,
+    measurement_index: int | None,
+    step: int | None,
+    override: float | None,
+) -> float:
+    if override is not None:
+        return _validate_nonnegative_likelihood(override, "appearance_likelihood")
+    value = _resolve_value(
+        config.appearance_likelihood,
+        track,
+        measurement,
+        measurement_index=measurement_index,
+        step=step,
+    )
+    return _validate_nonnegative_likelihood(value, "appearance_likelihood")
+
+
+def _resolve_value(
+    spec: FactorSpec,
+    track: Any,
+    measurement: Any | None,
+    *,
+    measurement_index: int | None,
+    step: int | None,
+) -> float:
     if not callable(spec):
         return float(spec)
 
     call_attempts = (
-        lambda: spec(track=track, measurement=measurement, measurement_index=measurement_index, step=step),
+        lambda: spec(
+            track=track,
+            measurement=measurement,
+            measurement_index=measurement_index,
+            step=step,
+        ),
         lambda: spec(track, measurement, measurement_index, step),
         lambda: spec(track, measurement),
         lambda: spec(track),
@@ -323,13 +465,36 @@ def _resolve_value(spec: FactorSpec, track: Any, measurement: Any | None, *, mea
             return float(attempt())
         except TypeError as exc:
             last_error = exc
-    raise TypeError("Callable probability factors must accept keyword arguments, (track, measurement, measurement_index, step), (track, measurement), or track") from last_error
+    raise TypeError(
+        "Callable factors must accept keyword arguments, "
+        "(track, measurement, measurement_index, step), "
+        "(track, measurement), or track"
+    ) from last_error
+
+
+def _hypothesis_log_score(hypothesis: AssociationHypothesis) -> float:
+    if hypothesis.log_likelihood is not None:
+        return float(hypothesis.log_likelihood)
+    if hypothesis.probability is not None:
+        probability = float(hypothesis.probability)
+        if probability <= 0.0:
+            return float("-inf")
+        return log(probability)
+    if hypothesis.cost is not None:
+        return -float(hypothesis.cost)
+    return 0.0
 
 
 def _validate_probability_spec(spec: FactorSpec, name: str) -> None:
     if callable(spec):
         return
     _validate_probability(spec, name, allow_zero=True)
+
+
+def _validate_nonnegative_likelihood_spec(spec: FactorSpec, name: str) -> None:
+    if callable(spec):
+        return
+    _validate_nonnegative_likelihood(spec, name)
 
 
 def _validate_probability(value: Any, name: str, *, allow_zero: bool) -> float:
@@ -344,7 +509,19 @@ def _validate_probability(value: Any, name: str, *, allow_zero: bool) -> float:
     return probability
 
 
-def _coerce_measurements_for_prior(measurements, measurement_matrix, measurement_axis: MeasurementAxis) -> list[np.ndarray]:
+def _validate_nonnegative_likelihood(value: Any, name: str) -> float:
+    value_array = np.asarray(value)
+    if value_array.shape != () or value_array.dtype == np.bool_:
+        raise ValueError(f"{name} must be a scalar likelihood")
+    likelihood = float(value_array.item())
+    if likelihood < 0.0 or not np.isfinite(likelihood):
+        raise ValueError(f"{name} must be finite and nonnegative")
+    return likelihood
+
+
+def _coerce_measurements_for_prior(
+    measurements, measurement_matrix, measurement_axis: MeasurementAxis
+) -> list[np.ndarray]:
     measurement_matrix = np.asarray(measurement_matrix, dtype=float)
     measurement_dim = int(measurement_matrix.shape[0])
     try:
@@ -370,8 +547,14 @@ def _coerce_measurements_for_prior(measurements, measurement_matrix, measurement
     if columns_match and rows_match and array.shape == (1, 1):
         return [array[:, 0].reshape(-1)]
     if columns_match and rows_match:
-        raise ValueError("Ambiguous measurement array orientation for measurement_axis='auto'. Pass measurement_axis='columns' or 'rows' explicitly.")
-    raise ValueError("Neither axis of measurements matches the measurement dimension inferred from measurement_matrix")
+        raise ValueError(
+            "Ambiguous measurement array orientation for measurement_axis='auto'. "
+            "Pass measurement_axis='columns' or 'rows' explicitly."
+        )
+    raise ValueError(
+        "Neither axis of measurements matches the measurement dimension inferred "
+        "from measurement_matrix"
+    )
 
 
 __all__ = [
