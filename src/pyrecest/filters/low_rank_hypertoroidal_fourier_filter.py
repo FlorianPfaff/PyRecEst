@@ -28,9 +28,13 @@ class LowRankHypertoroidalFourierFilter(AbstractFilter, HypertoroidalFilterMixin
     after prediction and is left for later work.
     """
 
-    def __init__(self, n_coefficients, transformation="identity", *, max_rank=None, rtol=0.0):
+    def __init__(
+        self, n_coefficients, transformation="identity", *, max_rank=None, rtol=0.0
+    ):
         if pyrecest.backend.__backend_name__ != "numpy":  # pylint: disable=no-member
-            raise NotImplementedError("LowRankHypertoroidalFourierFilter is NumPy-only.")
+            raise NotImplementedError(
+                "LowRankHypertoroidalFourierFilter is NumPy-only."
+            )
         if transformation != "identity":
             raise NotImplementedError(
                 "The first low-rank prototype supports only transformation='identity'."
@@ -67,7 +71,9 @@ class LowRankHypertoroidalFourierFilter(AbstractFilter, HypertoroidalFilterMixin
                 new_state, max_rank=self.max_rank, rtol=self.rtol
             )
         if new_state.transformation != "identity":
-            raise NotImplementedError("Only identity-transformed low-rank states are supported.")
+            raise NotImplementedError(
+                "Only identity-transformed low-rank states are supported."
+            )
         self._filter_state = new_state
 
     def _convert_noise(self, distribution):
