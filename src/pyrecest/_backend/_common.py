@@ -208,6 +208,67 @@ def diagonal(a, offset=0, axis1=0, axis2=1):
     return _np.diagonal(a, offset=offset, axis1=axis1, axis2=axis2)
 
 
+def _normalize_cross_axis(axis, ndim_value, name):
+    """Return a normalized NumPy-style cross-product axis."""
+    if isinstance(axis, _AXIS_FLAG_TYPES):
+        raise TypeError(f"{name} must be an integer")
+    try:
+        axis_index = _operator.index(axis)
+    except TypeError as exc:
+        raise TypeError(f"{name} must be an integer") from exc
+
+    normalized_axis = axis_index + ndim_value if axis_index < 0 else axis_index
+    if normalized_axis < 0 or normalized_axis >= ndim_value:
+        raise IndexError(
+            f"{name} {axis_index} is out of bounds for array of dimension {ndim_value}"
+        )
+    return normalized_axis
+
+
+def _torch_cross(a, b, torch, *, axisa=-1, axisb=-1, axisc=-1, axis=None):
+    """Return a NumPy-compatible cross product for PyTorch tensors."""
+    if axis is not None:
+        axisa = axisb = axisc = axis
+    if a.ndim == 0 or b.ndim == 0:
+        raise ValueError("At least one array has zero dimension")
+
+    axisa = _normalize_cross_axis(axisa, a.ndim, "axisa")
+    axisb = _normalize_cross_axis(axisb, b.ndim, "axisb")
+    a = torch.movedim(a, axisa, -1)
+    b = torch.movedim(b, axisb, -1)
+
+    if a.dtype == torch.bool:
+        a = a.to(dtype=torch.int64)
+    if b.dtype == torch.bool:
+        b = b.to(dtype=torch.int64)
+
+    a_dim = a.shape[-1]
+    b_dim = b.shape[-1]
+    if a_dim not in (2, 3) or b_dim not in (2, 3):
+        raise ValueError("incompatible dimensions for cross product (dimension must be 2 or 3)")
+
+    a0 = a[..., 0]
+    a1 = a[..., 1]
+    b0 = b[..., 0]
+    b1 = b[..., 1]
+    a2 = a[..., 2] if a_dim == 3 else torch.zeros_like(a0)
+    b2 = b[..., 2] if b_dim == 3 else torch.zeros_like(b0)
+
+    if a_dim == 2 and b_dim == 2:
+        return a0 * b1 - a1 * b0
+
+    result = torch.stack(
+        (
+            a1 * b2 - a2 * b1,
+            a2 * b0 - a0 * b2,
+            a0 * b1 - a1 * b0,
+        ),
+        dim=-1,
+    )
+    axisc = _normalize_cross_axis(axisc, result.ndim, "axisc")
+    return torch.movedim(result, -1, axisc)
+
+
 def _active_backend_name():
     try:
         import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
@@ -276,6 +337,17 @@ def dot(a, b):
         return torch.tensordot(a, b, dims=([-1], [-2]))
 
     return _np.dot(_np.asarray(a), _np.asarray(b))
+
+
+def cross(a, b, axisa=-1, axisb=-1, axisc=-1, axis=None):
+    """Return NumPy-compatible cross products for NumPy and PyTorch values."""
+    torch_pair = _torch_promoted_pair(a, b)
+    if torch_pair is not None:
+        a, b = torch_pair
+        torch = _torch_module_for_values(a, b)
+        return _torch_cross(a, b, torch, axisa=axisa, axisb=axisb, axisc=axisc, axis=axis)
+
+    return _np.cross(_np.asarray(a), _np.asarray(b), axisa=axisa, axisb=axisb, axisc=axisc, axis=axis)
 
 
 def matvec(matrix, vector):

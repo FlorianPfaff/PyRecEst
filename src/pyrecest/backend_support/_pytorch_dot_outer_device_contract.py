@@ -60,6 +60,21 @@ def _patch_sort_axis_none_contract(raw_pytorch, backend, torch_module) -> None:
         setattr(backend, "sort", sort)
 
 
+def _ensure_raw_pytorch_cross(raw_pytorch):
+    """Expose the shared cross-product fallback on raw PyTorch when absent."""
+    original_cross = getattr(raw_pytorch, "cross", None)
+    if original_cross is not None:
+        return original_cross
+
+    try:
+        import pyrecest._backend._common as common_backend  # pylint: disable=import-outside-toplevel
+    except ModuleNotFoundError:  # pragma: no cover - shared backend should be available
+        return None
+
+    raw_pytorch.cross = common_backend.cross
+    return raw_pytorch.cross
+
+
 def patch_pytorch_dot_outer_device_contract() -> None:
     """Patch raw/public PyTorch vector-product helpers to preserve non-CPU operands."""
     try:
@@ -73,7 +88,7 @@ def patch_pytorch_dot_outer_device_contract() -> None:
 
     original_dot = getattr(raw_pytorch, "dot", None)
     original_outer = getattr(raw_pytorch, "outer", None)
-    original_cross = getattr(raw_pytorch, "cross", None)
+    original_cross = _ensure_raw_pytorch_cross(raw_pytorch)
     if original_dot is None or original_outer is None:
         return
 
