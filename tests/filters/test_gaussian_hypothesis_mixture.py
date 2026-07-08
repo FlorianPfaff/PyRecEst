@@ -69,6 +69,35 @@ class GaussianHypothesisMixtureTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "log_weights"):
             normalize_log_weights([0.0, 1.0 + 2.0j])
 
+    def test_datetime_like_numeric_inputs_are_rejected_without_epoch_coercion(self):
+        with self.assertRaisesRegex(ValueError, "mean"):
+            WeightedGaussianHypothesis(
+                np.array([np.datetime64("2026-01-01")]), np.array([[1.0]])
+            )
+
+        with self.assertRaisesRegex(ValueError, "covariance"):
+            WeightedGaussianHypothesis(
+                np.array([0.0]), np.array([[np.timedelta64(1, "s")]])
+            )
+
+        with self.assertRaisesRegex(ValueError, "log_weight"):
+            WeightedGaussianHypothesis(
+                np.array([0.0]),
+                np.array([[1.0]]),
+                log_weight=np.datetime64("2026-01-01"),
+            )
+
+        invalid_log_weights = (
+            np.array([np.datetime64("2026-01-01")]),
+            np.array([np.timedelta64(1, "s")]),
+            np.array([np.datetime64("2026-01-01")], dtype=object),
+            np.array([np.timedelta64(1, "s")], dtype=object),
+        )
+        for log_weights in invalid_log_weights:
+            with self.subTest(log_weights=log_weights):
+                with self.assertRaisesRegex(ValueError, "log_weights"):
+                    normalize_log_weights(log_weights)
+
     def test_hypotheses_reject_nonfinite_mean_and_covariance(self):
         with self.assertRaisesRegex(ValueError, "mean"):
             WeightedGaussianHypothesis(np.array([np.nan]), np.array([[1.0]]))

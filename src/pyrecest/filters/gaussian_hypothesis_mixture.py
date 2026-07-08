@@ -7,7 +7,7 @@ from typing import Any
 
 import numpy as np
 
-_INVALID_FLOAT_ARRAY_KINDS = {"b", "S", "U", "c"}
+_INVALID_FLOAT_ARRAY_KINDS = {"b", "S", "U", "c", "M", "m"}
 _INVALID_FLOAT_ARRAY_SCALAR_TYPES = (
     bool,
     np.bool_,
@@ -18,6 +18,8 @@ _INVALID_FLOAT_ARRAY_SCALAR_TYPES = (
     np.bytes_,
     complex,
     np.complexfloating,
+    np.datetime64,
+    np.timedelta64,
 )
 
 
