@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from operator import index as _operator_index
+
 
 def patch_pytorch_close_equal_nan_device_contract() -> None:
     """Preserve ``equal_nan`` while keeping PyTorch close operands on one device."""
@@ -232,3 +234,57 @@ def patch_pytorch_edge_pad_contract() -> None:
     raw_pytorch.pad = pad
     if active_pytorch_backend:
         backend.pad = pad
+
+
+def patch_pytorch_transpose_boolean_axes_contract() -> None:
+    """Make PyTorch ``transpose`` reject boolean axes sequences like NumPy."""
+
+    try:
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
+        import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
+        import torch  # pylint: disable=import-outside-toplevel
+    except ModuleNotFoundError:  # pragma: no cover - PyTorch backend may be unavailable
+        return
+
+    active_pytorch_backend = getattr(backend, "__backend_name__", None) == "pytorch"
+    original_transpose = getattr(raw_pytorch, "transpose", None)
+    if original_transpose is None:
+        return
+    if getattr(original_transpose, "_pyrecest_transpose_boolean_axes_contract", False):
+        if active_pytorch_backend:
+            setattr(backend, "transpose", original_transpose)
+        return
+
+    def _normalized_axes(axes):
+        if axes is None:
+            return None
+        if torch.is_tensor(axes):
+            if axes.ndim == 0:
+                axes = axes.item()
+            else:
+                axes = axes.detach().cpu().tolist()
+        if isinstance(axes, (str, bytes)):
+            raise TypeError("transpose axes must be a sequence of integers")
+        try:
+            iterator = iter(axes)
+        except TypeError as exc:
+            raise TypeError("transpose axes must be a sequence of integers") from exc
+
+        normalized = []
+        for axis in iterator:
+            if isinstance(axis, bool) or (
+                torch.is_tensor(axis) and axis.ndim == 0 and axis.dtype == torch.bool
+            ):
+                raise TypeError("an integer is required")
+            normalized.append(_operator_index(axis))
+        return tuple(normalized)
+
+    def transpose(x, axes=None):
+        return original_transpose(x, axes=_normalized_axes(axes))
+
+    transpose.__name__ = getattr(original_transpose, "__name__", "transpose")
+    transpose.__doc__ = getattr(original_transpose, "__doc__", None)
+    transpose._pyrecest_transpose_boolean_axes_contract = True
+    raw_pytorch.transpose = transpose
+    if active_pytorch_backend:
+        backend.transpose = transpose
