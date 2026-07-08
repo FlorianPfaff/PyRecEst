@@ -30,6 +30,14 @@ assert torch.equal(
     torch.tensor([[1, 0, 0, 0], [0, 0, 1, 0]], dtype=torch.uint8),
 )
 
+for bad_num_classes in (True, torch.tensor(True)):
+    try:
+        target.one_hot([0], bad_num_classes)
+    except TypeError as exc:
+        assert "num_classes must be an integer" in str(exc)
+    else:
+        raise AssertionError("boolean num_classes was accepted")
+
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("meta")
 device_result = target.one_hot(torch.tensor(2, device=device), 4)
 assert device_result.device.type == device.type

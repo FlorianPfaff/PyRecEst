@@ -5,6 +5,9 @@ from __future__ import annotations
 from operator import index as _operator_index
 
 
+_INTEGER_MESSAGE = "num_classes must be an integer"
+
+
 def _is_boolean_take_axis(axis, torch_module) -> bool:
     """Return whether ``axis`` is a boolean scalar, not an integer axis."""
     if isinstance(axis, bool) or type(axis).__name__ == "bool_":
@@ -14,6 +17,20 @@ def _is_boolean_take_axis(axis, torch_module) -> bool:
         and axis.ndim == 0
         and axis.dtype == torch_module.bool
     )
+
+
+def _normalize_num_classes(num_classes, torch_module) -> int:
+    """Return a non-boolean integer ``num_classes`` value."""
+    if isinstance(num_classes, bool) or type(num_classes).__name__ == "bool_":
+        raise TypeError(f"{_INTEGER_MESSAGE}, not boolean")
+    if torch_module.is_tensor(num_classes):
+        if num_classes.ndim != 0 or num_classes.dtype == torch_module.bool:
+            raise TypeError(_INTEGER_MESSAGE)
+        num_classes = num_classes.item()
+    try:
+        return _operator_index(num_classes)
+    except TypeError as exc:
+        raise TypeError(_INTEGER_MESSAGE) from exc
 
 
 def _patch_pytorch_take_axis_contract(pytorch_backend, torch_module) -> None:
@@ -66,7 +83,7 @@ def _patch_pytorch_one_hot_scalar_contract(
         return
 
     def one_hot(labels, num_classes):
-        num_classes = _operator_index(num_classes)
+        num_classes = _normalize_num_classes(num_classes, torch_module)
         if torch_module.is_tensor(labels):
             if (
                 labels.dtype == torch_module.bool
