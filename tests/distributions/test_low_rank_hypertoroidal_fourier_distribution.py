@@ -50,6 +50,21 @@ class TestLowRankHypertoroidalFourierDistribution(unittest.TestCase):
         npt.assert_allclose(low_rank.value(xs), dense.value(xs), atol=1e-10)
         npt.assert_allclose(low_rank.pdf(xs), dense.pdf(xs), atol=1e-10)
 
+    def test_value_rejects_invalid_point_rank(self):
+        low_rank_1d = LowRankHypertoroidalFourierDistribution.from_dense(
+            HypertoroidalFourierDistribution(_identity_coefficients_1d(), "identity")
+        )
+        with self.assertRaisesRegex(ValueError, "scalar, vector, or column"):
+            low_rank_1d.value(np.zeros((2, 2, 1)))
+
+        low_rank_2d = LowRankHypertoroidalFourierDistribution.from_dense(
+            HypertoroidalFourierDistribution(_identity_coefficients_2d(), "identity")
+        )
+        for points in (0.0, np.zeros((2, 2, 2))):
+            with self.subTest(points_shape=np.shape(points)):
+                with self.assertRaisesRegex(ValueError, "shape \\(2,\\) or \\(n, 2\\)"):
+                    low_rank_2d.value(points)
+
     def test_shift_matches_dense_2d(self):
         dense = HypertoroidalFourierDistribution(_identity_coefficients_2d(), "identity")
         low_rank = LowRankHypertoroidalFourierDistribution.from_dense(dense)
