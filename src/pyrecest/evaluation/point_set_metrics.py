@@ -371,9 +371,23 @@ def _validate_boolean_flag(value: Any, name: str) -> bool:
     raise TypeError(f"{name} must be a boolean.")
 
 
+def _is_temporal_scalar_array(array: np.ndarray) -> bool:
+    if array.shape != ():
+        return False
+    if array.dtype.kind in "Mm":
+        return True
+    if array.dtype != object:
+        return False
+    try:
+        scalar = array.item()
+    except (TypeError, ValueError):
+        return False
+    return isinstance(scalar, (np.datetime64, np.timedelta64))
+
+
 def _validate_chunk_size(query_chunk_size: int) -> int:
     array = np.asarray(query_chunk_size)
-    if array.shape != () or array.dtype == np.bool_:
+    if array.shape != () or array.dtype == np.bool_ or _is_temporal_scalar_array(array):
         raise ValueError("query_chunk_size must be a positive integer.")
     scalar = array.item()
     if isinstance(scalar, (bool, np.bool_, str, bytes)):
@@ -397,7 +411,11 @@ def _normalize_optional_integer(value: Any, name: str) -> int | None:
 
     value_array = np.asarray(value)
     message = f"{name} must be None or an integer."
-    if value_array.shape != () or value_array.dtype == np.bool_:
+    if (
+        value_array.shape != ()
+        or value_array.dtype == np.bool_
+        or _is_temporal_scalar_array(value_array)
+    ):
         raise ValueError(message)
 
     scalar = value_array.item()
@@ -420,7 +438,7 @@ def _validate_numeric_scalar(value: Any, message: str) -> float:
         array = np.asarray(value)
     except (TypeError, ValueError) as exc:
         raise ValueError(message) from exc
-    if array.shape != () or array.dtype == np.bool_:
+    if array.shape != () or array.dtype == np.bool_ or _is_temporal_scalar_array(array):
         raise ValueError(message)
 
     scalar = array.item()
