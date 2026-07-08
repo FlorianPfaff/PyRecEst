@@ -88,9 +88,7 @@ def _validate_nonnegative_finite(name: str, value: float) -> float:
         value_array = np.asarray(value)
     except (TypeError, ValueError, OverflowError, RuntimeError) as exc:
         raise ValueError(f"{name} must be a scalar number.") from exc
-    if _contains_unsupported_numeric_values(value_array):
-        raise ValueError(f"{name} must be a scalar number.")
-    if value_array.shape != () or np.issubdtype(value_array.dtype, np.bool_):
+    if value_array.shape != () or _contains_unsupported_numeric_values(value_array):
         raise ValueError(f"{name} must be a scalar number.")
     scalar = value_array.item()
     if isinstance(scalar, (bool, np.bool_)) or not isinstance(scalar, Real):
@@ -116,9 +114,11 @@ def _validate_nonnegative_integer(name: str, value: int) -> int:
         value_array = np.asarray(value)
     except (TypeError, ValueError, OverflowError, RuntimeError) as exc:
         raise ValueError(f"{name} must be a nonnegative integer.") from exc
-    if value_array.shape != () or not np.issubdtype(value_array.dtype, np.integer):
-        raise ValueError(f"{name} must be a nonnegative integer.")
-    if np.issubdtype(value_array.dtype, np.bool_):
+    if (
+        value_array.shape != ()
+        or _contains_unsupported_numeric_values(value_array)
+        or not np.issubdtype(value_array.dtype, np.integer)
+    ):
         raise ValueError(f"{name} must be a nonnegative integer.")
     value = int(value_array.item())
     if value < 0:
