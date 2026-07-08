@@ -63,8 +63,12 @@ def _default_score_to_cost(scores: Any) -> Any:
     return -asarray(scores, dtype=float)
 
 
-def _is_text_scalar(value: Any) -> bool:
-    return isinstance(value, (str, bytes, np.str_, np.bytes_))
+def _is_rejected_scalar(value: Any) -> bool:
+    return isinstance(value, _INVALID_SCORE_SCALAR_TYPES)
+
+
+def _is_rejected_scalar_array(value_array: np.ndarray) -> bool:
+    return value_array.dtype.kind in _REJECTED_SCORE_ARRAY_KINDS
 
 
 def _raise_invalid_score_matrix() -> None:
@@ -76,7 +80,7 @@ def _validate_object_real_values(
     invalid_callback: Callable[[], None],
 ) -> None:
     for item in raw_values.reshape(-1):
-        if isinstance(item, _INVALID_SCORE_SCALAR_TYPES):
+        if _is_rejected_scalar(item):
             invalid_callback()
         try:
             float(item)
@@ -124,13 +128,11 @@ def _validate_pairwise_score_inputs(pairwise_scores: PairwiseCostsInput) -> None
 
 def _normalize_min_score(min_score: Any) -> float:
     min_score_array = np.asarray(min_score)
-    if min_score_array.shape != () or min_score_array.dtype == np.bool_:
+    if min_score_array.shape != () or _is_rejected_scalar_array(min_score_array):
         raise ValueError("min_score must be a finite scalar.")
 
     min_score_value = min_score_array.item()
-    if isinstance(min_score_value, (bool, np.bool_)) or _is_text_scalar(
-        min_score_value
-    ):
+    if _is_rejected_scalar(min_score_value):
         raise ValueError("min_score must be a finite scalar.")
 
     try:
@@ -144,11 +146,11 @@ def _normalize_min_score(min_score: Any) -> float:
 
 def _normalize_max_gap(max_gap: Any) -> int:
     max_gap_array = np.asarray(max_gap)
-    if max_gap_array.shape != () or max_gap_array.dtype == np.bool_:
+    if max_gap_array.shape != () or _is_rejected_scalar_array(max_gap_array):
         raise ValueError("max_gap must be a non-negative integer.")
 
     max_gap_value = max_gap_array.item()
-    if isinstance(max_gap_value, (bool, np.bool_)) or _is_text_scalar(max_gap_value):
+    if _is_rejected_scalar(max_gap_value):
         raise ValueError("max_gap must be a non-negative integer.")
 
     if isinstance(max_gap_value, (int, np.integer)):
@@ -171,13 +173,11 @@ def _normalize_max_gap(max_gap: Any) -> int:
 
 def _normalize_index_matrix_fill_value(fill_value: Any) -> int:
     fill_value_array = np.asarray(fill_value)
-    if fill_value_array.shape != () or fill_value_array.dtype == np.bool_:
+    if fill_value_array.shape != () or _is_rejected_scalar_array(fill_value_array):
         raise ValueError("fill_value must be a negative integer.")
 
     fill_value_value = fill_value_array.item()
-    if isinstance(fill_value_value, (bool, np.bool_)) or _is_text_scalar(
-        fill_value_value
-    ):
+    if _is_rejected_scalar(fill_value_value):
         raise ValueError("fill_value must be a negative integer.")
 
     if isinstance(fill_value_value, (int, np.integer)):
