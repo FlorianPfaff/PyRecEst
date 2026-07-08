@@ -21,14 +21,12 @@ def _identity_coefficients_1d(scale=1.0):
     return coeff
 
 
-def _identity_coefficients_2d(scale=1.0):
-    coeff = np.zeros((3, 3), dtype=np.complex128)
-    coeff[1, 1] = 1.0 / (2.0 * np.pi) ** 2
-    coeff[0, 1] = scale * (0.005 + 0.002j)
-    coeff[2, 1] = np.conjugate(coeff[0, 1])
-    coeff[1, 0] = scale * (-0.004 + 0.003j)
-    coeff[1, 2] = np.conjugate(coeff[1, 0])
-    return coeff
+def _separable_identity_coefficients_2d(scale=1.0):
+    coeff_1d = np.zeros(3, dtype=np.complex128)
+    coeff_1d[1] = 1.0 / (2.0 * np.pi)
+    coeff_1d[0] = scale * (0.005 + 0.002j)
+    coeff_1d[2] = np.conjugate(coeff_1d[0])
+    return np.outer(coeff_1d, coeff_1d)
 
 
 @unittest.skipIf(
@@ -114,9 +112,11 @@ class TestLowRankHypertoroidalFourierFilter(unittest.TestCase):
             (3, 3), "identity", max_rank=1, rtol=0.0, atol=0.0
         )
         low_rank_filter.filter_state = HypertoroidalFourierDistribution(
-            _identity_coefficients_2d(), "identity"
+            _separable_identity_coefficients_2d(), "identity"
         )
-        noise = HypertoroidalFourierDistribution(_identity_coefficients_2d(0.5), "identity")
+        noise = HypertoroidalFourierDistribution(
+            _separable_identity_coefficients_2d(0.5), "identity"
+        )
 
         low_rank_filter.predict_identity(noise)
 
@@ -128,9 +128,11 @@ class TestLowRankHypertoroidalFourierFilter(unittest.TestCase):
             (3, 3), "identity", max_rank=1, rtol=0.0, atol=0.0
         )
         low_rank_filter.filter_state = HypertoroidalFourierDistribution(
-            _identity_coefficients_2d(), "identity"
+            _separable_identity_coefficients_2d(), "identity"
         )
-        noise = HypertoroidalFourierDistribution(_identity_coefficients_2d(0.5), "identity")
+        noise = HypertoroidalFourierDistribution(
+            _separable_identity_coefficients_2d(0.5), "identity"
+        )
 
         low_rank_filter.update_identity(noise, np.array([0.3, -0.2]))
 
