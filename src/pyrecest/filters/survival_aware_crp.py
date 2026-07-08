@@ -53,6 +53,28 @@ def _validate_nonnegative_integer(value, name):
     return value
 
 
+def _normalize_assignment_weights(weights, minimum_total_weight):
+    """Normalize finite nonnegative association weights without sum overflow."""
+
+    weights = tuple(_validate_nonnegative(weight, "association weight") for weight in weights)
+    if not weights:
+        raise ValueError("At least one association alternative must have positive weight.")
+
+    scale = max(weights)
+    if scale <= 0.0:
+        raise ValueError("At least one association alternative must have positive weight.")
+
+    scaled_weights = tuple(weight / scale for weight in weights)
+    scaled_total = sum(scaled_weights)
+    if not isfinite(scaled_total) or scaled_total <= 0.0:
+        raise ValueError("At least one association alternative must have positive weight.")
+
+    if scale <= minimum_total_weight / scaled_total:
+        raise ValueError("At least one association alternative must have positive weight.")
+
+    return tuple(weight / scaled_total for weight in scaled_weights)
+
+
 @dataclass(frozen=True)
 class SurvivalAwareTrackEvidence:
     """Track evidence used by :class:`SurvivalAwareCRPAssociationPrior`.
@@ -198,7 +220,7 @@ class SurvivalAwareCRPAssociationPrior:
     raw table count with a track-specific score:
 
     ``discounted mass * existence * survival * detection * visibility``
-    ``* kinematic compatibility * appearance compatibility``.
+    ``* kinematic compatibility * appearance compatibility``
 
     The resulting object is best viewed as a CRP-inspired partition prior, not
     as a classical Dirichlet process, because the track scores are explicitly
@@ -326,16 +348,16 @@ class SurvivalAwareCRPAssociationPrior:
                 clutter_weight=clutter_weight,
             )
         )
-        total_weight = sum(existing_weights) + birth_weight + clutter_weight
-        if total_weight <= self.minimum_total_weight:
-            raise ValueError("At least one association alternative must have positive weight.")
+        normalized_weights = _normalize_assignment_weights(
+            (*existing_weights, birth_weight, clutter_weight),
+            self.minimum_total_weight,
+        )
+        existing_count = len(existing_weights)
 
         return SurvivalAwareAssociationProbabilities(
-            existing_track_probabilities=tuple(
-                weight / total_weight for weight in existing_weights
-            ),
-            birth_probability=birth_weight / total_weight,
-            clutter_probability=clutter_weight / total_weight,
+            existing_track_probabilities=normalized_weights[:existing_count],
+            birth_probability=normalized_weights[existing_count],
+            clutter_probability=normalized_weights[existing_count + 1],
         )
 
     @staticmethod
