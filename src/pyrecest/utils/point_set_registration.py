@@ -164,6 +164,21 @@ def _minimum_required_matches(model: TransformModel, dim: int) -> int:
     raise ValueError(f"Unsupported transform model: {model}")
 
 
+def _validate_effective_weight_support(
+    weights,
+    *,
+    min_matches: int,
+    model: TransformModel,
+    dim: int,
+) -> None:
+    positive_weight_count = int(sum(weights > 0.0))
+    if positive_weight_count < min_matches:
+        raise ValueError(
+            f"The '{model}' model requires at least {min_matches} "
+            f"positive-weight matched points in {dim}D."
+        )
+
+
 def _validate_positive_integer(value, name: str, *, minimum: int = 1) -> int:
     value_array = asarray(value)
     if value_array.shape != ():
@@ -225,6 +240,12 @@ def estimate_transform(  # pylint: disable=too-many-locals
         )
 
     normalized_weights = _normalize_weights(weights, n_points)
+    _validate_effective_weight_support(
+        normalized_weights,
+        min_matches=min_matches,
+        model=model,
+        dim=dim,
+    )
     source_centroid = sum(normalized_weights[:, None] * source, axis=0)
     target_centroid = sum(normalized_weights[:, None] * target, axis=0)
 
