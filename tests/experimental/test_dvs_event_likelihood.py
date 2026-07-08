@@ -183,6 +183,24 @@ def test_normal_flow_activities_rejects_nonfinite_inputs():
         normal_flow_activities(normals, np.array([0.0, 0.0]), activity_floor=np.nan)
 
 
+@pytest.mark.parametrize(
+    "event_xy",
+    [
+        np.array([[np.nan, 0.0]]),
+        np.array([[0.0, np.inf]]),
+        np.array([[0.0, -np.inf]]),
+    ],
+)
+def test_event_likelihood_rejects_nonfinite_event_coordinates(event_xy):
+    contour = _rectangle_contour(width=1.0, height=2.0)
+    velocity = np.array([1.0, 0.0])
+
+    with pytest.raises(ValueError, match="event_xy must contain only finite values"):
+        contour_event_intensity(event_xy, contour, velocity)
+    with pytest.raises(ValueError, match="event_xy must contain only finite values"):
+        event_batch_log_likelihood(event_xy, contour, velocity)
+
+
 def test_active_edge_events_have_higher_intensity():
     contour = _rectangle_contour(width=4.0, height=2.0)
     config = EventLikelihoodConfig(
