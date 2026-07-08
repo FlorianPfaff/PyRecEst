@@ -22,6 +22,23 @@ def _normalize_max_rank(max_rank):
     return normalized
 
 
+def _normalize_nonnegative_tolerance(value, name):
+    """Return a finite non-negative scalar tolerance."""
+    message = f"{name} must be a non-negative finite real scalar."
+    if isinstance(value, (bool, np.bool_)):
+        raise TypeError(message)
+    try:
+        values = np.asarray(value)
+    except (TypeError, ValueError) as exc:
+        raise TypeError(message) from exc
+    if values.shape != () or values.dtype.kind not in "iuf":
+        raise TypeError(message)
+    tolerance = float(values)
+    if not np.isfinite(tolerance) or tolerance < 0.0:
+        raise ValueError(message)
+    return tolerance
+
+
 def _choose_rank(singular_values, max_rank, local_tolerance):
     max_rank = _normalize_max_rank(max_rank)
     full_rank = singular_values.size
@@ -91,18 +108,18 @@ class TensorTrain:
     @classmethod
     def from_dense(cls, tensor, *, max_rank=None, rtol=0.0, atol=0.0):
         max_rank = _normalize_max_rank(max_rank)
+        rtol = _normalize_nonnegative_tolerance(rtol, "rtol")
+        atol = _normalize_nonnegative_tolerance(atol, "atol")
         array = np.asarray(tensor, dtype=np.complex128)
         if array.ndim < 1:
             raise ValueError("A tensor with at least one axis is required.")
         if any(axis_size < 1 for axis_size in array.shape):
             raise ValueError("All tensor axes must be non-empty.")
-        if rtol < 0 or atol < 0:
-            raise ValueError("rtol and atol must be non-negative.")
         if array.ndim == 1:
             return cls((array.reshape(1, array.shape[0], 1),))
 
         norm = float(np.linalg.norm(array.ravel()))
-        global_tolerance = max(float(atol), float(rtol) * norm)
+        global_tolerance = max(atol, rtol * norm)
         local_tolerance = global_tolerance / sqrt(array.ndim - 1) if global_tolerance > 0 else 0.0
 
         cores = []
@@ -206,13 +223,13 @@ class TensorTrain:
 
         del max_dense_entries
         max_rank = _normalize_max_rank(max_rank)
-        if rtol < 0 or atol < 0:
-            raise ValueError("rtol and atol must be non-negative.")
+        rtol = _normalize_nonnegative_tolerance(rtol, "rtol")
+        atol = _normalize_nonnegative_tolerance(atol, "atol")
         if self.ndim == 1:
             return self.copy()
 
         norm = self.norm()
-        global_tolerance = max(float(atol), float(rtol) * norm)
+        global_tolerance = max(atol, rtol * norm)
         local_tolerance = global_tolerance / sqrt(self.ndim - 1) if global_tolerance > 0 else 0.0
 
         cores = [core.copy() for core in self.cores]

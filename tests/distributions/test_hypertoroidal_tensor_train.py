@@ -67,6 +67,25 @@ class TestHypertoroidalTensorTrain(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     tt.round(max_rank=invalid)
 
+    def test_tolerances_require_nonnegative_finite_scalars(self):
+        tensor = np.arange(8, dtype=float).reshape(2, 2, 2)
+        tt = TensorTrain.from_dense(tensor)
+
+        for keyword in ("rtol", "atol"):
+            for invalid in (True, np.bool_(False), "0.1", [0.1], 1.0 + 0.0j):
+                with self.subTest(keyword=keyword, invalid=invalid):
+                    with self.assertRaises(TypeError):
+                        TensorTrain.from_dense(tensor, **{keyword: invalid})
+                    with self.assertRaises(TypeError):
+                        tt.round(**{keyword: invalid})
+
+            for invalid in (-1.0, np.inf, np.nan):
+                with self.subTest(keyword=keyword, invalid=invalid):
+                    with self.assertRaises(ValueError):
+                        TensorTrain.from_dense(tensor, **{keyword: invalid})
+                    with self.assertRaises(ValueError):
+                        tt.round(**{keyword: invalid})
+
 
 if __name__ == "__main__":
     unittest.main()
