@@ -10,6 +10,7 @@ from pyrecest.backend import (
     angle,
     any,
     array,
+    erf,
     exp,
     int32,
     int64,
@@ -24,7 +25,6 @@ from pyrecest.backend import (
     where,
     zeros,
 )
-from scipy.special import erf  # pylint: disable=no-name-in-module
 
 from ..hypertorus._input_validation import as_shift_vector
 from ..hypertorus.hypertoroidal_wrapped_normal_distribution import (
