@@ -6,6 +6,7 @@ from ._dispatch import numpy as _np
 _modify_func_default_dtype = _common._modify_func_default_dtype
 _allow_complex_dtype = _common._allow_complex_dtype
 _BOOLEAN_TYPES = (bool, _np.bool_)
+_TEMPORAL_DTYPE_KINDS = "Mm"
 
 
 def _rand(*dims, size=None):
@@ -30,6 +31,10 @@ def _contains_boolean_value(value):
     except (TypeError, ValueError, RuntimeError):
         return False
     return any(isinstance(item, _BOOLEAN_TYPES) for item in values)
+
+
+def _is_temporal_scalar_array(value_array):
+    return value_array.ndim == 0 and value_array.dtype.kind in _TEMPORAL_DTYPE_KINDS
 
 
 def _size_type_error():
@@ -178,6 +183,8 @@ def _choice_bool(value, name):
 def _validate_choice_population(a_array):
     if a_array.ndim != 0:
         return
+    if _is_temporal_scalar_array(a_array):
+        raise ValueError("a must be a positive integer or a non-empty array")
     scalar = a_array.item()
     if isinstance(scalar, _BOOLEAN_TYPES):
         raise ValueError("a must be a positive integer or a non-empty array")
@@ -208,6 +215,8 @@ def _maybe_preserve_choice_order(indices, *, replace, p, shuffle, size):
 
 def _integer_choice_population_size(a_array):
     if a_array.ndim == 0:
+        if _is_temporal_scalar_array(a_array):
+            raise ValueError("a must be a positive integer or a non-empty array")
         try:
             return _operator.index(a_array.item())
         except TypeError:
