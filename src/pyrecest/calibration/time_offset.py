@@ -66,7 +66,13 @@ def _contains_temporal_values(arr: np.ndarray) -> bool:
         return True
     if arr.dtype.kind != "O":
         return False
-    return any(isinstance(item, _TEMPORAL_SCALAR_TYPES) for item in arr.reshape(-1))
+    for item in arr.reshape(-1):
+        if isinstance(item, _TEMPORAL_SCALAR_TYPES):
+            return True
+        dtype = getattr(item, "dtype", None)
+        if getattr(dtype, "kind", None) in ("M", "m"):
+            return True
+    return False
 
 
 def _as_finite_float(value: Any, name: str) -> float:
