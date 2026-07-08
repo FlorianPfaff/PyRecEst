@@ -46,6 +46,8 @@ _COMPLEX_DTYPE_FOR_TENSOR_DTYPE = {
     _torch.complex128: _np.complex128,
 }
 
+_AXIS_TYPE_ERROR = "axis must be None, an integer, or a tuple of integers"
+
 
 def _default_linalg_dtype():
     dtype = get_default_dtype()
@@ -85,6 +87,16 @@ def _as_integer_scalar(value, name):
         return _operator_index(value)
     except TypeError as exc:
         raise TypeError(f"{name} must be an integer scalar") from exc
+
+
+def _as_norm_axis_entry(axis) -> int:
+    """Return one non-boolean PyTorch linalg.norm axis entry."""
+    if _is_boolean_scalar(axis):
+        raise TypeError(_AXIS_TYPE_ERROR)
+    try:
+        return _operator_index(axis)
+    except TypeError as exc:
+        raise TypeError(_AXIS_TYPE_ERROR) from exc
 
 
 def _common_linalg_dtype(*tensors):
@@ -278,30 +290,30 @@ def _normalize_norm_axis(axis):
     """Return a PyTorch-compatible norm dimension from NumPy-style axis input."""
     if axis is None:
         return None
-    if isinstance(axis, (bool, _np.bool_)):
-        raise TypeError("axis must be None, an integer, or a tuple of integers")
+    if _is_boolean_scalar(axis):
+        raise TypeError(_AXIS_TYPE_ERROR)
     if _torch.is_tensor(axis):
         if axis.dtype == _torch.bool:
-            raise TypeError("axis must be None, an integer, or a tuple of integers")
+            raise TypeError(_AXIS_TYPE_ERROR)
         if axis.ndim == 0:
-            return _operator_index(axis.item())
+            return _as_norm_axis_entry(axis.item())
         if axis.ndim != 1:
-            raise TypeError("axis must be None, an integer, or a tuple of integers")
+            raise TypeError(_AXIS_TYPE_ERROR)
         axis = axis.detach().cpu().tolist()
     elif isinstance(axis, _np.ndarray):
         if axis.dtype == _np.bool_:
-            raise TypeError("axis must be None, an integer, or a tuple of integers")
+            raise TypeError(_AXIS_TYPE_ERROR)
         if axis.ndim == 0:
-            return _operator_index(axis.item())
+            return _as_norm_axis_entry(axis.item())
         if axis.ndim != 1:
-            raise TypeError("axis must be None, an integer, or a tuple of integers")
+            raise TypeError(_AXIS_TYPE_ERROR)
         axis = axis.tolist()
     elif isinstance(axis, (int, _np.integer)):
-        return int(axis)
+        return _as_norm_axis_entry(axis)
 
     if isinstance(axis, (list, tuple)):
-        return tuple(_operator_index(one_axis) for one_axis in axis)
-    return _operator_index(axis)
+        return tuple(_as_norm_axis_entry(one_axis) for one_axis in axis)
+    return _as_norm_axis_entry(axis)
 
 
 def norm(x, ord=None, axis=None, keepdims=False):
