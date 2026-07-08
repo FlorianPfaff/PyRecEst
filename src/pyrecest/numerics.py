@@ -88,6 +88,8 @@ def _validate_nonnegative_finite(name: str, value: float) -> float:
         value_array = np.asarray(value)
     except (TypeError, ValueError, OverflowError, RuntimeError) as exc:
         raise ValueError(f"{name} must be a scalar number.") from exc
+    if _contains_unsupported_numeric_values(value_array):
+        raise ValueError(f"{name} must be a scalar number.")
     if value_array.shape != () or np.issubdtype(value_array.dtype, np.bool_):
         raise ValueError(f"{name} must be a scalar number.")
     scalar = value_array.item()
