@@ -71,7 +71,9 @@ class SurvivalAwareAssociationConfig:
         _validate_nonnegative_finite(self.clutter_weight, "clutter_weight")
         if float(self.birth_weight) + float(self.clutter_weight) <= 0.0:
             raise ValueError("birth_weight and clutter_weight cannot both be zero")
-        _validate_probability(self.minimum_probability, "minimum_probability", allow_zero=False)
+        _validate_probability(
+            self.minimum_probability, "minimum_probability", allow_zero=False
+        )
         if not isinstance(self.metadata_existence_key, str):
             raise ValueError("metadata_existence_key must be a string")
 
@@ -461,7 +463,7 @@ def _resolve_value(
     step: int | None,
 ) -> float:
     if not callable(spec):
-        return float(spec)
+        return float(_as_numpy_array(spec).item())
 
     call_attempts = (
         lambda: spec(
@@ -477,7 +479,7 @@ def _resolve_value(
     last_error: TypeError | None = None
     for attempt in call_attempts:
         try:
-            return float(attempt())
+            return float(_as_numpy_array(attempt()).item())
         except TypeError as exc:
             last_error = exc
     raise TypeError(
@@ -513,7 +515,7 @@ def _validate_nonnegative_likelihood_spec(spec: FactorSpec, name: str) -> None:
 
 
 def _validate_probability(value: Any, name: str, *, allow_zero: bool) -> float:
-    value_array = np.asarray(value)
+    value_array = _as_numpy_array(value)
     if value_array.shape != () or value_array.dtype == np.bool_:
         raise ValueError(f"{name} must be a scalar probability")
     probability = float(value_array.item())
@@ -525,7 +527,7 @@ def _validate_probability(value: Any, name: str, *, allow_zero: bool) -> float:
 
 
 def _validate_nonnegative_finite(value: Any, name: str) -> float:
-    value_array = np.asarray(value)
+    value_array = _as_numpy_array(value)
     if value_array.shape != () or value_array.dtype == np.bool_:
         raise ValueError(f"{name} must be a scalar number")
     scalar = float(value_array.item())
@@ -535,7 +537,7 @@ def _validate_nonnegative_finite(value: Any, name: str) -> float:
 
 
 def _validate_nonnegative_likelihood(value: Any, name: str) -> float:
-    value_array = np.asarray(value)
+    value_array = _as_numpy_array(value)
     if value_array.shape != () or value_array.dtype == np.bool_:
         raise ValueError(f"{name} must be a scalar likelihood")
     likelihood = float(value_array.item())
@@ -544,19 +546,31 @@ def _validate_nonnegative_likelihood(value: Any, name: str) -> float:
     return likelihood
 
 
+def _as_numpy_array(value: Any, *, dtype=float) -> np.ndarray:
+    """Return ``value`` as a NumPy array, respecting active backend adapters."""
+
+    try:
+        from pyrecest.backend import to_numpy  # pylint: disable=import-outside-toplevel
+
+        value = to_numpy(value)
+    except (ImportError, AttributeError, TypeError, ValueError, RuntimeError):
+        pass
+    return np.asarray(value, dtype=dtype)
+
+
 def _coerce_measurements_for_prior(
     measurements, measurement_matrix, measurement_axis: MeasurementAxis
 ) -> list[np.ndarray]:
-    measurement_matrix = np.asarray(measurement_matrix, dtype=float)
+    measurement_matrix = _as_numpy_array(measurement_matrix)
     measurement_dim = int(measurement_matrix.shape[0])
     try:
-        array = np.asarray(measurements, dtype=float)
-    except (TypeError, ValueError):
-        return [np.asarray(measurement, dtype=float).reshape(-1) for measurement in measurements]
+        array = _as_numpy_array(measurements)
+    except (TypeError, ValueError, RuntimeError):
+        return [_as_numpy_array(measurement).reshape(-1) for measurement in measurements]
     if array.ndim == 1:
         return [array.reshape(-1)]
     if array.ndim != 2:
-        return [np.asarray(measurement, dtype=float).reshape(-1) for measurement in measurements]
+        return [_as_numpy_array(measurement).reshape(-1) for measurement in measurements]
     if measurement_axis == "columns":
         return [array[:, index].reshape(-1) for index in range(array.shape[1])]
     if measurement_axis in ("rows", "sequence"):
