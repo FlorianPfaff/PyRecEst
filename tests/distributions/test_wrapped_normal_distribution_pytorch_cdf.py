@@ -26,7 +26,7 @@ def test_wrapped_normal_cdf_uses_backend_erf_under_pytorch():
         pytest.skip("torch is not installed")
 
     _run_python_with_backend(
-        r'''
+        r"""
 import math
 
 import pyrecest.backend as backend
@@ -50,6 +50,6 @@ assert values_np[0] <= values_np[1] <= values_np[2]
 scalar_value = dist.cdf(backend.asarray(0.4), starting_point=0.0, n_wraps=4)
 assert scalar_value.ndim == 0
 assert math.isfinite(float(backend.to_numpy(scalar_value)))
-''',
+""",
         backend_name="pytorch",
     )

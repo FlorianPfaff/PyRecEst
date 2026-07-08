@@ -140,7 +140,9 @@ class WrappedNormalFilter(AbstractFilter, CircularFilterMixin):
                 )
 
                 if current_lambda <= 0:
-                    raise ValueError("Progressive update with given threshold impossible")
+                    raise ValueError(
+                        "Progressive update with given threshold impossible"
+                    )
 
                 current_lambda = maximum(current_lambda, MINIMUM_LAMBDA)
                 current_lambda = minimum(current_lambda, lambda_)
