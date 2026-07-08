@@ -1,8 +1,11 @@
-"""PyTorch creation-helper shape validation hook."""
+"""PyTorch creation-helper scalar and shape validation hook."""
 
 from __future__ import annotations
 
 from operator import index as _operator_index
+
+
+_ARANGE_SENTINEL = object()
 
 
 def _pytorch_creation_dimension(dimension, numpy_module) -> int:
@@ -42,8 +45,20 @@ def _pytorch_creation_shape(shape, numpy_module, torch_module) -> tuple[int, ...
     return normalized_shape
 
 
+def _pytorch_creation_scalar(value, numpy_module, torch_module, *, argument_name: str):
+    """Normalize one NumPy-style scalar creation argument."""
+    if torch_module.is_tensor(value):
+        if value.ndim != 0:
+            raise TypeError(f"arange {argument_name} must be a scalar")
+        return value.item()
+    value_array = numpy_module.asarray(value)
+    if value_array.shape != ():
+        raise TypeError(f"arange {argument_name} must be a scalar")
+    return value_array.item()
+
+
 def patch_pytorch_creation_shape_contract() -> None:
-    """Patch raw/public PyTorch creation helpers to reject boolean shapes."""
+    """Patch raw/public PyTorch creation helpers for NumPy-style inputs."""
     try:
         import numpy as np  # pylint: disable=import-outside-toplevel
         import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
@@ -60,6 +75,54 @@ def patch_pytorch_creation_shape_contract() -> None:
 
     active_pytorch_backend = getattr(backend, "__backend_name__", None) == "pytorch"
     patch_pytorch_scatter_add_contract()
+
+    original_arange = getattr(raw_pytorch, "arange", None)
+    if original_arange is not None:
+        if getattr(original_arange, "_pyrecest_numpy_scalar_contract", False):
+            if active_pytorch_backend:
+                setattr(backend, "arange", original_arange)
+        else:
+
+            def arange(start, end=_ARANGE_SENTINEL, step=1, *, dtype=None, **kwargs):
+                start = _pytorch_creation_scalar(
+                    start,
+                    np,
+                    torch,
+                    argument_name="start",
+                )
+                if end is _ARANGE_SENTINEL:
+                    return torch.arange(
+                        start,
+                        dtype=_normalize_dtype(dtype),
+                        **kwargs,
+                    )
+                end = _pytorch_creation_scalar(
+                    end,
+                    np,
+                    torch,
+                    argument_name="end",
+                )
+                step = _pytorch_creation_scalar(
+                    step,
+                    np,
+                    torch,
+                    argument_name="step",
+                )
+                return torch.arange(
+                    start,
+                    end,
+                    step,
+                    dtype=_normalize_dtype(dtype),
+                    **kwargs,
+                )
+
+            arange.__name__ = getattr(original_arange, "__name__", "arange")
+            arange.__doc__ = getattr(original_arange, "__doc__", None)
+            arange._pyrecest_numpy_contract = True
+            arange._pyrecest_numpy_scalar_contract = True
+            setattr(raw_pytorch, "arange", arange)
+            if active_pytorch_backend:
+                setattr(backend, "arange", arange)
 
     def _wrap_creation_helper(helper_name, torch_helper, *, has_fill_value=False):
         original_helper = getattr(raw_pytorch, helper_name, None)
