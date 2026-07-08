@@ -16,6 +16,8 @@ _REJECTED_REAL_SCALAR_TYPES = (
     bytearray,
     complex,
     np.complexfloating,
+    np.datetime64,
+    np.timedelta64,
 )
 
 
