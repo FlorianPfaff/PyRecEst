@@ -93,6 +93,13 @@ def as_point_array(
         raise ValueError("points must have shape (n_points, dim).")
     if point_array.shape[0] == 0:
         raise ValueError("At least one point is required.")
+    if (
+        _is_boolean_dtype(point_array)
+        or _is_complex_dtype(point_array)
+        or _is_text_dtype(point_array)
+        or _is_temporal_dtype(point_array)
+    ):
+        raise ValueError("points must contain real numeric values.")
     if not bool(backend_all(isfinite(point_array))):
         raise ValueError("points must contain only finite values.")
     if expected_dim is None:
@@ -155,6 +162,31 @@ def _is_complex_dtype(value) -> bool:
     }
 
 
+def _is_text_dtype(value) -> bool:
+    return _dtype_kind(value) in {"S", "U"} or _dtype_name(value) in {
+        "bytes",
+        "str",
+        "string",
+    }
+
+
+def _is_temporal_dtype(value) -> bool:
+    dtype_kind = _dtype_kind(value)
+    dtype_name = _dtype_name(value)
+    return dtype_kind in {"M", "m"} or any(
+        temporal_name in dtype_name
+        for temporal_name in ("datetime64", "timedelta64")
+    )
+
+
+def _is_numpy_temporal_scalar(value) -> bool:
+    value_type = type(value)
+    return value_type.__module__ == "numpy" and value_type.__name__ in {
+        "datetime64",
+        "timedelta64",
+    }
+
+
 def _coerce_cost_matrix(cost_matrix):
     try:
         costs = asarray(cost_matrix)
@@ -163,7 +195,12 @@ def _coerce_cost_matrix(cost_matrix):
 
     if costs.ndim != 2:
         raise ValueError("cost_matrix must be two-dimensional.")
-    if _is_boolean_dtype(costs) or _is_complex_dtype(costs):
+    if (
+        _is_boolean_dtype(costs)
+        or _is_complex_dtype(costs)
+        or _is_text_dtype(costs)
+        or _is_temporal_dtype(costs)
+    ):
         raise ValueError("cost_matrix must contain real numeric values.")
 
     try:
@@ -201,12 +238,17 @@ def _validate_max_cost(max_cost) -> float:
         raise ValueError("max_cost must be a scalar numeric value.") from exc
     if max_cost_array.shape != ():
         raise ValueError("max_cost must be a scalar.")
+    if _is_temporal_dtype(max_cost_array):
+        raise ValueError("max_cost must be a scalar numeric value.")
 
     try:
         max_cost_scalar = max_cost_array.item()
     except (TypeError, ValueError, AttributeError, RuntimeError) as exc:
         raise ValueError("max_cost must be a scalar numeric value.") from exc
-    if isinstance(max_cost_scalar, (bool, str, bytes, bytearray)):
+    if (
+        isinstance(max_cost_scalar, (bool, str, bytes, bytearray))
+        or _is_numpy_temporal_scalar(max_cost_scalar)
+    ):
         raise ValueError("max_cost must be a scalar numeric value.")
 
     try:
@@ -228,9 +270,14 @@ def _validate_tolerance(tolerance) -> float:
         raise ValueError("tolerance must be a finite non-negative scalar.") from exc
     if tolerance_array.shape != ():
         raise ValueError("tolerance must be a finite non-negative scalar.")
+    if _is_temporal_dtype(tolerance_array):
+        raise ValueError("tolerance must be a finite non-negative scalar.")
 
     tolerance_scalar = tolerance_array.item()
-    if isinstance(tolerance_scalar, (bool, str, bytes, bytearray)):
+    if (
+        isinstance(tolerance_scalar, (bool, str, bytes, bytearray))
+        or _is_numpy_temporal_scalar(tolerance_scalar)
+    ):
         raise ValueError("tolerance must be a finite non-negative scalar.")
 
     try:
