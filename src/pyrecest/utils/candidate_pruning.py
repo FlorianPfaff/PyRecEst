@@ -230,9 +230,9 @@ def candidate_mask_from_costs(
 ) -> np.ndarray:
     """Return a boolean candidate mask for a pairwise association matrix."""
 
-    costs = _as_cost_matrix(cost_matrix)
-    finite_costs = np.isfinite(costs)
     cfg = candidate_pruning_config_from_mapping(config)
+    costs = _as_cost_matrix(cost_matrix, allow_nan_as_infinite=cfg is None)
+    finite_costs = np.isfinite(costs)
     if cfg is None:
         return finite_costs
 
@@ -281,8 +281,8 @@ def prune_pairwise_cost_matrix(
 ) -> np.ndarray:
     """Replace pruned candidate entries by a large finite cost."""
 
-    costs = _as_cost_matrix(cost_matrix)
     cfg = candidate_pruning_config_from_mapping(config)
+    costs = _as_cost_matrix(cost_matrix, allow_nan_as_infinite=cfg is None)
     if cfg is None:
         return costs
 
@@ -358,11 +358,18 @@ def _effective_large_cost(costs: np.ndarray, penalty: float) -> float:
     return adjusted_penalty
 
 
-def _as_cost_matrix(cost_matrix: Any) -> np.ndarray:
+def _as_cost_matrix(
+    cost_matrix: Any,
+    *,
+    allow_nan_as_infinite: bool = True,
+) -> np.ndarray:
     costs = _as_numeric_matrix(cost_matrix, "cost_matrix")
     if costs.ndim != 2:
         raise ValueError("cost_matrix must be two-dimensional")
-    if np.any(np.isneginf(costs)):
+    invalid_nonfinite = np.isneginf(costs)
+    if not allow_nan_as_infinite:
+        invalid_nonfinite |= np.isnan(costs)
+    if np.any(invalid_nonfinite):
         raise ValueError(
             "cost_matrix may only contain finite values or positive infinity"
         )
