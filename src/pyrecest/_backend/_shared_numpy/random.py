@@ -183,6 +183,19 @@ def _validate_choice_population(a_array):
         raise ValueError("a must be a positive integer or a non-empty array")
 
 
+def _normalize_probability_values(values):
+    if _np.any(values < 0.0) or _np.any(~_np.isfinite(values)):
+        raise ValueError("probabilities do not sum to a positive value")
+    scale = float(values.max()) if values.size else 0.0
+    if scale <= 0.0:
+        raise ValueError("probabilities do not sum to a positive value")
+    scaled = values / scale
+    total = scaled.sum()
+    if not _np.isfinite(total) or total <= 0.0:
+        raise ValueError("probabilities do not sum to a positive value")
+    return scaled / total
+
+
 def _maybe_preserve_choice_order(indices, *, replace, p, shuffle, size):
     if replace or p is not None or shuffle or size is None:
         return indices
@@ -216,10 +229,7 @@ def _validate_choice_probabilities(p, population_size):
     p_array = p_array.astype(_np.float64, copy=False)
     if p_array.ndim != 1 or p_array.shape[0] != population_size:
         raise ValueError("p must be 1-dimensional with one entry per population item")
-    p_sum = p_array.sum()
-    if _np.any(p_array < 0) or not _np.isfinite(p_sum) or p_sum <= 0:
-        raise ValueError("probabilities do not sum to a positive value")
-    return p_array / p_sum
+    return _normalize_probability_values(p_array)
 
 
 def choice(a, size=None, replace=True, p=None, axis=0, shuffle=True):

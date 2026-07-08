@@ -180,6 +180,15 @@ def test_multinomial_accepts_integer_like_size_argument():
     assert np.all(samples.sum(axis=1) == 2)
 
 
+def test_multinomial_accepts_large_finite_unnormalized_probabilities():
+    random.seed(0)
+
+    samples = random.multinomial(5, np.array([1e308, 1e308]), size=3)
+
+    assert samples.shape == (3, 2)
+    assert np.all(samples.sum(axis=1) == 5)
+
+
 @pytest.mark.parametrize(
     ("low", "high"),
     [
@@ -287,6 +296,15 @@ def test_choice_rejects_non_boolean_controls(control):
 
     with pytest.raises(TypeError, match=f"{control} must be a boolean"):
         random.choice(np.arange(3), size=2, **kwargs)
+
+
+def test_choice_accepts_large_finite_unnormalized_probabilities():
+    random.seed(0)
+
+    samples = random.choice(np.arange(2), size=8, p=np.array([1e308, 1e308]))
+
+    assert samples.shape == (8,)
+    assert np.all((samples == 0) | (samples == 1))
 
 
 @pytest.mark.parametrize(
