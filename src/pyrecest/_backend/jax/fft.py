@@ -40,14 +40,14 @@ def _normalize_real_fft_length(n):
     if isinstance(n, _np.ndarray):
         if _np.issubdtype(n.dtype, _np.bool_):
             raise TypeError(_BOOLEAN_FFT_LENGTH_ERROR)
-        if n.size == 1 and _np.issubdtype(n.dtype, _np.integer):
+        if n.ndim == 0 and _np.issubdtype(n.dtype, _np.integer):
             return int(n.item())
         return n
     if isinstance(n, _jnp.ndarray):
         n_dtype = _np.asarray(n).dtype
         if _np.issubdtype(n_dtype, _np.bool_):
             raise TypeError(_BOOLEAN_FFT_LENGTH_ERROR)
-        if n.size == 1 and _np.issubdtype(n_dtype, _np.integer):
+        if n.ndim == 0 and _np.issubdtype(n_dtype, _np.integer):
             return int(n.item())
         return n
     if isinstance(n, _np.integer):
