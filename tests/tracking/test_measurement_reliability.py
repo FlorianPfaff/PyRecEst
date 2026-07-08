@@ -40,6 +40,21 @@ def test_scalar_reliability_inputs_reject_text_and_object_booleans() -> None:
             reliability_to_covariance_scale(value)
 
 
+def test_scalar_reliability_inputs_reject_complex_scalars() -> None:
+    invalid_values = (
+        0.5 + 0.25j,
+        np.complex128(0.5 + 0.25j),
+        np.array(0.5 + 0.25j),
+        np.array(np.complex128(0.5 + 0.25j), dtype=object),
+    )
+
+    for value in invalid_values:
+        with pytest.raises(ValueError, match="finite scalar"):
+            reliability_to_covariance_scale(value)
+        with pytest.raises(ValueError, match="finite scalar"):
+            apply_measurement_reliability(np.eye(1), reliability=value)
+
+
 def test_reliability_config_rejects_text_and_object_boolean_scalars() -> None:
     invalid_configs = (
         {"threshold": "0.5"},
@@ -50,6 +65,19 @@ def test_reliability_config_rejects_text_and_object_boolean_scalars() -> None:
 
     for kwargs in invalid_configs:
         with pytest.raises(ValueError):
+            MeasurementReliabilityConfig(**kwargs)
+
+
+def test_reliability_config_rejects_complex_scalar_parameters() -> None:
+    invalid_configs = (
+        {"threshold": np.complex128(0.5 + 0.25j)},
+        {"floor": np.array(0.1 + 0.25j)},
+        {"exponent": np.array(np.complex128(2.0 + 0.25j), dtype=object)},
+        {"max_scale": 2.0 + 0.25j},
+    )
+
+    for kwargs in invalid_configs:
+        with pytest.raises(ValueError, match="finite scalar"):
             MeasurementReliabilityConfig(**kwargs)
 
 
