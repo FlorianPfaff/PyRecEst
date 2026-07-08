@@ -1,7 +1,14 @@
+import importlib.util
+
+import pytest
+
 from tests.support.backend_runner import run_backend_code
 
 
 def test_pytorch_backend_squeeze_rejects_non_singleton_axis():
+    if importlib.util.find_spec("torch") is None:
+        pytest.skip("torch is not installed")
+
     code = """
 import pyrecest  # noqa: F401
 import pyrecest.backend as backend
@@ -28,6 +35,9 @@ print("ok")
 
 
 def test_raw_pytorch_squeeze_rejects_non_singleton_axis_after_package_import():
+    if importlib.util.find_spec("torch") is None:
+        pytest.skip("torch is not installed")
+
     code = """
 import pyrecest  # noqa: F401
 import pyrecest._backend.pytorch as raw_pytorch
