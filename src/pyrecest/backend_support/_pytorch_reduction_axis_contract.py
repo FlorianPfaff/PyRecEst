@@ -32,7 +32,9 @@ def _axis_contains_boolean_value(axis, torch_module) -> bool:
             axes = tuple(axis)
         except TypeError:
             return False
-        return any(_axis_contains_boolean_value(one_axis, torch_module) for one_axis in axes)
+        return any(
+            _axis_contains_boolean_value(one_axis, torch_module) for one_axis in axes
+        )
     return False
 
 
@@ -97,8 +99,8 @@ def patch_pytorch_reduction_axis_contract() -> None:
 
     try:
         import pyrecest._backend as backend_loader  # pylint: disable=import-outside-toplevel
-        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import torch  # pylint: disable=import-outside-toplevel
     except ModuleNotFoundError:  # pragma: no cover - PyTorch backend may be unavailable
         return

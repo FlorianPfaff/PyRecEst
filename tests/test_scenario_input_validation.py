@@ -1,5 +1,4 @@
 import pytest
-
 from pyrecest.scenarios import _to_float_list
 
 
