@@ -8,6 +8,21 @@ from operator import index as _operator_index
 _ARANGE_SENTINEL = object()
 
 
+def _pytorch_has_temporal_dtype(value, numpy_module) -> bool:
+    """Return whether ``value`` has a NumPy temporal dtype."""
+    dtype = getattr(value, "dtype", None)
+    if dtype is None:
+        return False
+    try:
+        return bool(
+            numpy_module.issubdtype(dtype, numpy_module.datetime64)
+            or numpy_module.issubdtype(dtype, numpy_module.timedelta64)
+        )
+    except TypeError:
+        dtype_name = str(dtype).lower()
+        return "datetime64" in dtype_name or "timedelta64" in dtype_name
+
+
 def _pytorch_creation_dimension(dimension, numpy_module) -> int:
     """Return one NumPy-style shape dimension as a non-boolean integer."""
     if isinstance(dimension, (bool, numpy_module.bool_)):
@@ -31,6 +46,8 @@ def _pytorch_creation_shape(shape, numpy_module, torch_module) -> tuple[int, ...
             raise ValueError("negative dimensions are not allowed")
         return normalized_shape
     shape_array = numpy_module.asarray(shape)
+    if _pytorch_has_temporal_dtype(shape_array, numpy_module):
+        raise TypeError("shape dimensions must be integers")
     if shape_array.shape == ():
         normalized_shape = (
             _pytorch_creation_dimension(shape_array.item(), numpy_module),
@@ -54,6 +71,8 @@ def _pytorch_creation_scalar(value, numpy_module, torch_module, *, argument_name
     value_array = numpy_module.asarray(value)
     if value_array.shape != ():
         raise TypeError(f"{argument_name} must be a scalar")
+    if _pytorch_has_temporal_dtype(value_array, numpy_module):
+        raise TypeError(f"{argument_name} must be numeric")
     return value_array.item()
 
 
