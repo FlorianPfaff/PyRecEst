@@ -8,8 +8,13 @@ from . import assignment as _assignment_module
 from . import multisession_assignment as _multisession_assignment_module
 from . import roi_assignment as _roi_assignment_module
 from ._multisession_assignment_labels import tracks_to_session_labels
+from ._roi_assignment_otsu import (
+    patch_otsu_similarity_threshold as _patch_roi_otsu_similarity_threshold,
+)
 
 _TEXT_SCALAR_TYPES = (str, bytes, bytearray, _np.str_, _np.bytes_)
+
+_patch_roi_otsu_similarity_threshold(_roi_assignment_module)
 
 
 def _murty_solution_with_full_assignment(solution, n_cols):
