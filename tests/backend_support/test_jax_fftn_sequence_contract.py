@@ -13,13 +13,17 @@ except ModuleNotFoundError:
 class TestJaxFftnSequenceContract(unittest.TestCase):
     def test_fftn_accepts_scalar_array_entries_in_shape_and_axes(self):
         values = np.arange(4.0)
-        actual = np.asarray(jax_backend.fft.fftn(values, s=(np.array(4),), axes=(np.array(0),)))
+        actual = np.asarray(
+            jax_backend.fft.fftn(values, s=(np.array(4),), axes=(np.array(0),))
+        )
         expected = np.fft.fftn(values, s=(4,), axes=(0,))
         self.assertTrue(np.allclose(actual, expected))
 
     def test_ifftn_accepts_scalar_array_entries_in_shape_and_axes(self):
         spectrum = np.fft.fftn(np.arange(4.0))
-        actual = np.asarray(jax_backend.fft.ifftn(spectrum, s=[np.array(4)], axes=[np.array(0)]))
+        actual = np.asarray(
+            jax_backend.fft.ifftn(spectrum, s=[np.array(4)], axes=[np.array(0)])
+        )
         expected = np.fft.ifftn(spectrum, s=(4,), axes=(0,))
         self.assertTrue(np.allclose(actual, expected))
 
