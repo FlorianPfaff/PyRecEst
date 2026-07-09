@@ -207,6 +207,44 @@ class LowRankHypertoroidalFourierDistribution(AbstractHypertoroidalDistribution)
             normalize=False,
         )
 
+    def centered_hermitian_deviation(self, *, max_entries=1_000_000):
+        """Return max ``|C[k] - conj(C[-k])|`` for identity coefficients."""
+
+        if self.transformation != "identity":
+            raise NotImplementedError("Hermitian coefficient checks apply to identity coefficients only.")
+        return self.coefficients.centered_hermitian_deviation(max_entries=max_entries)
+
+    def is_centered_hermitian(self, *, atol=1e-10, max_entries=1_000_000):
+        """Return whether identity coefficients define a real-valued Fourier series."""
+
+        if self.transformation != "identity":
+            raise NotImplementedError("Hermitian coefficient checks apply to identity coefficients only.")
+        return self.coefficients.is_centered_hermitian(atol=atol, max_entries=max_entries)
+
+    def centered_hermitianized(
+        self,
+        *,
+        max_rank=None,
+        rtol=0.0,
+        atol=0.0,
+        max_entries=1_000_000,
+    ):
+        """Return a centered-Hermitian identity-coefficient distribution."""
+
+        if self.transformation != "identity":
+            raise NotImplementedError("Hermitian coefficient repair applies to identity coefficients only.")
+        coefficients = self.coefficients.centered_hermitianized(
+            max_rank=max_rank,
+            rtol=rtol,
+            atol=atol,
+            max_entries=max_entries,
+        )
+        return LowRankHypertoroidalFourierDistribution(
+            coefficients,
+            "identity",
+            normalize=True,
+        )
+
     def multiply(self, other, n_coefficients=None, *, max_rank=None, rtol=0.0, atol=0.0):
         other = self._ensure_low_rank(other)
         self._check_compatible(other)

@@ -122,6 +122,35 @@ class TestLowRankHypertoroidalFourierDistribution(unittest.TestCase):
         npt.assert_allclose(dist.integrate(), 1.0, atol=1e-12)
         self.assertTrue(np.isfinite(dist.pdf(np.zeros(8))))
 
+    def test_hermitian_helpers_delegate_to_coefficients(self):
+        dist = LowRankHypertoroidalFourierDistribution.from_dense(
+            HypertoroidalFourierDistribution(_identity_coefficients_2d(), "identity")
+        )
+        self.assertTrue(dist.is_centered_hermitian())
+        npt.assert_allclose(dist.centered_hermitian_deviation(), 0.0, atol=1e-12)
+
+    def test_centered_hermitianized_repairs_and_normalizes_distribution(self):
+        coeff = _identity_coefficients_1d()
+        coeff[3] += 0.1
+        dist = LowRankHypertoroidalFourierDistribution.from_dense(
+            HypertoroidalFourierDistribution(coeff, "identity")
+        )
+        self.assertFalse(dist.is_centered_hermitian(atol=1e-12))
+
+        repaired = dist.centered_hermitianized()
+
+        self.assertTrue(repaired.is_centered_hermitian())
+        npt.assert_allclose(repaired.integrate(), 1.0, atol=1e-12)
+
+    def test_hermitian_helpers_reject_sqrt_transformation(self):
+        dist = LowRankHypertoroidalFourierDistribution.uniform((3,), transformation="sqrt")
+        with self.assertRaises(NotImplementedError):
+            dist.centered_hermitian_deviation()
+        with self.assertRaises(NotImplementedError):
+            dist.is_centered_hermitian()
+        with self.assertRaises(NotImplementedError):
+            dist.centered_hermitianized()
+
     def test_tensor_train_from_dense_validates_max_rank_before_one_dimensional_return(self):
         for max_rank in (0, -1, np.array(0)):
             with self.subTest(max_rank=repr(max_rank)):
