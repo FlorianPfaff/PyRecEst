@@ -106,7 +106,9 @@ def _as_float_array(value: Any, name: str) -> np.ndarray:
         raise ValueError(f"{name} must contain real numeric values") from exc
     if array.dtype.kind in _INVALID_FLOAT_ARRAY_KINDS or (
         array.dtype.kind == "O"
-        and any(isinstance(item, _INVALID_FLOAT_ARRAY_SCALAR_TYPES) for item in array.flat)
+        and any(
+            isinstance(item, _INVALID_FLOAT_ARRAY_SCALAR_TYPES) for item in array.flat
+        )
     ):
         raise ValueError(f"{name} must contain real numeric values")
     try:

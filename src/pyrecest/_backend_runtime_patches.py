@@ -9,8 +9,8 @@ def patch_pytorch_close_equal_nan_device_contract() -> None:
     """Preserve ``equal_nan`` while keeping PyTorch close operands on one device."""
 
     try:
-        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import torch  # pylint: disable=import-outside-toplevel
     except ModuleNotFoundError:  # pragma: no cover - PyTorch backend may be unavailable
         return
@@ -123,8 +123,8 @@ def patch_pytorch_searchsorted_contract() -> None:
     """Restore PyTorch ``searchsorted`` with NumPy-style array-like inputs."""
 
     try:
-        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import torch  # pylint: disable=import-outside-toplevel
     except ModuleNotFoundError:  # pragma: no cover - PyTorch backend may be unavailable
         return
@@ -200,8 +200,8 @@ def patch_pytorch_repeat_numpy_contract() -> None:
 
     try:
         import numpy as np  # pylint: disable=import-outside-toplevel
-        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import torch  # pylint: disable=import-outside-toplevel
         from pyrecest._backend_submodules import (  # pylint: disable=import-outside-toplevel
             _pytorch_repeat_with_arraylike_inputs,
@@ -236,8 +236,8 @@ def patch_pytorch_edge_pad_contract() -> None:
 
     try:
         import numpy as np  # pylint: disable=import-outside-toplevel
-        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import torch  # pylint: disable=import-outside-toplevel
     except ModuleNotFoundError:  # pragma: no cover - PyTorch backend may be unavailable
         return
@@ -258,7 +258,9 @@ def patch_pytorch_edge_pad_contract() -> None:
         try:
             pad_pairs = np.broadcast_to(pad_width_array, (ndim, 2))
         except ValueError as exc:
-            raise ValueError(f"pad_width must be broadcastable to shape ({ndim}, 2)") from exc
+            raise ValueError(
+                f"pad_width must be broadcastable to shape ({ndim}, 2)"
+            ) from exc
         if np.any(pad_pairs < 0):
             raise ValueError("index can't contain negative values")
         return tuple((int(before), int(after)) for before, after in pad_pairs.tolist())
@@ -316,8 +318,8 @@ def patch_pytorch_transpose_boolean_axes_contract() -> None:
     """Make PyTorch ``transpose`` reject boolean axes sequences like NumPy."""
 
     try:
-        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import torch  # pylint: disable=import-outside-toplevel
     except ModuleNotFoundError:  # pragma: no cover - PyTorch backend may be unavailable
         return
@@ -371,8 +373,8 @@ def patch_jax_take_arraylike_contract() -> None:
 
     try:
         import jax.numpy as jnp  # pylint: disable=import-outside-toplevel
-        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import pyrecest._backend.jax as raw_jax  # pylint: disable=import-outside-toplevel
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
     except ModuleNotFoundError:  # pragma: no cover - JAX backend may be unavailable
         return
 
