@@ -1,5 +1,7 @@
 import unittest
 
+import numpy as np
+
 from pyrecest.backend import array, eye, zeros
 from pyrecest.models.validation import (
     infer_state_dim_from_distribution,
@@ -48,6 +50,32 @@ class TestModelValidation(unittest.TestCase):
                 with self.assertRaisesRegex(TypeError, "integer or None"):
                     call()
 
+    def test_validate_expected_dimensions_reject_temporal_values(self):
+        temporal_values = [
+            np.timedelta64(2, "ns"),
+            np.datetime64("1970-01-01T00:00:00.000000002"),
+            np.array(np.timedelta64(2, "ns")),
+            np.array(np.datetime64("1970-01-01T00:00:00.000000002")),
+            np.array(np.timedelta64(2, "ns"), dtype=object),
+            np.array(np.datetime64("1970-01-01T00:00:00.000000002"), dtype=object),
+        ]
+
+        for value in temporal_values:
+            invalid_calls = [
+                lambda value=value: validate_state_vector(array([1.0, 2.0]), state_dim=value),
+                lambda value=value: validate_measurement_vector(array([1.0, 2.0]), meas_dim=value),
+                lambda value=value: validate_covariance_matrix(eye(2), dim=value),
+                lambda value=value: validate_noise_covariance(eye(2), dim=value),
+                lambda value=value: validate_transition_matrix(zeros((2, 2)), state_dim=value),
+                lambda value=value: validate_transition_matrix(zeros((2, 2)), pred_dim=value),
+                lambda value=value: validate_measurement_matrix(zeros((2, 2)), state_dim=value),
+                lambda value=value: validate_measurement_matrix(zeros((2, 2)), meas_dim=value),
+            ]
+            for call in invalid_calls:
+                with self.subTest(value=value, call=call):
+                    with self.assertRaisesRegex(TypeError, "integer or None"):
+                        call()
+
     def test_validate_vector_and_matrix_reject_boolean_arrays(self):
         invalid_calls = [
             lambda: validate_state_vector(array([True, False]), state_dim=2),
@@ -62,6 +90,43 @@ class TestModelValidation(unittest.TestCase):
             with self.subTest(call=call):
                 with self.assertRaisesRegex(ValueError, "numeric non-boolean"):
                     call()
+
+    def test_validate_vector_and_matrix_reject_temporal_arrays(self):
+        datetime_vector = np.array(
+            ["1970-01-01T00:00:00.000000001", "1970-01-01T00:00:00.000000002"],
+            dtype="datetime64[ns]",
+        )
+        timedelta_vector = np.array([1, 2], dtype="timedelta64[ns]")
+        datetime_matrix = datetime_vector.reshape(1, 2)
+        timedelta_matrix = np.array([[1, 0], [0, 1]], dtype="timedelta64[ns]")
+        object_temporal_matrix = np.array(
+            [[np.datetime64("1970-01-01T00:00:00.000000001")]],
+            dtype=object,
+        )
+
+        invalid_calls = [
+            lambda: validate_state_vector(datetime_vector, state_dim=2),
+            lambda: validate_measurement_vector(timedelta_vector, meas_dim=2),
+            lambda: validate_covariance_matrix(timedelta_matrix, dim=2),
+            lambda: validate_noise_covariance(object_temporal_matrix, dim=1),
+            lambda: validate_transition_matrix(datetime_matrix, state_dim=2, pred_dim=1),
+            lambda: validate_measurement_matrix(timedelta_matrix, state_dim=2, meas_dim=2),
+        ]
+
+        for call in invalid_calls:
+            with self.subTest(call=call):
+                with self.assertRaisesRegex(ValueError, "numeric non-boolean"):
+                    call()
+
+    def test_validate_covariance_matrix_rejects_temporal_symmetry_tolerances(self):
+        for keyword in ("symmetric_rtol", "symmetric_atol"):
+            with self.subTest(keyword=keyword):
+                with self.assertRaisesRegex(ValueError, "finite nonnegative scalar"):
+                    validate_covariance_matrix(
+                        eye(1),
+                        check_symmetric=True,
+                        **{keyword: np.timedelta64(1, "ns")},
+                    )
 
     def test_validate_measurement_vector_accepts_expected_shape(self):
         measurement = validate_measurement_vector(array([1.0]), meas_dim=1)
@@ -151,6 +216,13 @@ class TestModelValidation(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "Could not infer"):
             infer_state_dim_from_distribution(DistributionWithBooleanDim())
+
+    def test_infer_state_dim_rejects_temporal_dim_attribute(self):
+        class DistributionWithTemporalDim:
+            dim = np.timedelta64(4, "ns")
+
+        with self.assertRaisesRegex(ValueError, "Could not infer"):
+            infer_state_dim_from_distribution(DistributionWithTemporalDim())
 
     def test_infer_state_dim_skips_disabled_callable_dim_attribute(self):
         class DistributionWithCallableDimAndMean:

@@ -16,8 +16,8 @@ from pyrecest import backend
 
 # pylint: disable=too-many-arguments
 
+_TEMPORAL_ARRAY_KINDS = {"M", "m"}
 _TEMPORAL_SCALAR_TYPES = (np.datetime64, np.timedelta64)
-_TEMPORAL_DTYPE_KINDS = {"M", "m"}
 
 
 def _as_backend_array(value: Any, name: str):
@@ -26,7 +26,10 @@ def _as_backend_array(value: Any, name: str):
         value_array = np.asarray(value)
     except (TypeError, ValueError, RuntimeError, OverflowError):
         value_array = None
-    if value_array is not None and _has_temporal_dtype(value_array):
+    if value_array is not None and (
+        _array_has_temporal_dtype(value_array)
+        or _contains_temporal_scalar(value_array)
+    ):
         raise ValueError(f"{name} must contain numeric non-boolean values.")
     try:
         return backend.asarray(value)
@@ -55,26 +58,33 @@ def _validate_bool_flag(value: Any, name: str) -> bool:
     raise TypeError(f"{name} must be a boolean.")
 
 
-def _has_temporal_dtype(value: Any) -> bool:
-    dtype = getattr(value, "dtype", None)
-    if dtype is None:
-        return False
-    if getattr(dtype, "kind", None) in _TEMPORAL_DTYPE_KINDS:
-        return True
-    dtype_name = str(dtype).lower()
-    return "datetime64" in dtype_name or "timedelta64" in dtype_name
-
-
-def _is_temporal_scalar_array(value_array: Any) -> bool:
-    if _has_temporal_dtype(value_array):
-        return True
-    if getattr(value_array, "shape", None) != ():
-        return False
+def _dtype_kind(dtype: Any) -> str:
     try:
-        scalar = value_array.item()
-    except (AttributeError, TypeError, ValueError):
+        return np.dtype(dtype).kind
+    except TypeError:
+        return ""
+
+
+def _dtype_is_temporal(dtype: Any) -> bool:
+    return _dtype_kind(dtype) in _TEMPORAL_ARRAY_KINDS
+
+
+def _array_has_temporal_dtype(value_array: np.ndarray) -> bool:
+    return _dtype_is_temporal(value_array.dtype)
+
+
+def _contains_temporal_scalar(value: Any) -> bool:
+    if isinstance(value, _TEMPORAL_SCALAR_TYPES):
+        return True
+    if isinstance(value, np.ndarray):
+        if _array_has_temporal_dtype(value):
+            return True
+        if value.dtype == object:
+            return any(_contains_temporal_scalar(item) for item in value.reshape(-1))
         return False
-    return isinstance(scalar, _TEMPORAL_SCALAR_TYPES)
+    if isinstance(value, (list, tuple)):
+        return any(_contains_temporal_scalar(item) for item in value)
+    return False
 
 
 def _validate_nonnegative_finite_scalar(value: Any, name: str) -> float:
@@ -82,13 +92,13 @@ def _validate_nonnegative_finite_scalar(value: Any, name: str) -> float:
     if (
         value_array.shape != ()
         or value_array.dtype == np.bool_
-        or _is_temporal_scalar_array(value_array)
+        or _array_has_temporal_dtype(value_array)
     ):
         raise ValueError(f"{name} must be a finite nonnegative scalar.")
     scalar = value_array.item()
     if isinstance(
         scalar,
-        (bool, np.bool_, str, bytes, bytearray, np.str_, np.bytes_),
+        (bool, np.bool_, str, bytes, bytearray, np.str_, np.bytes_, *_TEMPORAL_SCALAR_TYPES),
     ):
         raise ValueError(f"{name} must be a finite nonnegative scalar.")
     try:
@@ -122,11 +132,11 @@ def _validate_expected_dim_scalar(value: Any, dim_name: str) -> int:
     if (
         value_array.shape != ()
         or value_array.dtype == np.bool_
-        or _is_temporal_scalar_array(value_array)
+        or _array_has_temporal_dtype(value_array)
     ):
         raise TypeError(f"{dim_name} must be an integer or None.")
     scalar = value_array.item()
-    if isinstance(scalar, (bool, np.bool_)) or not isinstance(scalar, Integral):
+    if isinstance(scalar, (bool, np.bool_, *_TEMPORAL_SCALAR_TYPES)) or not isinstance(scalar, Integral):
         raise TypeError(f"{dim_name} must be an integer or None.")
     return int(scalar)
 
@@ -145,10 +155,22 @@ def _dtype_name(value: Any) -> str:
     return "" if dtype is None else str(dtype).lower()
 
 
-def _validate_numeric_nonboolean_entries(value: Any, name: str) -> None:
-    """Raise if a backend array is boolean-valued rather than numeric."""
+def _backend_value_has_temporal_dtype(value: Any) -> bool:
+    dtype = getattr(value, "dtype", None)
+    if dtype is None:
+        return False
+    if _dtype_is_temporal(dtype):
+        return True
     dtype_name = _dtype_name(value)
-    if dtype_name in {"bool", "bool_", "torch.bool"} or _has_temporal_dtype(value):
+    return "datetime64" in dtype_name or "timedelta64" in dtype_name
+
+
+def _validate_numeric_nonboolean_entries(value: Any, name: str) -> None:
+    """Raise if a backend array is boolean- or temporal-valued rather than numeric."""
+    dtype_name = _dtype_name(value)
+    if dtype_name in {"bool", "bool_", "torch.bool"}:
+        raise ValueError(f"{name} must contain numeric non-boolean values.")
+    if _backend_value_has_temporal_dtype(value) or _contains_temporal_scalar(value):
         raise ValueError(f"{name} must contain numeric non-boolean values.")
 
 
@@ -375,7 +397,7 @@ def _maybe_call(value: Any, *, allow_methods: bool) -> Any:
 
 
 def _positive_int_or_none(value: Any) -> int | None:
-    if isinstance(value, (bool, np.bool_)):
+    if isinstance(value, (bool, np.bool_, *_TEMPORAL_SCALAR_TYPES)):
         return None
     try:
         value_array = np.asarray(value)
@@ -384,11 +406,11 @@ def _positive_int_or_none(value: Any) -> int | None:
     if (
         value_array.shape != ()
         or value_array.dtype == np.bool_
-        or _is_temporal_scalar_array(value_array)
+        or _array_has_temporal_dtype(value_array)
     ):
         return None
     scalar = value_array.item()
-    if isinstance(scalar, (bool, np.bool_)):
+    if isinstance(scalar, (bool, np.bool_, *_TEMPORAL_SCALAR_TYPES)):
         return None
     if isinstance(scalar, Integral) and int(scalar) > 0:
         return int(scalar)
