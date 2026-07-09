@@ -356,9 +356,7 @@ def _coerce_candidate_session(value: Any) -> int | None:
         return None
 
     scalar = value_array.item()
-    if isinstance(
-        scalar, (bool, np.bool_, str, bytes, bytearray, np.str_, np.bytes_)
-    ):
+    if isinstance(scalar, (bool, np.bool_, str, bytes, bytearray, np.str_, np.bytes_)):
         return None
     if isinstance(scalar, (int, np.integer)):
         return int(scalar)

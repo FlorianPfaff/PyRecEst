@@ -13,7 +13,9 @@ from pyrecest.backend import (
     arange,
     argmax,
     asarray,
-    copy as backend_copy,
+)
+from pyrecest.backend import copy as backend_copy
+from pyrecest.backend import (
     int32,
     int64,
     isclose,

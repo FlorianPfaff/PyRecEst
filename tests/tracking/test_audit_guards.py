@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import pytest
-
 from pyrecest.tracking import (
     ForbiddenKeyAccessError,
     assert_selector_invariant_under_forbidden_key_changes,
@@ -12,7 +11,6 @@ from pyrecest.tracking import (
     strip_forbidden_keys,
     strip_forbidden_keys_from_mappings,
 )
-
 
 FORBIDDEN = {"audit_label", "audit_delta"}
 
@@ -34,7 +32,10 @@ def test_strip_and_poison_forbidden_keys() -> None:
     row = {"candidate_id": "a", "score": 1.0, "audit_delta": 99.0}
 
     assert strip_forbidden_keys(row, FORBIDDEN) == {"candidate_id": "a", "score": 1.0}
-    assert poison_forbidden_keys(row, FORBIDDEN)["audit_delta"] == "__PYRECEST_FORBIDDEN_AUDIT_VALUE__"
+    assert (
+        poison_forbidden_keys(row, FORBIDDEN)["audit_delta"]
+        == "__PYRECEST_FORBIDDEN_AUDIT_VALUE__"
+    )
 
 
 def test_sequence_helpers_strip_poison_and_guard_rows() -> None:
@@ -44,7 +45,9 @@ def test_sequence_helpers_strip_poison_and_guard_rows() -> None:
     ]
 
     stripped = strip_forbidden_keys_from_mappings(rows, FORBIDDEN)
-    poisoned = poison_forbidden_keys_in_mappings(rows, FORBIDDEN, poison_value="SENTINEL")
+    poisoned = poison_forbidden_keys_in_mappings(
+        rows, FORBIDDEN, poison_value="SENTINEL"
+    )
     guarded = guarded_mappings(rows, FORBIDDEN)
 
     assert all("audit_delta" not in row for row in stripped)
@@ -72,7 +75,9 @@ def test_selector_invariance_helper_catches_forbidden_feature_selector() -> None
     ]
 
     def selector(candidate_rows):
-        return max(candidate_rows, key=lambda row: row.get("audit_delta", 0.0))["candidate_id"]
+        return max(candidate_rows, key=lambda row: row.get("audit_delta", 0.0))[
+            "candidate_id"
+        ]
 
     with pytest.raises((AssertionError, ForbiddenKeyAccessError)):
         assert_selector_invariant_under_forbidden_key_changes(selector, rows, FORBIDDEN)

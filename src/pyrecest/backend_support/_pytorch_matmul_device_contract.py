@@ -41,7 +41,11 @@ def patch_pytorch_matmul_device_contract() -> None:
 
     helper_names = ("matmul", "matvec")
     if all(
-        getattr(getattr(raw_pytorch, helper_name, None), "_pyrecest_matmul_device_contract", False)
+        getattr(
+            getattr(raw_pytorch, helper_name, None),
+            "_pyrecest_matmul_device_contract",
+            False,
+        )
         for helper_name in helper_names
     ):
         if getattr(backend, "__backend_name__", None) == "pytorch":
