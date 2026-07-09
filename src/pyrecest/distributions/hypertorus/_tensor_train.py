@@ -39,6 +39,19 @@ def _normalize_nonnegative_tolerance(value, name):
     return tolerance
 
 
+def _check_dense_validation_size(size, max_entries):
+    if max_entries is None:
+        return
+    max_entries = _operator_index(max_entries)
+    if max_entries < 1:
+        raise ValueError("max_entries must be positive when provided.")
+    if size > max_entries:
+        raise ValueError(
+            "Centered Hermitian validation would require visiting more than "
+            f"{max_entries} tensor entries. Increase max_entries explicitly."
+        )
+
+
 def _choose_rank(singular_values, max_rank, local_tolerance):
     max_rank = _normalize_max_rank(max_rank)
     full_rank = singular_values.size
@@ -66,6 +79,11 @@ def _as_integer_index(value, axis, mode_size):
             f"TT entry index {index} is out of bounds for axis {axis} with size {mode_size}."
         )
     return index
+
+
+def _conjugate_flipped_centered(dense):
+    axes = tuple(range(dense.ndim))
+    return np.conjugate(np.flip(dense, axis=axes))
 
 
 class TensorTrain:
@@ -210,6 +228,36 @@ class TensorTrain:
             for left_core, right_core, mode_size in zip(self.cores, other.cores, target_shape)
         ]
         return TensorTrain(cores)
+
+    def centered_hermitian_deviation(self, *, max_entries=1_000_000):
+        """Return max ``|C[k] - conj(C[-k])|`` for center-indexed coefficients."""
+
+        _check_dense_validation_size(self.size, max_entries)
+        dense = self.to_dense()
+        return float(np.max(np.abs(dense - _conjugate_flipped_centered(dense))))
+
+    def is_centered_hermitian(self, *, atol=1e-10, max_entries=1_000_000):
+        """Return whether center-indexed coefficients satisfy Hermitian symmetry."""
+
+        atol = _normalize_nonnegative_tolerance(atol, "atol")
+        return self.centered_hermitian_deviation(max_entries=max_entries) <= atol
+
+    def centered_hermitianized(
+        self,
+        *,
+        max_rank=None,
+        rtol=0.0,
+        atol=0.0,
+        max_entries=1_000_000,
+    ):
+        """Return the nearest dense-average centered-Hermitian TT representation."""
+
+        _check_dense_validation_size(self.size, max_entries)
+        dense = self.to_dense()
+        hermitian_dense = 0.5 * (dense + _conjugate_flipped_centered(dense))
+        return TensorTrain.from_dense(
+            hermitian_dense, max_rank=max_rank, rtol=rtol, atol=atol
+        )
 
     def round(self, *, max_rank=None, rtol=0.0, atol=0.0, max_dense_entries=None):
         """Return a rank-rounded TT without materializing the full tensor.

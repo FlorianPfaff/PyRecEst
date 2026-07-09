@@ -51,6 +51,41 @@ class TestHypertoroidalTensorTrain(unittest.TestCase):
         self.assertEqual(rounded.shape, tt.shape)
         self.assertTrue(np.isfinite(rounded.norm_squared()))
 
+    def test_centered_hermitian_symmetry_detection(self):
+        coeff = np.zeros((3, 3), dtype=np.complex128)
+        coeff[1, 1] = 1.0
+        coeff[0, 1] = 0.2 + 0.1j
+        coeff[2, 1] = np.conjugate(coeff[0, 1])
+        coeff[1, 0] = -0.3 + 0.05j
+        coeff[1, 2] = np.conjugate(coeff[1, 0])
+        tt = TensorTrain.from_dense(coeff)
+        self.assertTrue(tt.is_centered_hermitian())
+        npt.assert_allclose(tt.centered_hermitian_deviation(), 0.0, atol=1e-12)
+
+        broken = coeff.copy()
+        broken[2, 1] += 0.1
+        broken_tt = TensorTrain.from_dense(broken)
+        self.assertFalse(broken_tt.is_centered_hermitian(atol=1e-12))
+        self.assertGreater(broken_tt.centered_hermitian_deviation(), 0.0)
+
+    def test_centered_hermitianized_repairs_dense_average(self):
+        coeff = np.zeros(5, dtype=np.complex128)
+        coeff[2] = 1.0
+        coeff[1] = 0.2 + 0.1j
+        coeff[3] = 0.3 - 0.2j
+        repaired = TensorTrain.from_dense(coeff).centered_hermitianized()
+        self.assertTrue(repaired.is_centered_hermitian())
+        dense = repaired.to_dense()
+        npt.assert_allclose(dense[1], np.conjugate(dense[3]), atol=1e-12)
+        npt.assert_allclose(dense[2].imag, 0.0, atol=1e-12)
+
+    def test_centered_hermitian_validation_obeys_max_entries_guard(self):
+        tt = TensorTrain.from_dense(np.zeros((3, 3), dtype=np.complex128))
+        with self.assertRaises(ValueError):
+            tt.centered_hermitian_deviation(max_entries=1)
+        with self.assertRaises(ValueError):
+            tt.centered_hermitianized(max_entries=1)
+
     def test_max_rank_requires_positive_integer(self):
         tensor = np.arange(8, dtype=float).reshape(2, 2, 2)
         tt = TensorTrain.from_dense(tensor)
