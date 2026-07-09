@@ -92,6 +92,27 @@ def _wrap_boolean_axis_reduction(helper, torch_module):
     return reduction
 
 
+def _wrap_boolean_axis_dim_reduction(helper, torch_module):
+    if getattr(helper, "_pyrecest_reduction_axis_bool_contract", False):
+        return helper
+
+    def reduction(*args, **kwargs):
+        axis = kwargs.get("axis")
+        if "axis" not in kwargs and len(args) >= 2:
+            axis = args[1]
+        dim = kwargs.get("dim")
+        if _axis_contains_boolean_value(axis, torch_module) or _axis_contains_boolean_value(
+            dim, torch_module
+        ):
+            raise TypeError(_AXIS_TYPE_MESSAGE)
+        return helper(*args, **kwargs)
+
+    reduction.__name__ = getattr(helper, "__name__", "reduction")
+    reduction.__doc__ = getattr(helper, "__doc__", None)
+    reduction._pyrecest_reduction_axis_bool_contract = True
+    return reduction
+
+
 def patch_pytorch_reduction_axis_contract() -> None:
     """Make raw/public PyTorch reduction helpers reject boolean axes."""
 
@@ -129,25 +150,32 @@ def patch_pytorch_reduction_axis_contract() -> None:
     original_normalizer = getattr(raw_pytorch, "_normalize_reduction_axes", None)
     if original_normalizer is None:
         return
-    if getattr(original_normalizer, "_pyrecest_reduction_axis_bool_contract", False):
-        return
+    if not getattr(original_normalizer, "_pyrecest_reduction_axis_bool_contract", False):
 
-    def _normalize_reduction_axes(axis, ndim_value):
-        return normalize_reduction_axes(axis, ndim_value, torch)
+        def _normalize_reduction_axes(axis, ndim_value):
+            return normalize_reduction_axes(axis, ndim_value, torch)
 
-    _normalize_reduction_axes.__name__ = getattr(
-        original_normalizer,
-        "__name__",
-        "_normalize_reduction_axes",
-    )
-    _normalize_reduction_axes.__doc__ = getattr(original_normalizer, "__doc__", None)
-    _normalize_reduction_axes._pyrecest_reduction_axis_bool_contract = True
-    raw_pytorch._normalize_reduction_axes = _normalize_reduction_axes
+        _normalize_reduction_axes.__name__ = getattr(
+            original_normalizer,
+            "__name__",
+            "_normalize_reduction_axes",
+        )
+        _normalize_reduction_axes.__doc__ = getattr(original_normalizer, "__doc__", None)
+        _normalize_reduction_axes._pyrecest_reduction_axis_bool_contract = True
+        raw_pytorch._normalize_reduction_axes = _normalize_reduction_axes
 
     for helper_name in ("any", "all", "count_nonzero", "max"):
         raw_helper = getattr(raw_pytorch, helper_name, None)
         if raw_helper is not None:
             wrapped_helper = _wrap_boolean_axis_reduction(raw_helper, torch)
+            setattr(raw_pytorch, helper_name, wrapped_helper)
+            if getattr(backend, "__backend_name__", None) == "pytorch":
+                setattr(backend, helper_name, wrapped_helper)
+
+    for helper_name in ("mean", "std"):
+        raw_helper = getattr(raw_pytorch, helper_name, None)
+        if raw_helper is not None:
+            wrapped_helper = _wrap_boolean_axis_dim_reduction(raw_helper, torch)
             setattr(raw_pytorch, helper_name, wrapped_helper)
             if getattr(backend, "__backend_name__", None) == "pytorch":
                 setattr(backend, helper_name, wrapped_helper)
