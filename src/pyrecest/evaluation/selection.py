@@ -21,6 +21,14 @@ def _is_text_scalar(value) -> bool:
     return isinstance(value, (str, bytes, np.str_, np.bytes_))
 
 
+def _is_temporal_scalar(value) -> bool:
+    return isinstance(value, (np.datetime64, np.timedelta64))
+
+
+def _has_temporal_dtype(value_array: np.ndarray) -> bool:
+    return value_array.dtype.kind in "Mm"
+
+
 def _contains_invalid_score_values(values: np.ndarray) -> bool:
     if values.dtype == np.bool_ or values.dtype.kind in "bUScMm":
         return True
@@ -34,10 +42,9 @@ def _contains_invalid_score_values(values: np.ndarray) -> bool:
                     np.bool_,
                     complex,
                     np.complexfloating,
-                    np.datetime64,
-                    np.timedelta64,
                 ),
             )
+            or _is_temporal_scalar(item)
             or _is_text_scalar(item)
             for item in values.reshape(-1)
         )
@@ -50,13 +57,18 @@ def _normalize_nonnegative_integer(value, name: str) -> int:
         value_array = np.asarray(value)
     except (TypeError, ValueError, RuntimeError) as exc:
         raise ValueError(message) from exc
-    if value_array.shape != () or value_array.dtype == np.bool_:
+    if (
+        value_array.shape != ()
+        or value_array.dtype == np.bool_
+        or _has_temporal_dtype(value_array)
+    ):
         raise ValueError(message)
 
     scalar = value_array.item()
     if (
         isinstance(scalar, (bool, np.bool_))
         or _is_text_scalar(scalar)
+        or _is_temporal_scalar(scalar)
         or not isinstance(scalar, Real)
     ):
         raise ValueError(message)
@@ -82,7 +94,7 @@ def _normalize_bool_flag(value, name: str) -> bool:
         value_array = np.asarray(value)
     except (TypeError, ValueError, RuntimeError) as exc:
         raise ValueError(message) from exc
-    if value_array.shape != ():
+    if value_array.shape != () or _has_temporal_dtype(value_array):
         raise ValueError(message)
     scalar = value_array.item()
     if not isinstance(scalar, (bool, np.bool_)):
@@ -95,13 +107,18 @@ def _normalize_finite_scalar(value, message: str) -> float:
         value_array = np.asarray(value)
     except (TypeError, ValueError, RuntimeError) as exc:
         raise ValueError(message) from exc
-    if value_array.shape != () or value_array.dtype == np.bool_:
+    if (
+        value_array.shape != ()
+        or value_array.dtype == np.bool_
+        or _has_temporal_dtype(value_array)
+    ):
         raise ValueError(message)
 
     scalar = value_array.item()
     if (
         isinstance(scalar, (bool, np.bool_))
         or _is_text_scalar(scalar)
+        or _is_temporal_scalar(scalar)
         or not isinstance(scalar, Real)
     ):
         raise ValueError(message)
