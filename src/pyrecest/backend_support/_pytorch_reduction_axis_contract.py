@@ -172,7 +172,7 @@ def patch_pytorch_reduction_axis_contract() -> None:
             if getattr(backend, "__backend_name__", None) == "pytorch":
                 setattr(backend, helper_name, wrapped_helper)
 
-    for helper_name in ("mean", "std"):
+    for helper_name in ("mean", "std", "sum"):
         raw_helper = getattr(raw_pytorch, helper_name, None)
         if raw_helper is not None:
             wrapped_helper = _wrap_boolean_axis_dim_reduction(raw_helper, torch)
