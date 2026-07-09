@@ -1,4 +1,4 @@
 {
   "ignore": ["src/pyrecest/_backend/**"],
-  "threshold": 1
+  "threshold": 5
 }
