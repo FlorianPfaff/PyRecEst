@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime as _datetime
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
 from typing import Any
@@ -10,6 +11,14 @@ import numpy as np
 
 _ERROR_METRIC_NAMES = frozenset({"max", "mean", "p95", "rmse", "std"})
 _ERROR_METRIC_MESSAGE = "metric must be one of 'max', 'mean', 'p95', 'rmse', or 'std'"
+_TEMPORAL_SCALAR_TYPES = (
+    np.datetime64,
+    np.timedelta64,
+    _datetime.date,
+    _datetime.datetime,
+    _datetime.timedelta,
+)
+_TEMPORAL_REPR_MARKERS = ("datetime64", "timedelta64")
 
 
 @dataclass(frozen=True)
@@ -59,9 +68,45 @@ def _validate_error_metric(metric: Any) -> str:
     return normalized
 
 
+def _contains_temporal_values(arr: np.ndarray) -> bool:
+    """Return true for native or object-wrapped NumPy temporal values."""
+    if arr.dtype.kind in "Mm":
+        return True
+    if arr.dtype.kind != "O":
+        return False
+    if _has_temporal_repr_marker(arr):
+        return True
+    for item in arr.reshape(-1):
+        if _is_temporal_value(item):
+            return True
+    return False
+
+
+def _is_temporal_value(value: Any) -> bool:
+    if isinstance(value, _TEMPORAL_SCALAR_TYPES):
+        return True
+    dtype = getattr(value, "dtype", None)
+    if getattr(dtype, "kind", None) in ("M", "m"):
+        return True
+    if isinstance(value, np.ndarray):
+        return _contains_temporal_values(value)
+    return _has_temporal_repr_marker(value)
+
+
+def _has_temporal_repr_marker(value: Any) -> bool:
+    """Catch NumPy object temporal scalars whose iterated value lost dtype info."""
+    value_repr = repr(value).lower()
+    return any(marker in value_repr for marker in _TEMPORAL_REPR_MARKERS)
+
+
 def _as_finite_float(value: Any, name: str) -> float:
     arr = np.asarray(value)
-    if arr.ndim != 0 or arr.dtype == np.bool_:
+    if (
+        arr.ndim != 0
+        or arr.dtype == np.bool_
+        or arr.dtype.kind == "O"
+        or _contains_temporal_values(arr)
+    ):
         raise ValueError(f"{name} must be a finite scalar")
     scalar = arr.item()
     if isinstance(scalar, (bool, np.bool_, str, bytes, bytearray)):
@@ -77,7 +122,12 @@ def _as_finite_float(value: Any, name: str) -> float:
 
 def _as_nonnegative_time_delta(value: Any, name: str) -> float:
     arr = np.asarray(value)
-    if arr.ndim != 0 or arr.dtype == np.bool_:
+    if (
+        arr.ndim != 0
+        or arr.dtype == np.bool_
+        or arr.dtype.kind == "O"
+        or _contains_temporal_values(arr)
+    ):
         raise ValueError(f"{name} must be nonnegative")
     scalar = arr.item()
     if isinstance(scalar, (bool, np.bool_, str, bytes, bytearray)):
@@ -93,12 +143,8 @@ def _as_nonnegative_time_delta(value: Any, name: str) -> float:
 
 def _as_real_numeric_array(value: Any, name: str) -> np.ndarray:
     arr = np.asarray(value)
-    if arr.dtype == np.bool_ or arr.dtype.kind in "USbcMm":
+    if arr.dtype == np.bool_ or arr.dtype.kind in "OUSbc" or _contains_temporal_values(arr):
         raise ValueError(f"{name} must contain real numeric values")
-    if arr.dtype.kind == "O":
-        for item in arr.reshape(-1):
-            if item is None or isinstance(item, (bool, np.bool_, str, bytes, bytearray, complex, np.complexfloating)):
-                raise ValueError(f"{name} must contain real numeric values")
     try:
         return np.asarray(value, dtype=float)
     except (TypeError, ValueError, OverflowError) as exc:
@@ -107,7 +153,12 @@ def _as_real_numeric_array(value: Any, name: str) -> np.ndarray:
 
 def _as_summary_scalar(value: Any, name: str, *, allow_nan: bool = False) -> float:
     arr = np.asarray(value)
-    if arr.ndim != 0 or arr.dtype == np.bool_ or arr.dtype.kind in "USbcMm":
+    if (
+        arr.ndim != 0
+        or arr.dtype == np.bool_
+        or arr.dtype.kind in "OUSbc"
+        or _contains_temporal_values(arr)
+    ):
         raise ValueError(f"{name} must be a real scalar")
     scalar = arr.item()
     if isinstance(scalar, (bool, np.bool_, str, bytes, bytearray)):
