@@ -8,13 +8,17 @@ from pathlib import Path
 
 
 def _load_base_contract_module():
-    module_path = Path(__file__).resolve().parent.parent / "_torch_dtype_promotion_contract.py"
+    module_path = (
+        Path(__file__).resolve().parent.parent / "_torch_dtype_promotion_contract.py"
+    )
     spec = importlib.util.spec_from_file_location(
         "_pyrecest_torch_dtype_promotion_contract_base",
         module_path,
     )
     if spec is None or spec.loader is None:
-        raise ImportError(f"Cannot load PyTorch dtype contract module from {module_path}")
+        raise ImportError(
+            f"Cannot load PyTorch dtype contract module from {module_path}"
+        )
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -31,7 +35,9 @@ def patch_pytorch_dtype_promotion_contract() -> None:
         import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
         import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import torch  # pylint: disable=import-outside-toplevel
-    except ModuleNotFoundError:  # pragma: no cover - PyTorch backend import failed earlier
+    except (
+        ModuleNotFoundError
+    ):  # pragma: no cover - PyTorch backend import failed earlier
         return
 
     _patch_pytorch_assignment_numpy_index_contract(raw_pytorch, backend, torch, np)
@@ -143,11 +149,17 @@ def _wrap_assignment_numpy_index_helper(original_helper, torch_module, numpy_mod
     return assignment
 
 
-def _patch_pytorch_assignment_numpy_index_contract(raw_pytorch, backend, torch, np) -> None:
+def _patch_pytorch_assignment_numpy_index_contract(
+    raw_pytorch, backend, torch, np
+) -> None:
     """Make PyTorch assignment helpers accept NumPy integer and boolean indices."""
     helper_names = ("assignment", "assignment_by_sum")
     if all(
-        getattr(getattr(raw_pytorch, helper_name, None), "_pyrecest_numpy_index_contract", False)
+        getattr(
+            getattr(raw_pytorch, helper_name, None),
+            "_pyrecest_numpy_index_contract",
+            False,
+        )
         for helper_name in helper_names
     ):
         if getattr(backend, "__backend_name__", None) == "pytorch":
@@ -295,7 +307,9 @@ def _patch_pytorch_comparison_device_contract(raw_pytorch, backend, torch) -> No
     """Make PyTorch comparison helpers accept NumPy-style array-like inputs."""
     helper_names = ("greater", "less", "logical_or")
     if all(
-        getattr(getattr(raw_pytorch, helper_name, None), "_pyrecest_device_contract", False)
+        getattr(
+            getattr(raw_pytorch, helper_name, None), "_pyrecest_device_contract", False
+        )
         for helper_name in helper_names
     ):
         if getattr(backend, "__backend_name__", None) == "pytorch":
@@ -320,7 +334,9 @@ def _patch_pytorch_binary_device_contract(raw_pytorch, backend, torch) -> None:
         "power": False,
     }
     if all(
-        getattr(getattr(raw_pytorch, helper_name, None), "_pyrecest_device_contract", False)
+        getattr(
+            getattr(raw_pytorch, helper_name, None), "_pyrecest_device_contract", False
+        )
         for helper_name in helpers
     ):
         if getattr(backend, "__backend_name__", None) == "pytorch":
@@ -343,7 +359,9 @@ def _patch_pytorch_equality_device_contract(raw_pytorch, backend, torch) -> None
     """Keep equality-style helpers on an existing non-CPU tensor device."""
     helper_names = ("equal", "less_equal", "array" + "_equal")
     if all(
-        getattr(getattr(raw_pytorch, helper_name, None), "_pyrecest_device_contract", False)
+        getattr(
+            getattr(raw_pytorch, helper_name, None), "_pyrecest_device_contract", False
+        )
         for helper_name in helper_names
     ):
         if getattr(backend, "__backend_name__", None) == "pytorch":
@@ -386,6 +404,7 @@ def _patch_pytorch_linspace_integer_dtype_contract(raw_pytorch, backend, torch) 
         if getattr(backend, "__backend_name__", None) == "pytorch":
             backend.linspace = original_linspace
         return
+
     def linspace(start, stop, num=50, endpoint=True, dtype=None):
         integer_dtype = _integer_torch_dtype(dtype, raw_pytorch, torch)
         if integer_dtype is None:
@@ -433,8 +452,7 @@ def _pytorch_creation_shape(shape, torch, np) -> tuple[int, ...]:
     if shape_array.size and np.issubdtype(shape_array.dtype, np.bool_):
         raise TypeError("shape dimensions must be integers")
     return tuple(
-        _pytorch_creation_dimension(dimension, np)
-        for dimension in shape_array.tolist()
+        _pytorch_creation_dimension(dimension, np) for dimension in shape_array.tolist()
     )
 
 
@@ -444,7 +462,9 @@ def _wrap_creation_shape_helper(original_helper, torch, np):
         return original_helper
 
     def creation_helper(shape, *args, **kwargs):
-        return original_helper(_pytorch_creation_shape(shape, torch, np), *args, **kwargs)
+        return original_helper(
+            _pytorch_creation_shape(shape, torch, np), *args, **kwargs
+        )
 
     creation_helper.__name__ = getattr(original_helper, "__name__", "creation_helper")
     creation_helper.__doc__ = getattr(original_helper, "__doc__", None)
@@ -452,11 +472,17 @@ def _wrap_creation_shape_helper(original_helper, torch, np):
     return creation_helper
 
 
-def _patch_pytorch_creation_bool_shape_contract(raw_pytorch, backend, torch, np) -> None:
+def _patch_pytorch_creation_bool_shape_contract(
+    raw_pytorch, backend, torch, np
+) -> None:
     """Reject boolean creation shapes before PyTorch interprets them as integers."""
     helper_names = ("empty", "zeros", "ones", "full")
     if all(
-        getattr(getattr(raw_pytorch, helper_name, None), "_pyrecest_bool_shape_contract", False)
+        getattr(
+            getattr(raw_pytorch, helper_name, None),
+            "_pyrecest_bool_shape_contract",
+            False,
+        )
         for helper_name in helper_names
     ):
         if getattr(backend, "__backend_name__", None) == "pytorch":
@@ -505,7 +531,9 @@ def _wrap_argsort_arraylike_helper(original_argsort, raw_pytorch, torch):
     if getattr(original_argsort, "_pyrecest_arraylike_contract", False):
         return original_argsort
 
-    def argsort(input, axis=-1, descending=False, stable=False, *, dim=None):  # pylint: disable=redefined-builtin
+    def argsort(
+        input, axis=-1, descending=False, stable=False, *, dim=None
+    ):  # pylint: disable=redefined-builtin
         if dim is not None:
             if axis != -1 and axis != dim:
                 raise TypeError("argsort() got both 'axis' and 'dim'")
@@ -537,7 +565,11 @@ def _patch_pytorch_arraylike_helper_contract(raw_pytorch, backend, torch) -> Non
     )
     all_helper_names = (*helper_names, "argsort")
     if all(
-        getattr(getattr(raw_pytorch, helper_name, None), "_pyrecest_arraylike_contract", False)
+        getattr(
+            getattr(raw_pytorch, helper_name, None),
+            "_pyrecest_arraylike_contract",
+            False,
+        )
         for helper_name in all_helper_names
     ):
         if getattr(backend, "__backend_name__", None) == "pytorch":
@@ -555,7 +587,9 @@ def _patch_pytorch_arraylike_helper_contract(raw_pytorch, backend, torch) -> Non
         if getattr(backend, "__backend_name__", None) == "pytorch":
             setattr(backend, helper_name, wrapped_helper)
 
-    wrapped_argsort = _wrap_argsort_arraylike_helper(raw_pytorch.argsort, raw_pytorch, torch)
+    wrapped_argsort = _wrap_argsort_arraylike_helper(
+        raw_pytorch.argsort, raw_pytorch, torch
+    )
     raw_pytorch.argsort = wrapped_argsort
     if getattr(backend, "__backend_name__", None) == "pytorch":
         backend.argsort = wrapped_argsort
