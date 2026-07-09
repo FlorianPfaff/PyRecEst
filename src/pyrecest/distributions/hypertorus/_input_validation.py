@@ -14,7 +14,10 @@ def _reject_boolean_array(value, name: str) -> None:
     if dtype is not None and str(dtype) in _BOOLEAN_DTYPE_NAMES:
         raise ValueError(f"{name} must contain real angles, not boolean values.")
     if dtype is not None and str(dtype) == "object":
-        object_values = np.asarray(value, dtype=object).reshape(-1)
+        try:
+            object_values = np.asarray(value, dtype=object).reshape(-1)
+        except (TypeError, ValueError, RuntimeError):
+            return
         if any(isinstance(item, _BOOLEAN_SCALAR_TYPES) for item in object_values):
             raise ValueError(f"{name} must contain real angles, not boolean values.")
 
@@ -26,6 +29,7 @@ def as_shift_vector(shift_by, dim: int, *, name: str = "shift_by"):
     This keeps public APIs robust for ordinary Python scalar/list inputs before
     shape validation is performed.
     """
+    _reject_boolean_array(shift_by, name)
     shift_by = array(shift_by)
     _reject_boolean_array(shift_by, name)
     if shift_by.ndim == 0:
@@ -45,6 +49,7 @@ def as_hypertoroidal_points(xs, dim: int, *, name: str = "xs"):
     For higher-dimensional distributions, a one-dimensional array of length
     ``dim`` is treated as a single query point.
     """
+    _reject_boolean_array(xs, name)
     xs = array(xs)
     _reject_boolean_array(xs, name)
     if xs.ndim == 0:
