@@ -220,6 +220,9 @@ try:
         patch_pytorch_take_axis_contract as _patch_pytorch_take_axis_contract,
         patch_pytorch_transpose_boolean_axes_contract as _patch_pytorch_transpose_boolean_axes_contract,
     )
+    from pyrecest.backend_support._pytorch_linalg_tolerance_contract import (  # pylint: disable=import-outside-toplevel
+        patch_pytorch_linalg_tolerance_contract as _patch_pytorch_linalg_tolerance_contract,
+    )
     from pyrecest.backend_support._pytorch_one_hot_scalar_contract import (  # pylint: disable=import-outside-toplevel
         patch_pytorch_one_hot_scalar_contract as _patch_pytorch_one_hot_scalar_contract,
     )
@@ -230,6 +233,7 @@ except ModuleNotFoundError:  # pragma: no cover - source tree corruption only
     pass
 else:
     _patch_pytorch_close_equal_nan_device_contract()
+    _patch_pytorch_linalg_tolerance_contract()
     _patch_pytorch_repeat_numpy_contract()
     _patch_pytorch_edge_pad_contract()
     _patch_pytorch_searchsorted_contract()
