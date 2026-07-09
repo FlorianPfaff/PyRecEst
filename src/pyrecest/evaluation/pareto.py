@@ -305,7 +305,7 @@ def _has_front_eligible_objectives(
 ) -> bool:
     if allow_missing:
         return any(
-            not _is_missing(record.get(objective, np.nan))
+            not _is_missing(_lookup_numeric(record, objective))
             for objective in objectives
         )
     return all(
