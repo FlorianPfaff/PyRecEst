@@ -56,7 +56,9 @@ def guarded_mapping(
 ) -> GuardedMapping:
     """Wrap one mapping so forbidden audit keys fail on access."""
 
-    return GuardedMapping(mapping=mapping, forbidden_keys=frozenset(map(str, forbidden_keys)))
+    return GuardedMapping(
+        mapping=mapping, forbidden_keys=frozenset(map(str, forbidden_keys))
+    )
 
 
 def guarded_mappings(
@@ -76,7 +78,9 @@ def strip_forbidden_keys(
     """Return a copy of ``mapping`` without forbidden audit-only keys."""
 
     forbidden = frozenset(map(str, forbidden_keys))
-    return {str(key): value for key, value in mapping.items() if str(key) not in forbidden}
+    return {
+        str(key): value for key, value in mapping.items() if str(key) not in forbidden
+    }
 
 
 def strip_forbidden_keys_from_mappings(
@@ -139,7 +143,9 @@ def assert_selector_invariant_under_forbidden_key_changes(
     forbidden = frozenset(map(str, forbidden_keys))
     normalize_result = normalize or (lambda result: result)
     baseline = normalize_result(selector(rows))
-    stripped = normalize_result(selector(strip_forbidden_keys_from_mappings(rows, forbidden)))
+    stripped = normalize_result(
+        selector(strip_forbidden_keys_from_mappings(rows, forbidden))
+    )
     poisoned = normalize_result(
         selector(
             poison_forbidden_keys_in_mappings(

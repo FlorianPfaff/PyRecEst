@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from operator import index as _operator_index
 
-
 _INTEGER_MESSAGE = "num_classes must be an integer"
 
 

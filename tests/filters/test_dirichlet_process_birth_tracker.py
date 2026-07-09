@@ -1,10 +1,9 @@
 import numpy as np
-import pytest
-
 import pyrecest.backend
+import pytest
 from pyrecest.filters.dirichlet_process_birth_tracker import (
-    DPBirthMultiBernoulliTracker,
     DirichletProcessBirthMultiBernoulliTracker,
+    DPBirthMultiBernoulliTracker,
 )
 
 pytestmark = pytest.mark.skipif(
@@ -47,7 +46,9 @@ def _tracker(**overrides):
 def test_unassigned_measurement_creates_birth_atom_and_component():
     tracker, measurement_matrix, measurement_covariance = _tracker()
 
-    tracker.update_linear(np.array([[2.0], [3.0]]), measurement_matrix, measurement_covariance)
+    tracker.update_linear(
+        np.array([[2.0], [3.0]]), measurement_matrix, measurement_covariance
+    )
 
     assert len(tracker.birth_atoms) == 1
     assert tracker.get_number_of_components() == 1
@@ -61,7 +62,9 @@ def test_high_clutter_suppresses_birth_creation():
         dp_birth_threshold=10.0,
     )
 
-    tracker.update_linear(np.array([[2.0], [3.0]]), measurement_matrix, measurement_covariance)
+    tracker.update_linear(
+        np.array([[2.0], [3.0]]), measurement_matrix, measurement_covariance
+    )
 
     assert len(tracker.birth_atoms) == 0
     assert tracker.get_number_of_components() == 0

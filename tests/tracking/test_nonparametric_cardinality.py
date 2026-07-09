@@ -1,7 +1,6 @@
 import math
 
 import pytest
-
 from pyrecest.tracking.nonparametric_cardinality import (
     DirichletProcessCardinalityPrior,
     PitmanYorCardinalityPrior,
@@ -46,7 +45,9 @@ def test_zero_discount_pitman_yor_matches_dirichlet_process_cluster_count_pmf():
     pitman_yor = PitmanYorCardinalityPrior(strength=1.7, discount=0.0)
     dirichlet = DirichletProcessCardinalityPrior(strength=1.7)
 
-    assert pitman_yor.cluster_count_pmf(6) == pytest.approx(dirichlet.cluster_count_pmf(6))
+    assert pitman_yor.cluster_count_pmf(6) == pytest.approx(
+        dirichlet.cluster_count_pmf(6)
+    )
 
 
 def test_pitman_yor_has_heavier_cluster_count_tail_than_matching_dirichlet_process():

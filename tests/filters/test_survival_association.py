@@ -1,6 +1,6 @@
-from dataclasses import dataclass, field
 import math
 import unittest
+from dataclasses import dataclass, field
 
 import numpy as np
 from pyrecest.filters.association_hypotheses import AssociationHypothesis
@@ -22,7 +22,9 @@ class DummyTrack:
 
 class SurvivalAssociationTest(unittest.TestCase):
     def test_resolves_survival_weight_from_track_lifecycle(self):
-        tracks = [DummyTrack(hits=4, misses=2, metadata={"visibility_probability": 0.25})]
+        tracks = [
+            DummyTrack(hits=4, misses=2, metadata={"visibility_probability": 0.25})
+        ]
         config = SurvivalAwareAssociationConfig(
             existence_probability=0.8,
             survival_probability=0.5,
@@ -45,8 +47,12 @@ class SurvivalAssociationTest(unittest.TestCase):
     def test_prior_can_prefer_recent_track_over_popular_stale_track(self):
         tracks = [DummyTrack(hits=1, misses=0), DummyTrack(hits=10, misses=4)]
         hypotheses = [
-            AssociationHypothesis(track_index=0, measurement_index=0, cost=0.0, log_likelihood=0.0),
-            AssociationHypothesis(track_index=1, measurement_index=0, cost=0.0, log_likelihood=0.0),
+            AssociationHypothesis(
+                track_index=0, measurement_index=0, cost=0.0, log_likelihood=0.0
+            ),
+            AssociationHypothesis(
+                track_index=1, measurement_index=0, cost=0.0, log_likelihood=0.0
+            ),
         ]
         config = SurvivalAwareAssociationConfig(
             existence_probability=1.0,
