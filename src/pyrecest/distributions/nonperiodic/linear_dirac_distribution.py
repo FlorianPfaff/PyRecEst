@@ -66,7 +66,7 @@ class LinearDiracDistribution(AbstractDiracDistribution, AbstractLinearDistribut
                 sample_locs[:, 1],
                 sample_weights / max(sample_weights) * 100,
                 *args,
-                **kwargs
+                **kwargs,
             )
         elif self.dim == 3:
             fig = plt.figure()
@@ -78,7 +78,7 @@ class LinearDiracDistribution(AbstractDiracDistribution, AbstractLinearDistribut
                 sample_locs[:, 2],
                 s=(sample_weights / max(sample_weights) * 100),
                 *args,
-                **kwargs
+                **kwargs,
             )
         else:
             raise ValueError("Plotting not supported for this dimension")

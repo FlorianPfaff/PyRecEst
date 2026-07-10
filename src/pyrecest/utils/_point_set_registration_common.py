@@ -174,8 +174,7 @@ def _is_temporal_dtype(value) -> bool:
     dtype_kind = _dtype_kind(value)
     dtype_name = _dtype_name(value)
     return dtype_kind in {"M", "m"} or any(
-        temporal_name in dtype_name
-        for temporal_name in ("datetime64", "timedelta64")
+        temporal_name in dtype_name for temporal_name in ("datetime64", "timedelta64")
     )
 
 
@@ -245,10 +244,9 @@ def _validate_max_cost(max_cost) -> float:
         max_cost_scalar = max_cost_array.item()
     except (TypeError, ValueError, AttributeError, RuntimeError) as exc:
         raise ValueError("max_cost must be a scalar numeric value.") from exc
-    if (
-        isinstance(max_cost_scalar, (bool, str, bytes, bytearray))
-        or _is_numpy_temporal_scalar(max_cost_scalar)
-    ):
+    if isinstance(
+        max_cost_scalar, (bool, str, bytes, bytearray)
+    ) or _is_numpy_temporal_scalar(max_cost_scalar):
         raise ValueError("max_cost must be a scalar numeric value.")
 
     try:
@@ -274,10 +272,9 @@ def _validate_tolerance(tolerance) -> float:
         raise ValueError("tolerance must be a finite non-negative scalar.")
 
     tolerance_scalar = tolerance_array.item()
-    if (
-        isinstance(tolerance_scalar, (bool, str, bytes, bytearray))
-        or _is_numpy_temporal_scalar(tolerance_scalar)
-    ):
+    if isinstance(
+        tolerance_scalar, (bool, str, bytes, bytearray)
+    ) or _is_numpy_temporal_scalar(tolerance_scalar):
         raise ValueError("tolerance must be a finite non-negative scalar.")
 
     try:

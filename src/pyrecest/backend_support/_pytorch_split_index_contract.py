@@ -5,7 +5,6 @@ from __future__ import annotations
 from operator import index as _operator_index
 
 import numpy as np
-
 from pyrecest.backend_support._pytorch_take_index_contract import (
     patch_pytorch_take_index_contract as _patch_pytorch_take_index_contract,
 )
@@ -56,8 +55,8 @@ def patch_pytorch_split_index_contract() -> None:
     _patch_pytorch_take_index_contract()
 
     try:
-        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import torch  # pylint: disable=import-outside-toplevel
     except ModuleNotFoundError:  # pragma: no cover - PyTorch may be unavailable
         return
