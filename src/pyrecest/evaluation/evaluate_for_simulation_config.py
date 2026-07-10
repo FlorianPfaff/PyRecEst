@@ -85,8 +85,10 @@ def get_all_seeds(n_runs: int, seed_input=None, consecutive_seed: bool = True):
         if consecutive_seed:
             all_seeds = list(range(seed_value, seed_value + n_runs))
         else:
-            random.seed(seed_value)
-            all_seeds = [random.randint(1, 0xFFFFFFFF) for _ in range(n_runs)]  # nosec
+            seed_generator = random.Random(seed_value)
+            all_seeds = [
+                seed_generator.randint(1, 0xFFFFFFFF) for _ in range(n_runs)  # nosec
+            ]
     else:
         raise ValueError(
             "The number of seeds provided must be either 1 or equal to the number of runs."
