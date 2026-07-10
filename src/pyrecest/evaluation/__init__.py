@@ -71,8 +71,28 @@ from .selection import (
 from .simulation_database import simulation_database
 from .summarize_filter_results import summarize_filter_results
 
-_original_classify_evidence_margin = classify_evidence_margin
-_original_paired_model_margin_decisions = paired_model_margin_decisions
+_ORIGINAL_CLASSIFIER_ATTR = "_pyrecest_original_classify_evidence_margin"
+_ORIGINAL_DECISIONS_ATTR = "_pyrecest_original_paired_model_margin_decisions"
+
+if not hasattr(_model_comparison, _ORIGINAL_CLASSIFIER_ATTR):
+    setattr(
+        _model_comparison,
+        _ORIGINAL_CLASSIFIER_ATTR,
+        classify_evidence_margin,
+    )
+if not hasattr(_model_comparison, _ORIGINAL_DECISIONS_ATTR):
+    setattr(
+        _model_comparison,
+        _ORIGINAL_DECISIONS_ATTR,
+        paired_model_margin_decisions,
+    )
+
+_original_classify_evidence_margin = getattr(
+    _model_comparison, _ORIGINAL_CLASSIFIER_ATTR
+)
+_original_paired_model_margin_decisions = getattr(
+    _model_comparison, _ORIGINAL_DECISIONS_ATTR
+)
 
 
 def _classify_evidence_margin(delta_log_evidence: float) -> str:
