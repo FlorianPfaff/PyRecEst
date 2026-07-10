@@ -56,6 +56,28 @@ def test_mem_rbpf_predict_update_smoke():
     assert np.isclose(np.sum(np.asarray(tracker.weights)), 1.0)
 
 
+def test_mem_rbpf_systematic_resampling_closes_roundoff_gap(monkeypatch):
+    tracker = _make_tracker(
+        n_particles=3,
+        resampling_mode="systematic",
+        resampling_threshold=0,
+    )
+    tracker.weights = array(
+        [0.20381898702851367, 0.7463113329614236, 0.0498696800100626]
+    )
+    monkeypatch.setattr(
+        random,
+        "uniform",
+        lambda size=None: array(np.nextafter(1.0, 0.0)),
+    )
+
+    indices = np.asarray(tracker._resample_indices())
+
+    np.testing.assert_array_equal(indices, np.array([1, 1, 2]))
+    tracker.resample()
+    assert tracker.theta.shape == (3,)
+
+
 def test_mem_rbpf_original_parameter_constructor_alias():
     random.seed(1)
     tracker = MEMRBPFTracker.from_original_parameters(
