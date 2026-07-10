@@ -133,7 +133,10 @@ class LowRankHypertoroidalFourierDistribution(AbstractHypertoroidalDistribution)
 
     def normalize_in_place(self):
         if self.transformation == "identity":
-            normalizer = ((2.0 * np.pi) ** self.dim) * self.coefficient_at_zero()
+            center_coefficient = self.coefficient_at_zero()
+            if abs(center_coefficient.imag) > 0.001:
+                raise ValueError("Center coefficient must be real-valued.")
+            normalizer = ((2.0 * np.pi) ** self.dim) * center_coefficient.real
         else:
             normalizer = sqrt((2.0 * np.pi) ** self.dim) * self.coefficients.norm()
         if abs(normalizer) == 0:
