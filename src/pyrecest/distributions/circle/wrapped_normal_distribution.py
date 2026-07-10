@@ -160,6 +160,7 @@ class WrappedNormalDistribution(
         starting_point: float = 0.0,
         n_wraps: Union[int, int32, int64] = 10,
     ):
+        n_wraps = _validate_series_order(n_wraps)
         mu = self.scalar_mu
         sigma = self.sigma
         starting_point = mod(starting_point, 2 * pi)
