@@ -6,6 +6,10 @@ from operator import index as _operator_index
 
 import numpy as np
 
+from pyrecest.backend_support._pytorch_split_index_contract import (
+    patch_pytorch_split_index_contract as _patch_pytorch_split_index_contract,
+)
+
 _AXIS_FLAG_TYPES = (bool, np.bool_)
 _AXIS_TYPE_MESSAGE = "axis must be an integer or a sequence of integers"
 
@@ -115,6 +119,8 @@ def _wrap_boolean_axis_dim_reduction(helper, torch_module):
 
 def patch_pytorch_reduction_axis_contract() -> None:
     """Make raw/public PyTorch reduction helpers reject boolean axes."""
+
+    _patch_pytorch_split_index_contract()
 
     try:
         import pyrecest._backend as backend_loader  # pylint: disable=import-outside-toplevel
