@@ -5,7 +5,6 @@ from __future__ import annotations
 from operator import index as _operator_index
 
 import numpy as np
-
 from pyrecest.backend_support._pytorch_split_index_contract import (
     patch_pytorch_split_index_contract as _patch_pytorch_split_index_contract,
 )
@@ -36,7 +35,9 @@ def _axis_contains_boolean_value(axis, torch_module) -> bool:
             axes = tuple(axis)
         except TypeError:
             return False
-        return any(_axis_contains_boolean_value(one_axis, torch_module) for one_axis in axes)
+        return any(
+            _axis_contains_boolean_value(one_axis, torch_module) for one_axis in axes
+        )
     return False
 
 
@@ -105,9 +106,9 @@ def _wrap_boolean_axis_dim_reduction(helper, torch_module):
         if "axis" not in kwargs and len(args) >= 2:
             axis = args[1]
         dim = kwargs.get("dim")
-        if _axis_contains_boolean_value(axis, torch_module) or _axis_contains_boolean_value(
-            dim, torch_module
-        ):
+        if _axis_contains_boolean_value(
+            axis, torch_module
+        ) or _axis_contains_boolean_value(dim, torch_module):
             raise TypeError(_AXIS_TYPE_MESSAGE)
         return helper(*args, **kwargs)
 
@@ -124,8 +125,8 @@ def patch_pytorch_reduction_axis_contract() -> None:
 
     try:
         import pyrecest._backend as backend_loader  # pylint: disable=import-outside-toplevel
-        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import torch  # pylint: disable=import-outside-toplevel
     except ModuleNotFoundError:  # pragma: no cover - PyTorch backend may be unavailable
         return
@@ -156,7 +157,9 @@ def patch_pytorch_reduction_axis_contract() -> None:
     original_normalizer = getattr(raw_pytorch, "_normalize_reduction_axes", None)
     if original_normalizer is None:
         return
-    if not getattr(original_normalizer, "_pyrecest_reduction_axis_bool_contract", False):
+    if not getattr(
+        original_normalizer, "_pyrecest_reduction_axis_bool_contract", False
+    ):
 
         def _normalize_reduction_axes(axis, ndim_value):
             return normalize_reduction_axes(axis, ndim_value, torch)
@@ -166,7 +169,9 @@ def patch_pytorch_reduction_axis_contract() -> None:
             "__name__",
             "_normalize_reduction_axes",
         )
-        _normalize_reduction_axes.__doc__ = getattr(original_normalizer, "__doc__", None)
+        _normalize_reduction_axes.__doc__ = getattr(
+            original_normalizer, "__doc__", None
+        )
         _normalize_reduction_axes._pyrecest_reduction_axis_bool_contract = True
         raw_pytorch._normalize_reduction_axes = _normalize_reduction_axes
 

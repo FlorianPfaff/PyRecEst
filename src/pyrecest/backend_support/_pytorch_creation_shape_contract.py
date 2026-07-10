@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from operator import index as _operator_index
 
-
 _ARANGE_SENTINEL = object()
 
 
@@ -215,7 +214,9 @@ def patch_pytorch_creation_shape_contract() -> None:
                     **kwargs,
                 )
 
-        like_creation_helper.__name__ = getattr(original_helper, "__name__", helper_name)
+        like_creation_helper.__name__ = getattr(
+            original_helper, "__name__", helper_name
+        )
         like_creation_helper.__doc__ = getattr(original_helper, "__doc__", None)
         like_creation_helper._pyrecest_numpy_contract = True
         like_creation_helper._pyrecest_arraylike_contract = True

@@ -57,9 +57,7 @@ class GaussianHypothesisMixtureTest(unittest.TestCase):
             WeightedGaussianHypothesis(np.array([1.0 + 2.0j]), np.array([[1.0]]))
 
         with self.assertRaisesRegex(ValueError, "covariance"):
-            WeightedGaussianHypothesis(
-                np.array([0.0]), np.array([[1.0 + 2.0j]])
-            )
+            WeightedGaussianHypothesis(np.array([0.0]), np.array([[1.0 + 2.0j]]))
 
         with self.assertRaisesRegex(ValueError, "log_weight"):
             WeightedGaussianHypothesis(
