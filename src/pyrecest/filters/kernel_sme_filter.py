@@ -161,7 +161,7 @@ class KernelSMEFilter(AbstractMultitargetTracker):
         if gating_threshold is None:
             gating_threshold = chi2.ppf(0.99, len(measurements))
         n_meas = measurements.shape[1]
-        kernel_width = mean(diag(cov_mat_meas)) ** 2
+        kernel_width = mean(diag(cov_mat_meas))
 
         if enable_gating:
             dists = full((self.n_targets, n_meas), float("nan"))
@@ -245,7 +245,7 @@ class KernelSMEFilter(AbstractMultitargetTracker):
         # Use sigma points to generate test points
         all_sample_points_list = [
             JulierSigmaPoints(meas_dim).sigma_points(
-                measurements[:, i], sqrt(kernel_width) * eye(meas_dim)
+                measurements[:, i], kernel_width * eye(meas_dim)
             )
             for i in range(n_meas)
         ]
