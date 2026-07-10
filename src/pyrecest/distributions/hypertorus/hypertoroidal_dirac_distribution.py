@@ -1,6 +1,7 @@
 import copy
 from collections.abc import Callable
 from numbers import Integral
+from operator import index as _operator_index
 from typing import Union
 
 import matplotlib.pyplot as plt
@@ -30,6 +31,27 @@ from ..abstract_dirac_distribution import AbstractDiracDistribution
 from ..nonperiodic.linear_dirac_distribution import LinearDiracDistribution
 from ._input_validation import as_shift_vector
 from .abstract_hypertoroidal_distribution import AbstractHypertoroidalDistribution
+
+
+def _validate_moment_order(n) -> int:
+    """Return a scalar integer trigonometric-moment order."""
+    message = "n must be an integer."
+    if isinstance(n, bool):
+        raise ValueError(message)
+
+    ndim = getattr(n, "ndim", None)
+    if ndim not in (None, 0):
+        raise ValueError(message)
+
+    dtype = getattr(n, "dtype", None)
+    if getattr(dtype, "kind", None) == "b" or str(dtype) == "torch.bool":
+        raise ValueError(message)
+
+    try:
+        order = _operator_index(n)
+    except (OverflowError, TypeError, ValueError) as exc:
+        raise ValueError(message) from exc
+    return int(order)
 
 
 class HypertoroidalDiracDistribution(
@@ -144,6 +166,7 @@ class HypertoroidalDiracDistribution(
         :param n: Integer moment order
         :return: Trigonometric moment
         """
+        n = _validate_moment_order(n)
         return sum(exp(1j * n * self.d.T) * tile(self.w, (self.dim, 1)), axis=1)
 
     def apply_function(self, f: Callable, function_is_vectorized: bool = True):
@@ -218,14 +241,3 @@ class HypertoroidalDiracDistribution(
         else:
             hd.d = mod(self.d + reshape(shift_by, (1, -1)), 2.0 * pi)
         return hd
-
-    def entropy(self):
-        # Implement the entropy calculation here.
-        raise NotImplementedError("Entropy calculation is not implemented")
-
-    def to_wd(self):
-        if self.dim != 1:
-            raise ValueError("The dimension must be 1")
-        from ..circle.circular_dirac_distribution import CircularDiracDistribution
-
-        return CircularDiracDistribution(self.d, self.w)
