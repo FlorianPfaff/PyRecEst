@@ -117,6 +117,39 @@ class AssociationHypothesesTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "threshold"):
             ProbabilityThresholdGate(np.nan, use_likelihood=True)
 
+    def test_top_k_gate_keeps_only_best_duplicate_pair_hypothesis(self):
+        hypotheses = [
+            AssociationHypothesis(0, 0, cost=1.0),
+            AssociationHypothesis(0, 0, cost=100.0),
+            AssociationHypothesis(0, 1, cost=2.0),
+        ]
+
+        gated_with_rejections = filter_hypotheses(
+            hypotheses,
+            TopKGate(1, mode="track"),
+            accepted_only=False,
+        )
+        self.assertEqual(
+            [hypothesis.accepted for hypothesis in gated_with_rejections],
+            [True, False, False],
+        )
+
+        gated = [
+            hypothesis
+            for hypothesis in gated_with_rejections
+            if hypothesis.accepted
+        ]
+        cost_matrix = hypotheses_to_cost_matrix(
+            gated,
+            num_tracks=1,
+            num_measurements=2,
+            missing_cost=99.0,
+        )
+        self.assertEqual(len(gated), 1)
+        self.assertEqual(gated[0].cost, 1.0)
+        self.assertAlmostEqual(cost_matrix[0, 0], 1.0)
+        self.assertEqual(cost_matrix[0, 1], 99.0)
+
     def test_top_k_gate_rejects_invalid_k(self):
         for k in (True, 1.5, np.nan, np.inf, np.array([1])):
             with self.subTest(k=k):

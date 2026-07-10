@@ -332,41 +332,36 @@ class TopKGate:
         self, hypotheses: Sequence[AssociationHypothesis]
     ) -> list[AssociationHypothesis]:
         """Return hypotheses accepted by the top-k rule."""
-        accepted_keys = set()
-        grouped: dict[int, list[AssociationHypothesis]] = defaultdict(list)
-        missed = []
-        for hypothesis in hypotheses:
+        accepted_indices = set()
+        grouped: dict[int, list[tuple[int, AssociationHypothesis]]] = defaultdict(list)
+        for hypothesis_index, hypothesis in enumerate(hypotheses):
             if hypothesis.is_missed_detection:
-                missed.append(hypothesis)
                 continue
             key = (
                 _track_index(hypothesis)
                 if self.mode == "track"
                 else _measurement_index(hypothesis)
             )
-            grouped[key].append(hypothesis)
+            grouped[key].append((hypothesis_index, hypothesis))
 
         for group in grouped.values():
             sorted_group = sorted(
                 group,
-                key=lambda hypothesis: hypothesis_cost(
-                    hypothesis, missing_cost=self.missing_cost
+                key=lambda item: hypothesis_cost(
+                    item[1], missing_cost=self.missing_cost
                 ),
             )
-            for hypothesis in sorted_group[: self.k]:
-                accepted_keys.add(
-                    (_track_index(hypothesis), _measurement_index(hypothesis))
-                )
+            accepted_indices.update(
+                hypothesis_index
+                for hypothesis_index, _ in sorted_group[: self.k]
+            )
 
         result = []
-        for hypothesis in hypotheses:
+        for hypothesis_index, hypothesis in enumerate(hypotheses):
             if hypothesis.is_missed_detection:
                 result.append(hypothesis)
                 continue
-            accepted = (
-                _track_index(hypothesis),
-                _measurement_index(hypothesis),
-            ) in accepted_keys
+            accepted = hypothesis_index in accepted_indices
             result.append(
                 hypothesis.with_acceptance(
                     accepted,
