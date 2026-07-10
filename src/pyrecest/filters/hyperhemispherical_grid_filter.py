@@ -34,6 +34,9 @@ from .abstract_grid_filter import AbstractGridFilter
 from .manifold_mixins import HyperhemisphericalFilterMixin
 
 
+_VMF_EQUATOR_TOLERANCE = 1e-10
+
+
 class HyperhemisphericalGridFilter(AbstractGridFilter, HyperhemisphericalFilterMixin):
     """
     Grid-based recursive Bayesian filter on the hyperhemisphere.
@@ -193,7 +196,7 @@ class HyperhemisphericalGridFilter(AbstractGridFilter, HyperhemisphericalFilterM
 
         Supported noise: :class:`HyperhemisphericalWatsonDistribution`,
         :class:`WatsonDistribution`, :class:`VonMisesFisherDistribution`
-        (with ``mu[-1] == 0``), symmetric :class:`HypersphericalMixture`.
+        for measurements on the equator, symmetric :class:`HypersphericalMixture`.
 
         Parameters
         ----------
@@ -216,7 +219,10 @@ class HyperhemisphericalGridFilter(AbstractGridFilter, HyperhemisphericalFilterM
                     "UpdateIdentity:UnexpectedMeas: mu needs to be [0;...; 0; 1]."
                 )
             meas_noise = WatsonDistribution(z, meas_noise.kappa)
-        elif isinstance(meas_noise, VonMisesFisherDistribution) and z[-1] == 0:
+        elif (
+            isinstance(meas_noise, VonMisesFisherDistribution)
+            and linalg.norm(z[-1:]) <= _VMF_EQUATOR_TOLERANCE
+        ):
             standard_pole = array([*([0.0] * self.dim), 1.0])
             if linalg.norm(meas_noise.mu - standard_pole) > 1e-6:
                 raise ValueError(
