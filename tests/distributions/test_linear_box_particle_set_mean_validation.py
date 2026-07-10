@@ -26,8 +26,8 @@ class LinearBoxParticleSetMeanValidationTest(unittest.TestCase):
             array([[2.0, 4.0], [8.0, 6.0]]),
             array([0.25, 0.75]),
         )
-        original_mean = dist.mean().copy()
-        original_widths = dist.widths().copy()
+        original_mean = dist.mean()
+        original_widths = dist.widths()
 
         shifted = dist.set_mean(array([10.0, -3.0]))
 
