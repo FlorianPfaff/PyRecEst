@@ -158,8 +158,19 @@ class LinearBoxParticleDistribution(AbstractLinearDistribution):
 
     def set_mean(self, new_mean):
         """Return a shifted copy whose mixture mean equals ``new_mean``."""
-        offset = array(new_mean) - self.mean()
-        offset = reshape(offset, (1, -1))
+        new_mean = array(new_mean)
+        if new_mean.ndim == 0:
+            if self.dim != 1:
+                raise ValueError(
+                    f"new_mean must have shape ({self.dim},), got scalar."
+                )
+            new_mean = reshape(new_mean, (1,))
+        elif new_mean.shape != (self.dim,):
+            raise ValueError(
+                f"new_mean must have shape ({self.dim},), got {new_mean.shape}."
+            )
+
+        offset = reshape(new_mean - self.mean(), (1, -1))
         dist = copy.deepcopy(self)
         dist.lower = self.lower + offset
         dist.upper = self.upper + offset
