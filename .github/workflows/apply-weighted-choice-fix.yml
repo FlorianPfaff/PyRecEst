@@ -1,0 +1,124 @@
+name: Apply weighted choice fix
+
+on:
+  push:
+    branches:
+      - bugfix/weighted-choice-zero-probability-20260710
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: bugfix/weighted-choice-zero-probability-20260710
+
+      - name: Apply backend fix and regression tests
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          torch_path = Path("src/pyrecest/_backend/pytorch/random.py")
+          torch_text = torch_path.read_text()
+          torch_old = '''    if p is not None:
+                  if not replace and num_samples > population_size:
+                      raise ValueError(
+                          "Cannot take a larger sample than population when 'replace=False'."
+                      )
+                  p = _validate_choice_probabilities(p, population_size, device)
+                  if num_samples == 0:
+          '''
+          torch_new = '''    if p is not None:
+                  if not replace and num_samples > population_size:
+                      raise ValueError(
+                          "Cannot take a larger sample than population when 'replace=False'."
+                      )
+                  p = _validate_choice_probabilities(p, population_size, device)
+                  if not replace and num_samples > int(_torch.count_nonzero(p).item()):
+                      raise ValueError("Fewer non-zero entries in p than size")
+                  if num_samples == 0:
+          '''
+          if torch_text.count(torch_old) != 1:
+              raise RuntimeError("PyTorch choice patch target was not unique")
+          torch_path.write_text(torch_text.replace(torch_old, torch_new))
+
+          jax_path = Path("src/pyrecest/_backend/jax/random.py")
+          jax_text = jax_path.read_text()
+          jax_old = '''    if p is not None:
+                  p = _validate_choice_probabilities(p, population_size)
+              choice_kwargs = {name: value for name, value in kwargs.items() if name != "axis"}
+          '''
+          jax_new = '''    if p is not None:
+                  p = _validate_choice_probabilities(p, population_size)
+                  sample_count = int(_np.prod(shape, dtype=_np.int64))
+                  positive_count = int(_np.count_nonzero(_np.asarray(p)))
+                  if not replace and sample_count > positive_count:
+                      raise ValueError("Fewer non-zero entries in p than size")
+              choice_kwargs = {name: value for name, value in kwargs.items() if name != "axis"}
+          '''
+          if jax_text.count(jax_old) != 1:
+              raise RuntimeError("JAX choice patch target was not unique")
+          jax_path.write_text(jax_text.replace(jax_old, jax_new))
+
+          Path("tests/backend/test_pytorch_choice_sparse_probabilities.py").write_text('''import pytest
+
+
+torch = pytest.importorskip("torch")
+
+from pyrecest._backend.pytorch import random  # noqa: E402
+
+
+@pytest.mark.parametrize("population", [3, torch.tensor([10, 20, 30])])
+def test_choice_without_replacement_rejects_too_few_positive_probabilities(population):
+    with pytest.raises(ValueError, match="Fewer non-zero entries in p than size"):
+        random.choice(
+            population,
+            size=2,
+            replace=False,
+            p=torch.tensor([1.0, 0.0, 0.0]),
+        )
+''')
+
+          Path("tests/backend/test_jax_choice_sparse_probabilities.py").write_text('''import pytest
+
+
+pytest.importorskip("jax")
+import jax.numpy as jnp  # noqa: E402
+
+from pyrecest._backend.jax import random  # noqa: E402
+
+
+@pytest.mark.parametrize("population", [3, jnp.array([10, 20, 30])])
+def test_choice_without_replacement_rejects_too_few_positive_probabilities(population):
+    with pytest.raises(ValueError, match="Fewer non-zero entries in p than size"):
+        random.choice(
+            population,
+            size=2,
+            replace=False,
+            p=jnp.array([1.0, 0.0, 0.0]),
+        )
+''')
+          PY
+
+          python -m py_compile \
+            src/pyrecest/_backend/pytorch/random.py \
+            src/pyrecest/_backend/jax/random.py \
+            tests/backend/test_pytorch_choice_sparse_probabilities.py \
+            tests/backend/test_jax_choice_sparse_probabilities.py
+
+      - name: Replace bootstrap commit with clean fix commit
+        shell: bash
+        run: |
+          rm .github/workflows/apply-weighted-choice-fix.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit --amend -m "Fix weighted choice with sparse probabilities"
+          git push --force-with-lease origin HEAD:bugfix/weighted-choice-zero-probability-20260710
