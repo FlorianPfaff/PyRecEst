@@ -241,3 +241,14 @@ class HypertoroidalDiracDistribution(
         else:
             hd.d = mod(self.d + reshape(shift_by, (1, -1)), 2.0 * pi)
         return hd
+
+    def entropy(self):
+        # Implement the entropy calculation here.
+        raise NotImplementedError("Entropy calculation is not implemented")
+
+    def to_wd(self):
+        if self.dim != 1:
+            raise ValueError("The dimension must be 1")
+        from ..circle.circular_dirac_distribution import CircularDiracDistribution
+
+        return CircularDiracDistribution(self.d, self.w)
