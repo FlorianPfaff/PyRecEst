@@ -671,11 +671,11 @@ class ModeRBPFManifoldUKFTracker(AbstractExtendedObjectTracker):
         if not np.any(swap):
             return
         swapped_log_axes = self.mu[swap, 5:7][:, ::-1].copy()
-        swapped_cov_rows = self.covariances[swap, 5:7, :][:, ::-1, :].copy()
-        swapped_cov_cols = self.covariances[swap, :, 5:7][:, :, ::-1].copy()
+        state_permutation = np.array([0, 1, 2, 3, 4, 6, 5])
         self.mu[swap, 5:7] = swapped_log_axes
-        self.covariances[swap, 5:7, :] = swapped_cov_rows
-        self.covariances[swap, :, 5:7] = swapped_cov_cols
+        self.covariances[swap] = self.covariances[swap][
+            :, state_permutation
+        ][:, :, state_permutation]
         self.mu[swap, 4] = self._wrap_ellipse_angle(self.mu[swap, 4] + np.pi / 2.0)
 
     def get_point_estimate(self):
