@@ -132,7 +132,9 @@ def test_observe_rejects_temporal_scalar_controls():
         np.timedelta64(2, "ns"),
         np.datetime64("1970-01-01T00:00:00.000000002"),
     ):
-        with pytest.raises(ValueError, match="measurement_dim must be a positive integer"):
+        with pytest.raises(
+            ValueError, match="measurement_dim must be a positive integer"
+        ):
             adapter.observe(measurement_dim=value, nis=1.0)
 
     for value in (

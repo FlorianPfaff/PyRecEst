@@ -6,7 +6,6 @@ from operator import index as _operator_index
 
 import numpy as _np
 
-
 _SORT_KIND_MESSAGE = (
     "sort kind must be one of 'quicksort', 'heapsort', 'stable', or 'mergesort'"
 )
