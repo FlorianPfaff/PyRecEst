@@ -174,6 +174,7 @@ def solve(a, b):
 
     Computes the "exact" solution, `x`, of the well-determined, i.e., full
     rank, linear matrix equation `ax = b`.
+
     Parameters
     ----------
     a : array-like, shape=[..., M, M]
