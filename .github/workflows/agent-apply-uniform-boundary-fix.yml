@@ -1,0 +1,73 @@
+name: Apply uniform boundary fix
+
+on:
+  push:
+    branches:
+      - agent/fix-uniform-reversed-boundaries
+
+permissions:
+  contents: write
+
+jobs:
+  apply-fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Apply source and regression-test changes
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          source_path = Path(
+              "src/pyrecest/distributions/hypertorus/"
+              "hypertoroidal_uniform_distribution.py"
+          )
+          source = source_path.read_text(encoding="utf-8")
+          old_source = """        if self.dim > 1:
+              _validate_boundary_order(left, right)
+          """
+          new_source = """        _validate_boundary_order(left, right)
+          """
+          if source.count(old_source) != 1:
+              raise RuntimeError("unexpected uniform integration implementation")
+          source_path.write_text(
+              source.replace(old_source, new_source), encoding="utf-8"
+          )
+
+          test_path = Path(
+              "tests/distributions/test_hypertoroidal_uniform_distribution.py"
+          )
+          tests = test_path.read_text(encoding="utf-8")
+          anchor = """def test_integrate_accepts_scalar_boundaries_for_one_dimension():
+          """
+          regression = """def test_integrate_rejects_reversed_scalar_boundaries():
+              dist = HypertoroidalUniformDistribution(1)
+
+              with pytest.raises(ValueError, match="increasing"):
+                  dist.integrate((array(1.0), array(0.0)))
+
+
+          """
+          if tests.count(anchor) != 1:
+              raise RuntimeError("unexpected uniform integration test layout")
+          test_path.write_text(
+              tests.replace(anchor, regression + anchor), encoding="utf-8"
+          )
+          PY
+
+          rm .github/workflows/agent-apply-uniform-boundary-fix.yml
+
+      - name: Commit fix
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/pyrecest/distributions/hypertorus/hypertoroidal_uniform_distribution.py \
+            tests/distributions/test_hypertoroidal_uniform_distribution.py \
+            .github/workflows/agent-apply-uniform-boundary-fix.yml
+          git commit -m "Reject reversed scalar uniform integration bounds"
+          git push origin HEAD:${{ github.ref_name }}
