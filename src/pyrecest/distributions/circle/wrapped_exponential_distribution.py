@@ -2,6 +2,8 @@
 from numbers import Integral
 from typing import Union
 
+import numpy as np
+
 # pylint: disable=redefined-builtin
 from pyrecest.backend import (
     all,
@@ -21,15 +23,72 @@ from pyrecest.backend import (
 from .abstract_circular_distribution import AbstractCircularDistribution
 
 _SMALL_RATE_SERIES_THRESHOLD = 1e-4
+_INVALID_RATE_SCALAR_TYPES = (
+    bool,
+    np.bool_,
+    str,
+    bytes,
+    bytearray,
+    np.str_,
+    np.bytes_,
+    complex,
+    np.complexfloating,
+    np.datetime64,
+    np.timedelta64,
+)
+_INVALID_RATE_DTYPE_KINDS = {"b", "S", "U", "c", "M", "m"}
+
+
+def _contains_invalid_rate_scalar(value) -> bool:
+    """Return whether a rate candidate is boolean, textual, complex, or temporal."""
+
+    if isinstance(value, _INVALID_RATE_SCALAR_TYPES):
+        return True
+
+    dtype = getattr(value, "dtype", None)
+    if dtype is not None:
+        try:
+            if np.dtype(dtype).kind in _INVALID_RATE_DTYPE_KINDS:
+                return True
+        except (TypeError, ValueError):
+            dtype_name = str(dtype).lower()
+            if any(
+                token in dtype_name
+                for token in (
+                    "bool",
+                    "complex",
+                    "str",
+                    "bytes",
+                    "datetime",
+                    "timedelta",
+                )
+            ):
+                return True
+
+    try:
+        values = np.asarray(value, dtype=object).reshape(-1)
+    except (OverflowError, TypeError, ValueError, RuntimeError):
+        return False
+    return any(isinstance(item, _INVALID_RATE_SCALAR_TYPES) for item in values)
 
 
 def _validate_positive_scalar(value, name):
-    value = asarray(value)
+    if _contains_invalid_rate_scalar(value):
+        raise ValueError(f"{name} must be a positive real scalar.")
+    try:
+        value = asarray(value)
+    except Exception as exc:  # pragma: no cover - backend-specific conversion type
+        raise ValueError(f"{name} must be a positive real scalar.") from exc
     if value.shape not in ((), (1,)):
         raise ValueError(f"{name} must be a positive scalar.")
-    if not bool(all(isfinite(value))):
+    try:
+        finite = bool(all(isfinite(value)))
+        positive = bool(all(value > 0.0))
+    except (OverflowError, TypeError, ValueError, RuntimeError) as exc:
+        raise ValueError(f"{name} must be a positive real scalar.") from exc
+    if not finite:
         raise ValueError(f"{name} must be finite.")
-    if not bool(all(value > 0.0)):
+    if not positive:
         raise ValueError(f"{name} must be positive.")
     return value
 
