@@ -436,9 +436,15 @@ def run_registration_loop(  # pylint: disable=too-many-locals
         moving,
         association_cost,
     )
+    final_assignment = callbacks.assignment_solver(
+        final_costs,
+        max_cost=config.max_cost,
+    )
+    if converged and not bool(array_equal(final_assignment, assignment)):
+        converged = False
     return RegistrationLoopState(
         transform=transform,
-        assignment=assignment,
+        assignment=final_assignment,
         transformed_reference_points=transformed_reference,
         costs=final_costs,
         iteration=iteration,
