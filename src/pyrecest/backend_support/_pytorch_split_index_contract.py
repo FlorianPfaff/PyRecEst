@@ -6,6 +6,10 @@ from operator import index as _operator_index
 
 import numpy as np
 
+from pyrecest.backend_support._pytorch_take_index_contract import (
+    patch_pytorch_take_index_contract as _patch_pytorch_take_index_contract,
+)
+
 _SPLIT_INDEX_TYPE_MESSAGE = (
     "slice indices must be integers or None or have an __index__ method"
 )
@@ -48,6 +52,8 @@ def _normalize_split_cut_indices(indices_or_sections, torch_module):
 
 def patch_pytorch_split_index_contract() -> None:
     """Make public and raw PyTorch ``split`` reject non-integer cut points."""
+
+    _patch_pytorch_take_index_contract()
 
     try:
         import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
