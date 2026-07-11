@@ -7,7 +7,7 @@ from typing import Sequence
 
 # pylint: disable=no-member
 from pyrecest import backend
-from pyrecest.backend import asarray, diag, linalg, ndim, zeros
+from pyrecest.backend import asarray, diag, isfinite, linalg, ndim, zeros
 
 from .abstract_smoother import AbstractSmoother
 
@@ -99,6 +99,8 @@ class SO3ChordalMeanSmoother(AbstractSmoother):
         weights_array = asarray(weights).reshape(-1)
         if weights_array.shape[0] != length:
             raise ValueError(f"{name} must have length {length}.")
+        if not bool(backend.all(isfinite(weights_array))):
+            raise ValueError(f"{name} must contain only finite values.")
 
         for idx in range(length):
             if weights_array[idx] < 0.0:
