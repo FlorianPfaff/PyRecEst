@@ -243,8 +243,6 @@ def adaptive_position_proposal_probability(
     ess_fraction = effective_sample_size_fraction(weights)
     if base_probability <= 0.0:
         return 0.0, ess_fraction
-    if base_probability >= 1.0:
-        return base_probability, ess_fraction
     if ess_threshold is None or ess_fraction < ess_threshold:
         return base_probability, ess_fraction
     return 0.0, ess_fraction
