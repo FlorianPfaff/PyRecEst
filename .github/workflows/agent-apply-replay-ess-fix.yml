@@ -45,7 +45,10 @@ jobs:
         run: python -m pip install -e .
 
       - name: Run focused tests
-        run: python -m pytest -q tests/filters/test_replay_grid_ess_gating.py tests/filters/test_replay_grid_likelihood.py
+        shell: bash
+        run: |
+          python tests/filters/test_replay_grid_ess_gating.py
+          python tests/filters/test_replay_grid_likelihood.py
 
       - name: Commit fix
         shell: bash
