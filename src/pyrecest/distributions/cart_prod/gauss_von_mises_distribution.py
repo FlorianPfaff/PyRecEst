@@ -31,7 +31,7 @@ from pyrecest.backend import (
     zeros_like,
 )
 from scipy.integrate import nquad
-from scipy.special import iv
+from scipy.special import ive
 from scipy.stats import vonmises as _vonmises
 
 from ..nonperiodic.gaussian_distribution import GaussianDistribution
@@ -177,8 +177,8 @@ class GaussVonMisesDistribution(AbstractHypercylindricalDistribution):
         )
         p = (
             mvn_vals
-            * exp(self.kappa * cos(xa[0, :] - theta))
-            / (2.0 * float(pi) * iv(0, self.kappa))
+            * exp(self.kappa * (cos(xa[0, :] - theta) - 1.0))
+            / (2.0 * float(pi) * ive(0, self.kappa))
         )
 
         if single_point:
@@ -278,7 +278,7 @@ class GaussVonMisesDistribution(AbstractHypercylindricalDistribution):
         lin_dim = self.lin_dim
 
         def B(p_val, kappa_val):
-            return 1.0 - iv(p_val, kappa_val) / iv(0, kappa_val)
+            return 1.0 - ive(p_val, kappa_val) / ive(0, kappa_val)
 
         B1 = B(1, self.kappa)
         B2 = B(2, self.kappa)
