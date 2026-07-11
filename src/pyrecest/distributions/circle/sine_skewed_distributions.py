@@ -2,7 +2,7 @@ from abc import abstractmethod
 from numbers import Integral
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import array, cos, cosh, exp, mod, ndim, pi, sin, sinh
+from pyrecest.backend import array, exp, mod, ndim, pi, sin
 from scipy.special import ive  # pylint: disable=no-name-in-module
 
 from .abstract_circular_distribution import AbstractCircularDistribution
@@ -249,10 +249,18 @@ class GeneralizedKSineSkewedWrappedCauchyDistribution(AbstractCircularDistributi
         xs = array(xs)
         if self.k != 1:
             raise NotImplementedError("Currently, only k=1 is supported")
-        # Use the WC pdf formula directly to ensure correct centering at mu
-        wc_pdf_vals = (
-            1 / (2 * pi) * sinh(self.gamma) / (cosh(self.gamma) - cos(xs - self.mu))
+
+        # Parameterizing the wrapped Cauchy density through rho avoids the
+        # sinh/cosh overflow and inf/inf cancellation that occur for large gamma.
+        rho = exp(-self.gamma)
+        one_minus_rho = 1.0 - rho
+        numerator = one_minus_rho * (1.0 + rho)
+        denominator = (
+            one_minus_rho**2
+            + 4.0 * rho * sin((xs - self.mu) / 2.0) ** 2
         )
+        wc_pdf_vals = numerator / (2.0 * pi * denominator)
+
         skew_factor = (1 + self.lambda_ * sin(self.k * (xs - self.mu))) ** self.m
         # For the wrapped Cauchy: E[cos(n*(x-mu))] = exp(-n*k*gamma)
         r2 = exp(-2 * self.k * self.gamma)
