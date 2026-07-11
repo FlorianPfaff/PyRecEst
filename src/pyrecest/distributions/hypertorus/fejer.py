@@ -7,12 +7,16 @@ from typing import Iterable, Literal
 
 import numpy as np
 
-
 CoefficientShape = int | Iterable[int]
 ReductionKernel = Literal["sharp", "none", "fejer", "korovkin", "fejer-korovkin", "fk"]
 
 
-def normalize_coefficient_shape(shape_like: CoefficientShape, *, dim: int | None = None, name: str = "n_coefficients") -> tuple[int, ...]:
+def normalize_coefficient_shape(
+    shape_like: CoefficientShape,
+    *,
+    dim: int | None = None,
+    name: str = "n_coefficients",
+) -> tuple[int, ...]:
     """Validate and normalize a centered Fourier coefficient shape.
 
     PyRecEst's hypertoroidal Fourier coefficients use odd side lengths so that
@@ -65,7 +69,9 @@ def normalize_kernel_name(kernel: str) -> str:
         return "fejer"
     if normalized in ("korovkin", "fejer-korovkin", "fk"):
         return "korovkin"
-    raise ValueError(f"Unsupported reduction kernel {kernel!r}. Use 'sharp', 'fejer', or 'korovkin'.")
+    raise ValueError(
+        f"Unsupported reduction kernel {kernel!r}. Use 'sharp', 'fejer', or 'korovkin'."
+    )
 
 
 def centered_coefficients(coefficients, target_shape: CoefficientShape):
@@ -80,8 +86,12 @@ def centered_coefficients(coefficients, target_shape: CoefficientShape):
     """
 
     coeff_arr = np.asarray(coefficients)
-    target_shape = normalize_coefficient_shape(target_shape, dim=coeff_arr.ndim, name="target_shape")
-    current_shape = normalize_coefficient_shape(coeff_arr.shape, dim=coeff_arr.ndim, name="coefficients.shape")
+    target_shape = normalize_coefficient_shape(
+        target_shape, dim=coeff_arr.ndim, name="target_shape"
+    )
+    current_shape = normalize_coefficient_shape(
+        coeff_arr.shape, dim=coeff_arr.ndim, name="coefficients.shape"
+    )
 
     if current_shape == target_shape:
         return coeff_arr.copy()
@@ -100,7 +110,9 @@ def centered_coefficients(coefficients, target_shape: CoefficientShape):
     return result
 
 
-def _product_weights(shape: tuple[int, ...], one_dimensional_weight_factory, *, dtype=float):
+def _product_weights(
+    shape: tuple[int, ...], one_dimensional_weight_factory, *, dtype=float
+):
     weights = np.ones(shape, dtype=dtype)
     for axis, side_length in enumerate(shape):
         one_dim = one_dimensional_weight_factory(side_length, dtype=dtype)
@@ -137,7 +149,10 @@ def _korovkin_weights_1d(side_length: int, *, dtype=float):
 
     abs_ks = np.abs(np.arange(-order, order + 1, dtype=dtype))
     angle = np.pi / (order + 2.0)
-    weights = ((order + 1.0 - abs_ks) * np.cos(abs_ks * angle) + np.sin((abs_ks + 1.0) * angle) / np.sin(angle)) / (order + 2.0)
+    weights = (
+        (order + 1.0 - abs_ks) * np.cos(abs_ks * angle)
+        + np.sin((abs_ks + 1.0) * angle) / np.sin(angle)
+    ) / (order + 2.0)
 
     # Remove harmless floating-point drift at the zero-frequency coefficient.
     weights[order] = 1.0
@@ -172,7 +187,9 @@ def korovkin_weights(shape: CoefficientShape, *, dtype=float):
     return _product_weights(shape, _korovkin_weights_1d, dtype=dtype)
 
 
-def positive_kernel_weights(shape: CoefficientShape, *, kernel: str = "fejer", dtype=float):
+def positive_kernel_weights(
+    shape: CoefficientShape, *, kernel: str = "fejer", dtype=float
+):
     """Return tensor-product weights for a supported coefficient-reduction kernel."""
 
     kernel = normalize_kernel_name(kernel)
@@ -198,7 +215,9 @@ def apply_kernel_weights(coefficients, *, kernel: str = "fejer", exponent: float
     if exponent < 0.0:
         raise ValueError("exponent must be nonnegative.")
     coeff_arr = np.asarray(coefficients)
-    normalize_coefficient_shape(coeff_arr.shape, dim=coeff_arr.ndim, name="coefficients.shape")
+    normalize_coefficient_shape(
+        coeff_arr.shape, dim=coeff_arr.ndim, name="coefficients.shape"
+    )
     kernel = normalize_kernel_name(kernel)
     if kernel == "sharp" or exponent == 0.0:
         return coeff_arr.copy()
@@ -214,7 +233,13 @@ def apply_fejer_weights(coefficients):
     return apply_kernel_weights(coefficients, kernel="fejer")
 
 
-def reduce_coefficients(coefficients, target_shape: CoefficientShape | None = None, *, kernel: str = "fejer", exponent: float = 1.0):
+def reduce_coefficients(
+    coefficients,
+    target_shape: CoefficientShape | None = None,
+    *,
+    kernel: str = "fejer",
+    exponent: float = 1.0,
+):
     """Reduce centered coefficients by center alignment followed by kernel weights."""
 
     coeff_arr = np.asarray(coefficients)
@@ -224,13 +249,17 @@ def reduce_coefficients(coefficients, target_shape: CoefficientShape | None = No
     return apply_kernel_weights(reduced, kernel=kernel, exponent=exponent)
 
 
-def fejer_reduce_coefficients(coefficients, target_shape: CoefficientShape | None = None):
+def fejer_reduce_coefficients(
+    coefficients, target_shape: CoefficientShape | None = None
+):
     """Reduce centered coefficients by center alignment followed by Fejer weights."""
 
     return reduce_coefficients(coefficients, target_shape, kernel="fejer")
 
 
-def coefficient_grid_shape(shape: CoefficientShape, oversampling_factor: int = 1) -> tuple[int, ...]:
+def coefficient_grid_shape(
+    shape: CoefficientShape, oversampling_factor: int = 1
+) -> tuple[int, ...]:
     """Return an odd FFT-grid shape obtained by centered zero-padding."""
 
     if isinstance(oversampling_factor, bool) or int(oversampling_factor) < 1:
@@ -244,15 +273,21 @@ def values_on_fft_grid(coefficients, grid_shape: CoefficientShape | None = None)
     """Evaluate centered Fourier coefficients on their equidistant FFT grid."""
 
     coeff_arr = np.asarray(coefficients)
-    normalize_coefficient_shape(coeff_arr.shape, dim=coeff_arr.ndim, name="coefficients.shape")
+    normalize_coefficient_shape(
+        coeff_arr.shape, dim=coeff_arr.ndim, name="coefficients.shape"
+    )
     if grid_shape is not None:
-        grid_shape = normalize_coefficient_shape(grid_shape, dim=coeff_arr.ndim, name="grid_shape")
+        grid_shape = normalize_coefficient_shape(
+            grid_shape, dim=coeff_arr.ndim, name="grid_shape"
+        )
         coeff_arr = centered_coefficients(coeff_arr, grid_shape)
     values = np.fft.ifftn(np.fft.ifftshift(coeff_arr)) * np.prod(coeff_arr.shape)
     return np.real_if_close(values, tol=1000).real
 
 
-def minimum_on_fft_grid(coefficients, grid_shape: CoefficientShape | None = None) -> float:
+def minimum_on_fft_grid(
+    coefficients, grid_shape: CoefficientShape | None = None
+) -> float:
     """Return the minimum real value on an equidistant FFT diagnostic grid."""
 
     return float(np.min(values_on_fft_grid(coefficients, grid_shape=grid_shape)))
@@ -290,15 +325,22 @@ def adaptive_kernel_reduce_coefficients(
     coeff_arr = np.asarray(coefficients)
     if target_shape is None:
         target_shape = coeff_arr.shape
-    target_shape = normalize_coefficient_shape(target_shape, dim=coeff_arr.ndim, name="target_shape")
-    diagnostic_shape = coefficient_grid_shape(target_shape, oversampling_factor=oversampling_factor)
+    target_shape = normalize_coefficient_shape(
+        target_shape, dim=coeff_arr.ndim, name="target_shape"
+    )
+    diagnostic_shape = coefficient_grid_shape(
+        target_shape, oversampling_factor=oversampling_factor
+    )
 
     sharp = centered_coefficients(coeff_arr, target_shape)
     if minimum_on_fft_grid(sharp, diagnostic_shape) >= -min_value_tolerance:
         return (sharp, 0.0) if return_exponent else sharp
 
     full = reduce_coefficients(coeff_arr, target_shape, kernel=kernel, exponent=1.0)
-    if minimum_on_fft_grid(full, diagnostic_shape) < -min_value_tolerance or exponent_search_steps == 0:
+    if (
+        minimum_on_fft_grid(full, diagnostic_shape) < -min_value_tolerance
+        or exponent_search_steps == 0
+    ):
         return (full, 1.0) if return_exponent else full
 
     low = 0.0
@@ -306,7 +348,9 @@ def adaptive_kernel_reduce_coefficients(
     best = full
     for _ in range(int(exponent_search_steps)):
         mid = 0.5 * (low + high)
-        candidate = reduce_coefficients(coeff_arr, target_shape, kernel=kernel, exponent=mid)
+        candidate = reduce_coefficients(
+            coeff_arr, target_shape, kernel=kernel, exponent=mid
+        )
         if minimum_on_fft_grid(candidate, diagnostic_shape) >= -min_value_tolerance:
             best = candidate
             high = mid

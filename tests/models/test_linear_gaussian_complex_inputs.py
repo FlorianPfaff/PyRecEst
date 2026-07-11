@@ -31,9 +31,7 @@ class LinearGaussianComplexInputTest(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "state_mean must be real-valued"):
             model.predict_mean(np.asarray([1.0 + 1.0j]))
-        with self.assertRaisesRegex(
-            ValueError, "state_covariance must be real-valued"
-        ):
+        with self.assertRaisesRegex(ValueError, "state_covariance must be real-valued"):
             model.predict_covariance(np.asarray([[1.0 + 1.0j]]))
 
     def test_measurement_model_rejects_complex_inputs(self):
@@ -45,9 +43,7 @@ class LinearGaussianComplexInputTest(unittest.TestCase):
         model = LinearGaussianMeasurementModel(real_matrix, real_matrix)
         with self.assertRaisesRegex(ValueError, "state_mean must be real-valued"):
             model.predict_mean(np.asarray([1.0 + 1.0j]))
-        with self.assertRaisesRegex(
-            ValueError, "state_covariance must be real-valued"
-        ):
+        with self.assertRaisesRegex(ValueError, "state_covariance must be real-valued"):
             model.innovation_covariance(np.asarray([[1.0 + 1.0j]]))
 
 

@@ -255,10 +255,7 @@ class GeneralizedKSineSkewedWrappedCauchyDistribution(AbstractCircularDistributi
         rho = exp(-self.gamma)
         one_minus_rho = 1.0 - rho
         numerator = one_minus_rho * (1.0 + rho)
-        denominator = (
-            one_minus_rho**2
-            + 4.0 * rho * sin((xs - self.mu) / 2.0) ** 2
-        )
+        denominator = one_minus_rho**2 + 4.0 * rho * sin((xs - self.mu) / 2.0) ** 2
         wc_pdf_vals = numerator / (2.0 * pi * denominator)
 
         skew_factor = (1 + self.lambda_ * sin(self.k * (xs - self.mu))) ** self.m

@@ -144,7 +144,9 @@ class AbstractMixture(AbstractDistributionType):
             raise ValueError("At least one mixture weight must be nonzero")
 
         weight_sum = sum(weights)
-        if not bool(pyrecest.backend.isfinite(weight_sum)) or not bool(weight_sum > 0.0):
+        if not bool(pyrecest.backend.isfinite(weight_sum)) or not bool(
+            weight_sum > 0.0
+        ):
             raise ValueError("Mixture weights must have positive finite total mass")
 
         if len(non_zero_indices) < len(weights):

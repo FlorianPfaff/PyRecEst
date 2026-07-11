@@ -51,8 +51,7 @@ class WrappedLaplaceDistribution(AbstractCircularDistribution):
             * self.kappa
             / (1 + self.kappa**2)
             * (
-                exp(-positive_rate * xs)
-                / (1 - exp(-2.0 * pi * positive_rate))
+                exp(-positive_rate * xs) / (1 - exp(-2.0 * pi * positive_rate))
                 + exp(-negative_rate * (2.0 * pi - xs))
                 / (1 - exp(-2.0 * pi * negative_rate))
             )
