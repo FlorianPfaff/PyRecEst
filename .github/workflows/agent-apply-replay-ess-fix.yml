@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - agent/fix-replay-proposal-ess-gating
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
