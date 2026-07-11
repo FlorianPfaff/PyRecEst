@@ -1,7 +1,7 @@
 """Reusable linear Gaussian transition and measurement models."""
 
 import math
-from numbers import Integral
+from numbers import Complex, Integral, Real
 
 from pyrecest.backend import (
     asarray,
@@ -24,8 +24,37 @@ def _has_boolean_dtype(value):
     return dtype is not None and str(dtype).lower() in {"bool", "bool_", "torch.bool"}
 
 
+def _has_complex_dtype(value):
+    dtype = getattr(value, "dtype", None)
+    return dtype is not None and "complex" in str(dtype).lower()
+
+
+def _contains_complex_values(value):
+    if _has_complex_dtype(value):
+        return True
+
+    dtype = getattr(value, "dtype", None)
+    if dtype is not None and "object" not in str(dtype).lower():
+        return False
+
+    try:
+        values = value.reshape(-1)
+    except (AttributeError, TypeError, ValueError):
+        values = (value,)
+    for item in values:
+        try:
+            scalar = item.item()
+        except AttributeError:
+            scalar = item
+        if isinstance(scalar, Complex) and not isinstance(scalar, Real):
+            return True
+    return False
+
+
 def _as_matrix(value, name):
     arr = asarray(value)
+    if _contains_complex_values(arr):
+        raise ValueError(f"{name} must be real-valued")
     if ndim(arr) != 2:
         raise ValueError(f"{name} must be two-dimensional")
     return arr
@@ -33,6 +62,8 @@ def _as_matrix(value, name):
 
 def _as_vector(value, name):
     arr = asarray(value)
+    if _contains_complex_values(arr):
+        raise ValueError(f"{name} must be real-valued")
     if ndim(arr) == 0:
         arr = reshape(arr, (1,))
     if ndim(arr) != 1:
