@@ -176,12 +176,13 @@ class HypersphericalUKF(AbstractFilter, HypersphericalFilterMixin):
     ):
         """
         Predict assuming nonlinear system model with arbitrary noise:
-            x(k+1) = f(x(k), v_k)
+            x(k+1) = normalize(f(x(k), v_k))
 
         Parameters
         ----------
         f:
             Function ``f(x, v) -> x_new`` where x is a unit vector in R^d.
+            Each returned state is normalized before moment matching.
         noise_samples:
             Array of shape ``(noise_dim, n_noise)`` with noise samples (columns).
         noise_weights:
@@ -229,10 +230,10 @@ class HypersphericalUKF(AbstractFilter, HypersphericalFilterMixin):
                     ),
                     (-1,),
                 )
+                x_new = self._normalize(x_new)
                 new_samples[:, k] = x_new
                 new_weights[k] = noise_weights[j] * state_weights[i]
                 k += 1
-
         new_weights = new_weights / new_weights.sum()
 
         # Weighted mean and covariance
