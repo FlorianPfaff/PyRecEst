@@ -53,7 +53,9 @@ class MeasurementUpdateDiagnostics:
                     "active_measurement_indices must be smaller than measurement_count"
                 )
             object.__setattr__(self, "measurement_count", measurement_count)
-        object.__setattr__(self, "skipped_reason", _normalize_skipped_reason(self.skipped_reason))
+        object.__setattr__(
+            self, "skipped_reason", _normalize_skipped_reason(self.skipped_reason)
+        )
         object.__setattr__(self, "metadata", _normalize_metadata(self.metadata))
 
     @property

@@ -8,7 +8,6 @@ from math import nan
 from typing import Any
 
 import numpy as np
-
 from pyrecest import backend
 
 # pylint: disable=no-name-in-module,no-member
