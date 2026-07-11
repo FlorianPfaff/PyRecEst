@@ -8,7 +8,19 @@ from numbers import Integral
 import numpy as np
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import asarray, concatenate, float64, full, linalg, reshape, stack
+from pyrecest.backend import (
+    all,
+    allclose,
+    asarray,
+    concatenate,
+    float64,
+    full,
+    isfinite,
+    linalg,
+    reshape,
+    stack,
+    transpose,
+)
 
 _TEXT_SCALAR_TYPES = (str, bytes, np.str_, np.bytes_)
 
@@ -45,6 +57,16 @@ def _scalar_item(value, name: str):
     return scalar
 
 
+def _to_python_bool(value) -> bool:
+    """Convert a scalar backend boolean result to a Python bool."""
+
+    if isinstance(value, bool):
+        return value
+    if hasattr(value, "item"):
+        return bool(value.item())
+    return bool(value)
+
+
 def _validate_positive_integer(value, name: str) -> int:
     scalar = _scalar_item(value, name)
     if not isinstance(scalar, Integral):
@@ -79,6 +101,10 @@ def _validate_sigma_inputs(x, P, n: int):
     P = asarray(P, dtype=float64)
     if P.shape != (n, n):
         raise ValueError(f"P must have shape ({n}, {n})")
+    if not _to_python_bool(all(isfinite(P))):
+        raise ValueError("P must contain only finite values")
+    if not _to_python_bool(allclose(P, transpose(P), rtol=1e-7, atol=1e-9)):
+        raise ValueError("P must be symmetric")
     return x, P
 
 
