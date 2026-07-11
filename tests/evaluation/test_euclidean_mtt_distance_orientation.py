@@ -27,3 +27,17 @@ def test_euclidean_mtt_distance_handles_empty_against_dim_first_targets():
 
     np.testing.assert_allclose(distance(no_targets, dim_first_targets), 35.0)
     np.testing.assert_allclose(distance(dim_first_targets, no_targets), 35.0)
+
+
+def test_empty_target_dimension_disambiguates_small_dim_first_target_set():
+    distance = get_distance_function("euclidean_mtt", {"cutoff_distance": 7.0})
+    no_targets = np.empty((0, 2))
+    dim_first_targets = np.array(
+        [
+            [0.0, 10.0, 20.0],
+            [0.0, 0.0, 0.0],
+        ]
+    )
+
+    np.testing.assert_allclose(distance(no_targets, dim_first_targets), 21.0)
+    np.testing.assert_allclose(distance(dim_first_targets, no_targets), 21.0)
