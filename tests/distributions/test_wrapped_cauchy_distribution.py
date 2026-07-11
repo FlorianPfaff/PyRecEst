@@ -38,6 +38,12 @@ class WrappedCauchyDistributionTest(unittest.TestCase):
             dist.pdf(xs=self.xs), custom_wrapped.pdf(xs=self.xs), atol=0.0001
         )
 
+    def test_pdf_remains_finite_for_large_gamma(self):
+        dist = WrappedCauchyDistribution(self.mu, 1000.0)
+        xs = array([0.0, 0.3, 1.0, pi, 2.0 * pi - 1e-6])
+
+        npt.assert_allclose(dist.pdf(xs), 1.0 / (2.0 * pi), rtol=1e-12)
+
     def test_pdf_mode_for_nonzero_mean(self):
         dist = WrappedCauchyDistribution(array(1.0), array(0.5))
         npt.assert_array_less(dist.pdf(array([2.0])), dist.pdf(array([1.0])))
