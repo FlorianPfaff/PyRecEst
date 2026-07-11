@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import pyrecest.backend
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import asarray, cov, ones, reshape, zeros
+from pyrecest.backend import asarray, cov, ones, reshape, to_numpy, zeros
 
 from ..abstract_dirac_distribution import AbstractDiracDistribution
 from .abstract_linear_distribution import AbstractLinearDistribution
@@ -49,12 +49,9 @@ class LinearDiracDistribution(AbstractDiracDistribution, AbstractLinearDistribut
         return C
 
     def plot(self, *args, **kwargs):
-        if pyrecest.backend.__backend_name__ == "numpy":
-            sample_locs = self.d
-            sample_weights = self.w
-        elif pyrecest.backend.__backend_name__ == "pytorch":
-            sample_locs = self.d.numpy()
-            sample_weights = self.w.numpy()
+        if pyrecest.backend.__backend_name__ in {"numpy", "pytorch"}:
+            sample_locs = to_numpy(self.d)
+            sample_weights = to_numpy(self.w)
         else:
             raise ValueError("Plotting not supported for this backend")
 
