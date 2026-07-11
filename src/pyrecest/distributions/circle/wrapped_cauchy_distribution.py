@@ -5,13 +5,11 @@ from pyrecest.backend import (
     array,
     atleast_1d,
     cos,
-    cosh,
     exp,
     isfinite,
     mod,
     pi,
     sin,
-    sinh,
     tanh,
 )
 
@@ -53,7 +51,13 @@ class WrappedCauchyDistribution(AbstractCircularDistribution):
     def pdf(self, xs):
         xs = _as_1d_input(xs)
         xs_centered = mod(xs - self.mu, 2 * pi)
-        return 1 / (2 * pi) * sinh(self.gamma) / (cosh(self.gamma) - cos(xs_centered))
+        rho = exp(-self.gamma)
+        one_minus_rho = 1.0 - rho
+        numerator = one_minus_rho * (1.0 + rho)
+        denominator = (
+            one_minus_rho**2 + 4.0 * rho * sin(xs_centered / 2.0) ** 2
+        )
+        return numerator / (2.0 * pi * denominator)
 
     def cdf(self, xs, starting_point=0.0):
         """
