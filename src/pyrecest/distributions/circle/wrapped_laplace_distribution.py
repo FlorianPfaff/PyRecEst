@@ -6,6 +6,9 @@ from pyrecest.backend import all, asarray, exp, isfinite, mod, ndim, pi
 from .abstract_circular_distribution import AbstractCircularDistribution
 
 
+_SMALL_RATE_SERIES_THRESHOLD = 1e-4
+
+
 def _validate_positive_scalar(value, name):
     value = asarray(value)
     if value.shape not in ((), (1,)):
@@ -15,6 +18,22 @@ def _validate_positive_scalar(value, name):
     if not bool(all(value > 0.0)):
         raise ValueError(f"{name} must be positive.")
     return value
+
+
+def _wrapped_exponential_density(rate, distance):
+    """Evaluate a wrapped exponential component without small-rate cancellation."""
+    log_beta = 2.0 * pi * rate
+    if bool(all(log_beta < _SMALL_RATE_SERIES_THRESHOLD)):
+        # rate / (1 - exp(-2*pi*rate)) expanded around rate == 0.
+        normalization = (
+            1.0 / (2.0 * pi)
+            + rate / 2.0
+            + pi * rate**2 / 6.0
+            - pi**3 * rate**4 / 90.0
+        )
+    else:
+        normalization = rate / (1.0 - exp(-log_beta))
+    return normalization * exp(-rate * distance)
 
 
 class WrappedLaplaceDistribution(AbstractCircularDistribution):
@@ -51,15 +70,10 @@ class WrappedLaplaceDistribution(AbstractCircularDistribution):
         xs = mod(xs, 2.0 * pi)
         positive_rate = self.lambda_ * self.kappa
         negative_rate = self.lambda_ / self.kappa
+        mixture_normalization = 1.0 + self.kappa**2
         p = (
-            self.lambda_
-            * self.kappa
-            / (1 + self.kappa**2)
-            * (
-                exp(-positive_rate * xs)
-                / (1 - exp(-2.0 * pi * positive_rate))
-                + exp(-negative_rate * (2.0 * pi - xs))
-                / (1 - exp(-2.0 * pi * negative_rate))
-            )
-        )
+            _wrapped_exponential_density(positive_rate, xs)
+            + self.kappa**2
+            * _wrapped_exponential_density(negative_rate, 2.0 * pi - xs)
+        ) / mixture_normalization
         return p
