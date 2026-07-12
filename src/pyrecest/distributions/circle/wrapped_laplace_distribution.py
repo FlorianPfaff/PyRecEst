@@ -1,4 +1,6 @@
 # pylint: disable=no-name-in-module,no-member
+from numbers import Integral
+
 from pyrecest.backend import all, asarray, exp, isfinite, mod, ndim, pi
 
 from .abstract_circular_distribution import AbstractCircularDistribution
@@ -33,6 +35,9 @@ class WrappedLaplaceDistribution(AbstractCircularDistribution):
         self.kappa = kappa_
 
     def trigonometric_moment(self, n):
+        if isinstance(n, bool) or not isinstance(n, Integral):
+            raise ValueError("n must be an integer.")
+        n = int(n)
         return (
             1
             / (1 - 1j * n / self.lambda_ / self.kappa)

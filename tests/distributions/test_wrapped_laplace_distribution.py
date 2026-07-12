@@ -86,6 +86,18 @@ class WrappedLaplaceDistributionTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "one-dimensional"):
             self.wl.pdf(array([[0.0, 1.0]]))
 
+    def test_trigonometric_moment_rejects_non_integer_orders(self):
+        for order in (0.5, True, "1"):
+            with self.subTest(order=order):
+                with self.assertRaisesRegex(ValueError, "n must be an integer"):
+                    self.wl.trigonometric_moment(order)
+
+    def test_trigonometric_moment_accepts_negative_integer_orders(self):
+        positive_moment = self.wl.trigonometric_moment(2)
+        negative_moment = self.wl.trigonometric_moment(-2)
+
+        npt.assert_allclose(negative_moment, positive_moment.conjugate(), rtol=1e-12)
+
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
         reason="Not supported on this backend",
