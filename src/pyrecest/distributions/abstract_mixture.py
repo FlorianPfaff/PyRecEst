@@ -228,7 +228,7 @@ class AbstractMixture(AbstractDistributionType):
         else:
             if xs.ndim == 0 or xs.shape[-1] != self.input_dim:
                 raise ValueError("Dimension mismatch")
-            p = zeros(1) if xs.ndim == 1 else zeros(xs.shape[0])
+            p = zeros(1) if xs.ndim == 1 else zeros(xs.shape[:-1])
 
         for i, dist in enumerate(self.dists):
             p += self.w[i] * dist.pdf(xs)
