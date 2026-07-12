@@ -58,14 +58,16 @@ class CartProdStackedDistribution(AbstractCartProdDistribution):
 
     def pdf(self, xs):
         xs = asarray(xs)
+        if xs.ndim == 0 or xs.shape[-1] != self.input_dim:
+            raise ValueError(
+                f"xs must have trailing dimension {self.input_dim}, got shape {xs.shape}."
+            )
+
         ps = []
         next_dim = 0
         for dist in self.dists:
             next_input_dim = next_dim + dist.input_dim
-            if xs.ndim == 1:
-                xs_curr = xs[next_dim:next_input_dim]
-            else:
-                xs_curr = xs[:, next_dim:next_input_dim]
+            xs_curr = xs[..., next_dim:next_input_dim]
             pdf_value = asarray(dist.pdf(xs_curr))
             if xs.ndim == 1:
                 pdf_value = reshape(pdf_value, ())
