@@ -235,7 +235,7 @@ class HypertoroidalDiracDistribution(
 
     def shift(self, shift_by) -> "HypertoroidalDiracDistribution":
         shift_by = as_shift_vector(shift_by, self.dim)
-        hd = copy.copy(self)
+        hd = copy.deepcopy(self)
         if self.dim == 1 and self.d.ndim == 1:
             hd.d = mod(self.d + shift_by[0], 2.0 * pi)
         else:
