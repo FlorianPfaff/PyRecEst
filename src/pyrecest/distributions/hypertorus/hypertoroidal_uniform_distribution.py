@@ -88,7 +88,7 @@ def _validate_pdf_inputs(xs, dim: int):
 
     if xs.shape[-1] != dim:
         raise ShapeError("xs", xs.shape, expected=f"last axis of length {dim}")
-    return xs, xs.shape[0], False
+    return xs, xs.shape[:-1], False
 
 
 def _validate_vector(name: str, value, dim: int):
@@ -129,9 +129,9 @@ class HypertoroidalUniformDistribution(
         :param xs: Values at which to evaluate the PDF
         :returns: PDF evaluated at xs
         """
-        _, n_inputs, single_input = _validate_pdf_inputs(xs, self.dim)
+        _, output_shape, single_input = _validate_pdf_inputs(xs, self.dim)
 
-        pdf_values = 1.0 / self.get_manifold_size() * ones(n_inputs)
+        pdf_values = 1.0 / self.get_manifold_size() * ones(output_shape)
         return pdf_values[0] if single_input else pdf_values
 
     def trigonometric_moment(self, n: Union[int, int32, int64]):
