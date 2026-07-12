@@ -24,6 +24,10 @@ class HypertoroidalMixture(AbstractMixture, AbstractHypertoroidalDistribution):
         """
         if len(dists) == 0:
             raise ValueError("Mixture must contain at least one distribution")
+        if not all(
+            isinstance(dist, AbstractHypertoroidalDistribution) for dist in dists
+        ):
+            raise TypeError("All distributions must be hypertoroidal distributions")
 
         AbstractHypertoroidalDistribution.__init__(self, dim=dists[0].dim)
         AbstractMixture.__init__(self, dists, w)
