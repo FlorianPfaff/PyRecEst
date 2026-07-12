@@ -1,6 +1,7 @@
 import unittest
 
 import numpy as np
+import pyrecest.backend
 
 from pyrecest.distributions.circle.wrapped_exponential_distribution import (
     WrappedExponentialDistribution,
@@ -32,6 +33,19 @@ class WrappedExponentialRateValidationTest(unittest.TestCase):
         distribution = WrappedExponentialDistribution(np.float64(2.0))
 
         self.assertAlmostEqual(float(distribution.lambda_), 2.0)
+
+    def test_normalizes_one_element_rate_array_to_scalar(self):
+        distribution = WrappedExponentialDistribution(np.array([2.0]))
+
+        for value in (
+            distribution.lambda_,
+            distribution.pdf(1.0),
+            distribution.trigonometric_moment(1),
+            distribution.entropy(),
+        ):
+            with self.subTest(value=value):
+                converted = np.asarray(pyrecest.backend.to_numpy(value))
+                self.assertEqual(converted.shape, ())
 
 
 if __name__ == "__main__":

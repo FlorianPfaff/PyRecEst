@@ -81,6 +81,8 @@ def _validate_positive_scalar(value, name):
         raise ValueError(f"{name} must be a positive real scalar.") from exc
     if value.shape not in ((), (1,)):
         raise ValueError(f"{name} must be a positive scalar.")
+    if value.shape == (1,):
+        value = value.reshape(())
     try:
         finite = bool(all(isfinite(value)))
         positive = bool(all(value > 0.0))
