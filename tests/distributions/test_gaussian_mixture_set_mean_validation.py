@@ -1,5 +1,6 @@
 import unittest
 
+import numpy as np
 import numpy.testing as npt
 
 # pylint: disable=no-name-in-module,no-member
@@ -30,6 +31,18 @@ class GaussianMixtureSetMeanValidationTest(unittest.TestCase):
             with self.subTest(invalid_mean=invalid_mean):
                 with self.assertRaisesRegex(ValueError, "new_mean"):
                     gmix.set_mean(invalid_mean)
+
+    def test_set_mean_rejects_nonfinite_values(self):
+        gm1 = GaussianDistribution(array([0.0, 1.0]), diag(array([1.0, 2.0])))
+        gm2 = GaussianDistribution(array([2.0, 3.0]), diag(array([3.0, 4.0])))
+        gmix = GaussianMixture([gm1, gm2], array([0.25, 0.75]))
+
+        for invalid_value in (np.nan, np.inf, -np.inf):
+            with self.subTest(invalid_value=invalid_value):
+                with self.assertRaisesRegex(
+                    ValueError, "new_mean must contain only finite values"
+                ):
+                    gmix.set_mean(array([0.0, invalid_value]))
 
 
 if __name__ == "__main__":
