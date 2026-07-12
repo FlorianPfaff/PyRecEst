@@ -39,8 +39,10 @@ def _validate_stacked_mode_vector(new_mode, expected_input_dim: int):
 
 class CartProdStackedDistribution(AbstractCartProdDistribution):
     def __init__(self, dists):
-        self.dists = dists
-        AbstractCartProdDistribution.__init__(self, sum(dist.dim for dist in dists))
+        self.dists = list(dists)
+        AbstractCartProdDistribution.__init__(
+            self, sum(dist.dim for dist in self.dists)
+        )
 
     @property
     def input_dim(self) -> int:
