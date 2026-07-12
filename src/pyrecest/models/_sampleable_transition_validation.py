@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from typing import Any
 
+from ._additive_noise_sample_count_validation import (
+    install_additive_noise_sample_count_validation,
+)
 from .likelihood import (
     DensityTransitionModel,
     SampleableTransitionModel,
@@ -47,7 +50,7 @@ def _patch_sampler_count_check(model_cls) -> None:
 
 
 def install_sampleable_transition_validation() -> None:
-    """Validate ``function_is_vectorized`` after construction as well."""
+    """Validate transition-model capability flags and sample counts."""
 
     SampleableTransitionModel.function_is_vectorized = property(
         _get_function_is_vectorized,
@@ -56,3 +59,13 @@ def install_sampleable_transition_validation() -> None:
     )
     _patch_sampler_count_check(SampleableTransitionModel)
     _patch_sampler_count_check(DensityTransitionModel)
+
+    from .additive_noise import (  # pylint: disable=import-outside-toplevel
+        AdditiveNoiseMeasurementModel,
+        AdditiveNoiseTransitionModel,
+    )
+
+    install_additive_noise_sample_count_validation(
+        AdditiveNoiseTransitionModel,
+        AdditiveNoiseMeasurementModel,
+    )
