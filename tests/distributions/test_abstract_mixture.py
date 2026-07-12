@@ -52,6 +52,22 @@ class AbstractMixtureTest(unittest.TestCase):
                 array([float("nan"), 1.0]),
             )
 
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ == "jax",
+        reason="JAX arrays are immutable",
+    )
+    def test_constructor_copies_explicit_weights(self):
+        vmf = ToroidalWrappedNormalDistribution(array([1.0, 0.0]), eye(2))
+        weights = array([0.25, 0.75])
+        mix = HypertoroidalMixture(
+            [vmf, vmf.shift(array([1.0, 1.0]))],
+            weights,
+        )
+
+        weights[:] = array([0.75, 0.25])
+
+        self.assertTrue(allclose(mix.w, array([0.25, 0.75])))
+
     def test_sample_metropolis_hastings_basics_only_t2(self):
         vmf = ToroidalWrappedNormalDistribution(array([1.0, 0.0]), eye(2))
         mix = HypertoroidalMixture(
