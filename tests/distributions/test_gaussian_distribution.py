@@ -125,6 +125,26 @@ class GaussianDistributionTest(unittest.TestCase):
 
         self.assertTrue(allclose(g_shifted.mode(), mu + shift_by, atol=1e-6))
 
+    def test_set_mean_rejects_nonfinite_values(self):
+        g = GaussianDistribution(array([0.0, 1.0]), diag(array([1.0, 2.0])))
+
+        for value in (float("nan"), float("inf"), -float("inf")):
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(
+                    ValueError, "new_mean must contain only finite values"
+                ):
+                    g.set_mean(array([0.0, value]))
+
+    def test_shift_rejects_nonfinite_values(self):
+        g = GaussianDistribution(array([0.0, 1.0]), diag(array([1.0, 2.0])))
+
+        for value in (float("nan"), float("inf"), -float("inf")):
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(
+                    ValueError, "shift_by must contain only finite values"
+                ):
+                    g.shift(array([0.0, value]))
+
     def test_pdf_accepts_array_like_inputs(self):
         g = GaussianDistribution(array([0.0]), array([[1.0]]))
 
@@ -174,7 +194,6 @@ class GaussianDistributionTest(unittest.TestCase):
         dist = StandardNormalLinearDistribution()
 
         covariance = dist.covariance_numerical()
-
         self.assertEqual(covariance.shape, (1, 1))
         npt.assert_allclose(to_numpy(covariance), [[1.0]], atol=1e-7)
 
