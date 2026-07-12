@@ -60,6 +60,12 @@ class CircularGridDistributionTest(unittest.TestCase):
         indices = array([0, 3, 7])
         npt.assert_allclose(dist.get_grid_point(indices), dist.get_grid()[indices])
 
+    def test_constructor_rejects_distribution_argument_with_conversion_guidance(self):
+        dist = VonMisesDistribution(0.4, 1.3)
+
+        with self.assertRaisesRegex(ValueError, "use from_distribution"):
+            CircularGridDistribution(dist)
+
     def test_enforced_nonnegative_interpolation_rejects_negative_grid_values(self):
         with self.assertRaisesRegex(ValueError, "nonnegative"):
             CircularGridDistribution(

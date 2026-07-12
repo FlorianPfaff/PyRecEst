@@ -44,13 +44,13 @@ class CircularGridDistribution(AbstractCircularDistribution, AbstractGridDistrib
     """
 
     def __init__(self, grid_values, enforce_pdf_nonnegative=True):
-        grid_values = array(grid_values)
         if isinstance(grid_values, AbstractCircularDistribution):
             raise ValueError(
                 "You gave a distribution as the first argument. "
                 "To convert distributions to a distribution in grid representation, "
                 "use from_distribution."
             )
+        grid_values = array(grid_values)
         if enforce_pdf_nonnegative and any(grid_values < 0):
             raise ValueError(
                 "grid_values must be nonnegative when "
