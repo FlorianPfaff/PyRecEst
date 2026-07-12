@@ -10,10 +10,11 @@ from pyrecest.distributions.abstract_orthogonal_basis_distribution import (
 class DummyOrthogonalBasisDistribution(AbstractOrthogonalBasisDistribution):
     def __init__(self, values, transformation="sqrt"):
         self._values = values
+        self.normalization_calls = 0
         super().__init__(coeff_mat=array([1.0]), transformation=transformation)
 
     def normalize_in_place(self):
-        return self
+        self.normalization_calls += 1
 
     def value(self, xs):  # pylint: disable=unused-argument
         return self._values
@@ -30,6 +31,16 @@ class AbstractOrthogonalBasisDistributionTest(unittest.TestCase):
         dist = DummyOrthogonalBasisDistribution(array([2.0 - 1j]), "sqrt")
 
         self.assertAlmostEqual(float(dist.pdf(array([0.0]))[0]), 5.0)
+
+    def test_normalize_returns_independent_copy_when_in_place_returns_none(self):
+        dist = DummyOrthogonalBasisDistribution(array([1.0]), "identity")
+
+        normalized = dist.normalize()
+
+        self.assertIsInstance(normalized, DummyOrthogonalBasisDistribution)
+        self.assertIsNot(normalized, dist)
+        self.assertEqual(dist.normalization_calls, 1)
+        self.assertEqual(normalized.normalization_calls, 2)
 
 
 if __name__ == "__main__":
