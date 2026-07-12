@@ -106,12 +106,40 @@ def _reject_boolean_randint_bound(value, name):
         raise TypeError(f"{name} must contain integer values")
 
 
+def _normalize_scalar_integer_randint_bound(value):
+    """Convert integer-like scalar arrays/tensors to exact Python integers."""
+    scalar = _LEGACY._scalar_integer_dimension(value)
+    return value if scalar is None else scalar
+
+
+def _first_randint_bound_device(*values):
+    """Return the first tensor-bound device so scalar normalization preserves it."""
+    return next(
+        (
+            value.device
+            for value in values
+            if _LEGACY._torch.is_tensor(value)
+        ),
+        None,
+    )
+
+
 def randint(low, high=None, size=None, *args, **kwargs):
-    """Draw integer samples, rejecting boolean scalar bounds consistently."""
+    """Draw integer samples with exact scalar-bound handling."""
 
     _reject_boolean_randint_bound(low, "low" if high is not None else "high")
     if high is not None:
         _reject_boolean_randint_bound(high, "high")
+
+    bound_device = _first_randint_bound_device(low, high)
+    low = _normalize_scalar_integer_randint_bound(low)
+    if high is not None:
+        high = _normalize_scalar_integer_randint_bound(high)
+
+    if bound_device is not None and "device" not in kwargs:
+        kwargs = dict(kwargs)
+        kwargs["device"] = bound_device
+
     return _LEGACY.randint(low, high, size, *args, **kwargs)
 
 
