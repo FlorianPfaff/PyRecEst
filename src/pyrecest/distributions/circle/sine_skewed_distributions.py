@@ -2,7 +2,7 @@ from abc import abstractmethod
 from numbers import Integral
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import array, exp, mod, ndim, pi, sin
+from pyrecest.backend import array, exp, isfinite, mod, ndim, pi, sin
 from scipy.special import ive  # pylint: disable=no-name-in-module
 
 from .abstract_circular_distribution import AbstractCircularDistribution
@@ -21,6 +21,13 @@ def _validate_scalar_parameter(value, name):
     parameter = array(value)
     if ndim(parameter) != 0:
         raise ValueError(f"{name} must be a scalar")
+    return parameter
+
+
+def _validate_finite_scalar_parameter(value, name):
+    parameter = _validate_scalar_parameter(value, name)
+    if not bool(isfinite(parameter)):
+        raise ValueError(f"{name} must be finite")
     return parameter
 
 
@@ -237,7 +244,7 @@ class GeneralizedKSineSkewedWrappedCauchyDistribution(AbstractCircularDistributi
         self.validate_parameters()
 
     def validate_parameters(self):
-        self.gamma = _validate_scalar_parameter(self.gamma, "gamma")
+        self.gamma = _validate_finite_scalar_parameter(self.gamma, "gamma")
         if self.gamma <= 0:
             raise ValueError("gamma must be positive")
         self.lambda_ = _validate_scalar_parameter(self.lambda_, "lambda_")
