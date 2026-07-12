@@ -44,7 +44,10 @@ def block_diag_measurement_covariance(
     "Return a diagonal covariance from trusted and weak dimension stds."
     if trusted_std is None and weak_std is None:
         raise ValueError("at least one of trusted_std or weak_std must be provided")
-    if _is_mapping(trusted_std) or _is_mapping(weak_std):
+    uses_mapping = _is_mapping(trusted_std) or _is_mapping(weak_std)
+    if dimension_order is not None and not uses_mapping:
+        raise ValueError("dimension_order requires mapping standard deviations")
+    if uses_mapping:
         if trusted_std is not None and not _is_mapping(trusted_std):
             raise TypeError("trusted_std must be a mapping when weak_std is a mapping")
         if weak_std is not None and not _is_mapping(weak_std):
@@ -158,6 +161,11 @@ class WeakDimensionMeasurementModel(LinearGaussianMeasurementModel):
             )
         if stds is not None and (trusted_std is not None or weak_std is not None):
             raise ValueError("stds cannot be combined with trusted_std or weak_std")
+        if dimension_order is not None and (
+            measurement_noise_cov is not None
+            or (stds is not None and not _is_mapping(stds))
+        ):
+            raise ValueError("dimension_order requires mapping standard deviations")
         if measurement_noise_cov is not None:
             covariance = _finite_real_numeric_array(
                 measurement_noise_cov, name="measurement_noise_cov"
