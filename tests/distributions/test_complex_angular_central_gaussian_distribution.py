@@ -232,14 +232,14 @@ class TestComplexAngularCentralGaussianDistribution(unittest.TestCase):
         reason="Not supported on JAX backend",
     )  # pylint: disable=no-member
     def test_fit_accepts_array_like_samples(self):
-        """fit() should coerce array-like sample collections before reading shape."""
+        """fit() should coerce samples without contracting the parameter scale."""
         Z = [[1.0 + 0.0j, 0.0 + 0.0j], [0.0 + 0.0j, 1.0 + 0.0j]]
 
         dist = ComplexAngularCentralGaussianDistribution.fit(Z, n_iterations=1)
 
         self.assertIsInstance(dist, ComplexAngularCentralGaussianDistribution)
         self.assertEqual(dist.dim, 2)
-        npt.assert_allclose(real(dist.C), 0.5 * eye(2), atol=1e-12)
+        npt.assert_allclose(real(dist.C), eye(2), atol=1e-12)
 
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ == "jax",
