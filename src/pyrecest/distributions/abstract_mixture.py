@@ -232,4 +232,5 @@ class AbstractMixture(AbstractDistributionType):
 
         for i, dist in enumerate(self.dists):
             p += self.w[i] * dist.pdf(xs)
+
         return p
