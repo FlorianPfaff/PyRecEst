@@ -2,8 +2,18 @@ from numbers import Integral
 from typing import Union
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import array, int32, int64, linalg, random, reshape, where, zeros
-from pyrecest.exceptions import ShapeError
+from pyrecest.backend import (
+    array,
+    int32,
+    int64,
+    is_complex,
+    linalg,
+    random,
+    reshape,
+    where,
+    zeros,
+)
+from pyrecest.exceptions import ShapeError, ValidationError
 
 from .abstract_ellipsoidal_ball_distribution import AbstractEllipsoidalBallDistribution
 from .abstract_uniform_distribution import AbstractUniformDistribution
@@ -72,6 +82,8 @@ class EllipsoidalBallUniformDistribution(
 
     def _coerce_points(self, xs):
         xs = array(xs)
+        if is_complex(xs):
+            raise ValidationError("xs must be real-valued")
         if xs.ndim == 0:
             if self.dim != 1:
                 raise ShapeError(
