@@ -168,6 +168,8 @@ def _as_target_matrix(
     value, name: str, *, expected_target_dim: int | None = None
 ) -> numpy.ndarray:
     value = _as_real_numeric_array(value, name)
+    if value.ndim not in (1, 2):
+        raise ValueError(f"{name} must be a one- or two-dimensional target set")
     if value.size == 0:
         if value.ndim == 2:
             return value
