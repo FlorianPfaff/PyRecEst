@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 
 import numpy as np
 import numpy.testing as npt
@@ -24,6 +25,63 @@ class SE3DiracDistributionTest(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "same number of samples"):
             AbstractSE3Distribution.plot_trajectory(periodic_states, lin_states)
+
+    def test_plot_point_draws_rotated_body_axes(self):
+        class RecordingAxes:
+            def __init__(self):
+                self.quiver_calls = []
+
+            def quiver(self, *args, **_kwargs):
+                self.quiver_calls.append(args)
+                return object()
+
+            @staticmethod
+            def get_xlim():
+                return (-100.0, 100.0)
+
+            @staticmethod
+            def get_ylim():
+                return (-100.0, 100.0)
+
+            @staticmethod
+            def get_zlim():
+                return (-100.0, 100.0)
+
+            @staticmethod
+            def set_xlim(_limits):
+                return None
+
+            @staticmethod
+            def set_ylim(_limits):
+                return None
+
+            @staticmethod
+            def set_zlim(_limits):
+                return None
+
+        class RecordingFigure:
+            def __init__(self, axes):
+                self.axes = axes
+
+            def add_subplot(self, *_args, **_kwargs):
+                return self.axes
+
+        axes = RecordingAxes()
+        quarter_turn = np.sqrt(0.5)
+        point = array([quarter_turn, 0.0, 0.0, quarter_turn, 10.0, 20.0, 30.0])
+
+        with patch(
+            "pyrecest.distributions.abstract_se3_distribution.plt.figure",
+            return_value=RecordingFigure(axes),
+        ):
+            AbstractSE3Distribution.plot_point(point)
+
+        directions = np.asarray([call[3:6] for call in axes.quiver_calls], dtype=float)
+        npt.assert_allclose(
+            directions,
+            np.array([[0.0, 1.0, 0.0], [-1.0, 0.0, 0.0], [0.0, 0.0, 1.0]]),
+            atol=1e-12,
+        )
 
     def test_constructor(self):
         dSph = array(
