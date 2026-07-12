@@ -41,3 +41,15 @@ def test_generalized_sine_skewed_wrapped_cauchy_rejects_vector_parameters():
             k=1,
             m=1,
         )
+
+
+@pytest.mark.parametrize("gamma", [float("nan"), float("inf")])
+def test_generalized_sine_skewed_wrapped_cauchy_rejects_nonfinite_gamma(gamma):
+    with pytest.raises(ValueError, match="gamma must be finite"):
+        GeneralizedKSineSkewedWrappedCauchyDistribution(
+            mu=0.0,
+            gamma=gamma,
+            lambda_=0.25,
+            k=1,
+            m=1,
+        )
