@@ -7,6 +7,7 @@ from pyrecest.backend import (
     allclose,
     array,
     asarray,
+    copy as backend_copy,
     diag,
     eye,
     isclose,
@@ -164,7 +165,6 @@ class BinghamFilter(AbstractFilter):
         for i in range(n):
             m_conj = self._conjugate(bv.M[:, i])
             bv.M[:, i] = self._compose(z, m_conj)
-
         self.filter_state = self.filter_state.multiply(bv)
 
     def get_point_estimate(self):
@@ -178,7 +178,7 @@ class BinghamFilter(AbstractFilter):
         For q = [w, x, y, z], conjugate = [w, -x, -y, -z].
         For q = [a, b], conjugate = [a, -b].
         """
-        result = copy.copy(q)
+        result = backend_copy(q)
         result[1:] = -result[1:]
         return result
 
