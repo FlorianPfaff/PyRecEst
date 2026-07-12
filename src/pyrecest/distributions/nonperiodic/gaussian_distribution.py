@@ -10,6 +10,7 @@ import pyrecest.backend
 from pyrecest.backend import all as backend_all
 from pyrecest.backend import (
     allclose,
+    copy as backend_copy,
     exp,
     eye,
     isfinite,
@@ -136,7 +137,6 @@ class GaussianDistribution(AbstractLinearDistribution):
         expected_shape = (mu.shape[0], mu.shape[0])
         if C.shape != expected_shape:
             raise ValueError(f"C must have shape {expected_shape}, got {C.shape}.")
-        self.mu = mu
 
         if check_validity:
             _validate_finite_values(mu, "mu")
@@ -147,7 +147,8 @@ class GaussianDistribution(AbstractLinearDistribution):
             if not _to_python_bool(backend_all(linalg.eigvalsh(C) > 0.0)):
                 raise ValueError("C must be positive definite.")
 
-        self.C = C
+        self.mu = backend_copy(mu)
+        self.C = backend_copy(C)
 
     def set_mean(self, new_mean):
         """Return a copy with a replaced mean vector.
@@ -164,7 +165,7 @@ class GaussianDistribution(AbstractLinearDistribution):
             )
         _validate_finite_values(new_mean, "new_mean")
         new_dist = copy.deepcopy(self)
-        new_dist.mu = new_mean
+        new_dist.mu = backend_copy(new_mean)
         return new_dist
 
     def _validate_evaluation_points(self, xs):
