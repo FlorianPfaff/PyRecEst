@@ -45,11 +45,13 @@ def validate_scalar_parameter(value, name):
 class AbstractToroidalBivarVMDistribution(AbstractToroidalDistribution):
     """Abstract base for bivariate von Mises distributions on the torus.
 
-    Subclasses share the same ``pdf`` structure:
+    Subclasses share the same ``pdf`` structure::
 
         C * exp(kappa1*cos(x1 - mu1) + kappa2*cos(x2 - mu2) + coupling_term)
 
-    and must implement :meth:`_coupling_term`.
+    Subclasses with a stable log normalization constant may assign
+    ``self._log_norm_const``. The base density then evaluates directly in the
+    log domain, avoiding the ``0 * inf`` cancellation at high concentration.
     """
 
     def __init__(self, mu, kappa):
@@ -57,6 +59,7 @@ class AbstractToroidalBivarVMDistribution(AbstractToroidalDistribution):
         mu, kappa = validate_toroidal_vm_parameters(mu, kappa)
         self.mu = mod(mu, 2.0 * pi)
         self.kappa = kappa
+        self._log_norm_const = None
 
     def _coupling_term(self, xs):
         """Return the distribution-specific coupling term for ``pdf``."""
@@ -68,8 +71,11 @@ class AbstractToroidalBivarVMDistribution(AbstractToroidalDistribution):
             raise ValueError(
                 f"xs must have trailing dimension {self.dim}, got {xs.shape}."
             )
-        return self.C * exp(
+        log_unnormalized = (
             self.kappa[0] * cos(xs[..., 0] - self.mu[0])
             + self.kappa[1] * cos(xs[..., 1] - self.mu[1])
             + self._coupling_term(xs)
         )
+        if self._log_norm_const is not None:
+            return exp(log_unnormalized - self._log_norm_const)
+        return self.C * exp(log_unnormalized)

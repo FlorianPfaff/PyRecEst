@@ -3,7 +3,7 @@
 import math
 
 from pyrecest.backend import sin
-from scipy.special import gammaln, iv
+from scipy.special import gammaln, iv, ive
 
 from .abstract_toroidal_bivar_vm_distribution import (
     AbstractToroidalBivarVMDistribution,
@@ -25,7 +25,17 @@ def _iv_over_power(order, concentration):
     return float(iv(order, concentration)) / concentration**order
 
 
-def _adaptive_positive_series_sum(term):
+def _scaled_iv_over_power(order, concentration):
+    """Return exp(-concentration) * I_order(concentration) / concentration**order."""
+    concentration = float(concentration)
+    if order == 0:
+        return float(ive(0, concentration))
+    if concentration == 0.0:
+        return math.exp(-order * math.log(2.0) - float(gammaln(order + 1.0)))
+    return float(ive(order, concentration)) / concentration**order
+
+
+def _adaptive_positive_series_sum(term, *, scale_floor=1.0):
     """Sum a nonnegative series until the tail term is negligible."""
     total = 0.0
     terms = []
@@ -36,7 +46,7 @@ def _adaptive_positive_series_sum(term):
         terms.append(contribution)
         total += contribution
         if order >= _SERIES_MIN_TERMS and contribution <= _SERIES_RTOL * max(
-            1.0, abs(total)
+            scale_floor, abs(total)
         ):
             return math.fsum(terms)
     raise RuntimeError("Bivariate von Mises series did not converge")
@@ -55,23 +65,59 @@ class ToroidalVonMisesSineDistribution(AbstractToroidalBivarVMDistribution):
         AbstractToroidalBivarVMDistribution.__init__(self, mu, kappa)
         lambda_ = validate_scalar_parameter(lambda_, "lambda_")
         self.lambda_ = lambda_
-        self.C = 1.0 / self.norm_const
+        self._bessel_exponential_scale = float(self.kappa[0]) + float(self.kappa[1])
 
-    @property
-    def norm_const(self):
+        try:
+            self._norm_const = self._compute_norm_const(scaled=False)
+            if not math.isfinite(self._norm_const) or self._norm_const <= 0.0:
+                raise FloatingPointError
+            self._series_uses_scaled_bessel = False
+            self._log_norm_const = math.log(self._norm_const)
+        except (FloatingPointError, OverflowError):
+            scaled_norm_const = self._compute_norm_const(scaled=True)
+            if not math.isfinite(scaled_norm_const) or scaled_norm_const <= 0.0:
+                raise FloatingPointError(
+                    "Bivariate von Mises normalization constant must be "
+                    "positive and finite"
+                )
+            self._series_uses_scaled_bessel = True
+            self._log_norm_const = (
+                math.log(scaled_norm_const) + self._bessel_exponential_scale
+            )
+            try:
+                self._norm_const = math.exp(self._log_norm_const)
+            except OverflowError:
+                self._norm_const = float("inf")
+
+        self.C = math.exp(-self._log_norm_const)
+
+    def _compute_norm_const(self, *, scaled):
         lambda_sq_over_four = float(self.lambda_) ** 2 / 4.0
         kappa0 = float(self.kappa[0])
         kappa1 = float(self.kappa[1])
+        bessel_ratio = _scaled_iv_over_power if scaled else _iv_over_power
 
         def s(order):
             return (
                 math.comb(2 * order, order)
                 * lambda_sq_over_four**order
-                * _iv_over_power(order, kappa0)
-                * _iv_over_power(order, kappa1)
+                * bessel_ratio(order, kappa0)
+                * bessel_ratio(order, kappa1)
             )
 
-        return 4.0 * math.pi**2 * _adaptive_positive_series_sum(s)
+        scale_floor = 0.0 if scaled else 1.0
+        return 4.0 * math.pi**2 * _adaptive_positive_series_sum(
+            s, scale_floor=scale_floor
+        )
+
+    @property
+    def log_norm_const(self):
+        """Return the logarithm of the normalization constant."""
+        return self._log_norm_const
+
+    @property
+    def norm_const(self):
+        return self._norm_const
 
     def _coupling_term(self, xs):
         return (

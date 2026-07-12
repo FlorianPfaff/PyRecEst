@@ -3,7 +3,7 @@ import math
 
 import numpy as np
 from pyrecest.backend import cos, mod, pi
-from scipy.special import iv
+from scipy.special import iv, ive
 
 from ._input_validation import as_shift_vector
 from .abstract_toroidal_bivar_vm_distribution import (
@@ -20,7 +20,11 @@ def _iv(order, concentration):
     return float(iv(order, float(concentration)))
 
 
-def _adaptive_series_sum(term, coefficient):
+def _scaled_iv(order, concentration):
+    return float(ive(order, float(concentration)))
+
+
+def _adaptive_series_sum(term, coefficient, *, scale_floor=1.0):
     """Sum a scalar series until the latest contribution is negligible."""
     total = 0.0
     terms = []
@@ -31,18 +35,26 @@ def _adaptive_series_sum(term, coefficient):
         terms.append(contribution)
         total += contribution
         if order >= _SERIES_MIN_TERMS and abs(contribution) <= _SERIES_RTOL * max(
-            1.0, abs(total)
+            scale_floor, abs(total)
         ):
             return math.fsum(terms)
     raise RuntimeError("Bivariate von Mises series did not converge")
 
 
-def _symmetric_series_sum(term):
-    return _adaptive_series_sum(term, lambda order: 1.0 if order == 0 else 2.0)
+def _symmetric_series_sum(term, *, scale_floor=1.0):
+    return _adaptive_series_sum(
+        term,
+        lambda order: 1.0 if order == 0 else 2.0,
+        scale_floor=scale_floor,
+    )
 
 
-def _half_zero_series_sum(term):
-    return _adaptive_series_sum(term, lambda order: 0.5 if order == 0 else 1.0)
+def _half_zero_series_sum(term, *, scale_floor=1.0):
+    return _adaptive_series_sum(
+        term,
+        lambda order: 0.5 if order == 0 else 1.0,
+        scale_floor=scale_floor,
+    )
 
 
 class ToroidalVonMisesCosineDistribution(AbstractToroidalBivarVMDistribution):
@@ -66,18 +78,60 @@ class ToroidalVonMisesCosineDistribution(AbstractToroidalBivarVMDistribution):
         AbstractToroidalBivarVMDistribution.__init__(self, mu, kappa)
         kappa3 = validate_scalar_parameter(kappa3, "kappa3")
         self.kappa3 = kappa3
-        self.C = 1.0 / self.norm_const
+        self._bessel_exponential_scale = (
+            float(self.kappa[0]) + float(self.kappa[1]) + abs(float(self.kappa3))
+        )
 
-    @property
-    def norm_const(self):
+        try:
+            self._norm_series_sum = self._compute_norm_series_sum(scaled=False)
+            self._norm_const = 4.0 * math.pi**2 * self._norm_series_sum
+            if not math.isfinite(self._norm_const) or self._norm_const <= 0.0:
+                raise FloatingPointError
+            self._series_uses_scaled_bessel = False
+            self._log_norm_const = math.log(self._norm_const)
+        except (FloatingPointError, OverflowError):
+            self._norm_series_sum = self._compute_norm_series_sum(scaled=True)
+            scaled_norm_const = 4.0 * math.pi**2 * self._norm_series_sum
+            if not math.isfinite(scaled_norm_const) or scaled_norm_const <= 0.0:
+                raise FloatingPointError(
+                    "Bivariate von Mises normalization constant must be "
+                    "positive and finite"
+                )
+            self._series_uses_scaled_bessel = True
+            self._log_norm_const = (
+                math.log(scaled_norm_const) + self._bessel_exponential_scale
+            )
+            try:
+                self._norm_const = math.exp(self._log_norm_const)
+            except OverflowError:
+                self._norm_const = float("inf")
+
+        self.C = math.exp(-self._log_norm_const)
+
+    def _compute_norm_series_sum(self, *, scaled):
         kappa0 = float(self.kappa[0])
         kappa1 = float(self.kappa[1])
         kappa3 = float(self.kappa3)
+        bessel = _scaled_iv if scaled else _iv
 
         def s(order):
-            return _iv(order, kappa0) * _iv(order, kappa1) * _iv(order, -kappa3)
+            return (
+                bessel(order, kappa0)
+                * bessel(order, kappa1)
+                * bessel(order, -kappa3)
+            )
 
-        return 4.0 * math.pi**2 * _symmetric_series_sum(s)
+        scale_floor = 0.0 if scaled else 1.0
+        return _symmetric_series_sum(s, scale_floor=scale_floor)
+
+    @property
+    def log_norm_const(self):
+        """Return the logarithm of the normalization constant."""
+        return self._log_norm_const
+
+    @property
+    def norm_const(self):
+        return self._norm_const
 
     def _coupling_term(self, xs):
         return -self.kappa3 * cos(xs[..., 0] - self.mu[0] - xs[..., 1] + self.mu[1])
@@ -87,27 +141,26 @@ class ToroidalVonMisesCosineDistribution(AbstractToroidalBivarVMDistribution):
             kappa0 = float(self.kappa[0])
             kappa1 = float(self.kappa[1])
             kappa3 = float(self.kappa3)
+            bessel = _scaled_iv if self._series_uses_scaled_bessel else _iv
+            scale_floor = 0.0 if self._series_uses_scaled_bessel else 1.0
 
             def s1(order):
                 return (
-                    (_iv(order + 1, kappa0) + _iv(order - 1, kappa0))
-                    * _iv(order, kappa1)
-                    * _iv(order, -kappa3)
+                    (bessel(order + 1, kappa0) + bessel(order - 1, kappa0))
+                    * bessel(order, kappa1)
+                    * bessel(order, -kappa3)
                 )
 
             def s2(order):
                 return (
-                    _iv(order, kappa0)
-                    * (_iv(order + 1, kappa1) + _iv(order - 1, kappa1))
-                    * _iv(order, -kappa3)
+                    bessel(order, kappa0)
+                    * (bessel(order + 1, kappa1) + bessel(order - 1, kappa1))
+                    * bessel(order, -kappa3)
                 )
 
-            def s(order):
-                return _iv(order, kappa0) * _iv(order, kappa1) * _iv(order, -kappa3)
-
-            s1_sum = _half_zero_series_sum(s1)
-            s2_sum = _half_zero_series_sum(s2)
-            s_sum = _symmetric_series_sum(s)
+            s1_sum = _half_zero_series_sum(s1, scale_floor=scale_floor)
+            s2_sum = _half_zero_series_sum(s2, scale_floor=scale_floor)
+            s_sum = self._norm_series_sum
 
             # Use numpy directly here because the result is inherently complex
             # and pyrecest.backend does not support complex-valued arrays.
