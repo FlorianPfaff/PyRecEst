@@ -76,6 +76,8 @@ class CustomLinearDistribution(
         )
         if ndim(p) > 1:
             raise ValueError("The custom pdf function must return at most 1-D values.")
+        if xs.ndim > 2:
+            p = reshape(p, xs.shape[:-1])
         return p
 
     @staticmethod
