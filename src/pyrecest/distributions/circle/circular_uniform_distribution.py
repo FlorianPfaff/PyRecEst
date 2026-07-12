@@ -1,10 +1,35 @@
-from pyrecest.backend import array, mod, pi
+import math
+
+import numpy as np
+from pyrecest.backend import array, mod, pi, to_numpy
 
 from ..hypertorus._input_validation import as_shift_vector
 from ..hypertorus.hypertoroidal_uniform_distribution import (
     HypertoroidalUniformDistribution,
 )
 from .abstract_circular_distribution import AbstractCircularDistribution
+
+
+def _as_finite_real_scalar(value, name: str) -> float:
+    """Normalize a finite real scalar accepted by every backend."""
+    message = f"{name} must be a finite real scalar"
+    try:
+        value_array = np.asarray(to_numpy(array(value)))
+    except (TypeError, ValueError, RuntimeError, OverflowError) as exc:
+        raise ValueError(message) from exc
+
+    if (
+        value_array.shape != ()
+        or np.issubdtype(value_array.dtype, np.bool_)
+        or not np.issubdtype(value_array.dtype, np.number)
+        or np.iscomplexobj(value_array)
+    ):
+        raise ValueError(message)
+
+    scalar = float(value_array.item())
+    if not math.isfinite(scalar):
+        raise ValueError(message)
+    return scalar
 
 
 class CircularUniformDistribution(
@@ -43,5 +68,6 @@ class CircularUniformDistribution(
             cdf evaluated at columns of xa
         """
 
+        starting_point = _as_finite_real_scalar(starting_point, "starting_point")
         xa = array(xa)
         return mod(xa - starting_point, 2.0 * pi) / (2.0 * pi)
