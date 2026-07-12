@@ -76,17 +76,18 @@ class AbstractSE3Distribution(AbstractLinBoundedCartProdDistribution):
         fig = plt.figure()
         ax = fig.add_subplot(111, projection="3d")
         h1 = ax.quiver(
-            pos[0], pos[1], pos[2], rotMat[0, 0], rotMat[0, 1], rotMat[0, 2], color="r"
+            pos[0], pos[1], pos[2], rotMat[0, 0], rotMat[1, 0], rotMat[2, 0], color="r"
         )
         h2 = ax.quiver(
-            pos[0], pos[1], pos[2], rotMat[1, 0], rotMat[1, 1], rotMat[1, 2], color="g"
+            pos[0], pos[1], pos[2], rotMat[0, 1], rotMat[1, 1], rotMat[2, 1], color="g"
         )
         h3 = ax.quiver(
-            pos[0], pos[1], pos[2], rotMat[2, 0], rotMat[2, 1], rotMat[2, 2], color="b"
+            pos[0], pos[1], pos[2], rotMat[0, 2], rotMat[1, 2], rotMat[2, 2], color="b"
         )
         h = [h1, h2, h3]
 
-        relevant_coords = concatenate((pos.reshape(-1, 1), pos + rotMat), axis=1)
+        pos_column = pos.reshape(-1, 1)
+        relevant_coords = concatenate((pos_column, pos_column + rotMat), axis=1)
         needed_boundaries = column_stack(
             (min(relevant_coords, axis=1), max(relevant_coords, axis=1))
         )
