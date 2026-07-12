@@ -336,6 +336,7 @@ def continuous_to_discrete_lti(
         raise ValueError(
             "noise_input_matrix and continuous_noise_covariance must be supplied together"
         )
+    dt = _as_nonnegative_float(dt, "dt")
 
     noise_input_np = np.asarray(noise_input_matrix, dtype=float)
     continuous_noise_np = np.asarray(continuous_noise_covariance, dtype=float)
