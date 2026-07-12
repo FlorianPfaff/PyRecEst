@@ -351,6 +351,6 @@ class ToroidalVMMatrixDistribution(AbstractToroidalDistribution):
     def shift(self, shift_by):
         """Return a copy of this distribution shifted by shift_by."""
         shift_by = as_shift_vector(shift_by, self.dim)
-        result = copy.copy(self)
+        result = copy.deepcopy(self)
         result.mu = mod(self.mu + shift_by, _2pi)
         return result
