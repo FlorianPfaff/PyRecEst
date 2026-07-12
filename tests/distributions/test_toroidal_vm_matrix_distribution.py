@@ -1,3 +1,4 @@
+import copy
 import unittest
 
 import numpy.testing as npt
@@ -147,6 +148,21 @@ class TestToroidalVMMatrixDistribution(unittest.TestCase):
         original_mu = array(self.tvm.mu)
         _ = self.tvm.shift(array([1.0, 1.0]))
         npt.assert_allclose(self.tvm.mu, original_mu, atol=1e-10)
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ == "jax",
+        reason="JAX arrays are immutable",
+    )
+    def test_shift_returns_independent_mutable_parameters(self):
+        original_kappa = copy.deepcopy(self.tvm.kappa)
+        original_A = copy.deepcopy(self.tvm.A)
+
+        shifted = self.tvm.shift([0.5, -0.3])
+        shifted.kappa[0] = shifted.kappa[0] + 1.0
+        shifted.A[0, 0] = shifted.A[0, 0] + 1.0
+
+        npt.assert_allclose(self.tvm.kappa, original_kappa, atol=1e-10)
+        npt.assert_allclose(self.tvm.A, original_A, atol=1e-10)
 
 
 if __name__ == "__main__":
