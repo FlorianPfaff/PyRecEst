@@ -58,10 +58,10 @@ class HypersphericalUniformDistribution(
 
     def ln_pdf(self, xs):
         xs = array(xs)
-        if xs.shape[-1] != self.input_dim:
+        if xs.ndim == 0 or xs.shape[-1] != self.input_dim:
             raise ValueError("Invalid shape of input data points.")
         log_density = -self.get_ln_manifold_size()
-        return log_density * ones(xs.shape[0]) if xs.ndim > 1 else log_density
+        return log_density * ones(xs.shape[:-1]) if xs.ndim > 1 else log_density
 
     def sample(self, n: Union[int, int32, int64]):
         n = _validate_positive_sample_count(n)
