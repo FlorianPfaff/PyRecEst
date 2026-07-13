@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import functools
+import inspect
 import warnings
 from collections.abc import Callable
 from typing import ParamSpec, TypeVar
@@ -47,6 +48,18 @@ def deprecated(
         )
         if replacement:
             message += f" Use {replacement} instead."
+
+        if inspect.iscoroutinefunction(func):
+
+            @functools.wraps(func)
+            async def async_wrapper(*args: P.args, **kwargs: P.kwargs):
+                warnings.warn(message, DeprecationWarning, stacklevel=2)
+                return await func(*args, **kwargs)
+
+            async_wrapper.__deprecated_since__ = since  # type: ignore[attr-defined]
+            async_wrapper.__deprecated_remove_in__ = remove_in  # type: ignore[attr-defined]
+            async_wrapper.__deprecated_replacement__ = replacement  # type: ignore[attr-defined]
+            return async_wrapper  # type: ignore[return-value]
 
         @functools.wraps(func)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
