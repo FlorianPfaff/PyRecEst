@@ -50,16 +50,23 @@ def _edge_probabilities(
         raise ValueError("point_weights must contain one value per edge label")
     if np.any(~np.isfinite(weights)) or np.any(weights < 0.0):
         raise ValueError("point_weights must contain only finite non-negative values")
-    edge_weights = np.array(
-        [float(np.sum(weights[labels == edge])) for edge in EDGE_ORDER],
-        dtype=float,
-    )
-    total_weight = float(np.sum(edge_weights))
-    if total_weight <= 0.0:
+
+    max_weight = float(np.max(weights)) if weights.size else 0.0
+    if max_weight <= 0.0:
         edge_weights = np.ones(len(EDGE_ORDER), dtype=float)
-        total_weight = float(len(EDGE_ORDER))
+    else:
+        scaled_weights = weights / max_weight
+        edge_weights = np.array(
+            [float(np.sum(scaled_weights[labels == edge])) for edge in EDGE_ORDER],
+            dtype=float,
+        )
+        total_weight = float(np.sum(edge_weights))
+        if not np.isfinite(total_weight) or total_weight <= 0.0:
+            raise ValueError("point_weights must have positive finite total weight")
+        edge_weights /= total_weight
+
     return {
-        edge: float(weight / total_weight)
+        edge: float(weight)
         for edge, weight in zip(EDGE_ORDER, edge_weights, strict=True)
     }
 
