@@ -14,12 +14,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  first-failure:
+  first-numpy-failure:
     runs-on: ubuntu-24.04
-    strategy:
-      fail-fast: false
-      matrix:
-        backend: [numpy, pytorch]
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
@@ -47,27 +43,21 @@ jobs:
           python -m pip install --upgrade pip poetry
           poetry env use python
           poetry install --with dev --extras "healpy_support"
-          if [ "${{ matrix.backend }}" = "pytorch" ]; then
-            poetry run python -m pip install \
-              --index-url https://download.pytorch.org/whl/cpu \
-              --extra-index-url https://pypi.org/simple \
-              "torch>=2.4,<3.0"
-          fi
 
-      - name: Capture first failing distribution test
+      - name: Capture first failing NumPy test
         shell: bash
         run: |
           set +e
-          export PYRECEST_BACKEND=${{ matrix.backend }}
+          export PYRECEST_BACKEND=numpy
           poetry run python -m pytest \
             --rootdir . \
             -q \
             --tb=short \
             --maxfail=1 \
             --strict-config \
-            ./tests/distributions > pytest-first-failure-${{ matrix.backend }}.log 2>&1
+            ./tests > pytest-first-failure-numpy.log 2>&1
           status=$?
-          cat pytest-first-failure-${{ matrix.backend }}.log
+          cat pytest-first-failure-numpy.log
           exit "$status"
         env:
           PYTHONPATH: ${{ github.workspace }}/src
@@ -76,6 +66,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: first-failure-${{ matrix.backend }}
-          path: pytest-first-failure-${{ matrix.backend }}.log
+          name: first-failure-numpy
+          path: pytest-first-failure-numpy.log
           if-no-files-found: error
