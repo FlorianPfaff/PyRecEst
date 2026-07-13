@@ -19,6 +19,7 @@ from pyrecest.backend import (
     isclose,
     isfinite,
     log,
+    max,
     ones,
     random,
     reshape,
@@ -79,29 +80,37 @@ class AbstractDiracDistribution(AbstractDistributionType):
 
     @staticmethod
     def _validate_weights(w):
-        """
-        Validate Dirac weights and return their total mass.
-        """
+        """Validate Dirac weights and return a stable normalization scale."""
+        if w.shape[0] == 0:
+            raise ValueError("Dirac weights must have positive finite total mass.")
+
         if not bool(all(isfinite(w))):
             raise ValueError("Dirac weights must be finite.")
 
         if not bool(all(w >= 0)):
             raise ValueError("Dirac weights must be nonnegative.")
 
-        total_weight = sum(w)
-        if not bool(isfinite(total_weight)) or not bool(total_weight > 0):
+        weight_scale = max(w)
+        if not bool(weight_scale > 0):
             raise ValueError("Dirac weights must have positive finite total mass.")
 
-        return total_weight
+        scaled_total_weight = sum(w / weight_scale)
+        if not bool(isfinite(scaled_total_weight)) or not bool(
+            scaled_total_weight > 0
+        ):
+            raise ValueError("Dirac weights must have positive finite total mass.")
+
+        return weight_scale, scaled_total_weight
 
     def normalize_in_place(self):
         """
         Normalize the weights in-place to ensure they sum to 1.
         """
-        total_weight = self._validate_weights(self.w)
-        if not isclose(total_weight, 1.0, atol=1e-10):
+        weight_scale, scaled_total_weight = self._validate_weights(self.w)
+        normalized_weights = (self.w / weight_scale) / scaled_total_weight
+        if not bool(all(isclose(self.w, normalized_weights, atol=1e-10))):
             warnings.warn("Weights are not normalized.", RuntimeWarning)
-            self.w = self.w / total_weight
+        self.w = normalized_weights
 
     def normalize(self) -> "AbstractDiracDistribution":
         dist = copy.deepcopy(self)
@@ -111,10 +120,10 @@ class AbstractDiracDistribution(AbstractDistributionType):
     @beartype
     def apply_function(self, f: Callable, function_is_vectorized: bool = True):
         """
-        Apply a function to the Dirac locations and return a new distribution.
+        Apply a function to the Dirac locations and return a new distribution with the function applied.
 
         :param f: Function to apply.
-        :returns: A new distribution with the function applied to the locations.
+        :returns: A new distribution with the function applied.
         """
         dist = copy.deepcopy(self)
         if function_is_vectorized:
@@ -132,8 +141,8 @@ class AbstractDiracDistribution(AbstractDistributionType):
         self._validate_weights(w_new)
 
         dist.w = w_new * dist.w
-        total_weight = self._validate_weights(dist.w)
-        dist.w = dist.w / total_weight
+        weight_scale, scaled_total_weight = self._validate_weights(dist.w)
+        dist.w = (dist.w / weight_scale) / scaled_total_weight
 
         return dist
 
