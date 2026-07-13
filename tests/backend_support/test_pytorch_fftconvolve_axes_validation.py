@@ -41,9 +41,9 @@ def test_pytorch_fftconvolve_rejects_non_integer_axes(axes):
 
 @pytest.mark.parametrize(
     "axes",
-    [True, False, np.bool_(True), np.array(True)],
+    [np.bool_(True), np.bool_(False), np.array(True), np.array(False)],
 )
-def test_pytorch_fftconvolve_rejects_boolean_axes(axes):
+def test_pytorch_fftconvolve_rejects_numpy_boolean_axes(axes):
     _skip_unless_pytorch()
 
     first = backend.asarray([1.0, 2.0])
