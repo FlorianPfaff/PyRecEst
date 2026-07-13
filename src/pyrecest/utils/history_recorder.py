@@ -123,7 +123,7 @@ class HistoryRecorder:
         if initial_value is None:
             initial_value = array([[]]) if pad_with_nan else []
         elif pad_with_nan:
-            initial_value = self._ensure_2d(initial_value)
+            initial_value = backend.copy(self._ensure_2d(initial_value))
         else:
             initial_value = copy.deepcopy(initial_value)
 
