@@ -1,3 +1,5 @@
+import asyncio
+import inspect
 import warnings
 
 import pytest
@@ -16,6 +18,21 @@ def test_deprecated_decorator_emits_standard_warning():
     assert len(caught) == 1
     assert issubclass(caught[0].category, DeprecationWarning)
     assert "new_function" in str(caught[0].message)
+
+
+def test_deprecated_decorator_preserves_async_function_contract():
+    @deprecated(since="2.3.0", remove_in="3.0.0", replacement="new_async_function")
+    async def legacy_async_function(value):
+        return value + 1
+
+    assert inspect.iscoroutinefunction(legacy_async_function)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        assert asyncio.run(legacy_async_function(1)) == 2
+
+    assert len(caught) == 1
+    assert issubclass(caught[0].category, DeprecationWarning)
+    assert "new_async_function" in str(caught[0].message)
 
 
 def test_deprecated_decorator_rejects_blank_since():
