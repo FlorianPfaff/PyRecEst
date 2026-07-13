@@ -11,6 +11,8 @@ def _coerce_axis(axis):
         raise TypeError(_AXIS_TYPE_ERROR) from exc
     if axis_array.shape != ():
         raise TypeError(_AXIS_TYPE_ERROR)
+    if axis_array.dtype == _np.bool_ and not isinstance(axis, bool):
+        raise ValueError(_AXIS_TYPE_ERROR)
     try:
         return int(axis_array.item().__index__())
     except AttributeError as exc:
