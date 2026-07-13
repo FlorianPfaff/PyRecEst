@@ -124,9 +124,29 @@ class UnscentedRauchTungStriebelSmoother(AbstractSmoother):
 
         try:
             signature = inspect.signature(function)
+            parameters = tuple(signature.parameters.values())
+            for time_parameter_name in ("dt", "time_step"):
+                time_parameter = signature.parameters.get(time_parameter_name)
+                if time_parameter is None:
+                    continue
+                if time_parameter.kind in (
+                    inspect.Parameter.POSITIONAL_ONLY,
+                    inspect.Parameter.VAR_POSITIONAL,
+                ):
+                    return asarray(function(sigma_point, time_step)).reshape(-1)
+                return asarray(
+                    function(sigma_point, **{time_parameter_name: time_step})
+                ).reshape(-1)
+
+            if any(
+                parameter.kind == inspect.Parameter.VAR_KEYWORD
+                for parameter in parameters
+            ):
+                return asarray(function(sigma_point, dt=time_step)).reshape(-1)
+
             positional_parameters = [
                 parameter
-                for parameter in signature.parameters.values()
+                for parameter in parameters
                 if parameter.kind
                 in (
                     inspect.Parameter.POSITIONAL_ONLY,
@@ -135,7 +155,7 @@ class UnscentedRauchTungStriebelSmoother(AbstractSmoother):
             ]
             has_varargs = any(
                 parameter.kind == inspect.Parameter.VAR_POSITIONAL
-                for parameter in signature.parameters.values()
+                for parameter in parameters
             )
             if has_varargs or len(positional_parameters) >= 2:
                 return asarray(function(sigma_point, time_step)).reshape(-1)
