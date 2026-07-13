@@ -1,0 +1,72 @@
+name: Python 3.14 CI diagnostics
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  diagnose-numpy-314:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Install system build dependencies
+        run: |
+          sudo rm -f \
+            /etc/apt/sources.list.d/azure-cli.list \
+            /etc/apt/sources.list.d/azure-cli.sources \
+            /etc/apt/sources.list.d/microsoft-prod.list \
+            /etc/apt/sources.list.d/microsoft-prod.sources
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            gfortran pkg-config ninja-build \
+            libopenblas-dev liblapack-dev \
+            libfftw3-dev libhealpix-cxx-dev
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip --quiet
+          python -m pip install poetry --quiet
+          poetry env use python
+          poetry install --with dev --extras "healpy_support" --no-interaction --no-ansi
+
+      - name: Capture first test failure
+        shell: bash
+        run: |
+          set +e
+          export PYRECEST_BACKEND=numpy
+          export PYTHONPATH="${GITHUB_WORKSPACE}/src"
+          poetry run python -m pytest \
+            --rootdir . \
+            -q \
+            --maxfail=1 \
+            --strict-config \
+            --junitxml=ci-python314-diagnostics.xml \
+            ./tests
+          status=$?
+          echo "$status" > ci-python314-exit-code.txt
+          exit "$status"
+
+      - name: Upload diagnostic report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: ci-python314-diagnostics
+          path: |
+            ci-python314-diagnostics.xml
+            ci-python314-exit-code.txt
+          if-no-files-found: error
