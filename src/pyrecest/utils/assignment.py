@@ -11,6 +11,7 @@ import numpy as _np
 import pyrecest.backend
 from pyrecest.backend import abs as _abs
 from pyrecest.backend import any as _any
+from pyrecest.backend import amax as _amax
 from pyrecest.backend import array as _array
 from pyrecest.backend import asarray as _asarray
 from pyrecest.backend import concatenate as _concatenate
@@ -467,9 +468,17 @@ def min_cost_max_cardinality_assignment(cost_matrix):
             "cost": 0.0,
         }
 
-    cardinality_priority_cost = 2.0 * (float(_sum(_abs(finite_costs))) + 1.0)
+    finite_cost_mask = _isfinite(cost_matrix)
+    optimization_cost_matrix = _array(cost_matrix)
+    maximum_absolute_cost = float(_amax(_abs(finite_costs)))
+    if maximum_absolute_cost > 0.0:
+        optimization_cost_matrix[finite_cost_mask] /= maximum_absolute_cost
+    scaled_finite_costs = optimization_cost_matrix[finite_cost_mask]
+    cardinality_priority_cost = 2.0 * (
+        float(_sum(_abs(scaled_finite_costs))) + 1.0
+    )
     solutions = murty_k_best_assignments(
-        cost_matrix,
+        optimization_cost_matrix,
         k=1,
         row_non_assignment_costs=_full(
             (n_rows,), cardinality_priority_cost, dtype=float
