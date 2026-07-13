@@ -19,6 +19,15 @@ _TEMPORAL_SCALAR_TYPES = (
     _datetime.timedelta,
 )
 _TEMPORAL_REPR_MARKERS = ("datetime64", "timedelta64")
+_TIME_OFFSET_SUMMARY_FIELDS = frozenset(
+    {
+        "metric",
+        "best_offset_s",
+        "evaluated_offsets",
+        "best_metric_value",
+        "best_count",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -34,12 +43,27 @@ class TimeOffsetFitResult:
     metadata: Mapping[str, Any] = field(default_factory=dict)
 
     def summary(self) -> dict[str, Any]:
-        out: dict[str, Any] = {"metric": self.metric, "best_offset_s": self.best_offset_s, "evaluated_offsets": int(len(self.offsets_s))}
-        best_index = _best_metric_index(self.offsets_s, self.metric_values, self.counts, self.best_offset_s)
+        out = {
+            key: value
+            for key, value in dict(self.metadata).items()
+            if key not in _TIME_OFFSET_SUMMARY_FIELDS
+        }
+        out.update(
+            {
+                "metric": self.metric,
+                "best_offset_s": self.best_offset_s,
+                "evaluated_offsets": int(len(self.offsets_s)),
+            }
+        )
+        best_index = _best_metric_index(
+            self.offsets_s,
+            self.metric_values,
+            self.counts,
+            self.best_offset_s,
+        )
         if best_index is not None:
             out["best_metric_value"] = float(self.metric_values[best_index])
             out["best_count"] = int(self.counts[best_index])
-        out.update(dict(self.metadata))
         return out
 
 
