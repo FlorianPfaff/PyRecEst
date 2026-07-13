@@ -178,7 +178,7 @@ class BinghamFilter(AbstractFilter):
         For q = [w, x, y, z], conjugate = [w, -x, -y, -z].
         For q = [a, b], conjugate = [a, -b].
         """
-        result = copy.copy(q)
+        result = pyrecest.backend.copy(q)
         result[1:] = -result[1:]
         return result
 
