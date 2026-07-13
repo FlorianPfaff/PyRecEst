@@ -471,17 +471,22 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
         if pyrecest.backend.any(transition_matrix < 0.0):
             raise ValueError("transition_matrix must be elementwise nonnegative.")
 
-        row_sums = transition_matrix.sum(axis=1)
-        if pyrecest.backend.any(row_sums <= 0.0):
+        row_scales = pyrecest.backend.max(transition_matrix, axis=1)
+        if pyrecest.backend.any(row_scales <= 0.0):
             raise ValueError(
                 "Each row of transition_matrix must sum to a positive value."
             )
-        if not allclose(row_sums, 1.0):
+
+        rows_are_normalized = bool(
+            pyrecest.backend.all(transition_matrix <= 1.0)
+        ) and allclose(transition_matrix.sum(axis=1), 1.0)
+        if not rows_are_normalized:
             warnings.warn(
                 "Rows of transition_matrix do not sum to one. Renormalizing rows.",
                 UserWarning,
             )
-            transition_matrix = transition_matrix / row_sums[:, None]
+            scaled_rows = transition_matrix / row_scales[:, None]
+            transition_matrix = scaled_rows / scaled_rows.sum(axis=1)[:, None]
         return transition_matrix
 
     @staticmethod
