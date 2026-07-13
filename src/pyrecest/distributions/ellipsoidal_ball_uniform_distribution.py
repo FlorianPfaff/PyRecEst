@@ -121,6 +121,9 @@ class EllipsoidalBallUniformDistribution(
         if isinstance(n, bool) or not isinstance(n, Integral) or int(n) <= 0:
             raise ValueError("n must be a positive integer.")
         n = int(n)
+        if self.dim == 0:
+            return zeros((n, 0))
+
         random_points = random.normal(size=(n, self.dim))
         random_points /= linalg.norm(random_points, axis=1).reshape(-1, 1)
 
