@@ -170,7 +170,7 @@ def additive_cost_matrix_adjustment(
 ) -> CallableCostMatrixAdjustment:
     """Return an adjustment that adds a same-shaped penalty matrix."""
 
-    penalty = _as_cost_matrix(penalty_matrix)
+    penalty = _as_cost_matrix(penalty_matrix).copy()
     stored_diagnostics = _metadata_dict(diagnostics, name="diagnostics")
 
     def _add(
