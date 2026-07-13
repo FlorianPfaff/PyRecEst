@@ -144,8 +144,10 @@ class LinearDiracDistribution(AbstractDiracDistribution, AbstractLinearDistribut
             weights = reshape(asarray(weights), (-1,))
             if weights.shape[0] != sample_matrix.shape[0]:
                 raise ValueError("Number of weights and samples must match")
-            total_weight = AbstractDiracDistribution._validate_weights(weights)
-            weights = weights / total_weight
+            weight_scale, scaled_total_weight = (
+                AbstractDiracDistribution._validate_weights(weights)
+            )
+            weights = (weights / weight_scale) / scaled_total_weight
 
         mean = weights @ sample_matrix
         deviation = sample_matrix - mean
