@@ -1,0 +1,82 @@
+name: CI failure diagnostics
+
+on:
+  pull_request:
+    branches:
+      - "**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  first-failure:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        backend: [numpy, pytorch]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Install system build dependencies
+        run: |
+          sudo rm -f \
+            /etc/apt/sources.list.d/azure-cli.list \
+            /etc/apt/sources.list.d/azure-cli.sources \
+            /etc/apt/sources.list.d/microsoft-prod.list \
+            /etc/apt/sources.list.d/microsoft-prod.sources
+          sudo apt-get update
+          sudo apt-get install -y \
+            gfortran pkg-config ninja-build \
+            libopenblas-dev liblapack-dev \
+            libfftw3-dev libhealpix-cxx-dev
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip poetry
+          poetry env use python
+          poetry install --with dev --extras "healpy_support"
+          if [ "${{ matrix.backend }}" = "pytorch" ]; then
+            poetry run python -m pip install \
+              --index-url https://download.pytorch.org/whl/cpu \
+              --extra-index-url https://pypi.org/simple \
+              "torch>=2.4,<3.0"
+          fi
+
+      - name: Capture first failing test
+        id: pytest
+        shell: bash
+        run: |
+          set +e
+          export PYRECEST_BACKEND=${{ matrix.backend }}
+          poetry run python -m pytest \
+            --rootdir . \
+            -q \
+            --tb=short \
+            --maxfail=1 \
+            --strict-config \
+            ./tests > pytest-first-failure-${{ matrix.backend }}.log 2>&1
+          status=$?
+          cat pytest-first-failure-${{ matrix.backend }}.log
+          exit "$status"
+        env:
+          PYTHONPATH: ${{ github.workspace }}/src
+
+      - name: Upload first-failure log
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: first-failure-${{ matrix.backend }}
+          path: pytest-first-failure-${{ matrix.backend }}.log
+          if-no-files-found: error
