@@ -132,6 +132,8 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     x, y = _as_tensor_pair(in1, in2)
     if x.ndim != y.ndim:
         raise ValueError("in1 and in2 should have the same dimensionality")
+    if x.ndim == 0:
+        return x * y
 
     axes = _normalize_axes(axes, x.ndim)
     x_shape = tuple(x.shape)
