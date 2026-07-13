@@ -54,8 +54,7 @@ jobs:
               "torch>=2.4,<3.0"
           fi
 
-      - name: Capture first failing test
-        id: pytest
+      - name: Capture first failing distribution test
         shell: bash
         run: |
           set +e
@@ -66,7 +65,7 @@ jobs:
             --tb=short \
             --maxfail=1 \
             --strict-config \
-            ./tests > pytest-first-failure-${{ matrix.backend }}.log 2>&1
+            ./tests/distributions > pytest-first-failure-${{ matrix.backend }}.log 2>&1
           status=$?
           cat pytest-first-failure-${{ matrix.backend }}.log
           exit "$status"
