@@ -1,5 +1,6 @@
 from math import isfinite
 from numbers import Integral
+from operator import index as _operator_index
 from typing import Union
 
 import pyrecest.backend
@@ -187,9 +188,17 @@ class WrappedNormalDistribution(
         return squeeze(val)
 
     def trigonometric_moment(self, n: Union[int, int32, int64]):
-        if isinstance(n, bool) or not isinstance(n, Integral):
+        dtype_name = str(getattr(n, "dtype", "")).lower()
+        if (
+            isinstance(n, bool)
+            or "bool" in dtype_name
+            or getattr(n, "ndim", 0) != 0
+        ):
             raise ValueError("n must be an integer")
-        n = int(n)
+        try:
+            n = int(_operator_index(n))
+        except TypeError as exc:
+            raise ValueError("n must be an integer") from exc
         return exp(1j * n * self.scalar_mu - n**2 * self.sigma**2 / 2)
 
     def multiply(
