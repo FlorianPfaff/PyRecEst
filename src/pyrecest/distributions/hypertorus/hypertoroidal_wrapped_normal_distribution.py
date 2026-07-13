@@ -143,7 +143,7 @@ class HypertoroidalWrappedNormalDistribution(AbstractHypertoroidalDistribution):
         """
         m = _validate_series_order(m)
         xs = as_hypertoroidal_points(xs, self.dim)
-        xs = (xs + pi) % (2 * pi) - pi
+        residuals = mod(xs - self.mu + pi, 2.0 * pi) - pi
 
         # Generate all combinations of offsets for each dimension
         offsets = [arange(-m, m + 1) * 2.0 * pi for _ in range(self.dim)]
@@ -151,12 +151,14 @@ class HypertoroidalWrappedNormalDistribution(AbstractHypertoroidalDistribution):
             -1, self.dim
         )
 
-        # Calculate the PDF values by considering all combinations of offsets
+        # Center the finite image expansion on the nearest wrapped residual.
         pdf_values = zeros(xs.shape[0])
         for offset in offset_combinations:
-            shifted_xa = xs + offset[None, :]
+            shifted_residuals = residuals + offset[None, :]
             pdf_values += multivariate_normal.pdf(
-                shifted_xa, mean=self.mu.flatten(), cov=self.C
+                shifted_residuals,
+                mean=zeros(self.dim),
+                cov=self.C,
             )
 
         return pdf_values
