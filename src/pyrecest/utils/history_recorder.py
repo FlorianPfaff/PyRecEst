@@ -126,6 +126,8 @@ class HistoryRecorder:
             initial_value = self._ensure_2d(initial_value)
         else:
             initial_value = copy.deepcopy(initial_value)
+            if not isinstance(initial_value, list):
+                initial_value = [initial_value]
 
         self._entries[name] = _HistoryEntry(initial_value, pad_with_nan)
         return self._entries[name].values
