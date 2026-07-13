@@ -78,7 +78,13 @@ class VonMisesDistribution(AbstractCircularDistribution):
             raise ValueError("n must be a positive integer.")
         n = int(n)
         return mod(
-            array(vonmises.rvs(kappa=float(self.kappa), loc=float(self.mu), size=n)),
+            array(
+                vonmises.rvs(
+                    kappa=self._as_float_scalar(self.kappa, "kappa"),
+                    loc=self._as_float_scalar(self.mu, "mu"),
+                    size=n,
+                )
+            ),
             2.0 * pi,
         )
 
@@ -151,8 +157,12 @@ class VonMisesDistribution(AbstractCircularDistribution):
 
     @staticmethod
     def _as_float_scalar(value, name: str) -> float:
+        value_array = array(value)
+        if value_array.shape not in ((), (1,)):
+            raise ValueError(f"{name} must be a scalar.")
+
         try:
-            scalar = float(value)
+            scalar = float(value_array.reshape(()))
         except (TypeError, ValueError) as exc:
             raise ValueError(f"{name} must be a scalar.") from exc
 
