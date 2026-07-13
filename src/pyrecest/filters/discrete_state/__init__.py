@@ -114,10 +114,11 @@ def _validated_probability_vector(
     mask = _module_globals["_coerce_valid_state_mask"](valid_state_mask, n_entries)
     if mask is not None:
         values[~mask] = 0.0
-    total = float(values.sum())
-    if total <= 0.0:
+    scale = float(values.max())
+    if scale <= 0.0:
         raise ValueError(f"{name} must contain positive probability mass")
-    return values / total
+    values /= scale
+    return values / float(values.sum())
 
 
 def sparse_gaussian_transition_matrix(
