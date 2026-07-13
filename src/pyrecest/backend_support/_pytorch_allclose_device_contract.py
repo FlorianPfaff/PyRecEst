@@ -76,7 +76,6 @@ def _patch_pytorch_linalg_logm_arraylike_contract() -> None:
 def _patch_pytorch_flip_numpy_axis_contract() -> None:
     """Patch raw/public PyTorch ``flip`` to accept NumPy integer axes."""
     try:
-        import numpy as np  # pylint: disable=import-outside-toplevel
         import pyrecest._backend.pytorch as pytorch_backend  # pylint: disable=import-outside-toplevel
         import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import torch as torch_module  # pylint: disable=import-outside-toplevel
@@ -94,9 +93,10 @@ def _patch_pytorch_flip_numpy_axis_contract() -> None:
     def _flip_axes(axis, ndim):
         if axis is None:
             return list(range(ndim))
-        if isinstance(axis, (int, np.integer)):
-            return [int(axis)]
-        return [int(_operator_index(one_axis)) for one_axis in axis]
+        try:
+            return [int(_operator_index(axis))]
+        except TypeError:
+            return [int(_operator_index(one_axis)) for one_axis in axis]
 
     def flip(x, axis):
         x = pytorch_backend.array(x)
