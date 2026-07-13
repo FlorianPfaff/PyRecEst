@@ -206,7 +206,8 @@ class HypertoroidalUniformDistribution(
             left, right = integration_boundaries
         left = _validate_boundary("left", left, self.dim)
         right = _validate_boundary("right", right, self.dim)
-        _validate_boundary_order(left, right)
+        if self.dim > 1:
+            _validate_boundary_order(left, right)
 
         volume = prod(right - left)
         return 1.0 / (2.0 * pi) ** self.dim * volume
