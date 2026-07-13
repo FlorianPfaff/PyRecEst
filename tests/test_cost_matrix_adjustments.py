@@ -114,6 +114,35 @@ class TestCostMatrixAdjustments(unittest.TestCase):
         self.assertEqual(result.diagnostics["shared"], {"step": 1})
         self.assertEqual(result.diagnostics["shared_2"], {"step": 2})
 
+    def test_compose_adjustments_protects_reserved_order_diagnostics_key(self):
+        reserved_name = CallableCostMatrixAdjustment(
+            name="adjustment_order",
+            function=lambda matrix, _metadata: CostMatrixAdjustmentResult(
+                matrix + 1.0,
+                {"step": 1},
+            ),
+        )
+        following = CallableCostMatrixAdjustment(
+            name="following",
+            function=lambda matrix, _metadata: CostMatrixAdjustmentResult(
+                matrix + 2.0,
+                {"step": 2},
+            ),
+        )
+
+        result = compose_cost_matrix_adjustments(
+            np.array([[0.0]]),
+            [reserved_name, following],
+        )
+
+        npt.assert_allclose(result.adjusted_cost_matrix, np.array([[3.0]]))
+        self.assertEqual(
+            result.diagnostics["adjustment_order"],
+            ["adjustment_order_2", "following"],
+        )
+        self.assertEqual(result.diagnostics["adjustment_order_2"], {"step": 1})
+        self.assertEqual(result.diagnostics["following"], {"step": 2})
+
     def test_additive_adjustment_rejects_shape_mismatch(self):
         adjustment = additive_cost_matrix_adjustment(np.ones((2, 2)))
 
