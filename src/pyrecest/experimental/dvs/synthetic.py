@@ -53,7 +53,11 @@ def _edge_probabilities(
 
     max_weight = float(np.max(weights)) if weights.size else 0.0
     if max_weight <= 0.0:
-        edge_weights = np.ones(len(EDGE_ORDER), dtype=float)
+        edge_weights = np.full(
+            len(EDGE_ORDER),
+            1.0 / len(EDGE_ORDER),
+            dtype=float,
+        )
     else:
         scaled_weights = weights / max_weight
         edge_weights = np.array(
