@@ -44,6 +44,23 @@ def _promote_trapezoid_tensor(value, raw_pytorch):
     return value.to(dtype=raw_pytorch.get_default_dtype())
 
 
+def _trapezoid_with_dx(y, dx, dim, torch_module, raw_pytorch):
+    """Integrate with NumPy-style scalar or broadcastable ``dx`` values."""
+    dx = _as_trapezoid_tensor(dx, torch_module, device=y.device)
+    result_dtype = torch_module.promote_types(y.dtype, dx.dtype)
+    if not (result_dtype.is_floating_point or result_dtype.is_complex):
+        result_dtype = raw_pytorch.get_default_dtype()
+    y = y.to(dtype=result_dtype)
+    dx = dx.to(dtype=result_dtype)
+
+    slice1 = [slice(None)] * y.ndim
+    slice2 = [slice(None)] * y.ndim
+    slice1[dim] = slice(1, None)
+    slice2[dim] = slice(None, -1)
+    interval_averages = 0.5 * (y[tuple(slice1)] + y[tuple(slice2)])
+    return torch_module.sum(dx * interval_averages, dim=dim)
+
+
 def patch_pytorch_trapezoid_numpy_contract() -> None:
     """Patch raw/public PyTorch ``trapezoid`` to accept NumPy-style inputs."""
     try:
@@ -63,12 +80,13 @@ def patch_pytorch_trapezoid_numpy_contract() -> None:
 
     def trapezoid(y, x=None, dx=1.0, axis=-1):
         dim = _trapezoid_axis(axis)
-        device = _preferred_pytorch_device(torch, y, x)
+        device_values = (y, dx) if x is None else (y, x)
+        device = _preferred_pytorch_device(torch, *device_values)
         y = _as_trapezoid_tensor(y, torch, device=device)
 
         if x is None:
             y = _promote_trapezoid_tensor(y, raw_pytorch)
-            return torch.trapezoid(y, dx=dx, dim=dim)
+            return _trapezoid_with_dx(y, dx, dim, torch, raw_pytorch)
 
         x = _as_trapezoid_tensor(x, torch, device=y.device)
         result_dtype = torch.promote_types(y.dtype, x.dtype)
