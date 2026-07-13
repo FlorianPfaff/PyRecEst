@@ -16,6 +16,7 @@ from pyrecest.backend import (
     concatenate,
     full,
     minimum,
+    mod,
     ndim,
     pi,
     random,
@@ -124,10 +125,9 @@ class HypercylindricalStateSpaceSubdivisionDistribution(
         # Find nearest grid indices (vectorised toroidal distance)
         grid = asarray(self.gd.get_grid())  # (n_grid, bound_dim)
         delta = grid[None, :, :] - x_bound[:, None, :]  # (n_eval, n_grid, bound_dim)
-        abs_delta = abs(delta)
-        dists = backend_sum(
-            minimum(abs_delta**2, (2.0 * pi - abs_delta) ** 2), axis=-1
-        )  # (n_eval, n_grid)
+        abs_delta = mod(abs(delta), 2.0 * pi)
+        wrapped_delta = minimum(abs_delta, 2.0 * pi - abs_delta)
+        dists = backend_sum(wrapped_delta**2, axis=-1)  # (n_eval, n_grid)
         indices = argmin(dists, axis=1)  # (n_eval,)
 
         # Evaluate periodic marginal pdf (nearest-neighbor)
@@ -303,7 +303,6 @@ class HypercylindricalStateSpaceSubdivisionDistribution(
 
             # Unnormalized conditional to compute the marginal weight
             cd_unnorm = CustomLinearDistribution(lambda x, fc=fun_curr: fc(x), dim_lin)
-
             integral_val = float(
                 cd_unnorm.integrate(
                     left=array([float(int_range[0])]),
