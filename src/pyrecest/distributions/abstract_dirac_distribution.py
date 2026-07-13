@@ -120,10 +120,10 @@ class AbstractDiracDistribution(AbstractDistributionType):
     @beartype
     def apply_function(self, f: Callable, function_is_vectorized: bool = True):
         """
-        Apply a function to the Dirac locations and return a new distribution with the function applied.
+        Apply a function to the Dirac locations and return a new distribution.
 
         :param f: Function to apply.
-        :returns: A new distribution with the function applied.
+        :returns: A new distribution with the function applied to the locations.
         """
         dist = copy.deepcopy(self)
         if function_is_vectorized:
