@@ -148,10 +148,13 @@ def _normalize_weights(weights, n_points):
         raise ValueError("weights must be finite.")
     if any(weights_array < 0.0):
         raise ValueError("weights must be non-negative.")
-    weight_sum = float(weights_array.sum())
-    if weight_sum <= 0.0:
+
+    weight_scale = weights_array.max()
+    if not bool(weight_scale > 0.0):
         raise ValueError("weights must sum to a positive value.")
-    return weights_array / weight_sum
+
+    scaled_weights = weights_array / weight_scale
+    return scaled_weights / scaled_weights.sum()
 
 
 def _minimum_required_matches(model: TransformModel, dim: int) -> int:
