@@ -143,24 +143,30 @@ class AbstractMixture(AbstractDistributionType):
         if len(non_zero_indices) == 0:
             raise ValueError("At least one mixture weight must be nonzero")
 
-        weight_sum = sum(weights)
-        if not bool(pyrecest.backend.isfinite(weight_sum)) or not bool(weight_sum > 0.0):
+        weight_scale = pyrecest.backend.max(weights)
+        scaled_weights = weights / weight_scale
+        scaled_weight_sum = sum(scaled_weights)
+        if not bool(pyrecest.backend.isfinite(scaled_weight_sum)) or not bool(
+            scaled_weight_sum > 0.0
+        ):
             raise ValueError("Mixture weights must have positive finite total mass")
+        weights_sum_to_one = bool(
+            abs(weight_scale - 1.0 / scaled_weight_sum)
+            <= 1e-10 / scaled_weight_sum
+        )
 
         if len(non_zero_indices) < len(weights):
             warnings.warn(
                 "Elements with zero weights detected. Pruning elements in mixture with weight zero."
             )
             dists = [dists[i] for i in non_zero_indices]
-            weights = weights[array(non_zero_indices, dtype=int64)]
+            scaled_weights = scaled_weights[array(non_zero_indices, dtype=int64)]
 
         self.dists = dists
 
-        if abs(weight_sum - 1.0) > 1e-10:
+        if not weights_sum_to_one:
             warnings.warn("Weights of mixture do not sum to one.")
-            self.w = weights / weight_sum
-        else:
-            self.w = weights
+        self.w = scaled_weights / scaled_weight_sum
 
     @property
     def input_dim(self) -> int:
