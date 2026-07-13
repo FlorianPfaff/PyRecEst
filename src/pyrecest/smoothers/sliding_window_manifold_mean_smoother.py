@@ -6,8 +6,9 @@ from collections.abc import Callable, Sequence
 from functools import partial
 from operator import index as operator_index
 
+from pyrecest.backend import all as backend_all
 from pyrecest.backend import any as backend_any
-from pyrecest.backend import asarray, concatenate, ndim, stack, sum
+from pyrecest.backend import asarray, concatenate, isfinite, ndim, stack, sum
 from pyrecest.distributions import (
     AbstractHypercylindricalDistribution,
     AbstractHyperhemisphericalDistribution,
@@ -92,6 +93,8 @@ class SlidingWindowManifoldMeanSmoother(AbstractSmoother):
             self.window_weights = asarray(window_weights).reshape(-1)
             if self.window_weights.shape[0] != self.window_size:
                 raise ValueError("window_weights must have length window_size.")
+            if not bool(backend_all(isfinite(self.window_weights))):
+                raise ValueError("window_weights must be finite.")
             if backend_any(self.window_weights < 0):
                 raise ValueError("window_weights must be non-negative.")
             if sum(self.window_weights) <= 0:
