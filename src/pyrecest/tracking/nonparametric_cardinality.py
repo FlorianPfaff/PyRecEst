@@ -10,8 +10,17 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from math import exp, isfinite, lgamma, log
-from numbers import Integral
+from numbers import Integral, Real
 from typing import Sequence
+
+
+def _as_finite_real_scalar(value, name: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, Real):
+        raise TypeError(f"{name} must be a real scalar.")
+    value = float(value)
+    if not isfinite(value):
+        raise ValueError(f"{name} must be finite.")
+    return value
 
 
 @dataclass(frozen=True)
@@ -48,12 +57,8 @@ class PitmanYorCardinalityPrior:
     discount: float = 0.0
 
     def __post_init__(self) -> None:
-        strength = float(self.strength)
-        discount = float(self.discount)
-        if not isfinite(strength):
-            raise ValueError("strength must be finite.")
-        if not isfinite(discount):
-            raise ValueError("discount must be finite.")
+        strength = _as_finite_real_scalar(self.strength, "strength")
+        discount = _as_finite_real_scalar(self.discount, "discount")
         if not 0.0 <= discount < 1.0:
             raise ValueError("discount must satisfy 0 <= discount < 1.")
         if strength <= -discount:
