@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  first-numpy-failure:
+  first-pytorch-failure:
     runs-on: ubuntu-24.04
     steps:
       - name: Check out repository
@@ -43,21 +43,25 @@ jobs:
           python -m pip install --upgrade pip poetry
           poetry env use python
           poetry install --with dev --extras "healpy_support"
+          poetry run python -m pip install \
+            --index-url https://download.pytorch.org/whl/cpu \
+            --extra-index-url https://pypi.org/simple \
+            "torch>=2.4,<3.0"
 
-      - name: Capture first failing NumPy test
+      - name: Capture first failing PyTorch test
         shell: bash
         run: |
           set +e
-          export PYRECEST_BACKEND=numpy
+          export PYRECEST_BACKEND=pytorch
           poetry run python -m pytest \
             --rootdir . \
             -q \
             --tb=short \
             --maxfail=1 \
             --strict-config \
-            ./tests > pytest-first-failure-numpy.log 2>&1
+            ./tests > pytest-first-failure-pytorch.log 2>&1
           status=$?
-          cat pytest-first-failure-numpy.log
+          cat pytest-first-failure-pytorch.log
           exit "$status"
         env:
           PYTHONPATH: ${{ github.workspace }}/src
@@ -66,6 +70,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: first-failure-numpy
-          path: pytest-first-failure-numpy.log
+          name: first-failure-pytorch
+          path: pytest-first-failure-pytorch.log
           if-no-files-found: error
