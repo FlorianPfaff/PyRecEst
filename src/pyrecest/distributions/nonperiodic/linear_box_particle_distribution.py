@@ -12,6 +12,7 @@ from pyrecest.backend import (
     arange,
     argmax,
     array,
+    copy as backend_copy,
     diag,
     expand_dims,
     int32,
@@ -59,8 +60,8 @@ class LinearBoxParticleDistribution(AbstractLinearDistribution):
             raise ValueError("Each box must satisfy upper > lower component-wise")
 
         AbstractLinearDistribution.__init__(self, int(lower.shape[1]))
-        self.lower = copy.copy(lower)
-        self.upper = copy.copy(upper)
+        self.lower = backend_copy(lower)
+        self.upper = backend_copy(upper)
 
         n_boxes = int(lower.shape[0])
         if w is None:
@@ -71,7 +72,7 @@ class LinearBoxParticleDistribution(AbstractLinearDistribution):
                 weights = reshape(weights, (-1,))
             if weights.shape[0] != n_boxes:
                 raise ValueError("Number of weights and boxes must match")
-            self.w = copy.copy(weights)
+            self.w = backend_copy(weights)
         self.normalize_in_place()
 
     @staticmethod
