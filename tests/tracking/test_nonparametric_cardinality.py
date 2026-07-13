@@ -1,5 +1,6 @@
 import math
 
+import numpy as np
 import pytest
 
 from pyrecest.tracking.nonparametric_cardinality import (
@@ -79,6 +80,20 @@ def test_parameter_validation():
         PitmanYorCardinalityPrior(strength=-0.5, discount=0.25)
     with pytest.raises(ValueError):
         DirichletProcessCardinalityPrior(strength=0.0)
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        pytest.param({"strength": True}, id="python-bool-strength"),
+        pytest.param({"strength": np.bool_(True)}, id="numpy-bool-strength"),
+        pytest.param({"discount": False}, id="python-bool-discount"),
+        pytest.param({"discount": np.bool_(False)}, id="numpy-bool-discount"),
+    ],
+)
+def test_parameter_validation_rejects_boolean_scalars(kwargs):
+    with pytest.raises(TypeError, match="must be a real scalar"):
+        PitmanYorCardinalityPrior(**kwargs)
 
 
 def test_cluster_size_validation():
