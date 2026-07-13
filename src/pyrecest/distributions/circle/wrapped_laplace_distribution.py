@@ -13,6 +13,8 @@ def _validate_positive_scalar(value, name):
     value = asarray(value)
     if value.shape not in ((), (1,)):
         raise ValueError(f"{name} must be a positive scalar.")
+    if value.shape == (1,):
+        value = value.reshape(())
     if not bool(all(isfinite(value))):
         raise ValueError(f"{name} must be finite.")
     if not bool(all(value > 0.0)):
