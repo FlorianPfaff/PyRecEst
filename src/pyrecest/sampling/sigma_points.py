@@ -90,6 +90,18 @@ def _validate_finite_scalar(value, name: str) -> float:
     return result
 
 
+def _merwe_scale(n: int, alpha: float, kappa: float) -> float:
+    """Return ``alpha**2 * (n + kappa)`` without subtractive cancellation."""
+
+    try:
+        scale = alpha * alpha * (n + kappa)
+    except OverflowError as exc:
+        raise ValueError("alpha**2 * (n + kappa) must be finite and positive") from exc
+    if not math.isfinite(scale) or scale <= 0.0:
+        raise ValueError("alpha**2 * (n + kappa) must be finite and positive")
+    return scale
+
+
 def _validate_sigma_inputs(x, P, n: int):
     if _has_complex_dtype(x):
         raise ValueError("x must contain real values")
@@ -138,8 +150,8 @@ class MerweScaledSigmaPoints:
 
     def _compute_weights(self):
         n = self.n
-        lam = self.alpha**2 * (n + self.kappa) - n
-        scale = n + lam
+        scale = _merwe_scale(n, self.alpha, self.kappa)
+        lam = scale - n
 
         self.Wm = concatenate(
             [
@@ -168,11 +180,11 @@ class MerweScaledSigmaPoints:
             State covariance, shape ``(n, n)``.
         """
         n = self.n
-        lam = self.alpha**2 * (n + self.kappa) - n
+        scale = _merwe_scale(n, self.alpha, self.kappa)
 
         x, P = _validate_sigma_inputs(x, P, n)
 
-        U = linalg.cholesky((n + lam) * P)  # lower-triangular
+        U = linalg.cholesky(scale * P)  # lower-triangular
 
         positive = [x + U[:, i] for i in range(n)]
         negative = [x - U[:, i] for i in range(n)]
