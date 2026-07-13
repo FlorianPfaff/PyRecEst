@@ -201,10 +201,13 @@ class HypersphericalUKF(AbstractFilter, HypersphericalFilterMixin):
                 "noise_samples and noise_weights must contain the same number "
                 "of samples."
             )
+        if noise_weights.shape[0] == 0:
+            raise ValueError("noise_weights must contain at least one sample.")
         if not all(isfinite(noise_weights)):
             raise ValueError("noise_weights must be finite.")
         if not all(noise_weights > 0):
             raise ValueError("noise_weights must be strictly positive.")
+        noise_weights = noise_weights / noise_weights.max()
         noise_weights = noise_weights / noise_weights.sum()
 
         mu = reshape(asarray(self._filter_state.mu, dtype=float64), (-1,))
