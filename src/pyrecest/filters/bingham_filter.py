@@ -7,6 +7,7 @@ from pyrecest.backend import (
     allclose,
     array,
     asarray,
+    copy as backend_copy,
     diag,
     eye,
     isclose,
@@ -178,7 +179,7 @@ class BinghamFilter(AbstractFilter):
         For q = [w, x, y, z], conjugate = [w, -x, -y, -z].
         For q = [a, b], conjugate = [a, -b].
         """
-        result = copy.copy(q)
+        result = backend_copy(q)
         result[1:] = -result[1:]
         return result
 
