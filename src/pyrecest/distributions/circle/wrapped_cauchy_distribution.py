@@ -22,6 +22,8 @@ def _validate_finite_scalar(value, name):
     value = array(value)
     if value.shape not in ((), (1,)):
         raise ValueError(f"{name} must be a scalar.")
+    if value.shape == (1,):
+        value = value.reshape(())
     if not bool(all(isfinite(value))):
         raise ValueError(f"{name} must be finite.")
     return value
