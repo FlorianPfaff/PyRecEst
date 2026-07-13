@@ -308,7 +308,9 @@ def solve_gated_assignment(cost_matrix, *, max_cost: float = float("inf")):
 
     highest_valid_cost = float(valid_costs.max())
     unassigned_cost = (
-        max_cost_value if math.isfinite(max_cost_value) else highest_valid_cost + 1.0
+        max_cost_value
+        if math.isfinite(max_cost_value)
+        else max(highest_valid_cost, 0.0) + 1.0
     )
     cost_scale = max(abs(highest_valid_cost), abs(unassigned_cost), 1.0)
     invalid_cost = max(highest_valid_cost, 2.0 * unassigned_cost) + cost_scale
