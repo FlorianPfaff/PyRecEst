@@ -4,6 +4,7 @@ from numbers import Integral
 import numpy as np
 import pyrecest.backend
 from pyrecest.backend import (
+    amax,
     arange,
     array,
     exp,
@@ -144,11 +145,12 @@ class PiecewiseConstantDistribution(AbstractCircularDistribution):
         if any(bool(weight < 0.0) for weight in w):
             raise ValueError("Weights must be nonnegative")
 
-        mean_weight = mean(w)
-        if not bool(mean_weight > 0.0):
+        max_weight = amax(w)
+        if not bool(max_weight > 0.0):
             raise ValueError("Weights must have positive total mass")
 
-        self.w = w / (mean_weight * 2.0 * pi)
+        scaled_weights = w / max_weight
+        self.w = scaled_weights / (mean(scaled_weights) * 2.0 * pi)
 
     def pdf(self, xs):
         """Evaluate the pdf at each point in xs.
