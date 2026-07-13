@@ -143,13 +143,15 @@ class EvidenceComputationMode:
         """Return stable scalar diagnostics for reports and artifacts."""
 
         diagnostics = {
-            f"{prefix}_computation_mode": self.mode,
-            f"{prefix}_only": int(self.evidence_only_requested),
-            f"{prefix}_return_smoothed": int(self.return_smoothed),
-            f"{prefix}_terminal_posterior": int(self.terminal_posterior),
+            f"{prefix}_{key}": value for key, value in self.metadata.items()
         }
         diagnostics.update(
-            {f"{prefix}_{key}": value for key, value in self.metadata.items()}
+            {
+                f"{prefix}_computation_mode": self.mode,
+                f"{prefix}_only": int(self.evidence_only_requested),
+                f"{prefix}_return_smoothed": int(self.return_smoothed),
+                f"{prefix}_terminal_posterior": int(self.terminal_posterior),
+            }
         )
         return diagnostics
 
