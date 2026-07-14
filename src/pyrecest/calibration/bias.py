@@ -64,18 +64,28 @@ class SensorBiasCorrectionModel:
     def __post_init__(self) -> None:
         target_dim = _as_positive_int(self.target_dim, "target_dim")
         feature_dim = _as_nonnegative_int(self.feature_dim, "feature_dim")
-        intercept = _as_numeric_array(self.intercept, "intercept").reshape(target_dim)
-        coefficients = _as_numeric_array(self.coefficients, "coefficients").reshape(
-            feature_dim, target_dim
+        intercept = (
+            _as_numeric_array(self.intercept, "intercept")
+            .reshape(target_dim)
+            .copy()
         )
-        feature_mean = _as_numeric_array(self.feature_mean, "feature_mean").reshape(
-            feature_dim
+        coefficients = (
+            _as_numeric_array(self.coefficients, "coefficients")
+            .reshape(feature_dim, target_dim)
+            .copy()
+        )
+        feature_mean = (
+            _as_numeric_array(self.feature_mean, "feature_mean")
+            .reshape(feature_dim)
+            .copy()
         )
         feature_scale = _as_numeric_array(self.feature_scale, "feature_scale").reshape(
             feature_dim
         )
-        residual_std = _as_numeric_array(self.residual_std, "residual_std").reshape(
-            target_dim
+        residual_std = (
+            _as_numeric_array(self.residual_std, "residual_std")
+            .reshape(target_dim)
+            .copy()
         )
         _require_finite_array(intercept, "intercept")
         _require_finite_array(coefficients, "coefficients")
