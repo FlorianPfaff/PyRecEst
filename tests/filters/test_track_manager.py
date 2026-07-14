@@ -133,6 +133,17 @@ class TrackManagerAssociationTest(unittest.TestCase):
                         num_measurements=1,
                     )
 
+    def test_solver_accepts_zero_dimensional_scalar_unassigned_costs(self):
+        association = solve_global_nearest_neighbor(
+            np.array([[0.0, 10.0], [10.0, 0.0]]),
+            unassigned_track_cost=np.array(5.0),
+            unassigned_measurement_cost=np.array(5.0),
+        )
+
+        self.assertEqual(association.matches, [(0, 0), (1, 1)])
+        self.assertEqual(association.unmatched_track_indices, [])
+        self.assertEqual(association.unmatched_measurement_indices, [])
+
     def test_solver_does_not_return_nonfinite_pair_as_match(self):
         association = solve_global_nearest_neighbor(
             np.array([[np.inf]]),

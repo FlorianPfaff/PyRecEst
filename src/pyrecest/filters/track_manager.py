@@ -1001,8 +1001,9 @@ def _forbidden_assignment_cost(assignment_size: int, *cost_arrays: Any) -> float
 def _coerce_cost_vector(cost: Any, length: int, name: str) -> np.ndarray:
     """Normalize scalar or iterable costs to a length-``length`` vector."""
 
-    if np.isscalar(cost):
-        return np.full(length, float(cost))
+    cost_array = np.asarray(cost)
+    if cost_array.shape == ():
+        return np.full(length, float(cost_array.item()))
 
     vector = np.asarray(cost, dtype=float).reshape(-1)
     if vector.size != length:
