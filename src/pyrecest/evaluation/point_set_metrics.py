@@ -35,6 +35,8 @@ def as_point_set(
         raise ValueError(f"{name} must have shape (N, D).") from exc
     if array.ndim != 2:
         raise ValueError(f"{name} must have shape (N, D).")
+    if array.shape[1] == 0:
+        raise ValueError(f"{name} must contain points with at least one coordinate.")
     if expected_dim is not None and array.shape[1] != expected_dim:
         raise ValueError(f"{name} must have shape (N, {expected_dim}).")
     if array.shape[0] == 0:
