@@ -41,6 +41,11 @@ class CostMatrixAdjustmentResult:
     def __post_init__(self) -> None:
         object.__setattr__(
             self,
+            "adjusted_cost_matrix",
+            _as_cost_matrix(self.adjusted_cost_matrix).copy(),
+        )
+        object.__setattr__(
+            self,
             "diagnostics",
             _metadata_dict(self.diagnostics, name="diagnostics"),
         )
