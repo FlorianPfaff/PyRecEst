@@ -180,12 +180,16 @@ def _normalized_particle_weights(raw_weights: Any, particle_count: int, backend)
     if any(weight < 0.0 for weight in weight_values):
         raise ValueError("weights must be nonnegative")
 
-    weight_total = sum(weight_values)
-    if weight_total <= 0.0:
+    weight_scale = max(weight_values, default=0.0)
+    if weight_scale <= 0.0:
         raise ValueError("weights must have positive total mass")
+    scaled_weights = [weight / weight_scale for weight in weight_values]
+    scaled_total = sum(scaled_weights)
+    if scaled_total <= 0.0 or not math.isfinite(scaled_total):
+        raise ValueError("weights must have positive finite total mass")
 
     return backend.asarray(
-        [weight / weight_total for weight in weight_values],
+        [weight / scaled_total for weight in scaled_weights],
         dtype=backend.float64,
     )
 
