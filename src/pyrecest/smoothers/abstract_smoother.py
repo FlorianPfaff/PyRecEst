@@ -115,6 +115,9 @@ class AbstractSmoother(ABC):
         if values is None:
             return [None] * length
 
+        expected_shape = (vector_dim,)
+        shape_error = f"{name} must contain vectors with shape {expected_shape}."
+
         try:
             values_arr = asarray(values)
         except (TypeError, ValueError, RuntimeError):
@@ -130,8 +133,12 @@ class AbstractSmoother(ABC):
             if ndim(values_arr) == 1:
                 if vector_dim == 1 and values_arr.shape[0] == length:
                     return [asarray([values_arr[idx]]) for idx in range(length)]
+                if values_arr.shape[0] != vector_dim:
+                    raise ValueError(shape_error)
                 return [copy(values_arr) for _ in range(length)]
             if ndim(values_arr) == 2 and values_arr.shape[0] == length:
+                if values_arr.shape[1] != vector_dim:
+                    raise ValueError(shape_error)
                 return [copy(values_arr[idx]) for idx in range(length)]
 
         if isinstance(values, (list, tuple)) and len(values) == length:
@@ -147,6 +154,8 @@ class AbstractSmoother(ABC):
                             f"Scalar entries in {name} are only supported in one-dimensional models."
                         )
                     normalized_values.append(asarray([value_arr]))
+                elif ndim(value_arr) != 1 or value_arr.shape[0] != vector_dim:
+                    raise ValueError(shape_error)
                 else:
                     normalized_values.append(value_arr)
             return normalized_values
