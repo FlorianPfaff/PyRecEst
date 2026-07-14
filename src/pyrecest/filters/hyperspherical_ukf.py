@@ -213,13 +213,15 @@ class HypersphericalUKF(AbstractFilter, HypersphericalFilterMixin):
 
         points = self._make_sigma_points(dim_x)
         sigmas = points.sigma_points(mu, C)  # shape: (2*dim_x+1, dim_x)
-        state_weights = asarray(points.Wm, dtype=float64)
+        state_mean_weights = asarray(points.Wm, dtype=float64)
+        state_covariance_weights = asarray(points.Wc, dtype=float64)
 
         n_sigmas = sigmas.shape[0]
         n_noise = noise_samples.shape[1]
 
         new_samples = empty((dim_x, n_sigmas * n_noise))
-        new_weights = empty((n_sigmas * n_noise,))
+        new_mean_weights = empty((n_sigmas * n_noise,))
+        new_covariance_weights = empty((n_sigmas * n_noise,))
         k = 0
         for i in range(n_sigmas):
             for j in range(n_noise):
@@ -232,14 +234,20 @@ class HypersphericalUKF(AbstractFilter, HypersphericalFilterMixin):
                 )
                 x_new = self._normalize(x_new)
                 new_samples[:, k] = x_new
-                new_weights[k] = noise_weights[j] * state_weights[i]
+                new_mean_weights[k] = noise_weights[j] * state_mean_weights[i]
+                new_covariance_weights[k] = (
+                    noise_weights[j] * state_covariance_weights[i]
+                )
                 k += 1
-        new_weights = new_weights / new_weights.sum()
+        new_mean_weights = new_mean_weights / new_mean_weights.sum()
 
-        # Weighted mean and covariance
-        predicted_mean = (new_samples * expand_dims(new_weights, 0)).sum(axis=1)
+        # Wc includes Merwe's central covariance correction and therefore does
+        # not generally sum to one. Only the mean weights are normalized.
+        predicted_mean = (new_samples * expand_dims(new_mean_weights, 0)).sum(axis=1)
         diff = new_samples - expand_dims(predicted_mean, -1)
-        predicted_cov = (diff * expand_dims(new_weights, 0)) @ diff.T
+        predicted_cov = (
+            diff * expand_dims(new_covariance_weights, 0)
+        ) @ diff.T
 
         predicted_mean = self._normalize(predicted_mean)
         self._filter_state = GaussianDistribution(
