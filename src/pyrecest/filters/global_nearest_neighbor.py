@@ -134,16 +134,37 @@ class GlobalNearestNeighbor(AbstractNearestNeighborTracker):
         measurement_matrix = asarray(measurement_matrix, dtype=float)
         cov_mats_meas = asarray(cov_mats_meas, dtype=float)
 
+        if measurements.ndim != 2:
+            raise ValueError("measurements must have shape (dim_meas, n_meas).")
+        if measurement_matrix.ndim != 2:
+            raise ValueError("measurement_matrix must be a 2D matrix.")
+
         n_targets = len(self.filter_bank)
         n_meas = measurements.shape[1]
+        dim_meas = measurements.shape[0]
 
-        valid_shared_covariance = cov_mats_meas.ndim == 2
-        valid_per_measurement_covariances = (
-            cov_mats_meas.ndim == 3 and cov_mats_meas.shape[2] == n_meas
+        if measurement_matrix.shape[0] != dim_meas:
+            raise ValueError(
+                "Dimensions of measurement matrix must match measurement dimensions."
+            )
+        if n_targets > 0:
+            self._validate_measurement_update_inputs(
+                measurements,
+                measurement_matrix,
+                self.filter_bank[0].get_point_estimate().shape[0],
+            )
+
+        valid_shared_covariance = cov_mats_meas.shape == (dim_meas, dim_meas)
+        valid_per_measurement_covariances = cov_mats_meas.shape == (
+            dim_meas,
+            dim_meas,
+            n_meas,
         )
         if not (valid_shared_covariance or valid_per_measurement_covariances):
             raise ValueError(
-                "cov_mats_meas must be a matrix or contain one covariance per measurement."
+                "cov_mats_meas must have shape "
+                f"({dim_meas}, {dim_meas}) or "
+                f"({dim_meas}, {dim_meas}, {n_meas}), got {cov_mats_meas.shape}."
             )
 
         pairwise_cost_matrix = self._validate_pairwise_cost_matrix(
