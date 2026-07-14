@@ -98,7 +98,9 @@ def _extract_mtt_mean(filter_state):
 
 def get_extract_mean(manifold_name, mtt_scenario=False):
     normalized_name = _normalize_registry_name(manifold_name)
-    is_mtt_scenario = _coerce_mtt_scenario_flag(mtt_scenario) or "mtt" in normalized_name
+    is_mtt_scenario = (
+        _coerce_mtt_scenario_flag(mtt_scenario) or "mtt" in normalized_name
+    )
     registered_factory = _EXTRACT_MEAN_FACTORIES.get(normalized_name)
     if registered_factory is not None:
         return registered_factory(manifold_name, is_mtt_scenario)
