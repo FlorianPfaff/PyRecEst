@@ -51,6 +51,10 @@ class CircularGridDistribution(AbstractCircularDistribution, AbstractGridDistrib
                 "use from_distribution."
             )
         grid_values = array(grid_values)
+        if ndim(grid_values) != 1 or grid_values.shape[0] == 0:
+            raise ValueError(
+                "grid_values must be a non-empty one-dimensional array."
+            )
         if enforce_pdf_nonnegative and any(grid_values < 0):
             raise ValueError(
                 "grid_values must be nonnegative when "
