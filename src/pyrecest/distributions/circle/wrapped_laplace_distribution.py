@@ -1,7 +1,8 @@
 # pylint: disable=no-name-in-module,no-member
 from numbers import Integral
 
-from pyrecest.backend import all, asarray, exp, isfinite, mod, ndim, pi
+import numpy as np
+from pyrecest.backend import all, asarray, exp, isfinite, mod, ndim, pi, to_numpy
 
 from .abstract_circular_distribution import AbstractCircularDistribution
 
@@ -10,9 +11,14 @@ _SMALL_RATE_SERIES_THRESHOLD = 1e-4
 
 
 def _validate_positive_scalar(value, name):
-    value = asarray(value)
-    if value.shape not in ((), (1,)):
-        raise ValueError(f"{name} must be a positive scalar.")
+    message = f"{name} must be a positive real scalar."
+    try:
+        value = asarray(value)
+        numpy_value = np.asarray(to_numpy(value))
+    except (TypeError, ValueError, RuntimeError, OverflowError) as exc:
+        raise ValueError(message) from exc
+    if numpy_value.shape not in ((), (1,)) or numpy_value.dtype.kind not in "iuf":
+        raise ValueError(message)
     if not bool(all(isfinite(value))):
         raise ValueError(f"{name} must be finite.")
     if not bool(all(value > 0.0)):
