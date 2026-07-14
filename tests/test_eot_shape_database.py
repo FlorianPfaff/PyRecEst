@@ -55,6 +55,20 @@ class TestStarShapedPolygon(unittest.TestCase):
         self.assertEqual(boundary_samples.shape, (0, 2))
         self.assertEqual(within_samples.shape, (0, 2))
 
+    def test_degenerate_polygon_rejects_positive_sample_requests(self):
+        degenerate_polygon = PolygonWithSampling()
+
+        with self.assertRaisesRegex(ValueError, "positive finite perimeter"):
+            degenerate_polygon.sample_on_boundary(1)
+        with self.assertRaisesRegex(ValueError, "positive finite area"):
+            degenerate_polygon.sample_within(1)
+
+    def test_degenerate_polygon_still_allows_zero_samples(self):
+        degenerate_polygon = PolygonWithSampling()
+
+        self.assertEqual(degenerate_polygon.sample_on_boundary(0).shape, (0, 2))
+        self.assertEqual(degenerate_polygon.sample_within(0).shape, (0, 2))
+
 
 class TestStar(unittest.TestCase):
     def test_compute_kernel_star_convex(self):

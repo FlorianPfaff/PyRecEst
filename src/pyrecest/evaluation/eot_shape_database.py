@@ -1,4 +1,5 @@
 # pylint: disable=no-name-in-module,no-member
+from math import isfinite
 from operator import index as _operator_index
 
 from pyrecest.backend import array, cos, linspace, pi, random, sin, to_numpy
@@ -42,9 +43,16 @@ class PolygonWithSampling(Polygon):  # pylint: disable=abstract-method
 
     def sample_on_boundary(self, num_points: int):
         num_points = _validate_nonnegative_sample_count(num_points)
-        points = []
-        perimeter = self.length
+        if num_points == 0:
+            return _points_to_array(())
 
+        perimeter = self.length
+        if not isfinite(perimeter) or perimeter <= 0.0:
+            raise ValueError(
+                "Cannot sample from a polygon without a positive finite perimeter."
+            )
+
+        points = []
         if isinstance(self.boundary, LineString):
             lines = [self.boundary]
         elif isinstance(self.boundary, MultiLineString):
@@ -67,6 +75,15 @@ class PolygonWithSampling(Polygon):  # pylint: disable=abstract-method
 
     def sample_within(self, num_points: int):
         num_points = _validate_nonnegative_sample_count(num_points)
+        if num_points == 0:
+            return _points_to_array(())
+
+        area = self.area
+        if self.is_empty or not isfinite(area) or area <= 0.0:
+            raise ValueError(
+                "Cannot sample from a polygon without a positive finite area."
+            )
+
         min_x, min_y, max_x, max_y = self.bounds
         points = []
 
