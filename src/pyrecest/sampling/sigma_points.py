@@ -23,21 +23,34 @@ from pyrecest.backend import (
 )
 
 _TEXT_SCALAR_TYPES = (str, bytes, np.str_, np.bytes_)
+_COMPLEX_SCALAR_TYPES = (complex, np.complexfloating)
 
 
 def _has_complex_dtype(value) -> bool:
-    """Return whether *value* has a complex-valued array dtype."""
+    """Return whether *value* contains complex-valued array entries."""
 
     dtype = getattr(value, "dtype", None)
     if dtype is not None:
         try:
-            return np.dtype(dtype).kind == "c"
+            dtype_kind = np.dtype(dtype).kind
         except (TypeError, ValueError):
             return "complex" in str(dtype).lower()
+        if dtype_kind == "c":
+            return True
+        if dtype_kind != "O":
+            return False
+
     try:
-        return np.asarray(value).dtype.kind == "c"
+        value_array = np.asarray(value)
     except (TypeError, ValueError):
         return False
+    if value_array.dtype.kind == "c":
+        return True
+    if value_array.dtype.kind != "O":
+        return False
+    return any(
+        isinstance(item, _COMPLEX_SCALAR_TYPES) for item in value_array.reshape(-1)
+    )
 
 
 def _scalar_item(value, name: str):
