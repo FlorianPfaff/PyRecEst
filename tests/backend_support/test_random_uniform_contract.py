@@ -63,6 +63,22 @@ print("ok")
 """
 
 
+_UNIFORM_OVERFLOWING_RANGE_REJECTION_CHECK = """
+import numpy as np
+from pyrecest.backend import random
+
+maximum = np.finfo(np.float64).max
+try:
+    random.uniform(low=-maximum, high=maximum, size=(2,))
+except OverflowError as exc:
+    assert "high - low range exceeds valid bounds" in str(exc)
+else:
+    raise AssertionError("uniform accepted a non-representable finite range")
+
+print("ok")
+"""
+
+
 @pytest.mark.backend_portable
 @pytest.mark.parametrize(
     "backend,required_module",
@@ -113,6 +129,24 @@ def test_uniform_rejects_nonfinite_bounds(backend, required_module):
         pytest.skip(f"{backend} backend dependency is not installed")
 
     result = run_backend_code(backend, _UNIFORM_NONFINITE_BOUNDS_REJECTION_CHECK)
+
+    assert result.returncode == 0, result.stderr
+    assert "ok" in result.stdout
+
+
+@pytest.mark.backend_portable
+@pytest.mark.parametrize(
+    "backend,required_module",
+    [
+        ("numpy", "numpy"),
+        ("pytorch", "torch"),
+    ],
+)
+def test_uniform_rejects_overflowing_finite_range(backend, required_module):
+    if importlib.util.find_spec(required_module) is None:
+        pytest.skip(f"{backend} backend dependency is not installed")
+
+    result = run_backend_code(backend, _UNIFORM_OVERFLOWING_RANGE_REJECTION_CHECK)
 
     assert result.returncode == 0, result.stderr
     assert "ok" in result.stdout

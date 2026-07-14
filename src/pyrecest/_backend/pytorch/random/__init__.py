@@ -19,6 +19,7 @@ _LEGACY_SPEC.loader.exec_module(_LEGACY)
 
 _BOOLEAN_SCALAR_TYPES = (bool, _np.bool_)
 _PROBABILITY_SUM_ERROR = "probabilities do not sum to a positive value"
+_UNIFORM_RANGE_ERROR = "high - low range exceeds valid bounds"
 
 
 def _probability_accumulation_dtype(probabilities):
@@ -141,6 +142,28 @@ def randint(low, high=None, size=None, *args, **kwargs):
         kwargs["device"] = bound_device
 
     return _LEGACY.randint(low, high, size, *args, **kwargs)
+
+
+def uniform(low=0.0, high=1.0, size=None, dtype=None):
+    """Draw uniform samples while rejecting non-representable finite ranges."""
+
+    torch = _LEGACY._torch
+    dtype = _LEGACY._normalize_random_dtype(dtype, default=None)
+    device = _LEGACY._tensor_device(low, high)
+    low = _LEGACY._validate_uniform_bound(low, "low", dtype=dtype, device=device)
+    high = _LEGACY._validate_uniform_bound(high, "high", dtype=dtype, device=device)
+    size = _LEGACY._uniform_size(size, low, high)
+    _LEGACY._validate_uniform_bounds(low, high)
+
+    arithmetic_dtype = dtype or torch.promote_types(
+        torch.result_type(low, high), torch.get_default_dtype()
+    )
+    low = low.to(dtype=arithmetic_dtype)
+    high = high.to(dtype=arithmetic_dtype)
+    span = high - low
+    if bool(torch.any(~torch.isfinite(span))):
+        raise OverflowError(_UNIFORM_RANGE_ERROR)
+    return span * torch.rand(size, dtype=dtype, device=device) + low
 
 
 def multivariate_normal(mean, cov, size=None, *args, **kwargs):
