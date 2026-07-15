@@ -8,6 +8,7 @@ import numpy as np
 from pyrecest.backend import (
     all,
     asarray,
+    copy as backend_copy,
     exp,
     int32,
     int64,
@@ -113,7 +114,7 @@ class WrappedExponentialDistribution(AbstractCircularDistribution):
 
     def __init__(self, lambda_):
         AbstractCircularDistribution.__init__(self)
-        lambda_ = _validate_positive_scalar(lambda_, "lambda_")
+        lambda_ = backend_copy(_validate_positive_scalar(lambda_, "lambda_"))
         self.lambda_ = lambda_
         self._log_beta = 2.0 * pi * lambda_
         self._normalization_const = _normalization_const_from_log_beta(self._log_beta)
