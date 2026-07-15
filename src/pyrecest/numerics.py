@@ -146,11 +146,25 @@ def _raise_if_not_square_matrix(matrix: np.ndarray, name: str = "matrix") -> Non
         raise ShapeError(f"Expected a square matrix, got shape {matrix.shape}.")
 
 
+def _symmetrized(matrix: np.ndarray) -> np.ndarray:
+    """Average a matrix with its transpose without overflowing finite entries."""
+    with np.errstate(over="ignore"):
+        symmetrized = 0.5 * (matrix + matrix.T)
+    overflowed = (
+        ~np.isfinite(symmetrized) & np.isfinite(matrix) & np.isfinite(matrix.T)
+    )
+    if np.any(overflowed):
+        symmetrized[overflowed] = (
+            0.5 * matrix[overflowed] + 0.5 * matrix.T[overflowed]
+        )
+    return symmetrized
+
+
 def symmetrize_matrix(matrix):
     """Return ``0.5 * (matrix + matrix.T)`` in the active backend representation."""
     arr = _to_numpy_array(matrix)
     _raise_if_not_square_matrix(arr)
-    return _from_numpy_array(0.5 * (arr + arr.T))
+    return _from_numpy_array(_symmetrized(arr))
 
 
 def is_symmetric(matrix, *, atol: float = 1e-10) -> bool:
@@ -199,11 +213,11 @@ def nearest_symmetric_psd(matrix, *, min_eigenvalue: float = 0.0):
     arr = _to_numpy_array(matrix)
     _raise_if_not_square_matrix(arr)
     _raise_if_nonfinite_matrix(arr, "matrix")
-    sym = 0.5 * (arr + arr.T)
+    sym = _symmetrized(arr)
     eigvals, eigvecs = np.linalg.eigh(sym)
     clipped = np.maximum(eigvals, min_eigenvalue)
     repaired = (eigvecs * clipped) @ eigvecs.T
-    return _from_numpy_array(0.5 * (repaired + repaired.T))
+    return _from_numpy_array(_symmetrized(repaired))
 
 
 def jittered_cholesky(matrix, *, initial_jitter: float = 1e-12, max_attempts: int = 8):
@@ -219,7 +233,7 @@ def jittered_cholesky(matrix, *, initial_jitter: float = 1e-12, max_attempts: in
     arr = _to_numpy_array(matrix)
     _raise_if_not_square_matrix(arr)
     _raise_if_nonfinite_matrix(arr, "matrix")
-    sym = 0.5 * (arr + arr.T)
+    sym = _symmetrized(arr)
     eye = np.eye(sym.shape[0])
     jitter = 0.0
     for attempt in range(max_attempts + 1):
