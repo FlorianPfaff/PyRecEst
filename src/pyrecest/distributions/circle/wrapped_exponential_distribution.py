@@ -8,7 +8,9 @@ import numpy as np
 from pyrecest.backend import (
     all,
     asarray,
-    copy as backend_copy,
+)
+from pyrecest.backend import copy as backend_copy
+from pyrecest.backend import (
     exp,
     int32,
     int64,

@@ -3,11 +3,11 @@ import unittest
 
 import numpy as np
 import numpy.testing as npt
-from scipy.special import ive
 
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import array, to_numpy
 from pyrecest.distributions import VonMisesFisherDistribution
+from scipy.special import ive
 
 
 class TestVonMisesFisherLargeKappa(unittest.TestCase):

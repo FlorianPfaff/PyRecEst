@@ -223,13 +223,9 @@ def _euclidean_mtt_distance(x1, x2, *, cutoff_distance: float) -> float:
     first = _as_target_matrix(x1, "x1")
     second = _as_target_matrix(x2, "x2")
     if first.shape[0] == 0 and first.shape[1] != 0:
-        second = _as_target_matrix(
-            x2, "x2", expected_target_dim=first.shape[1]
-        )
+        second = _as_target_matrix(x2, "x2", expected_target_dim=first.shape[1])
     elif second.shape[0] == 0 and second.shape[1] != 0:
-        first = _as_target_matrix(
-            x1, "x1", expected_target_dim=second.shape[1]
-        )
+        first = _as_target_matrix(x1, "x1", expected_target_dim=second.shape[1])
     if first.shape[0] == 0 or second.shape[0] == 0:
         if (
             first.shape[1] != 0

@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
-
 from pyrecest.distributions import GaussianDistribution
 
 from .multi_bernoulli_tracker import BernoulliComponent, MultiBernoulliTracker
@@ -87,11 +86,15 @@ class DirichletProcessBirthAtom:
             measurement_matrix @ self.covariance @ measurement_matrix.T
             + measurement_covariance
         )
-        gain = self.covariance @ measurement_matrix.T @ np.linalg.inv(
-            innovation_covariance
+        gain = (
+            self.covariance
+            @ measurement_matrix.T
+            @ np.linalg.inv(innovation_covariance)
         )
         self.mean = self.mean + gain @ innovation
-        updated_covariance = self.covariance - gain @ measurement_matrix @ self.covariance
+        updated_covariance = (
+            self.covariance - gain @ measurement_matrix @ self.covariance
+        )
         self.covariance = 0.5 * (updated_covariance + updated_covariance.T)
         self.count += 1.0
 
@@ -148,7 +151,9 @@ class DirichletProcessBirthMultiBernoulliTracker(MultiBernoulliTracker):
             elif isinstance(atom, tuple) and len(atom) == 2:
                 normalized_atoms.append(DirichletProcessBirthAtom(atom[0], atom[1]))
             elif isinstance(atom, tuple) and len(atom) == 3:
-                normalized_atoms.append(DirichletProcessBirthAtom(atom[0], atom[1], atom[2]))
+                normalized_atoms.append(
+                    DirichletProcessBirthAtom(atom[0], atom[1], atom[2])
+                )
             else:
                 raise ValueError(
                     "birth_atoms must contain atoms or (mean, covariance[, count]) tuples"
@@ -359,7 +364,9 @@ class DirichletProcessBirthMultiBernoulliTracker(MultiBernoulliTracker):
             return
         maximum_number_of_birth_atoms = int(maximum_number_of_birth_atoms)
         if maximum_number_of_birth_atoms < 0:
-            raise ValueError("maximum_number_of_birth_atoms must be non-negative or None")
+            raise ValueError(
+                "maximum_number_of_birth_atoms must be non-negative or None"
+            )
         self.birth_atoms = sorted(
             self.birth_atoms,
             key=lambda atom: atom.count,

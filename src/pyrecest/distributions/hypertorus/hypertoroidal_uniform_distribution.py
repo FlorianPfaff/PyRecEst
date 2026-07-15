@@ -3,8 +3,8 @@ from typing import Union
 
 # pylint: disable=no-name-in-module,no-member
 import numpy as np
+from pyrecest.backend import all as backend_all
 from pyrecest.backend import (
-    all as backend_all,
     asarray,
     int32,
     int64,
