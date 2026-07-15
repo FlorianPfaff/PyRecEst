@@ -17,6 +17,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           ref: ${{ github.head_ref }}
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -114,11 +115,11 @@ jobs:
       - name: Run focused regression tests
         run: python -m pytest tests/filters/test_interacting_multiple_model_filter.py tests/filters/test_imm_extreme_covariance_likelihood.py -q
 
-      - name: Commit validated fix and remove temporary workflow
+      - name: Commit validated fix and restore normal workflows
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git rm .github/workflows/agent-imm-stability-fix.yml
-          git add src/pyrecest/filters/interacting_multiple_model_filter.py tests/filters/test_imm_extreme_covariance_likelihood.py
+          git checkout origin/main -- .github/workflows
+          git add .github/workflows src/pyrecest/filters/interacting_multiple_model_filter.py tests/filters/test_imm_extreme_covariance_likelihood.py
           git commit -m "Stabilize IMM Gaussian likelihood evaluation"
           git push origin HEAD:agent/stabilize-imm-log-likelihood
