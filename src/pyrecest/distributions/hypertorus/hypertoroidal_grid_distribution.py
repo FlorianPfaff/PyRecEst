@@ -8,7 +8,6 @@ from beartype import beartype
 # pylint: disable=redefined-builtin
 from pyrecest.backend import (
     abs,
-    all,
     argmin,
     array,
     cast,
@@ -202,13 +201,6 @@ class HypertoroidalGridDistribution(
         mesh = meshgrid(*axes, indexing="ij")
         grid = stack([m.ravel() for m in mesh], axis=-1)  # (n_samples, dim)
         return grid
-
-    # ---------------------------------------------------------------- combine
-    def multiply(self, other):
-        assert all(
-            self.grid == other.grid
-        ), "Multiply:IncompatibleGrid: Can only multiply for equal grids."
-        return super().multiply(other)
 
     # pylint: disable=too-many-locals
     def pdf(self, xs):
