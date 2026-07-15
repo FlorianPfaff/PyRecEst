@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - agent/preserve-daum-huang-weights-20260715
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
@@ -114,11 +117,13 @@ jobs:
           assert "test_edh_filter_preserves_nonuniform_particle_weights" in tests
           PY
 
-      - name: Commit fix
+      - name: Commit fix to pull-request branch
         shell: bash
+        env:
+          TARGET_BRANCH: ${{ github.head_ref || github.ref_name }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "Preserve Daum-Huang particle weights"
-          git push origin "HEAD:${GITHUB_REF_NAME}"
+          git push origin "HEAD:${TARGET_BRANCH}"
