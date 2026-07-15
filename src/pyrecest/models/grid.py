@@ -25,6 +25,12 @@ def _ensure_callable(value: Any, name: str) -> None:
         raise TypeError(f"{name} must be callable")
 
 
+def _require_transition_density(value: Any, name: str) -> Any:
+    if value is None:
+        raise ValueError(f"{name} must not be None")
+    return value
+
+
 @dataclass(frozen=True)
 class GridLikelihoodMeasurementModel:
     """Measurement model that evaluates likelihoods on a filter grid.
@@ -66,6 +72,9 @@ class GridTransitionDensityModel:
 
     transition_density: Any
 
+    def __post_init__(self) -> None:
+        _require_transition_density(self.transition_density, "transition_density")
+
     def transition_density_for_filter(self, _filter: Any) -> Any:
         """Return the precomputed transition density for ``_filter``."""
         return self.transition_density
@@ -95,4 +104,8 @@ class GridTransitionDensityFactoryModel:
 
     def transition_density_for_filter(self, filter_instance: Any) -> Any:
         """Create a transition density compatible with ``filter_instance``."""
-        return self.transition_density_factory(filter_instance)
+        transition_density = self.transition_density_factory(filter_instance)
+        return _require_transition_density(
+            transition_density,
+            "transition_density_factory result",
+        )
