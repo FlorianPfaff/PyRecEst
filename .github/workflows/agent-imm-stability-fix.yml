@@ -1,0 +1,123 @@
+name: Apply IMM stability fix
+
+on:
+  push:
+    branches:
+      - agent/stabilize-imm-log-likelihood
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-test:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out fix branch
+        uses: actions/checkout@v7
+        with:
+          ref: agent/stabilize-imm-log-likelihood
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Apply source and regression-test patch
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          source_path = Path("src/pyrecest/filters/interacting_multiple_model_filter.py")
+          source = source_path.read_text(encoding="utf-8")
+          old_source = "\n".join(
+              [
+                  "        det_value = float(linalg.det(innovation_covariance))",
+                  "        if det_value <= 0.0:",
+                  "            raise ValueError(",
+                  '                "Innovation covariance must be positive definite to evaluate the IMM likelihood."',
+                  "            )",
+                  "        logdet = float(log(array(det_value)))",
+              ]
+          )
+          new_source = "\n".join(
+              [
+                  "        determinant_sign, logdet = linalg.slogdet(innovation_covariance)",
+                  "        determinant_sign = float(determinant_sign)",
+                  "        logdet = float(logdet)",
+                  "        if determinant_sign <= 0.0 or not np.isfinite(logdet):",
+                  "            raise ValueError(",
+                  '                "Innovation covariance must be positive definite to evaluate the IMM likelihood."',
+                  "            )",
+              ]
+          )
+          if source.count(old_source) != 1:
+              raise SystemExit("Expected exactly one determinant-based IMM likelihood block")
+          source_path.write_text(
+              source.replace(old_source, new_source, 1), encoding="utf-8"
+          )
+
+          test_path = Path("tests/filters/test_imm_extreme_covariance_likelihood.py")
+          test_path.write_text(
+              '''import numpy as np
+          import numpy.testing as npt
+          import pytest
+
+          import pyrecest.backend
+          from pyrecest.backend import array, eye
+          from pyrecest.distributions import GaussianDistribution
+          from pyrecest.filters.interacting_multiple_model_filter import (
+              InteractingMultipleModelFilter,
+          )
+
+
+          pytestmark = pytest.mark.skipif(
+              pyrecest.backend.__backend_name__ != "numpy",
+              reason="IMM likelihood evaluation is currently supported on the NumPy backend",
+          )
+
+
+          @pytest.mark.parametrize("scale", [1.0e-200, 1.0e200])
+          def test_linear_likelihood_stays_finite_for_extreme_covariance_scale(scale):
+              covariance = scale * eye(2)
+              predicted_state = GaussianDistribution(
+                  array([0.0, 0.0]), covariance, check_validity=False
+              )
+
+              log_likelihood = (
+                  InteractingMultipleModelFilter._log_linear_measurement_likelihood(
+                      array([0.0, 0.0]),
+                      predicted_state,
+                      eye(2),
+                      array([[0.0, 0.0], [0.0, 0.0]]),
+                  )
+              )
+
+              determinant_sign, expected_logdet = np.linalg.slogdet(
+                  np.asarray(covariance)
+              )
+              assert determinant_sign > 0.0
+              expected = -0.5 * (2.0 * np.log(2.0 * np.pi) + expected_logdet)
+              assert np.isfinite(log_likelihood)
+              npt.assert_allclose(log_likelihood, expected, rtol=1.0e-14, atol=1.0e-14)
+          ''',
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Install package and test dependency
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e . pytest
+
+      - name: Run focused regression tests
+        run: python -m pytest tests/filters/test_interacting_multiple_model_filter.py tests/filters/test_imm_extreme_covariance_likelihood.py -q
+
+      - name: Commit validated fix and remove temporary workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/agent-imm-stability-fix.yml
+          git add src/pyrecest/filters/interacting_multiple_model_filter.py tests/filters/test_imm_extreme_covariance_likelihood.py
+          git commit -m "Stabilize IMM Gaussian likelihood evaluation"
+          git push origin HEAD:agent/stabilize-imm-log-likelihood
