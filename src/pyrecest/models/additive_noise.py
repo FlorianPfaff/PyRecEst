@@ -7,12 +7,12 @@ from typing import Any
 import numpy as np
 
 # pylint: disable=no-name-in-module,no-member,too-many-instance-attributes,too-many-positional-arguments
-from pyrecest.backend import asarray, is_array
+from pyrecest.backend import asarray, copy as copy_array, is_array
 
 
 def _as_optional_array(value):
-    """Convert ``value`` through the active backend unless it is ``None``."""
-    return None if value is None else asarray(value)
+    """Convert and copy ``value`` through the active backend unless it is ``None``."""
+    return None if value is None else copy_array(asarray(value))
 
 
 def _array_difference(left, right):
