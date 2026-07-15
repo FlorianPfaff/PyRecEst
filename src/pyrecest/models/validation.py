@@ -27,8 +27,7 @@ def _as_backend_array(value: Any, name: str):
     except (TypeError, ValueError, RuntimeError, OverflowError):
         value_array = None
     if value_array is not None and (
-        _array_has_temporal_dtype(value_array)
-        or _contains_temporal_scalar(value_array)
+        _array_has_temporal_dtype(value_array) or _contains_temporal_scalar(value_array)
     ):
         raise ValueError(f"{name} must contain numeric non-boolean values.")
     try:
@@ -98,7 +97,16 @@ def _validate_nonnegative_finite_scalar(value: Any, name: str) -> float:
     scalar = value_array.item()
     if isinstance(
         scalar,
-        (bool, np.bool_, str, bytes, bytearray, np.str_, np.bytes_, *_TEMPORAL_SCALAR_TYPES),
+        (
+            bool,
+            np.bool_,
+            str,
+            bytes,
+            bytearray,
+            np.str_,
+            np.bytes_,
+            *_TEMPORAL_SCALAR_TYPES,
+        ),
     ):
         raise ValueError(f"{name} must be a finite nonnegative scalar.")
     try:
@@ -136,7 +144,9 @@ def _validate_expected_dim_scalar(value: Any, dim_name: str) -> int:
     ):
         raise TypeError(f"{dim_name} must be an integer or None.")
     scalar = value_array.item()
-    if isinstance(scalar, (bool, np.bool_, *_TEMPORAL_SCALAR_TYPES)) or not isinstance(scalar, Integral):
+    if isinstance(scalar, (bool, np.bool_, *_TEMPORAL_SCALAR_TYPES)) or not isinstance(
+        scalar, Integral
+    ):
         raise TypeError(f"{dim_name} must be an integer or None.")
     return int(scalar)
 
@@ -470,7 +480,9 @@ def infer_state_dim_from_distribution(
 
     if hasattr(distribution, "d"):
         try:
-            support = _maybe_call(getattr(distribution, "d"), allow_methods=allow_methods)
+            support = _maybe_call(
+                getattr(distribution, "d"), allow_methods=allow_methods
+            )
             support = validate_matrix(support, name="distribution.d")
             return _shape_tuple(support)[1]
         except (TypeError, ValueError):

@@ -1,5 +1,4 @@
 import numpy as np
-
 from pyrecest.filters import (
     WeightedGaussianHypothesis,
     moment_match_gaussian_hypotheses,

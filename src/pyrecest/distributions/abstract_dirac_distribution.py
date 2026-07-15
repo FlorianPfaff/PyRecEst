@@ -13,7 +13,9 @@ from pyrecest.backend import (
     arange,
     argmax,
     asarray,
-    copy as backend_copy,
+)
+from pyrecest.backend import copy as backend_copy
+from pyrecest.backend import (
     int32,
     int64,
     isclose,
@@ -95,9 +97,7 @@ class AbstractDiracDistribution(AbstractDistributionType):
             raise ValueError("Dirac weights must have positive finite total mass.")
 
         scaled_total_weight = sum(w / weight_scale)
-        if not bool(isfinite(scaled_total_weight)) or not bool(
-            scaled_total_weight > 0
-        ):
+        if not bool(isfinite(scaled_total_weight)) or not bool(scaled_total_weight > 0):
             raise ValueError("Dirac weights must have positive finite total mass.")
 
         return weight_scale, scaled_total_weight

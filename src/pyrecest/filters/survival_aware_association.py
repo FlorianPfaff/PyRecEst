@@ -21,7 +21,10 @@ from .association_hypotheses import (
     association_result_from_hypotheses,
     linear_gaussian_association_hypotheses,
 )
-from .survival_aware_crp import SurvivalAwareCRPAssociationPrior, SurvivalAwareTrackEvidence
+from .survival_aware_crp import (
+    SurvivalAwareCRPAssociationPrior,
+    SurvivalAwareTrackEvidence,
+)
 from .track_manager import AssociationResult
 
 FactorSpec = float | Callable[..., float]
@@ -59,12 +62,16 @@ class SurvivalAwareAssociationConfig:
             raise TypeError("crp_prior must be a SurvivalAwareCRPAssociationPrior")
         _validate_probability_spec(self.survival_probability, "survival_probability")
         _validate_probability_spec(self.detection_probability, "detection_probability")
-        _validate_probability_spec(self.visibility_probability, "visibility_probability")
+        _validate_probability_spec(
+            self.visibility_probability, "visibility_probability"
+        )
         _validate_nonnegative_likelihood_spec(
             self.appearance_likelihood, "appearance_likelihood"
         )
         if self.existence_probability is not None:
-            _validate_probability_spec(self.existence_probability, "existence_probability")
+            _validate_probability_spec(
+                self.existence_probability, "existence_probability"
+            )
         _validate_probability(self.mass_decay, "mass_decay", allow_zero=True)
         _validate_nonnegative_finite(self.mass_power, "mass_power")
         _validate_nonnegative_finite(self.birth_weight, "birth_weight")
@@ -148,9 +155,11 @@ def survival_aware_missed_detection_costs(
             measurement_index=None,
             step=step,
         )
-        predicted_existence = SurvivalAwareCRPAssociationPrior.predict_existence_probability(
-            existence,
-            survival,
+        predicted_existence = (
+            SurvivalAwareCRPAssociationPrior.predict_existence_probability(
+                existence,
+                survival,
+            )
         )
         missed_probability = 1.0 - predicted_existence * detection * visibility
         missed_probability = max(
@@ -272,7 +281,9 @@ def build_survival_aware_linear_gaussian_hypothesis_associator(
 
     def associator(tracks, measurements, **kwargs) -> AssociationResult:
         effective_config = kwargs.get("config", config)
-        effective_measurement_matrix = kwargs.get("measurement_matrix", measurement_matrix)
+        effective_measurement_matrix = kwargs.get(
+            "measurement_matrix", measurement_matrix
+        )
         effective_measurement_axis = kwargs.get("measurement_axis", measurement_axis)
         hypotheses = survival_aware_linear_gaussian_association_hypotheses(
             tracks,
@@ -291,8 +302,10 @@ def build_survival_aware_linear_gaussian_hypothesis_associator(
             measurements, effective_measurement_matrix, effective_measurement_axis
         )
         if unassigned_measurement_cost is None:
-            default_unassigned_measurement_cost = survival_aware_unassigned_measurement_cost(
-                effective_config, num_existing_tracks=len(tracks)
+            default_unassigned_measurement_cost = (
+                survival_aware_unassigned_measurement_cost(
+                    effective_config, num_existing_tracks=len(tracks)
+                )
             )
         else:
             default_unassigned_measurement_cost = unassigned_measurement_cost
@@ -315,7 +328,9 @@ def build_survival_aware_linear_gaussian_hypothesis_associator(
     return associator
 
 
-def _crp_prior(config: SurvivalAwareAssociationConfig) -> SurvivalAwareCRPAssociationPrior:
+def _crp_prior(
+    config: SurvivalAwareAssociationConfig,
+) -> SurvivalAwareCRPAssociationPrior:
     if config.crp_prior is not None:
         return config.crp_prior
     return SurvivalAwareCRPAssociationPrior(
@@ -337,7 +352,11 @@ def _survival_aware_track_evidence(
     return SurvivalAwareTrackEvidence(
         mass=_effective_track_mass(track, config),
         existence_probability=_resolve_existence_probability(
-            track, measurement, measurement_index=measurement_index, step=step, config=config
+            track,
+            measurement,
+            measurement_index=measurement_index,
+            step=step,
+            config=config,
         ),
         survival_probability=_resolve_probability(
             config.survival_probability,
@@ -566,17 +585,23 @@ def _coerce_measurements_for_prior(
     try:
         array = _as_numpy_array(measurements)
     except (TypeError, ValueError, RuntimeError):
-        return [_as_numpy_array(measurement).reshape(-1) for measurement in measurements]
+        return [
+            _as_numpy_array(measurement).reshape(-1) for measurement in measurements
+        ]
     if array.ndim == 1:
         return [array.reshape(-1)]
     if array.ndim != 2:
-        return [_as_numpy_array(measurement).reshape(-1) for measurement in measurements]
+        return [
+            _as_numpy_array(measurement).reshape(-1) for measurement in measurements
+        ]
     if measurement_axis == "columns":
         return [array[:, index].reshape(-1) for index in range(array.shape[1])]
     if measurement_axis in ("rows", "sequence"):
         return [array[index, :].reshape(-1) for index in range(array.shape[0])]
     if measurement_axis != "auto":
-        raise ValueError("measurement_axis must be 'auto', 'columns', 'rows', or 'sequence'")
+        raise ValueError(
+            "measurement_axis must be 'auto', 'columns', 'rows', or 'sequence'"
+        )
     columns_match = array.shape[0] == measurement_dim
     rows_match = array.shape[1] == measurement_dim
     if columns_match and not rows_match:

@@ -1,7 +1,6 @@
 import pytest
 from tests.support.backend_runner import run_backend_code
 
-
 _ARRAY_DTYPE_NONE_CODE = """
 import pyrecest.backend as backend
 

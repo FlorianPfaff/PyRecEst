@@ -37,9 +37,7 @@ def test_generic_manifold_axis_labels_are_preserved(manifold_name, expected_labe
         ("hypersphere_symmetric", "Angular error in radian"),
     ],
 )
-def test_axis_label_accepts_common_mathematical_notation(
-    manifold_name, expected_label
-):
+def test_axis_label_accepts_common_mathematical_notation(manifold_name, expected_label):
     assert get_axis_label(manifold_name) == expected_label
 
 
