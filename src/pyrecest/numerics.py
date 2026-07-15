@@ -223,11 +223,18 @@ def jittered_cholesky(matrix, *, initial_jitter: float = 1e-12, max_attempts: in
     eye = np.eye(sym.shape[0])
     jitter = 0.0
     for attempt in range(max_attempts + 1):
+        with np.errstate(over="ignore", invalid="ignore"):
+            jittered = sym + jitter * eye
+        if not _is_finite_matrix(jittered):
+            break
         try:
-            factor = np.linalg.cholesky(sym + jitter * eye)
-            return _from_numpy_array(factor), jitter
+            factor = np.linalg.cholesky(jittered)
         except np.linalg.LinAlgError:
             jitter = initial_jitter if attempt == 0 else jitter * 10.0
+            continue
+        if not _is_finite_matrix(factor):
+            break
+        return _from_numpy_array(factor), jitter
     raise NumericalStabilityError(
         f"Cholesky factorization failed after {max_attempts} jitter attempts."
     )
