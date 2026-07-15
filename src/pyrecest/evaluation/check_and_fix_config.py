@@ -43,11 +43,10 @@ def check_and_fix_config(simulation_param):
     simulation_param.setdefault("n_targets", 1)
     # Check for 'timesteps'
     timesteps = simulation_param["n_timesteps"]
-    if timesteps is not None:
-        if not isinstance(timesteps, int):
-            raise TypeError("n_timesteps must be an integer")
-        if timesteps <= 0:
-            raise ValueError("n_timesteps must be positive")
+    if not _is_integer_count(timesteps):
+        raise TypeError("n_timesteps must be an integer")
+    if timesteps <= 0:
+        raise ValueError("n_timesteps must be positive")
 
     simulation_param.setdefault(
         "apply_sys_noise_times",
