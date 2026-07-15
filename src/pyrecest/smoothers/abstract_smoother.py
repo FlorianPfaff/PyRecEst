@@ -8,6 +8,9 @@ from pyrecest.backend import asarray, copy, ndim
 from pyrecest.distributions import GaussianDistribution
 
 
+_RECTANGULAR_MATRIX_SEQUENCE_NAMES = {"measurement_matrices"}
+
+
 class AbstractSmoother(ABC):
     """Abstract base class for all smoothers."""
 
@@ -52,6 +55,27 @@ class AbstractSmoother(ABC):
         )
 
     @staticmethod
+    def _validate_matrix_shape(matrix, name: str, matrix_dim: int):
+        """Reject matrices whose shape would otherwise broadcast silently."""
+        matrix_shape = tuple(matrix.shape)
+        if name in _RECTANGULAR_MATRIX_SEQUENCE_NAMES:
+            valid_shape = (
+                len(matrix_shape) == 2
+                and matrix_shape[0] > 0
+                and matrix_shape[1] == matrix_dim
+            )
+            expected_shape = f"(measurement_dim, {matrix_dim})"
+        else:
+            valid_shape = matrix_shape == (matrix_dim, matrix_dim)
+            expected_shape = str((matrix_dim, matrix_dim))
+
+        if not valid_shape:
+            raise ValueError(
+                f"{name} must contain matrices with shape {expected_shape}."
+            )
+        return matrix
+
+    @staticmethod
     def _normalize_matrix_sequence(  # pylint: disable=too-many-return-statements,too-many-branches
         values, length: int, name: str, matrix_dim: int, default=None
     ) -> list:
@@ -61,7 +85,9 @@ class AbstractSmoother(ABC):
         if values is None:
             if default is None:
                 raise ValueError(f"{name} must be provided.")
-            default_arr = asarray(default)
+            default_arr = AbstractSmoother._validate_matrix_shape(
+                asarray(default), name, matrix_dim
+            )
             return [copy(default_arr) for _ in range(length)]
 
         try:
@@ -74,18 +100,35 @@ class AbstractSmoother(ABC):
                     raise ValueError(
                         f"Scalar input for {name} is only supported in one-dimensional models."
                     )
-                scalar_matrix = asarray([[values_arr]])
+                scalar_matrix = AbstractSmoother._validate_matrix_shape(
+                    asarray([[values_arr]]), name, matrix_dim
+                )
                 return [copy(scalar_matrix) for _ in range(length)]
             if (
                 ndim(values_arr) == 1
                 and matrix_dim == 1
                 and values_arr.shape[0] == length
             ):
-                return [asarray([[values_arr[idx]]]) for idx in range(length)]
+                return [
+                    AbstractSmoother._validate_matrix_shape(
+                        asarray([[values_arr[idx]]]), name, matrix_dim
+                    )
+                    for idx in range(length)
+                ]
             if ndim(values_arr) == 2:
+                values_arr = AbstractSmoother._validate_matrix_shape(
+                    values_arr, name, matrix_dim
+                )
                 return [copy(values_arr) for _ in range(length)]
             if ndim(values_arr) == 3 and values_arr.shape[0] == length:
-                return [copy(values_arr[idx]) for idx in range(length)]
+                return [
+                    copy(
+                        AbstractSmoother._validate_matrix_shape(
+                            values_arr[idx], name, matrix_dim
+                        )
+                    )
+                    for idx in range(length)
+                ]
 
         if isinstance(values, (list, tuple)) and len(values) == length:
             normalized_values = []
@@ -96,9 +139,12 @@ class AbstractSmoother(ABC):
                         raise ValueError(
                             f"Scalar entries in {name} are only supported in one-dimensional models."
                         )
-                    normalized_values.append(asarray([[value_arr]]))
-                else:
-                    normalized_values.append(value_arr)
+                    value_arr = asarray([[value_arr]])
+                normalized_values.append(
+                    AbstractSmoother._validate_matrix_shape(
+                        value_arr, name, matrix_dim
+                    )
+                )
             return normalized_values
 
         raise ValueError(
