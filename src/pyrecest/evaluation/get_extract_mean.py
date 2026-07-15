@@ -7,6 +7,8 @@ import numpy as np
 
 MeanExtractorFactory = Callable[[str, bool], Callable[[Any], Any]]
 _EXTRACT_MEAN_FACTORIES: dict[str, MeanExtractorFactory] = {}
+_SYMMETRIC_TOKENS = {"symmetric", "symm"}
+_SYMMETRIC_MANIFOLDS = ("circle", "hypertorus", "hypersphere")
 
 
 def _normalize_registry_name(manifold_name: str) -> str:
@@ -40,21 +42,46 @@ def available_extract_mean_functions() -> tuple[str, ...]:
     return tuple(sorted(_EXTRACT_MEAN_FACTORIES))
 
 
-def _is_hypersphere_symmetric_name(normalized_name: str) -> bool:
-    tokens = tuple(
+def _manifold_name_tokens(normalized_name: str) -> tuple[str, ...]:
+    return tuple(
         token for token in normalized_name.replace("-", "_").split("_") if token
     )
+
+
+def _is_compact_symmetric_manifold_name(compact_name: str) -> bool:
+    return any(
+        compact_name
+        in {
+            f"symmetric{manifold}",
+            f"symm{manifold}",
+            f"{manifold}symmetric",
+            f"{manifold}symm",
+        }
+        for manifold in _SYMMETRIC_MANIFOLDS
+    )
+
+
+def _is_symmetric_name(normalized_name: str) -> bool:
+    tokens = _manifold_name_tokens(normalized_name)
+    if any(token in _SYMMETRIC_TOKENS for token in tokens):
+        return True
+    return _is_compact_symmetric_manifold_name("".join(tokens))
+
+
+def _is_hypersphere_symmetric_name(normalized_name: str) -> bool:
+    tokens = _manifold_name_tokens(normalized_name)
     if "hypersphere" in tokens and any(
-        token in {"symmetric", "symm"} for token in tokens
+        token in _SYMMETRIC_TOKENS for token in tokens
     ):
         return True
 
     compact = "".join(tokens)
-    return (
-        "hyperspheresymmetric" in compact
-        or "hyperspheresymm" in compact
-        or compact in {"symmetrichypersphere", "symmhypersphere"}
-    )
+    return compact in {
+        "hyperspheresymmetric",
+        "hyperspheresymm",
+        "symmetrichypersphere",
+        "symmhypersphere",
+    }
 
 
 def _is_array_state(filter_state) -> bool:
@@ -107,7 +134,7 @@ def get_extract_mean(manifold_name, mtt_scenario=False):
         _unsupported(
             "Symmetric hypersphere mean extraction needs an explicit convention via a custom extractor."
         )
-    elif "symm" in normalized_name:
+    elif _is_symmetric_name(normalized_name):
         _unsupported("Symmetric mean extraction needs an explicit convention")
     elif "circle" in normalized_name or "hypertorus" in normalized_name:
 
