@@ -13,7 +13,6 @@ from pyrecest.backend import (
     asarray,
     cast,
     empty,
-    full,
     int64,
     isfinite,
     mean,
@@ -21,8 +20,9 @@ from pyrecest.backend import (
     where,
     zeros,
 )
-from scipy.optimize import linear_sum_assignment
 from scipy.spatial.distance import cdist
+
+from .assignment import min_cost_max_cardinality_assignment
 
 
 @dataclass(frozen=True)
@@ -306,39 +306,8 @@ def solve_gated_assignment(cost_matrix, *, max_cost: float = float("inf")):
     if valid_costs.shape[0] == 0:
         return zeros((costs.shape[0],), dtype=int64) - 1
 
-    highest_valid_cost = float(valid_costs.max())
-    unassigned_cost = (
-        max_cost_value
-        if math.isfinite(max_cost_value)
-        else max(highest_valid_cost, 0.0) + 1.0
-    )
-    cost_scale = max(abs(highest_valid_cost), abs(unassigned_cost), 1.0)
-    invalid_cost = max(highest_valid_cost, 2.0 * unassigned_cost) + cost_scale
-
-    n_reference, n_moving = costs.shape
-    augmented_size = n_reference + n_moving
-    augmented_costs = full((augmented_size, augmented_size), invalid_cost)
-    augmented_costs[:n_reference, :n_moving] = where(
-        valid_cost_mask,
-        costs,
-        invalid_cost,
-    )
-
-    for reference_index in range(n_reference):
-        augmented_costs[reference_index, n_moving + reference_index] = unassigned_cost
-    for moving_index in range(n_moving):
-        augmented_costs[n_reference + moving_index, moving_index] = unassigned_cost
-    augmented_costs[n_reference:, n_moving:] = 0.0
-
-    row_indices, col_indices = linear_sum_assignment(augmented_costs)
-
-    assignment = zeros((n_reference,), dtype=int64) - 1
-    for row_index, col_index in zip(row_indices, col_indices):
-        if row_index >= n_reference or col_index >= n_moving:
-            continue
-        if bool(valid_cost_mask[row_index, col_index]):
-            assignment[row_index] = int(col_index)
-    return assignment
+    gated_costs = where(valid_cost_mask, costs, float("inf"))
+    return min_cost_max_cardinality_assignment(gated_costs)["assignment"]
 
 
 def default_cost(transformed_reference_points, moving_points):
