@@ -130,7 +130,7 @@ class LinearBoxParticleDistribution(AbstractLinearDistribution):
 
     def centers(self):
         """Return all box centers with shape ``(n_boxes, dim)``."""
-        return 0.5 * (self.lower + self.upper)
+        return 0.5 * self.lower + 0.5 * self.upper
 
     def widths(self):
         """Return side lengths of all boxes."""
@@ -138,7 +138,7 @@ class LinearBoxParticleDistribution(AbstractLinearDistribution):
 
     def half_widths(self):
         """Return side half-lengths."""
-        return 0.5 * self.widths()
+        return 0.5 * self.upper - 0.5 * self.lower
 
     def volumes(self):
         """Return the hypervolume of every box particle."""
