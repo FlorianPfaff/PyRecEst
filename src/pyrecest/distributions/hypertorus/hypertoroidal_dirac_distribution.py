@@ -88,11 +88,9 @@ class HypertoroidalDiracDistribution(
 
         get_grid = getattr(distribution, "get_grid", None)
         if hasattr(distribution, "grid_values") and callable(get_grid):
-            weights = reshape(distribution.grid_values, (-1,))
-            weight_scale, scaled_total_weight = AbstractDiracDistribution._validate_weights(
-                weights
+            weights = AbstractDiracDistribution._normalized_weights(
+                reshape(distribution.grid_values, (-1,))
             )
-            weights = (weights / weight_scale) / scaled_total_weight
             return HypertoroidalDiracDistribution(
                 get_grid(), weights, dim=distribution.dim
             )
@@ -178,80 +176,9 @@ class HypertoroidalDiracDistribution(
         return dist
 
     def to_toroidal_wd(self):
-        from .toroidal_dirac_distribution import ToroidalDiracDistribution
-
-        if self.dim != 2:
-            raise ValueError("The dimension must be 2")
-        twd = ToroidalDiracDistribution(self.d, self.w)
-        return twd
-
-    def marginalize_to_1D(self, dimension: Union[int, int32, int64]):
-        from ..circle.circular_dirac_distribution import CircularDiracDistribution
-
-        dimension = self._validate_dimension_index(dimension, self.dim)
-        return CircularDiracDistribution(self.d[:, dimension], self.w)
-
-    def marginalize_out(self, dimensions: int | list[int]):
-        from ..circle.circular_dirac_distribution import CircularDiracDistribution
-
-        if isinstance(dimensions, bool):
-            raise ValueError("dimensions must contain integer indices.")
-        if isinstance(dimensions, Integral):
-            dimensions = [dimensions]
-        else:
-            try:
-                dimensions = list(dimensions)
-            except TypeError as exc:
-                raise ValueError(
-                    "dimensions must be an integer or an iterable of integers."
-                ) from exc
-
-        dimensions = [
-            self._validate_dimension_index(dimension, self.dim)
-            for dimension in dimensions
-        ]
-        dimensions_to_remove = set(dimensions)
-
-        if len(dimensions) != len(dimensions_to_remove):
-            raise ValueError("dimensions must not contain duplicates.")
-
-        if len(dimensions_to_remove) == 0:
-            return copy.deepcopy(self)
-
-        remaining_dims = [
-            dim for dim in range(self.dim) if dim not in dimensions_to_remove
-        ]
-
-        if len(remaining_dims) == 0:
-            raise ValueError("Cannot marginalize out all dimensions.")
-
-        marginalized_particles = self.d[:, array(remaining_dims)]
-
-        if len(remaining_dims) == 1:
-            return CircularDiracDistribution(marginalized_particles[:, 0], self.w)
-
-        return HypertoroidalDiracDistribution(
-            marginalized_particles,
-            self.w,
-            dim=len(remaining_dims),
+        """Convert the distribution to a wrapped Dirac distribution."""
+        from .toroidal_wrapped_dirac_distribution import (
+            ToroidalWrappedDiracDistribution,
         )
 
-    def shift(self, shift_by) -> "HypertoroidalDiracDistribution":
-        shift_by = as_shift_vector(shift_by, self.dim)
-        hd = copy.deepcopy(self)
-        if self.dim == 1 and self.d.ndim == 1:
-            hd.d = mod(self.d + shift_by[0], 2.0 * pi)
-        else:
-            hd.d = mod(self.d + reshape(shift_by, (1, -1)), 2.0 * pi)
-        return hd
-
-    def entropy(self):
-        # Implement the entropy calculation here.
-        raise NotImplementedError("Entropy calculation is not implemented")
-
-    def to_wd(self):
-        if self.dim != 1:
-            raise ValueError("The dimension must be 1")
-        from ..circle.circular_dirac_distribution import CircularDiracDistribution
-
-        return CircularDiracDistribution(self.d, self.w)
+        return ToroidalWrappedDiracDistribution(self.d, self.w)
