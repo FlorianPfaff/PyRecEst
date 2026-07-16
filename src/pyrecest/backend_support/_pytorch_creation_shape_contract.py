@@ -109,9 +109,17 @@ def patch_pytorch_creation_shape_contract() -> None:
                     torch,
                     argument_name="arange start",
                 )
+                step = _pytorch_creation_scalar(
+                    step,
+                    np,
+                    torch,
+                    argument_name="arange step",
+                )
                 if end is _ARANGE_SENTINEL:
                     return torch.arange(
+                        0,
                         start,
+                        step,
                         dtype=_normalize_dtype(dtype),
                         **kwargs,
                     )
@@ -120,12 +128,6 @@ def patch_pytorch_creation_shape_contract() -> None:
                     np,
                     torch,
                     argument_name="arange end",
-                )
-                step = _pytorch_creation_scalar(
-                    step,
-                    np,
-                    torch,
-                    argument_name="arange step",
                 )
                 return torch.arange(
                     start,
