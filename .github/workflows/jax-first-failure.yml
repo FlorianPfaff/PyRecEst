@@ -1,4 +1,4 @@
-name: Temporary sharded JAX diagnosis
+name: Temporary sharded backend diagnosis
 
 on:
   pull_request:
@@ -14,6 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        backend: [jax, pytorch]
         shard: [0, 1, 2, 3]
     steps:
       - name: Check out repository
@@ -41,36 +42,44 @@ jobs:
         run: |
           python -m pip install --upgrade pip poetry
           poetry env use python
-          poetry install --with dev --extras "healpy_support jax_support"
+          if [ "${{ matrix.backend }}" = "jax" ]; then
+            extra="jax_support"
+          else
+            extra="pytorch_support"
+          fi
+          poetry install --with dev --extras "healpy_support ${extra}"
 
-      - name: Run JAX test shard
+      - name: Run backend test shard
         run: |
-          export JAX_ENABLE_X64=True
-          export PYRECEST_BACKEND=jax
+          if [ "${{ matrix.backend }}" = "jax" ]; then
+            export JAX_ENABLE_X64=True
+          fi
+          export PYRECEST_BACKEND="${{ matrix.backend }}"
           mapfile -t files < <(
             find tests -type f -name 'test_*.py' -print \
               | sort \
               | awk -v shard="${{ matrix.shard }}" '((NR - 1) % 4) == shard'
           )
-          printf '%s\n' "${files[@]}" > jax-shard-files.txt
+          prefix="${{ matrix.backend }}-shard-${{ matrix.shard }}"
+          printf '%s\n' "${files[@]}" > "${prefix}-files.txt"
           set +e
           poetry run python -m pytest \
             --rootdir . \
             -q \
             --maxfail=1 \
             --tb=long \
-            "${files[@]}" > full-jax-failure.log 2>&1
+            "${files[@]}" > "${prefix}-full.log" 2>&1
           status=$?
-          tail -n 320 full-jax-failure.log > jax-first-failure.log
-          printf '%s\n' "$status" > jax-exit-code.txt
+          tail -n 320 "${prefix}-full.log" > "${prefix}-first-failure.log"
+          printf '%s\n' "$status" > "${prefix}-exit-code.txt"
           exit 0
 
       - name: Upload diagnosis
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: jax-shard-${{ matrix.shard }}
+          name: ${{ matrix.backend }}-shard-${{ matrix.shard }}
           path: |
-            jax-shard-files.txt
-            jax-first-failure.log
-            jax-exit-code.txt
+            ${{ matrix.backend }}-shard-${{ matrix.shard }}-files.txt
+            ${{ matrix.backend }}-shard-${{ matrix.shard }}-first-failure.log
+            ${{ matrix.backend }}-shard-${{ matrix.shard }}-exit-code.txt
