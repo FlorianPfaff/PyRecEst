@@ -83,6 +83,8 @@ class AbstractGridDistribution(AbstractDistributionType):
             raise NotImplementedError(
                 "Custom integration boundaries are currently not supported."
             )
+        if prod(self.grid_values.shape) == 0:
+            return self.get_manifold_size() * mean(self.grid_values)
         value_scale = backend_max(abs(self.grid_values))
         if not bool(isfinite(value_scale)) or bool(value_scale == 0.0):
             return self.get_manifold_size() * mean(self.grid_values)
