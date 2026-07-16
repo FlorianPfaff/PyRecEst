@@ -17,6 +17,7 @@ from pyrecest.backend import (
     ndim,
     reshape,
     sin,
+    sqrt,
     stack,
     sum,
     where,
@@ -60,7 +61,12 @@ def normalize_quaternions(quaternions):
         raise ValueError("SO(3) quaternions must be nonzero.")
 
     scales_col = reshape(scales, tuple(scales.shape) + (1,))
-    scaled_quaternions = quaternions / scales_col
+    scale_roots = sqrt(scales_col)
+    # Dividing by the scale in one operation can be lowered to multiplication by
+    # an underflowed reciprocal on JAX for values near float64.max. Splitting the
+    # scaling across two square-root-sized divisors keeps every intermediate
+    # finite for both subnormal and near-maximum finite quaternions.
+    scaled_quaternions = (quaternions / scale_roots) / scale_roots
     norms = linalg.norm(scaled_quaternions, axis=-1)
     if not bool(all(isfinite(norms))):
         raise ValueError("SO(3) quaternion norms must be finite.")
