@@ -1,6 +1,5 @@
 import numpy as np
 import numpy.testing as npt
-
 from pyrecest.backend import array, to_numpy
 from pyrecest.distributions.circle.wrapped_cauchy_distribution import (
     WrappedCauchyDistribution,

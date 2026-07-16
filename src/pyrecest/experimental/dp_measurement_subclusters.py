@@ -72,7 +72,9 @@ def _integer_at_least(value: int | None, name: str, lower_bound: int) -> int | N
 def _as_measurement_matrix(measurements: np.ndarray) -> np.ndarray:
     values = np.asarray(measurements, dtype=float)
     if values.ndim != 2:
-        raise ValueError("measurements must have shape (num_measurements, measurement_dim)")
+        raise ValueError(
+            "measurements must have shape (num_measurements, measurement_dim)"
+        )
     if np.any(~np.isfinite(values)):
         raise ValueError("measurements must contain only finite values")
     return values
@@ -98,10 +100,14 @@ def _logsumexp(log_values: np.ndarray) -> float:
     return maximum + log(float(np.sum(np.exp(log_values - maximum))))
 
 
-def _isotropic_gaussian_logpdf(value: np.ndarray, mean: np.ndarray, variance: float) -> float:
+def _isotropic_gaussian_logpdf(
+    value: np.ndarray, mean: np.ndarray, variance: float
+) -> float:
     residual = value - mean
     dim = value.shape[0]
-    return -0.5 * (dim * log(2.0 * pi * variance) + float(residual @ residual) / variance)
+    return -0.5 * (
+        dim * log(2.0 * pi * variance) + float(residual @ residual) / variance
+    )
 
 
 def _posterior_mean_and_variance(
@@ -145,9 +151,7 @@ class DPMeasurementSubclusterConfig:
             self.measurement_variance, "measurement_variance"
         )
         prior_variance = _positive_finite_scalar(self.prior_variance, "prior_variance")
-        max_subclusters = _integer_at_least(
-            self.max_subclusters, "max_subclusters", 1
-        )
+        max_subclusters = _integer_at_least(self.max_subclusters, "max_subclusters", 1)
         if self.prior_mean is not None:
             prior_mean = np.asarray(self.prior_mean, dtype=float)
             if prior_mean.ndim != 1:
@@ -337,7 +341,9 @@ def fit_dp_measurement_subclusters(
                 )
             )
 
-        can_create_new_cluster = config.max_subclusters is None or len(clusters) < config.max_subclusters
+        can_create_new_cluster = (
+            config.max_subclusters is None or len(clusters) < config.max_subclusters
+        )
         if can_create_new_cluster:
             log_scores.append(
                 log(config.concentration)
@@ -446,7 +452,10 @@ def score_dp_measurement_partition(
                 )
             )
         else:
-            if config.max_subclusters is not None and len(clusters) >= config.max_subclusters:
+            if (
+                config.max_subclusters is not None
+                and len(clusters) >= config.max_subclusters
+            ):
                 return float("-inf")
             cluster = _ClusterAccumulator(values.shape[1])
             clusters[label] = cluster
@@ -474,7 +483,9 @@ def dp_measurement_subset_log_likelihood(
     posterior-predictive likelihood while the returned partition from
     ``fit_dp_measurement_subclusters`` can be used as a proposal or diagnostic.
     """
-    return fit_dp_measurement_subclusters(measurements, config).log_predictive_likelihood
+    return fit_dp_measurement_subclusters(
+        measurements, config
+    ).log_predictive_likelihood
 
 
 __all__ = [
