@@ -73,6 +73,7 @@ from .summarize_filter_results import summarize_filter_results
 
 _ORIGINAL_CLASSIFIER_ATTR = "_pyrecest_original_classify_evidence_margin"
 _ORIGINAL_DECISIONS_ATTR = "_pyrecest_original_paired_model_margin_decisions"
+_ORIGINAL_EVIDENCE_TABLE_ATTR = "_pyrecest_original_evidence_margin_table"
 
 if not hasattr(_model_comparison, _ORIGINAL_CLASSIFIER_ATTR):
     setattr(
@@ -86,12 +87,21 @@ if not hasattr(_model_comparison, _ORIGINAL_DECISIONS_ATTR):
         _ORIGINAL_DECISIONS_ATTR,
         paired_model_margin_decisions,
     )
+if not hasattr(_model_comparison, _ORIGINAL_EVIDENCE_TABLE_ATTR):
+    setattr(
+        _model_comparison,
+        _ORIGINAL_EVIDENCE_TABLE_ATTR,
+        evidence_margin_table,
+    )
 
 _original_classify_evidence_margin = getattr(
     _model_comparison, _ORIGINAL_CLASSIFIER_ATTR
 )
 _original_paired_model_margin_decisions = getattr(
     _model_comparison, _ORIGINAL_DECISIONS_ATTR
+)
+_original_evidence_margin_table = getattr(
+    _model_comparison, _ORIGINAL_EVIDENCE_TABLE_ATTR
 )
 
 
@@ -134,10 +144,38 @@ def _paired_model_margin_decisions(
     )
 
 
+def _evidence_margin_table(
+    scores,
+    *,
+    group_cols=("session", "event_index"),
+    evidence_col="log_evidence",
+    model_col="model",
+):
+    group_cols = tuple(group_cols)
+    comparable = _model_comparison._comparable_rows(scores)
+    required = [*group_cols, evidence_col, model_col]
+    if comparable.empty or any(column not in comparable.columns for column in required):
+        return _original_evidence_margin_table(
+            scores,
+            group_cols=group_cols,
+            evidence_col=evidence_col,
+            model_col=model_col,
+        )
+    distinct = comparable.drop_duplicates([*group_cols, model_col], keep="last")
+    return _original_evidence_margin_table(
+        distinct,
+        group_cols=group_cols,
+        evidence_col=evidence_col,
+        model_col=model_col,
+    )
+
+
 _model_comparison.classify_evidence_margin = _classify_evidence_margin
 classify_evidence_margin = _classify_evidence_margin
 _model_comparison.paired_model_margin_decisions = _paired_model_margin_decisions
 paired_model_margin_decisions = _paired_model_margin_decisions
+_model_comparison.evidence_margin_table = _evidence_margin_table
+evidence_margin_table = _evidence_margin_table
 
 __all__ = [
     "generate_groundtruth",
