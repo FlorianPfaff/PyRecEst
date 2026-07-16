@@ -1,5 +1,4 @@
 import pytest
-
 from pyrecest.evaluation.get_extract_mean import get_extract_mean
 
 

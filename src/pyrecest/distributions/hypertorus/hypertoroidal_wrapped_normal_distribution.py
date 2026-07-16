@@ -26,7 +26,6 @@ from scipy.stats import multivariate_normal
 from ._input_validation import as_hypertoroidal_points, as_shift_vector
 from .abstract_hypertoroidal_distribution import AbstractHypertoroidalDistribution
 
-
 _FINITE_REAL_MESSAGE = "{name} must contain only finite real values"
 
 

@@ -151,8 +151,7 @@ class AbstractMixture(AbstractDistributionType):
         ):
             raise ValueError("Mixture weights must have positive finite total mass")
         weights_sum_to_one = bool(
-            abs(weight_scale - 1.0 / scaled_weight_sum)
-            <= 1e-10 / scaled_weight_sum
+            abs(weight_scale - 1.0 / scaled_weight_sum) <= 1e-10 / scaled_weight_sum
         )
 
         if len(non_zero_indices) < len(weights):
