@@ -1,0 +1,64 @@
+name: Apply complex rejection-density fix
+
+on:
+  push:
+    branches:
+      - agent/reject-complex-rejection-density
+
+permissions:
+  contents: write
+
+jobs:
+  apply-fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/reject-complex-rejection-density
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Patch and syntax-check
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("src/pyrecest/sampling/euclidean_sampler.py")
+          text = path.read_text(encoding="utf-8")
+          old = '''    @staticmethod
+              def _evaluate_pdf(pdf, samples, n_candidates):
+                  density_values = np.asarray(pdf(samples), dtype=float)
+          '''
+          new = '''    @staticmethod
+              def _evaluate_pdf(pdf, samples, n_candidates):
+                  raw_density_values = np.asarray(pdf(samples))
+                  if np.iscomplexobj(raw_density_values):
+                      raise ValueError("pdf must return real density values")
+                  density_values = np.asarray(raw_density_values, dtype=float)
+          '''
+          # Triple-quoted indentation above is normalized explicitly to avoid YAML
+          # heredoc indentation affecting the exact source match.
+          old = old.replace("              ", "        ")
+          new = new.replace("              ", "        ")
+          if text.count(old) != 1:
+              raise SystemExit("expected exactly one _evaluate_pdf source block")
+          path.write_text(text.replace(old, new, 1), encoding="utf-8")
+          PY
+          python -m py_compile \
+            src/pyrecest/sampling/euclidean_sampler.py \
+            tests/test_fibonacci_rejection_complex_density.py
+
+      - name: Remove one-shot workflow
+        run: rm .github/workflows/agent-apply-complex-density-fix.yml
+
+      - name: Commit source fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/pyrecest/sampling/euclidean_sampler.py \
+            .github/workflows/agent-apply-complex-density-fix.yml
+          git commit -m "Reject complex rejection densities"
+          git push origin HEAD:agent/reject-complex-rejection-density
