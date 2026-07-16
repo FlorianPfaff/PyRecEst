@@ -100,6 +100,33 @@ class TestPairwiseCovarianceFeatures(unittest.TestCase):
         npt.assert_allclose(logdet_cost, array([[log(2.0), log(2.0)]]))
         npt.assert_allclose(shape_similarity, exp(-shape_cost))
 
+    def test_pairwise_covariance_shape_components_stabilize_large_determinants(self):
+        large_scale = 1.0e200
+        smaller_scale = 1.0e150
+        covariances_a = array(
+            [
+                [[large_scale], [0.0]],
+                [[0.0], [large_scale]],
+            ]
+        )
+        covariances_b = array(
+            [
+                [[large_scale, smaller_scale], [0.0, 0.0]],
+                [[0.0, 0.0], [large_scale, smaller_scale]],
+            ]
+        )
+
+        shape_cost, logdet_cost, shape_similarity = (
+            pairwise_covariance_shape_components(covariances_a, covariances_b)
+        )
+
+        expected_logdet_cost = array(
+            [[0.0, 2.0 * abs(math.log(large_scale) - math.log(smaller_scale))]]
+        )
+        npt.assert_allclose(shape_cost, array([[0.0, 0.0]]))
+        npt.assert_allclose(logdet_cost, expected_logdet_cost, rtol=1.0e-14)
+        npt.assert_allclose(shape_similarity, array([[1.0, 1.0]]))
+
     def test_pairwise_covariance_shape_components_return_zero_for_equal_shapes(self):
         covariances_a = array(
             [

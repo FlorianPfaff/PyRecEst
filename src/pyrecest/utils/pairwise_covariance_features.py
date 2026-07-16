@@ -32,7 +32,9 @@ from pyrecest.backend import (
     log,
     maximum,
     moveaxis,
+    prod,
     reshape,
+    sign,
     sqrt,
 )
 from pyrecest.backend import sum as backend_sum
@@ -179,9 +181,11 @@ def pairwise_covariance_shape_components(
     shape_cost = sqrt(maximum(frobenius_squared, 0.0)) / sqrt(2.0)
     shape_similarity = exp(-shape_cost)
 
-    determinants_a = _positive_floor(linalg.det(moved_covariances_a), epsilon)
-    determinants_b = _positive_floor(linalg.det(moved_covariances_b), epsilon)
-    logdet_cost = abs(log(determinants_a[:, None] / determinants_b[None, :]))
+    log_determinants_a = _floored_log_determinants(moved_covariances_a, epsilon)
+    log_determinants_b = _floored_log_determinants(moved_covariances_b, epsilon)
+    logdet_cost = abs(
+        log_determinants_a[:, None] - log_determinants_b[None, :]
+    )
     return shape_cost, logdet_cost, shape_similarity
 
 
@@ -258,6 +262,29 @@ def _symmetrized_covariance_batch(covariances: Any) -> Any:
 
 def _batch_trace(matrices: Any) -> Any:
     return einsum("nii->n", matrices)
+
+
+def _floored_log_determinants(matrices: Any, epsilon: float) -> Any:
+    """Return ``log(max(det(matrix), epsilon))`` without forming determinants."""
+
+    eigenvalues = linalg.eigvalsh(matrices)
+    absolute_eigenvalues = abs(eigenvalues)
+    nonzero_eigenvalues = absolute_eigenvalues > 0.0
+    safe_absolute_eigenvalues = where(
+        nonzero_eigenvalues,
+        absolute_eigenvalues,
+        1.0,
+    )
+    determinant_signs = prod(sign(eigenvalues), axis=-1)
+    log_absolute_determinants = backend_sum(log(safe_absolute_eigenvalues), axis=-1)
+    log_epsilon = math.log(epsilon)
+    use_log_determinant = (
+        (determinant_signs > 0.0)
+        & backend_all(nonzero_eigenvalues, axis=-1)
+        & isfinite(log_absolute_determinants)
+        & (log_absolute_determinants > log_epsilon)
+    )
+    return where(use_log_determinant, log_absolute_determinants, log_epsilon)
 
 
 def _positive_floor(values: Any, epsilon: float) -> Any:
