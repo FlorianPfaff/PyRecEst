@@ -166,10 +166,13 @@ def solve_top_k_viterbi_sequence_associations(
 ) -> tuple[SequenceAssociationPath, ...]:
     """Return best Viterbi paths for the lowest-cost terminal nodes.
 
-    The dynamic program keeps the best predecessor for each node, then returns
-    paths ending at the ``top_k_terminal_paths`` lowest-cost final-frame nodes.
-    This mirrors the tracklet-Viterbi pattern used by RaFT-UAV and is not a full
-    Yen-style k-shortest-path enumeration.
+    The dynamic program keeps the best predecessor for each
+    ``(node, missed-detection streak)`` state, then returns paths ending at the
+    ``top_k_terminal_paths`` lowest-cost final-frame nodes.  Tracking the streak
+    as part of the state is necessary because transition costs can depend on
+    ``SequenceTransitionContext.previous_miss_streak``.  This mirrors the
+    tracklet-Viterbi pattern used by RaFT-UAV and is not a full Yen-style
+    k-shortest-path enumeration.
     """
     normalized_frames = _validate_frames(frames)
     top_k_terminal_paths = _validate_positive_integer(
@@ -177,77 +180,106 @@ def solve_top_k_viterbi_sequence_associations(
         "top_k_terminal_paths",
     )
 
-    costs: list[np.ndarray] = [
-        np.array([float(node.unary_cost) for node in normalized_frames[0]])
+    initial_streaks = [
+        1 if node.is_missed_detection else 0 for node in normalized_frames[0]
     ]
-    miss_streaks: list[np.ndarray] = [
-        np.array(
-            [1 if node.is_missed_detection else 0 for node in normalized_frames[0]],
-            dtype=int,
-        )
+    costs: list[list[dict[int, float]]] = [
+        [
+            {miss_streak: float(node.unary_cost)}
+            for node, miss_streak in zip(normalized_frames[0], initial_streaks)
+        ]
     ]
-    parents: list[np.ndarray] = [np.full(len(normalized_frames[0]), -1, dtype=int)]
-    chosen_transition_costs: list[np.ndarray] = [
-        np.zeros(len(normalized_frames[0]), dtype=float)
+    parents: list[list[dict[int, tuple[int, int]]]] = [
+        [{miss_streak: (-1, -1)} for miss_streak in initial_streaks]
+    ]
+    chosen_transition_costs: list[list[dict[int, float]]] = [
+        [{miss_streak: 0.0} for miss_streak in initial_streaks]
     ]
 
     for frame_pos in range(1, len(normalized_frames)):
         previous_frame = normalized_frames[frame_pos - 1]
         current_frame = normalized_frames[frame_pos]
-        current_costs = np.empty(len(current_frame), dtype=float)
-        current_miss_streaks = np.empty(len(current_frame), dtype=int)
-        current_parents = np.empty(len(current_frame), dtype=int)
-        current_transition_costs = np.empty(len(current_frame), dtype=float)
+        current_costs: list[dict[int, float]] = [
+            {} for _current_node in current_frame
+        ]
+        current_parents: list[dict[int, tuple[int, int]]] = [
+            {} for _current_node in current_frame
+        ]
+        current_transition_costs: list[dict[int, float]] = [
+            {} for _current_node in current_frame
+        ]
 
         for current_index, current_node in enumerate(current_frame):
-            candidate_costs = np.empty(len(previous_frame), dtype=float)
-            candidate_transition_costs = np.empty(len(previous_frame), dtype=float)
             for previous_index, previous_node in enumerate(previous_frame):
-                context = SequenceTransitionContext(
-                    frame_index=frame_pos,
-                    previous_frame_index=previous_node.frame_index,
-                    current_frame_index=current_node.frame_index,
-                    previous_node_index=previous_index,
-                    current_node_index=current_index,
-                    previous_miss_streak=int(miss_streaks[-1][previous_index]),
-                )
-                transition_value = _validate_cost(
-                    transition_cost(previous_node, current_node, context),
-                    "transition_cost",
-                )
-                candidate_transition_costs[previous_index] = transition_value
-                candidate_costs[previous_index] = (
-                    costs[-1][previous_index] + transition_value
-                )
-
-            parent = int(np.argmin(candidate_costs))
-            current_parents[current_index] = parent
-            current_transition_costs[current_index] = candidate_transition_costs[parent]
-            current_costs[current_index] = (
-                float(current_node.unary_cost) + candidate_costs[parent]
-            )
-            current_miss_streaks[current_index] = (
-                int(miss_streaks[-1][parent]) + 1
-                if current_node.is_missed_detection
-                else 0
-            )
+                for previous_miss_streak, previous_cost in costs[-1][
+                    previous_index
+                ].items():
+                    context = SequenceTransitionContext(
+                        frame_index=frame_pos,
+                        previous_frame_index=previous_node.frame_index,
+                        current_frame_index=current_node.frame_index,
+                        previous_node_index=previous_index,
+                        current_node_index=current_index,
+                        previous_miss_streak=previous_miss_streak,
+                    )
+                    transition_value = _validate_cost(
+                        transition_cost(previous_node, current_node, context),
+                        "transition_cost",
+                    )
+                    current_miss_streak = (
+                        previous_miss_streak + 1
+                        if current_node.is_missed_detection
+                        else 0
+                    )
+                    candidate_cost = (
+                        previous_cost
+                        + transition_value
+                        + float(current_node.unary_cost)
+                    )
+                    best_cost = current_costs[current_index].get(
+                        current_miss_streak
+                    )
+                    if best_cost is None or candidate_cost < best_cost:
+                        current_costs[current_index][current_miss_streak] = (
+                            candidate_cost
+                        )
+                        current_parents[current_index][current_miss_streak] = (
+                            previous_index,
+                            previous_miss_streak,
+                        )
+                        current_transition_costs[current_index][
+                            current_miss_streak
+                        ] = transition_value
 
         costs.append(current_costs)
-        miss_streaks.append(current_miss_streaks)
         parents.append(current_parents)
         chosen_transition_costs.append(current_transition_costs)
 
-    terminal_count = min(top_k_terminal_paths, len(costs[-1]))
-    terminal_indices = np.argsort(costs[-1])[:terminal_count]
+    terminal_hypotheses: list[tuple[float, int, int]] = []
+    for terminal_index, terminal_costs in enumerate(costs[-1]):
+        terminal_miss_streak = min(terminal_costs, key=terminal_costs.__getitem__)
+        terminal_hypotheses.append(
+            (
+                terminal_costs[terminal_miss_streak],
+                terminal_index,
+                terminal_miss_streak,
+            )
+        )
+    terminal_hypotheses.sort(key=lambda hypothesis: (hypothesis[0], hypothesis[1]))
+
+    terminal_count = min(top_k_terminal_paths, len(terminal_hypotheses))
     return tuple(
         _reconstruct_path(
             normalized_frames,
             parents,
             chosen_transition_costs,
             costs,
-            int(terminal_index),
+            terminal_index,
+            terminal_miss_streak,
         )
-        for terminal_index in terminal_indices
+        for _, terminal_index, terminal_miss_streak in terminal_hypotheses[
+            :terminal_count
+        ]
     )
 
 
@@ -277,27 +309,28 @@ def _validate_frames(
 
 def _reconstruct_path(
     frames: tuple[tuple[SequenceAssociationNode, ...], ...],
-    parents: list[np.ndarray],
-    chosen_transition_costs: list[np.ndarray],
-    costs: list[np.ndarray],
+    parents: list[list[dict[int, tuple[int, int]]]],
+    chosen_transition_costs: list[list[dict[int, float]]],
+    costs: list[list[dict[int, float]]],
     terminal_index: int,
+    terminal_miss_streak: int,
 ) -> SequenceAssociationPath:
+    total_cost = float(costs[-1][terminal_index][terminal_miss_streak])
     node_index = int(terminal_index)
+    miss_streak = int(terminal_miss_streak)
     path: list[SequenceAssociationNode] = []
     transition_values: list[float] = []
     for frame_pos in range(len(frames) - 1, -1, -1):
         path.append(frames[frame_pos][node_index])
         if frame_pos > 0:
             transition_values.append(
-                float(chosen_transition_costs[frame_pos][node_index])
+                float(chosen_transition_costs[frame_pos][node_index][miss_streak])
             )
-        node_index = int(parents[frame_pos][node_index])
-        if node_index < 0:
-            break
+            node_index, miss_streak = parents[frame_pos][node_index][miss_streak]
     path.reverse()
     transition_values.reverse()
     return SequenceAssociationPath(
-        total_cost=float(costs[-1][terminal_index]),
+        total_cost=total_cost,
         nodes=tuple(path),
         transition_costs=tuple(transition_values),
     )

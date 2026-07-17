@@ -55,6 +55,28 @@ class SequenceAssociationTest(unittest.TestCase):
         self.assertEqual(result.transition_costs, (1.0, 1.0))
         self.assertAlmostEqual(result.total_cost, 2.0)
 
+    def test_viterbi_preserves_histories_with_different_miss_streaks(self):
+        frames = [
+            [
+                _node(0, 0, "observed", 1.0),
+                SequenceAssociationNode.missed_detection(0),
+            ],
+            [SequenceAssociationNode.missed_detection(1)],
+            [_node(2, 0, "terminal", 0.0)],
+        ]
+
+        def transition_cost(_previous, current, context):
+            if current.is_missed_detection:
+                return 0.0
+            return 100.0 if context.previous_miss_streak >= 2 else 0.0
+
+        result = solve_viterbi_sequence_association(frames, transition_cost)
+
+        self.assertEqual(result.candidate_indices, (0, None, 0))
+        self.assertEqual(result.missed_detection_frame_indices, (1,))
+        self.assertEqual(result.transition_costs, (0.0, 0.0))
+        self.assertAlmostEqual(result.total_cost, 1.0)
+
     def test_top_k_terminal_paths_are_sorted(self):
         frames = [
             [_node(0, 0, "A", 0.0), _node(0, 1, "B", 0.4)],
