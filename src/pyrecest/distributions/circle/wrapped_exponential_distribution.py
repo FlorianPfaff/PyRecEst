@@ -96,11 +96,17 @@ def _validate_positive_scalar(value, name):
     return value
 
 
-def _normalization_const_from_log_beta(log_beta):
+def _density_scale_from_log_beta(log_beta):
+    """Return ``lambda / (1 - exp(-2*pi*lambda))`` without overflow."""
     if bool(all(log_beta < _SMALL_RATE_SERIES_THRESHOLD)):
-        # 1 / (1 - exp(-x)) = 1/x + 1/2 + x/12 - x**3/720 + O(x**5).
-        return 1.0 / log_beta + 0.5 + log_beta / 12.0 - log_beta**3 / 720.0
-    return 1.0 / (1.0 - exp(-log_beta))
+        # x / (1 - exp(-x)) = 1 + x/2 + x**2/12 - x**4/720 + O(x**6).
+        return (
+            1.0
+            + log_beta / 2.0
+            + log_beta**2 / 12.0
+            - log_beta**4 / 720.0
+        ) / (2.0 * pi)
+    return (log_beta / (2.0 * pi)) / (1.0 - exp(-log_beta))
 
 
 class WrappedExponentialDistribution(AbstractCircularDistribution):
@@ -117,14 +123,14 @@ class WrappedExponentialDistribution(AbstractCircularDistribution):
         lambda_ = backend_copy(_validate_positive_scalar(lambda_, "lambda_"))
         self.lambda_ = lambda_
         self._log_beta = 2.0 * pi * lambda_
-        self._normalization_const = _normalization_const_from_log_beta(self._log_beta)
+        self._density_scale = _density_scale_from_log_beta(self._log_beta)
 
     def pdf(self, xs):
         xs = asarray(xs)
         if ndim(xs) > 1:
             raise ValueError("xs must be a scalar or one-dimensional array.")
         xs = mod(xs, 2.0 * pi)
-        return self.lambda_ * exp(-self.lambda_ * xs) * self._normalization_const
+        return self._density_scale * exp(-self.lambda_ * xs)
 
     def trigonometric_moment(self, n):
         if isinstance(n, (bool, np.bool_)) or not isinstance(n, Integral):
