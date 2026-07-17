@@ -265,12 +265,27 @@ def fejer_reduce_coefficients(coefficients, target_shape: CoefficientShape | Non
     return reduce_coefficients(coefficients, target_shape, kernel="fejer")
 
 
+def _validate_integer_control(value, name: str, *, minimum: int) -> int:
+    """Return an integer control without silently truncating other scalar types."""
+
+    qualifier = "positive" if minimum == 1 else "nonnegative"
+    message = f"{name} must be a {qualifier} integer."
+    if isinstance(value, (bool, np.bool_)) or not isinstance(value, Integral):
+        raise ValueError(message)
+    value = int(value)
+    if value < minimum:
+        raise ValueError(message)
+    return value
+
+
 def coefficient_grid_shape(shape: CoefficientShape, oversampling_factor: int = 1) -> tuple[int, ...]:
     """Return an odd FFT-grid shape obtained by centered zero-padding."""
 
-    if isinstance(oversampling_factor, bool) or int(oversampling_factor) < 1:
-        raise ValueError("oversampling_factor must be a positive integer.")
-    oversampling_factor = int(oversampling_factor)
+    oversampling_factor = _validate_integer_control(
+        oversampling_factor,
+        "oversampling_factor",
+        minimum=1,
+    )
     shape = normalize_coefficient_shape(shape, name="shape")
     return tuple((side_length - 1) * oversampling_factor + 1 for side_length in shape)
 
@@ -319,8 +334,11 @@ def adaptive_kernel_reduce_coefficients(
 
     if min_value_tolerance < 0.0:
         raise ValueError("min_value_tolerance must be nonnegative.")
-    if isinstance(exponent_search_steps, bool) or int(exponent_search_steps) < 0:
-        raise ValueError("exponent_search_steps must be a nonnegative integer.")
+    exponent_search_steps = _validate_integer_control(
+        exponent_search_steps,
+        "exponent_search_steps",
+        minimum=0,
+    )
 
     coeff_arr = np.asarray(coefficients)
     if target_shape is None:
@@ -339,7 +357,7 @@ def adaptive_kernel_reduce_coefficients(
     low = 0.0
     high = 1.0
     best = full
-    for _ in range(int(exponent_search_steps)):
+    for _ in range(exponent_search_steps):
         mid = 0.5 * (low + high)
         candidate = reduce_coefficients(coeff_arr, target_shape, kernel=kernel, exponent=mid)
         if minimum_on_fft_grid(candidate, diagnostic_shape) >= -min_value_tolerance:

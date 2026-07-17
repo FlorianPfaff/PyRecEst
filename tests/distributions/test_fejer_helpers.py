@@ -6,6 +6,7 @@ from pyrecest.distributions.hypertorus.fejer import (
     adaptive_kernel_reduce_coefficients,
     apply_fejer_weights,
     centered_coefficients,
+    coefficient_grid_shape,
     fejer_weights,
     korovkin_weights,
     minimum_on_fft_grid,
@@ -57,6 +58,16 @@ def test_reduce_coefficients_sharp_matches_centered_coefficients():
     npt.assert_array_equal(reduce_coefficients(c, (3,), kernel="sharp"), centered_coefficients(c, (3,)))
 
 
+@pytest.mark.parametrize("invalid_value", [1.5, np.float64(2.0), "2", True])
+def test_coefficient_grid_shape_rejects_noninteger_oversampling_factor(invalid_value):
+    with pytest.raises(ValueError, match="oversampling_factor must be a positive integer"):
+        coefficient_grid_shape((3,), oversampling_factor=invalid_value)
+
+
+def test_coefficient_grid_shape_accepts_numpy_integer_oversampling_factor():
+    assert coefficient_grid_shape((3,), oversampling_factor=np.int64(2)) == (5,)
+
+
 def test_adaptive_reduction_keeps_nonnegative_sharp_result_unchanged():
     coeff = np.array([0.05, 1.0 / (2.0 * np.pi), 0.05])
     reduced, exponent = adaptive_kernel_reduce_coefficients(coeff, (3,), return_exponent=True)
@@ -73,6 +84,24 @@ def test_adaptive_reduction_damps_negative_sharp_result():
     assert minimum_on_fft_grid(sharp) < 0.0
     assert exponent > 0.0
     assert minimum_on_fft_grid(reduced) >= -1e-12
+
+
+@pytest.mark.parametrize("invalid_value", [1.5, np.float64(2.0), "2", True])
+def test_adaptive_reduction_rejects_noninteger_search_steps(invalid_value):
+    with pytest.raises(ValueError, match="exponent_search_steps must be a nonnegative integer"):
+        adaptive_kernel_reduce_coefficients(
+            np.ones(3),
+            exponent_search_steps=invalid_value,
+        )
+
+
+def test_adaptive_reduction_accepts_numpy_integer_search_steps():
+    reduced = adaptive_kernel_reduce_coefficients(
+        np.ones(3),
+        exponent_search_steps=np.int64(0),
+    )
+
+    npt.assert_array_equal(reduced, np.ones(3))
 
 
 def test_even_shape_rejected():
