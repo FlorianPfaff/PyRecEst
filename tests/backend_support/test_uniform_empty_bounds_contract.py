@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from tests.support.backend_runner import run_backend_code
 
 pytestmark = pytest.mark.backend_portable

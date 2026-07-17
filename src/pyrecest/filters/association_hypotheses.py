@@ -352,8 +352,7 @@ class TopKGate:
                 ),
             )
             accepted_indices.update(
-                hypothesis_index
-                for hypothesis_index, _ in sorted_group[: self.k]
+                hypothesis_index for hypothesis_index, _ in sorted_group[: self.k]
             )
 
         result = []

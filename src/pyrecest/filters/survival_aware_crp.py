@@ -56,21 +56,31 @@ def _validate_nonnegative_integer(value, name):
 def _normalize_assignment_weights(weights, minimum_total_weight):
     """Normalize finite nonnegative association weights without sum overflow."""
 
-    weights = tuple(_validate_nonnegative(weight, "association weight") for weight in weights)
+    weights = tuple(
+        _validate_nonnegative(weight, "association weight") for weight in weights
+    )
     if not weights:
-        raise ValueError("At least one association alternative must have positive weight.")
+        raise ValueError(
+            "At least one association alternative must have positive weight."
+        )
 
     scale = max(weights)
     if scale <= 0.0:
-        raise ValueError("At least one association alternative must have positive weight.")
+        raise ValueError(
+            "At least one association alternative must have positive weight."
+        )
 
     scaled_weights = tuple(weight / scale for weight in weights)
     scaled_total = sum(scaled_weights)
     if not isfinite(scaled_total) or scaled_total <= 0.0:
-        raise ValueError("At least one association alternative must have positive weight.")
+        raise ValueError(
+            "At least one association alternative must have positive weight."
+        )
 
     if scale <= minimum_total_weight / scaled_total:
-        raise ValueError("At least one association alternative must have positive weight.")
+        raise ValueError(
+            "At least one association alternative must have positive weight."
+        )
 
     return tuple(weight / scaled_total for weight in scaled_weights)
 
@@ -269,7 +279,7 @@ class SurvivalAwareCRPAssociationPrior:
 
         track_evidence = self._coerce_track_evidence(track_evidence)
         return track_evidence.mass * (
-            self.temporal_decay ** track_evidence.last_seen_steps
+            self.temporal_decay**track_evidence.last_seen_steps
         )
 
     def existing_track_weight(self, track_evidence):
@@ -410,15 +420,12 @@ class SurvivalAwareCRPAssociationPrior:
             "visibility_probability",
         )
 
-        effective_detection_probability = (
-            detection_probability * visibility_probability
-        )
+        effective_detection_probability = detection_probability * visibility_probability
         numerator = predicted_existence_probability * (
             1.0 - effective_detection_probability
         )
         denominator = (
-            1.0
-            - predicted_existence_probability * effective_detection_probability
+            1.0 - predicted_existence_probability * effective_detection_probability
         )
         if denominator <= 0.0:
             return 0.0

@@ -36,7 +36,9 @@ def _has_rejected_numeric_dtype(value: object) -> bool:
 
 
 def _is_rejected_scalar_payload(value: object) -> bool:
-    return isinstance(value, _REJECTED_SCALAR_TYPES) or _has_rejected_numeric_dtype(value)
+    return isinstance(value, _REJECTED_SCALAR_TYPES) or _has_rejected_numeric_dtype(
+        value
+    )
 
 
 @dataclass(frozen=True)
@@ -178,7 +180,9 @@ class RollingNISProcessNoiseAdapter:
         accepted = _normalize_bool_flag(accepted, "accepted")
         if not accepted:
             return self.ratios_by_source.get(source, 1.0)
-        measurement_dim = _normalize_positive_integer(measurement_dim, "measurement_dim")
+        measurement_dim = _normalize_positive_integer(
+            measurement_dim, "measurement_dim"
+        )
         nis = _normalize_nonnegative_finite_scalar(nis, "nis")
         ratio = nis / float(measurement_dim)
         previous = self.ratios_by_source.get(source, 1.0)

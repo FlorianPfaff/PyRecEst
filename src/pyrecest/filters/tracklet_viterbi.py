@@ -255,9 +255,7 @@ def _solve_tracklet_viterbi(
             previous, current, miss_streak, config
         )
     )
-    initial_streaks = [
-        1 if node.is_miss else 0 for node in nodes_by_frame[0]
-    ]
+    initial_streaks = [1 if node.is_miss else 0 for node in nodes_by_frame[0]]
     state_costs: list[list[dict[int, float]]] = [
         [
             {
@@ -275,9 +273,7 @@ def _solve_tracklet_viterbi(
         previous_nodes = nodes_by_frame[frame_index - 1]
         current_nodes = nodes_by_frame[frame_index]
         current_costs: list[dict[int, float]] = [{} for _ in current_nodes]
-        current_parents: list[dict[int, tuple[int, int]]] = [
-            {} for _ in current_nodes
-        ]
+        current_parents: list[dict[int, tuple[int, int]]] = [{} for _ in current_nodes]
         for current_index, current_node in enumerate(current_nodes):
             for previous_index, previous_node in enumerate(previous_nodes):
                 for previous_miss_streak, previous_cost in state_costs[-1][
@@ -296,9 +292,7 @@ def _solve_tracklet_viterbi(
                     candidate_cost = (
                         previous_cost + transition_value + current_node.unary_cost
                     )
-                    best_cost = current_costs[current_index].get(
-                        current_miss_streak
-                    )
+                    best_cost = current_costs[current_index].get(current_miss_streak)
                     if best_cost is None or candidate_cost < best_cost:
                         current_costs[current_index][
                             current_miss_streak
