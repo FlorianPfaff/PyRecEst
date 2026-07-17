@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from operator import index as operator_index
 from typing import Any
 
+import numpy as np
+
 _TEXT_SEQUENCE_TYPES = (str, bytes, bytearray)
 _ACTIVE_INDICES_MESSAGE = (
     "active_measurement_indices must be a sequence of non-negative integers"
@@ -134,6 +136,8 @@ def _normalize_metadata(metadata: Mapping[str, Any] | None) -> dict[str, Any]:
 
 def _as_nonnegative_integer(value: Any, name: str) -> int:
     message = f"{name} must be a non-negative integer"
+    if np.ma.isMaskedArray(value) and bool(np.any(np.ma.getmaskarray(value))):
+        raise ValueError(message)
     if _is_boolean_scalar(value):
         raise ValueError(message)
     try:
