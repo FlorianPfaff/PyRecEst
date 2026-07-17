@@ -86,7 +86,7 @@ class HypersphericalDiracDistributionTest(unittest.TestCase):
         twdNew = self.hdd.reweigh(f)
         self.assertIsInstance(twdNew, HypersphericalDiracDistribution)
         npt.assert_array_almost_equal(twdNew.d, self.hdd.d)
-        self.assertAlmostEqual(sum(twdNew.w), 1, places=10)
+        self.assertAlmostEqual(float(sum(twdNew.w)), 1, places=10)
         wNew = self.hdd.d[:, 1] * self.hdd.w
         npt.assert_array_almost_equal(twdNew.w, wNew / sum(wNew))
 
