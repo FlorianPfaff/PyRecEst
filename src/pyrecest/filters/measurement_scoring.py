@@ -32,6 +32,7 @@ class MeasurementScore:
     skipped_reason: str | None = None
 
     def __post_init__(self) -> None:
+        # Own caller-provided sequences so this frozen result cannot be mutated indirectly.
         object.__setattr__(
             self,
             "active_measurement_indices",
