@@ -88,8 +88,9 @@ def pairwise_feature_tensor(
 ) -> Any:
     """Build a pairwise feature tensor from named component planes.
 
-    All feature planes must have the same shape. Non-finite values are converted
-    to finite sentinels: ``nan -> 0``, ``+inf -> 1e6``, and ``-inf -> -1e6``.
+    All feature planes must have the same shape and contain real numeric values.
+    Non-finite values are converted to finite sentinels: ``nan -> 0``,
+    ``+inf -> 1e6``, and ``-inf -> -1e6``.
     """
     if isinstance(feature_names, NamedPairwiseFeatureSchema):
         if transforms is not None:
@@ -386,7 +387,10 @@ def _component_feature(
 
 
 def _finite_feature_plane(values: Any, feature_name: str) -> Any:
-    values = asarray(values, dtype=float64)
+    values = _as_real_numeric_backend_array(
+        values,
+        message=f"Feature {feature_name!r} must contain real numeric values",
+    )
     if values.ndim == 0:
         raise ValueError(f"Feature {feature_name!r} must be at least one-dimensional")
     finite_values = where(isnan(values), 0.0, values)
