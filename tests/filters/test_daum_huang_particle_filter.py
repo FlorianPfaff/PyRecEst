@@ -122,6 +122,56 @@ class DaumHuangParticleFlowFilterTest(unittest.TestCase):
             to_numpy(actual_covariance), to_numpy(expected_covariance), atol=1e-10
         )
 
+    def test_particle_flow_filters_preserve_nonuniform_weights(self):
+        particles = array(
+            [
+                [-2.0, -1.0],
+                [-1.0, 1.0],
+                [0.0, 0.0],
+                [1.0, -1.0],
+                [2.0, 1.0],
+            ]
+        )
+        weights = array([0.05, 0.10, 0.15, 0.25, 0.45])
+        prior = LinearDiracDistribution(particles, weights)
+        expected_weights = to_numpy(prior.w).copy()
+        measurement_matrix = array([[1.0, -0.5]])
+        measurement = array([0.25])
+        measurement_noise = array([[0.75]])
+        expected_mean, expected_covariance = gaussian_bridge_moments(
+            prior.mean(),
+            prior.covariance(),
+            measurement_matrix,
+            measurement,
+            measurement_noise,
+            1.0,
+            jitter=0.0,
+        )
+
+        for filter_type in (EDHParticleFlowFilter, LEDHParticleFlowFilter):
+            with self.subTest(filter_type=filter_type.__name__):
+                filt = filter_type(
+                    n_particles=particles.shape[0],
+                    dim=particles.shape[1],
+                    n_steps=4,
+                    jitter=0.0,
+                )
+                filt.filter_state = LinearDiracDistribution(particles, weights)
+
+                filt.update_linear(measurement, measurement_matrix, measurement_noise)
+
+                npt.assert_allclose(to_numpy(filt.filter_state.w), expected_weights)
+                npt.assert_allclose(
+                    to_numpy(filt.filter_state.mean()),
+                    to_numpy(expected_mean),
+                    atol=1e-10,
+                )
+                npt.assert_allclose(
+                    to_numpy(filt.filter_state.covariance()),
+                    to_numpy(expected_covariance),
+                    atol=1e-10,
+                )
+
     def test_ledh_records_particlewise_linearization_points(self):
         particles = array([[-2.0], [-1.0], [1.0], [2.0]])
 
