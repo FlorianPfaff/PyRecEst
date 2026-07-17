@@ -26,6 +26,16 @@ def test_particle_diagnostics_clips_negative_weights_before_normalizing():
     assert isclose(diagnostics.weight_entropy, log(2.0))
 
 
+def test_particle_diagnostics_stabilizes_extreme_finite_weights():
+    maximum = np.finfo(float).max
+
+    diagnostics = ParticleDiagnostics.from_weights([maximum, maximum / 2.0])
+
+    expected_entropy = -(2.0 / 3.0 * log(2.0 / 3.0) + 1.0 / 3.0 * log(1.0 / 3.0))
+    assert isclose(diagnostics.effective_sample_size, 1.8)
+    assert isclose(diagnostics.weight_entropy, expected_entropy)
+
+
 def test_particle_diagnostics_rejects_nonfinite_weights():
     for weights in ([float("nan"), 1.0], [float("inf"), 1.0]):
         with pytest.raises(ValueError, match="Particle weights must be finite"):
