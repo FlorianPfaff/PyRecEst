@@ -100,6 +100,8 @@ def candidate_pruning_config_from_mapping(
 
 
 def _normalize_bool(value: Any, name: str) -> bool:
+    if _contains_missing_values(value):
+        raise ValueError(f"{name} must be a boolean")
     value_array = np.asarray(value)
     if value_array.shape == () and value_array.dtype == np.bool_:
         return bool(value_array.item())
@@ -115,7 +117,11 @@ def _has_temporal_dtype(value: Any) -> bool:
 
 def _normalize_positive_integer(value: Any, name: str) -> int:
     message = f"{name} must be a positive integer or None"
-    if _has_temporal_dtype(value) or _contains_temporal_values(value):
+    if (
+        _contains_missing_values(value)
+        or _has_temporal_dtype(value)
+        or _contains_temporal_values(value)
+    ):
         raise ValueError(message)
     try:
         value_array = np.asarray(value)
@@ -144,7 +150,11 @@ def _normalize_positive_integer(value: Any, name: str) -> int:
 
 
 def _normalize_finite_scalar(value: Any, *, message: str) -> float:
-    if _has_temporal_dtype(value) or _contains_temporal_values(value):
+    if (
+        _contains_missing_values(value)
+        or _has_temporal_dtype(value)
+        or _contains_temporal_values(value)
+    ):
         raise ValueError(message)
     try:
         value_array = np.asarray(value)
@@ -205,7 +215,9 @@ def _contains_temporal_values(value: Any) -> bool:
 
 
 def _contains_missing_values(value: Any) -> bool:
-    return _contains_values_of_type(value, _MISSING_TYPES)
+    return bool(np.ma.is_masked(value)) or _contains_values_of_type(
+        value, _MISSING_TYPES
+    )
 
 
 def _as_numeric_matrix(value: Any, name: str) -> np.ndarray:
