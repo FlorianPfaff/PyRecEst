@@ -228,7 +228,7 @@ def _solve_tracklet_viterbi(
     include_initial_missed_detection: bool,
     return_tables: bool,
 ) -> TrackletViterbiResult:
-    """Solve Viterbi with independent control of the initial miss branch."""
+    """Solve Viterbi while preserving missed-detection streak state."""
 
     config = TrackletViterbiConfig() if config is None else config
     nodes_by_frame = [
@@ -255,60 +255,91 @@ def _solve_tracklet_viterbi(
             previous, current, miss_streak, config
         )
     )
-    first_costs = np.array(
-        [
-            node.unary_cost + (config.missed_detection_cost if node.is_miss else 0.0)
-            for node in nodes_by_frame[0]
-        ],
-        dtype=float,
-    )
-    costs = [first_costs]
-    miss_streaks = [
-        np.array([1 if node.is_miss else 0 for node in nodes_by_frame[0]], dtype=int)
+    initial_streaks = [
+        1 if node.is_miss else 0 for node in nodes_by_frame[0]
     ]
-    parents = [np.full(len(nodes_by_frame[0]), -1, dtype=int)]
+    state_costs: list[list[dict[int, float]]] = [
+        [
+            {
+                miss_streak: node.unary_cost
+                + (config.missed_detection_cost if node.is_miss else 0.0)
+            }
+            for node, miss_streak in zip(nodes_by_frame[0], initial_streaks)
+        ]
+    ]
+    state_parents: list[list[dict[int, tuple[int, int]]]] = [
+        [{miss_streak: (-1, -1)} for miss_streak in initial_streaks]
+    ]
 
     for frame_index in range(1, len(nodes_by_frame)):
         previous_nodes = nodes_by_frame[frame_index - 1]
         current_nodes = nodes_by_frame[frame_index]
-        current_costs = np.empty(len(current_nodes), dtype=float)
-        current_miss_streaks = np.empty(len(current_nodes), dtype=int)
-        current_parents = np.empty(len(current_nodes), dtype=int)
+        current_costs: list[dict[int, float]] = [{} for _ in current_nodes]
+        current_parents: list[dict[int, tuple[int, int]]] = [
+            {} for _ in current_nodes
+        ]
         for current_index, current_node in enumerate(current_nodes):
-            alternatives = np.array(
-                [
-                    costs[-1][previous_index]
-                    + float(
+            for previous_index, previous_node in enumerate(previous_nodes):
+                for previous_miss_streak, previous_cost in state_costs[-1][
+                    previous_index
+                ].items():
+                    transition_value = float(
                         transition(
                             previous_node.candidate,
                             current_node.candidate,
-                            int(miss_streaks[-1][previous_index]),
+                            previous_miss_streak,
                         )
                     )
-                    for previous_index, previous_node in enumerate(previous_nodes)
-                ],
-                dtype=float,
-            )
-            parent = int(np.argmin(alternatives))
-            current_parents[current_index] = parent
-            current_costs[current_index] = (
-                current_node.unary_cost + alternatives[parent]
-            )
-            current_miss_streaks[current_index] = (
-                int(miss_streaks[-1][parent]) + 1 if current_node.is_miss else 0
-            )
-        costs.append(current_costs)
-        miss_streaks.append(current_miss_streaks)
-        parents.append(current_parents)
+                    current_miss_streak = (
+                        previous_miss_streak + 1 if current_node.is_miss else 0
+                    )
+                    candidate_cost = (
+                        previous_cost + transition_value + current_node.unary_cost
+                    )
+                    best_cost = current_costs[current_index].get(
+                        current_miss_streak
+                    )
+                    if best_cost is None or candidate_cost < best_cost:
+                        current_costs[current_index][
+                            current_miss_streak
+                        ] = candidate_cost
+                        current_parents[current_index][current_miss_streak] = (
+                            previous_index,
+                            previous_miss_streak,
+                        )
+        state_costs.append(current_costs)
+        state_parents.append(current_parents)
 
-    terminal = int(np.argmin(costs[-1]))
-    path_nodes = _reconstruct_path(nodes_by_frame, parents, terminal)
+    terminal_cost, terminal_index, terminal_miss_streak = min(
+        (
+            cost,
+            node_index,
+            miss_streak,
+        )
+        for node_index, node_costs in enumerate(state_costs[-1])
+        for miss_streak, cost in node_costs.items()
+    )
+    path_nodes = _reconstruct_path(
+        nodes_by_frame,
+        state_parents,
+        terminal_index,
+        terminal_miss_streak,
+    )
+    if return_tables:
+        costs, parents, miss_streaks = _summarize_state_tables(
+            state_costs,
+            state_parents,
+        )
+    else:
+        costs = []
+        parents = []
+        miss_streaks = []
     return TrackletViterbiResult(
         path=[node.candidate for node in path_nodes],
-        total_cost=float(costs[-1][terminal]),
-        costs_by_frame=costs if return_tables else [],
-        parent_indices_by_frame=parents if return_tables else [],
-        miss_streaks_by_frame=miss_streaks if return_tables else [],
+        total_cost=float(terminal_cost),
+        costs_by_frame=costs,
+        parent_indices_by_frame=parents,
+        miss_streaks_by_frame=miss_streaks,
     )
 
 
@@ -583,17 +614,54 @@ def _fixed_lag_committed_step_cost(
     )
 
 
+def _summarize_state_tables(
+    state_costs: list[list[dict[int, float]]],
+    state_parents: list[list[dict[int, tuple[int, int]]]],
+) -> tuple[list[np.ndarray], list[np.ndarray], list[np.ndarray]]:
+    """Return the lowest-cost missed-streak state for each visible node."""
+
+    costs_by_frame: list[np.ndarray] = []
+    parents_by_frame: list[np.ndarray] = []
+    miss_streaks_by_frame: list[np.ndarray] = []
+    for frame_costs, frame_parents in zip(state_costs, state_parents):
+        best_streaks = [
+            min(node_costs, key=node_costs.__getitem__) for node_costs in frame_costs
+        ]
+        costs_by_frame.append(
+            np.array(
+                [
+                    node_costs[best_streak]
+                    for node_costs, best_streak in zip(frame_costs, best_streaks)
+                ],
+                dtype=float,
+            )
+        )
+        parents_by_frame.append(
+            np.array(
+                [
+                    frame_parents[node_index][best_streak][0]
+                    for node_index, best_streak in enumerate(best_streaks)
+                ],
+                dtype=int,
+            )
+        )
+        miss_streaks_by_frame.append(np.array(best_streaks, dtype=int))
+    return costs_by_frame, parents_by_frame, miss_streaks_by_frame
+
+
 def _reconstruct_path(
     nodes_by_frame: list[list[_Node]],
-    parents: list[np.ndarray],
+    parents: list[list[dict[int, tuple[int, int]]]],
     terminal_index: int,
+    terminal_miss_streak: int,
 ) -> list[_Node]:
-    best = int(terminal_index)
+    node_index = int(terminal_index)
+    miss_streak = int(terminal_miss_streak)
     path: list[_Node] = []
     for frame_index in range(len(nodes_by_frame) - 1, -1, -1):
-        path.append(nodes_by_frame[frame_index][best])
-        best = int(parents[frame_index][best])
-        if best < 0:
+        path.append(nodes_by_frame[frame_index][node_index])
+        node_index, miss_streak = parents[frame_index][node_index][miss_streak]
+        if node_index < 0:
             break
     path.reverse()
     return path

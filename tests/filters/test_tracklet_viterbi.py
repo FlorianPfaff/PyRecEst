@@ -235,3 +235,36 @@ def test_fixed_lag_custom_transition_scores_recovery_after_leading_gap():
     assert fixed_lag.path == full.path == [None, frames[1][0]]
     assert full.total_cost == 9.0
     assert fixed_lag.total_cost == full.total_cost
+
+
+def test_full_viterbi_preserves_competing_miss_streak_states():
+    observed = TrackletAssociationCandidate("observed", unary_cost=1.0)
+    terminal = TrackletAssociationCandidate("terminal", unary_cost=0.0)
+    frames = [[observed], [], [terminal]]
+
+    def transition(previous, current, miss_streak):
+        del previous
+        if current is None:
+            return 1000.0 if miss_streak >= 2 else 0.0
+        return 100.0 if miss_streak >= 2 else 0.0
+
+    result = solve_tracklet_viterbi(
+        frames,
+        config=TrackletViterbiConfig(missed_detection_cost=0.0),
+        transition_cost=transition,
+        return_tables=True,
+    )
+
+    assert result.path == [observed, None, terminal]
+    assert result.total_cost == 1.0
+    assert [table.shape for table in result.costs_by_frame] == [(2,), (1,), (2,)]
+    assert [table.shape for table in result.parent_indices_by_frame] == [
+        (2,),
+        (1,),
+        (2,),
+    ]
+    assert [table.shape for table in result.miss_streaks_by_frame] == [
+        (2,),
+        (1,),
+        (2,),
+    ]
