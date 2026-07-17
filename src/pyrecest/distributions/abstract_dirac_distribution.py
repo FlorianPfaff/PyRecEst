@@ -1,9 +1,11 @@
 import copy
+import math
 import warnings
 from collections.abc import Callable
 from operator import index as _operator_index
 from typing import Union
 
+import numpy as np
 from beartype import beartype
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
@@ -19,12 +21,12 @@ from pyrecest.backend import (
     isclose,
     isfinite,
     log,
-    max,
     ones,
     random,
     reshape,
     stack,
     sum,
+    to_numpy,
     where,
 )
 
@@ -80,7 +82,7 @@ class AbstractDiracDistribution(AbstractDistributionType):
 
     @staticmethod
     def _validate_weights(w):
-        """Validate Dirac weights and return a stable normalization scale."""
+        """Validate Dirac weights and return stable normalization divisors."""
         if w.shape[0] == 0:
             raise ValueError("Dirac weights must have positive finite total mass.")
 
@@ -90,24 +92,64 @@ class AbstractDiracDistribution(AbstractDistributionType):
         if not bool(all(w >= 0)):
             raise ValueError("Dirac weights must be nonnegative.")
 
-        weight_scale = max(w)
-        if not bool(weight_scale > 0):
-            raise ValueError("Dirac weights must have positive finite total mass.")
-
-        scaled_total_weight = sum(w / weight_scale)
-        if not bool(isfinite(scaled_total_weight)) or not bool(
-            scaled_total_weight > 0
+        try:
+            total_weight = sum(w)
+        except FloatingPointError:
+            total_weight = None
+        if total_weight is not None and bool(isfinite(total_weight)) and bool(
+            total_weight > 0
         ):
+            return 1.0, total_weight
+
+        # Validation already synchronizes backend scalars through ``bool`` above.
+        # A host fallback also avoids backend reductions that flush subnormals or
+        # lower division by the largest finite float through a zero reciprocal.
+        host_weights = np.asarray(to_numpy(w))
+        weight_scale = float(np.max(host_weights))
+        if not math.isfinite(weight_scale) or weight_scale <= 0:
             raise ValueError("Dirac weights must have positive finite total mass.")
 
-        return weight_scale, scaled_total_weight
+        scaled_total_weight = float(np.sum(host_weights / weight_scale))
+        if not math.isfinite(scaled_total_weight) or scaled_total_weight <= 0:
+            raise ValueError("Dirac weights must have positive finite total mass.")
+
+        normalization_root = math.sqrt(weight_scale) * math.sqrt(
+            scaled_total_weight
+        )
+        if not math.isfinite(normalization_root) or normalization_root <= 0:
+            raise ValueError("Dirac weights must have positive finite total mass.")
+
+        return normalization_root, normalization_root
+
+    @staticmethod
+    def _normalized_weights(w):
+        """Return validated weights normalized across all supported backends."""
+        first_divisor, second_divisor = AbstractDiracDistribution._validate_weights(w)
+        normalized_weights = (w / first_divisor) / second_divisor
+
+        try:
+            normalized_total = sum(normalized_weights)
+        except FloatingPointError:
+            normalized_total = None
+        if normalized_total is not None and bool(isfinite(normalized_total)) and bool(
+            normalized_total > 0
+        ):
+            return normalized_weights
+
+        # XLA flushes subnormal operands before arithmetic.  Normalize those rare
+        # inputs on the host, then move the ordinary-sized probabilities back to
+        # the active backend.
+        host_weights = np.asarray(to_numpy(w))
+        weight_scale = float(np.max(host_weights))
+        scaled_weights = host_weights / weight_scale
+        host_normalized_weights = scaled_weights / np.sum(scaled_weights)
+        return asarray(host_normalized_weights)
 
     def normalize_in_place(self):
         """
         Normalize the weights in-place to ensure they sum to 1.
         """
-        weight_scale, scaled_total_weight = self._validate_weights(self.w)
-        normalized_weights = (self.w / weight_scale) / scaled_total_weight
+        normalized_weights = self._normalized_weights(self.w)
         if not bool(all(isclose(self.w, normalized_weights, atol=1e-10))):
             warnings.warn("Weights are not normalized.", RuntimeWarning)
         self.w = normalized_weights
@@ -140,10 +182,7 @@ class AbstractDiracDistribution(AbstractDistributionType):
             raise ValueError("Function returned wrong output dimensions.")
         self._validate_weights(w_new)
 
-        dist.w = w_new * dist.w
-        weight_scale, scaled_total_weight = self._validate_weights(dist.w)
-        dist.w = (dist.w / weight_scale) / scaled_total_weight
-
+        dist.w = self._normalized_weights(w_new * dist.w)
         return dist
 
     def sample(self, n: Union[int, int32, int64]):
