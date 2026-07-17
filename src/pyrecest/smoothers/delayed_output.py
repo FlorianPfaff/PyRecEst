@@ -13,6 +13,8 @@ import operator
 from collections.abc import Callable
 from typing import Any, TypeAlias
 
+import numpy as np
+
 DelayedStateOutput: TypeAlias = tuple[int, Any]
 
 
@@ -31,6 +33,8 @@ def _as_step_index(value: Any, name: str) -> int:
     """Normalize a genuine integer scalar without lossy coercion."""
 
     message = f"{name} must be an integer"
+    if np.ma.isMaskedArray(value) and bool(np.any(np.ma.getmaskarray(value))):
+        raise ValueError(message)
     if _is_boolean_scalar(value):
         raise ValueError(message)
     try:

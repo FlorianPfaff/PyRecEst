@@ -72,6 +72,21 @@ def test_delayed_output_queue_rejects_noninteger_steps(step) -> None:
     assert smoother.last_emitted_step == -1
 
 
+def test_delayed_output_rejects_masked_step_cursors() -> None:
+    masked_step = np.ma.array(2, mask=True)
+    smoother = _DummyDelayedOutputSmoother()
+
+    with pytest.raises(ValueError, match="step must be an integer"):
+        smoother._queue_delayed_state(masked_step, "state")
+    with pytest.raises(ValueError, match="last_emitted_step must be an integer"):
+        smoother._initialize_delayed_state_outputs(last_emitted_step=masked_step)
+    with pytest.raises(ValueError, match="current_step must be an integer"):
+        smoother._finalize_delayed_state_outputs(masked_step, lambda step: step)
+
+    assert smoother.pop_ready_states() == []
+    assert smoother.last_emitted_step == -1
+
+
 def test_delayed_output_cursor_arguments_require_integer_scalars() -> None:
     smoother = _DummyDelayedOutputSmoother()
 
@@ -86,5 +101,6 @@ def test_delayed_output_accepts_numpy_integer_steps() -> None:
     smoother = _DummyDelayedOutputSmoother()
 
     assert smoother._queue_delayed_state(np.int64(2), "state")
-    assert smoother.pop_ready_states() == [(2, "state")]
-    assert smoother.last_emitted_step == 2
+    assert smoother._queue_delayed_state(np.ma.array(3, mask=False), "masked-state")
+    assert smoother.pop_ready_states() == [(2, "state"), (3, "masked-state")]
+    assert smoother.last_emitted_step == 3
