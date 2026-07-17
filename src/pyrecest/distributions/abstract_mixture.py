@@ -143,30 +143,38 @@ class AbstractMixture(AbstractDistributionType):
         if len(non_zero_indices) == 0:
             raise ValueError("At least one mixture weight must be nonzero")
 
-        weight_scale = pyrecest.backend.max(weights)
-        scaled_weights = weights / weight_scale
-        scaled_weight_sum = sum(scaled_weights)
-        if not bool(pyrecest.backend.isfinite(scaled_weight_sum)) or not bool(
-            scaled_weight_sum > 0.0
-        ):
-            raise ValueError("Mixture weights must have positive finite total mass")
-        weights_sum_to_one = bool(
-            abs(weight_scale - 1.0 / scaled_weight_sum)
-            <= 1e-10 / scaled_weight_sum
-        )
+        weight_sum = sum(weights)
+        if bool(pyrecest.backend.isfinite(weight_sum)) and bool(weight_sum > 0.0):
+            normalized_weights = weights / weight_sum
+            weights_sum_to_one = bool(abs(weight_sum - 1.0) <= 1e-10)
+        else:
+            weight_scale = pyrecest.backend.max(weights)
+            scale_root = pyrecest.backend.sqrt(weight_scale)
+            # JAX may lower ``weights / weight_scale`` to multiplication by an
+            # underflowed reciprocal when ``weight_scale`` is near float64.max.
+            # Splitting the division across two square-root-sized factors keeps
+            # the scaled weights and their sum finite without changing ratios.
+            scaled_weights = (weights / scale_root) / scale_root
+            scaled_weight_sum = sum(scaled_weights)
+            if not bool(pyrecest.backend.isfinite(scaled_weight_sum)) or not bool(
+                scaled_weight_sum > 0.0
+            ):
+                raise ValueError("Mixture weights must have positive finite total mass")
+            normalized_weights = scaled_weights / scaled_weight_sum
+            weights_sum_to_one = False
 
         if len(non_zero_indices) < len(weights):
             warnings.warn(
                 "Elements with zero weights detected. Pruning elements in mixture with weight zero."
             )
             dists = [dists[i] for i in non_zero_indices]
-            scaled_weights = scaled_weights[array(non_zero_indices, dtype=int64)]
+            normalized_weights = normalized_weights[array(non_zero_indices, dtype=int64)]
 
         self.dists = dists
 
         if not weights_sum_to_one:
             warnings.warn("Weights of mixture do not sum to one.")
-        self.w = scaled_weights / scaled_weight_sum
+        self.w = normalized_weights
 
     @property
     def input_dim(self) -> int:
@@ -238,5 +246,4 @@ class AbstractMixture(AbstractDistributionType):
 
         for i, dist in enumerate(self.dists):
             p += self.w[i] * dist.pdf(xs)
-
         return p
