@@ -44,8 +44,12 @@ def _minmax_operands(raw_pytorch, torch_module, left, right):
         dtype = torch_module.promote_types(left.dtype, right.dtype)
     except RuntimeError as promotion_error:
         try:
-            left_numpy_dtype = torch_module.empty((), dtype=left.dtype).numpy().dtype
-            right_numpy_dtype = torch_module.empty((), dtype=right.dtype).numpy().dtype
+            left_numpy_dtype = (
+                torch_module.empty((), dtype=left.dtype, device="cpu").numpy().dtype
+            )
+            right_numpy_dtype = (
+                torch_module.empty((), dtype=right.dtype, device="cpu").numpy().dtype
+            )
             promoted_numpy_dtype = _np.result_type(
                 left_numpy_dtype,
                 right_numpy_dtype,
