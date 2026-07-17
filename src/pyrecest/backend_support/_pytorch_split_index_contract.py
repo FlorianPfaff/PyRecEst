@@ -16,6 +16,35 @@ from pyrecest.backend_support._pytorch_take_index_contract import (
 _SPLIT_INDEX_TYPE_MESSAGE = (
     "slice indices must be integers or None or have an __index__ method"
 )
+_SPLIT_SECTION_COUNT_MESSAGE = "number sections must be an integer"
+
+
+def _normalize_split_section_count(indices_or_sections, torch_module):
+    """Return a scalar section count without truncating fractional values."""
+
+    if torch_module.is_tensor(indices_or_sections):
+        scalar = indices_or_sections.item()
+    else:
+        scalar = np.asarray(indices_or_sections).item()
+
+    if isinstance(scalar, (bool, np.bool_)):
+        return int(scalar)
+
+    try:
+        return _operator_index(scalar)
+    except TypeError:
+        pass
+
+    if isinstance(scalar, (str, bytes, np.str_, np.bytes_)):
+        raise TypeError(_SPLIT_INDEX_TYPE_MESSAGE)
+
+    try:
+        scalar_float = float(scalar)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise TypeError(_SPLIT_INDEX_TYPE_MESSAGE) from exc
+    if not np.isfinite(scalar_float) or not scalar_float.is_integer():
+        raise ValueError(_SPLIT_SECTION_COUNT_MESSAGE)
+    return int(scalar_float)
 
 
 def _normalize_split_cut_indices(indices_or_sections, torch_module):
@@ -26,14 +55,14 @@ def _normalize_split_cut_indices(indices_or_sections, torch_module):
 
     if torch_module.is_tensor(indices_or_sections):
         if indices_or_sections.ndim == 0:
-            return indices_or_sections
+            return _normalize_split_section_count(indices_or_sections, torch_module)
         if indices_or_sections.ndim != 1:
             raise ValueError("indices_or_sections must be a 1-D sequence")
         cut_points = tuple(indices_or_sections)
     else:
         cut_array = np.asarray(indices_or_sections)
         if cut_array.ndim == 0:
-            return indices_or_sections
+            return _normalize_split_section_count(indices_or_sections, torch_module)
         if cut_array.ndim != 1:
             raise ValueError("indices_or_sections must be a 1-D sequence")
         cut_points = (
