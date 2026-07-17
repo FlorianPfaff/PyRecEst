@@ -18,6 +18,7 @@ import pyrecest.backend
 from pyrecest.backend import (
     asarray,
     concatenate,
+    copy,
     eye,
     isfinite,
     linalg,
@@ -81,9 +82,9 @@ class ThinPlateSplineTransform:
         if affine_coefficients.shape != (3, 2):
             raise ValueError("affine_coefficients must have shape (3, 2).")
 
-        object.__setattr__(self, "control_points", control_points)
-        object.__setattr__(self, "weights", weights)
-        object.__setattr__(self, "affine_coefficients", affine_coefficients)
+        object.__setattr__(self, "control_points", copy(control_points))
+        object.__setattr__(self, "weights", copy(weights))
+        object.__setattr__(self, "affine_coefficients", copy(affine_coefficients))
 
     @staticmethod
     def identity() -> "ThinPlateSplineTransform":
