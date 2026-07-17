@@ -91,10 +91,17 @@ vector_quantile = backend.quantile(
     axis=1,
     keepdims=True,
 )
+matrix_quantile = backend.quantile(
+    values,
+    [[0.25, 0.75], [0.1, 0.9]],
+    axis=1,
+    keepdims=True,
+)
 raw_quantile = raw_backend.quantile(values, 0.5, dim=1, keepdim=True)
 
 assert tuple(scalar_quantile.shape) == (0, 2)
 assert tuple(vector_quantile.shape) == (2, 0, 1, 2)
+assert tuple(matrix_quantile.shape) == (2, 2, 0, 1, 2)
 assert tuple(raw_quantile.shape) == (0, 1, 2)
 """,
     )
