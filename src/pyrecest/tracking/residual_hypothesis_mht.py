@@ -14,6 +14,9 @@ ResidualMHTPreset = Literal["conservative", "frontier", "multi_family"]
 class ResidualEditCandidate:
     """One discrete residual edit candidate.
 
+    ``candidate_id`` uniquely identifies the edit. If the input frontier contains
+    duplicate IDs, only the highest-scoring candidate is retained.
+
     ``family`` is an optional generic grouping label, such as ``"split"``,
     ``"merge"``, or ``"terminal_veto"``.  It has no intrinsic meaning to
     PyRecEst, but :class:`ResidualMHTConfig` can cap the number of edits selected
@@ -225,9 +228,17 @@ def _candidate_frontier(
     filtered.sort(
         key=lambda candidate: (-float(candidate.score), str(candidate.candidate_id))
     )
+    unique_candidates = []
+    seen_candidate_ids: set[str] = set()
+    for candidate in filtered:
+        candidate_id = str(candidate.candidate_id)
+        if candidate_id in seen_candidate_ids:
+            continue
+        seen_candidate_ids.add(candidate_id)
+        unique_candidates.append(candidate)
     if config.candidate_top_k is not None:
-        return tuple(filtered[: max(0, int(config.candidate_top_k))])
-    return tuple(filtered)
+        return tuple(unique_candidates[: max(0, int(config.candidate_top_k))])
+    return tuple(unique_candidates)
 
 
 def _compatible(
