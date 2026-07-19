@@ -22,6 +22,9 @@ from pyrecest.backend import (
     isfinite,
     linalg,
     log,
+)
+from pyrecest.backend import max as backend_max
+from pyrecest.backend import (
     maximum,
     ndim,
     outer,
@@ -34,7 +37,6 @@ from pyrecest.backend import (
     zeros,
     zeros_like,
 )
-from pyrecest.backend import max as backend_max
 from scipy.optimize import brentq
 
 
@@ -276,11 +278,7 @@ class ComplexWatsonDistribution:
             # Weighted scatter: Σ_i w_i·z_i·z_i^H, normalised so uniform
             # weights (w_i=1) reproduce the unweighted result Z^H Z. Scaling
             # by max(weights) preserves the estimate while avoiding overflow.
-            S = (
-                (Z * scaled_weights[:, None]).conj().T
-                @ Z
-                * (N / scaled_weight_sum)
-            )
+            S = (Z * scaled_weights[:, None]).conj().T @ Z * (N / scaled_weight_sum)
 
         # Force Hermitian
         S = 0.5 * (S + conj(S).T)

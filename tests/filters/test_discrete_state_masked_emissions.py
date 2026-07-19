@@ -1,7 +1,6 @@
 """Regression tests for masked discrete-state emission scaling."""
 
 import numpy as np
-
 from pyrecest.filters.discrete_state import (
     discrete_forward_backward,
     discrete_forward_backward_time_varying,

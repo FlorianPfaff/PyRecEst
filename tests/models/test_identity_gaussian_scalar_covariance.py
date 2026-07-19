@@ -1,5 +1,4 @@
 import numpy.testing as npt
-
 from pyrecest.backend import eye, to_numpy
 from pyrecest.models import (
     IdentityGaussianMeasurementModel,

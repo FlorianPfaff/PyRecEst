@@ -183,9 +183,7 @@ def pairwise_covariance_shape_components(
 
     log_determinants_a = _floored_log_determinants(moved_covariances_a, epsilon)
     log_determinants_b = _floored_log_determinants(moved_covariances_b, epsilon)
-    logdet_cost = abs(
-        log_determinants_a[:, None] - log_determinants_b[None, :]
-    )
+    logdet_cost = abs(log_determinants_a[:, None] - log_determinants_b[None, :])
     return shape_cost, logdet_cost, shape_similarity
 
 

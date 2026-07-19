@@ -18,8 +18,8 @@ def patch_jax_array_from_sparse_flat_index_contract() -> None:
 
     try:
         import jax.numpy as jnp  # pylint: disable=import-outside-toplevel
-        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import pyrecest._backend.jax as raw_jax  # pylint: disable=import-outside-toplevel
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
     except ModuleNotFoundError:  # pragma: no cover - JAX backend may be unavailable
         return
 

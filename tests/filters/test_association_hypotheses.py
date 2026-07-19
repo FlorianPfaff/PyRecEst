@@ -135,9 +135,7 @@ class AssociationHypothesesTest(unittest.TestCase):
         )
 
         gated = [
-            hypothesis
-            for hypothesis in gated_with_rejections
-            if hypothesis.accepted
+            hypothesis for hypothesis in gated_with_rejections if hypothesis.accepted
         ]
         cost_matrix = hypotheses_to_cost_matrix(
             gated,
