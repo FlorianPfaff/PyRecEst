@@ -124,12 +124,16 @@ def set_backend_random_state(state: Any) -> None:
 
 @contextmanager
 def preserve_backend_random_state() -> Iterator[None]:
-    """Temporarily preserve and restore the active backend random state."""
+    """Temporarily preserve backend and NumPy random state."""
     state = copy.deepcopy(get_backend_random_state())
+    numpy_state = copy.deepcopy(np.random.get_state())
     try:
         yield
     finally:
-        set_backend_random_state(state)
+        try:
+            set_backend_random_state(state)
+        finally:
+            np.random.set_state(numpy_state)
 
 
 @contextmanager
