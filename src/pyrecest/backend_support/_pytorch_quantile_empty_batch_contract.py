@@ -3,6 +3,11 @@
 from __future__ import annotations
 
 
+_QUANTILE_METHOD_CONFLICT_MESSAGE = (
+    "quantile() cannot specify both 'method' and 'interpolation'"
+)
+
+
 def patch_pytorch_quantile_empty_batch_contract() -> None:
     """Preserve NumPy quantile shapes unsupported by native PyTorch."""
 
@@ -48,6 +53,8 @@ def patch_pytorch_quantile_empty_batch_contract() -> None:
                 raise TypeError("quantile() got both 'keepdims' and 'keepdim'")
             effective_keepdims = keepdim
 
+        if interpolation is not None and method != "linear":
+            raise TypeError(_QUANTILE_METHOD_CONFLICT_MESSAGE)
         effective_method = method if interpolation is None else interpolation
         values = raw_pytorch.array(a)
         q_shape = raw_pytorch._quantile_q_shape(q)
