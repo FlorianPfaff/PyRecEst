@@ -3,11 +3,11 @@ from pyrecest.backend import all as backend_all
 from pyrecest.backend import (
     allclose,
     array,
+    diagonal,
     is_complex,
     isfinite,
     linalg,
     pi,
-    sqrt,
     transpose,
 )
 from pyrecest.exceptions import ShapeError, ValidationError
@@ -86,4 +86,5 @@ class AbstractEllipsoidalBallDistribution(AbstractBoundedNonPeriodicDistribution
         else:
             c = (pi ** (self.dim / 2)) / gamma((self.dim / 2) + 1)
 
-        return c * sqrt(linalg.det(self.shape_matrix))
+        cholesky_factor = linalg.cholesky(self.shape_matrix)
+        return c * diagonal(cholesky_factor).prod()
