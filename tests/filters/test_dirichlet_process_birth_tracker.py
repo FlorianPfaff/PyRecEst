@@ -14,6 +14,7 @@ pytestmark = pytest.mark.skipif(
 
 
 def _tracker(**overrides):
+    birth_atoms = overrides.pop("birth_atoms", None)
     tracker_param = {
         "birth_covariance": np.diag([1.0, 1.0, 4.0, 4.0]),
         "birth_existence_probability": 0.8,
@@ -38,7 +39,10 @@ def _tracker(**overrides):
     )
     measurement_covariance = np.eye(2) * 0.2
     return (
-        DirichletProcessBirthMultiBernoulliTracker(tracker_param=tracker_param),
+        DirichletProcessBirthMultiBernoulliTracker(
+            tracker_param=tracker_param,
+            birth_atoms=birth_atoms,
+        ),
         measurement_matrix,
         measurement_covariance,
     )
