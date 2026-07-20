@@ -33,7 +33,6 @@ from pyrecest.distributions.hypersphere_subset.watson_distribution import (
 from .abstract_grid_filter import AbstractGridFilter
 from .manifold_mixins import HyperhemisphericalFilterMixin
 
-
 _VMF_EQUATOR_TOLERANCE = 1e-10
 
 

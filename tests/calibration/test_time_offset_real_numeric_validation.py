@@ -1,7 +1,6 @@
 import unittest
 
 import numpy as np
-
 from pyrecest.calibration import apply_time_offset, make_offset_grid
 
 

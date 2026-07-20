@@ -154,9 +154,7 @@ def reliability_to_covariance_scale(
         raise ValueError("floor must be positive")
     exponent = _positive_scalar(exponent, "exponent")
     bounded_scale = (
-        None
-        if max_scale is None
-        else _scale_upper_bound(max_scale, "max_scale")
+        None if max_scale is None else _scale_upper_bound(max_scale, "max_scale")
     )
     effective_reliability = max(reliability, floor)
     log_scale = -exponent * np.log(effective_reliability)
