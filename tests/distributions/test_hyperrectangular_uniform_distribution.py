@@ -43,6 +43,19 @@ class TestHyperrectangularUniformDistribution(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "real-valued"):
                     dist.pdf(points)
 
+    def test_pdf_rejects_nonfinite_points(self):
+        dist = HyperrectangularUniformDistribution(array([[0.0, 1.0], [10.0, 12.0]]))
+        invalid_points = (
+            array([0.5, float("nan")]),
+            array([float("inf"), 11.0]),
+            array([[0.5, 11.0], [-float("inf"), 11.0]]),
+        )
+
+        for points in invalid_points:
+            with self.subTest(points=points):
+                with self.assertRaisesRegex(ValueError, "finite"):
+                    dist.pdf(points)
+
     def test_pdf_rejects_wrong_point_dimension(self):
         dist = HyperrectangularUniformDistribution(array([[0.0, 1.0], [10.0, 12.0]]))
 
