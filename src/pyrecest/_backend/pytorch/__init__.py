@@ -839,9 +839,18 @@ def linspace(start, stop, num=50, endpoint=True, dtype=None):
         raise ValueError("num must be non-negative")
 
     device = next(
-        (value.device for value in (start, stop) if _torch.is_tensor(value)),
+        (
+            value.device
+            for value in (start, stop)
+            if _torch.is_tensor(value) and value.device.type != "cpu"
+        ),
         None,
     )
+    if device is None:
+        device = next(
+            (value.device for value in (start, stop) if _torch.is_tensor(value)),
+            None,
+        )
 
     if not _torch.is_tensor(start):
         start = _torch.as_tensor(start, dtype=dtype, device=device)
