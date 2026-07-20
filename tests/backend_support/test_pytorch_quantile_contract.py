@@ -33,6 +33,40 @@ assert backend.to_numpy(list_quantile).tolist() == [[1.5, 5.0], [2.5, 7.0]]
 
 
 @pytest.mark.backend_portable
+def test_pytorch_quantile_rejects_conflicting_method_aliases():
+    if importlib.util.find_spec("torch") is None:
+        pytest.skip("PyTorch is not installed")
+
+    result = run_backend_code(
+        "pytorch",
+        """
+import pytest
+
+import pyrecest.backend as backend
+import pyrecest._backend.pytorch as raw_backend
+
+for target in (backend, raw_backend):
+    with pytest.raises(TypeError, match="method.*interpolation"):
+        target.quantile(
+            [0.0, 10.0],
+            0.25,
+            method="nearest",
+            interpolation="linear",
+        )
+
+    alias_result = target.quantile(
+        [0.0, 10.0],
+        0.25,
+        interpolation="nearest",
+    )
+    assert float(alias_result) == 0.0
+""",
+    )
+
+    assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.backend_portable
 def test_pytorch_quantile_accepts_multidimensional_q_like_numpy():
     if importlib.util.find_spec("torch") is None:
         pytest.skip("PyTorch is not installed")
