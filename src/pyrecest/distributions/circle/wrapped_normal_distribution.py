@@ -288,6 +288,11 @@ class WrappedNormalDistribution(
             )
 
         moment_abs = min(moment_abs, 1.0)
+        if moment_abs == 0.0:
+            raise ValueError(
+                "A zero first trigonometric moment cannot be represented by a "
+                "wrapped normal with finite variance."
+            )
         if moment_abs == 1.0:
             raise ValueError(
                 "First trigonometric moment with |m| = 1 cannot be moment-matched "

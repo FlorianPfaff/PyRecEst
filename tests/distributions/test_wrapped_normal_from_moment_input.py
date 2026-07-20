@@ -27,3 +27,11 @@ def test_from_moment_accepts_scalar_and_singleton_array_like_inputs(moment):
 def test_from_moment_rejects_vector_moments_with_clear_error():
     with pytest.raises(ValueError, match="First trigonometric moment must be a scalar"):
         WrappedNormalDistribution.from_moment([0.25 + 0.0j, 0.5 + 0.0j])
+
+
+def test_from_moment_rejects_zero_moment_with_clear_error():
+    with pytest.raises(
+        ValueError,
+        match="zero first trigonometric moment cannot be represented",
+    ):
+        WrappedNormalDistribution.from_moment(0.0)
