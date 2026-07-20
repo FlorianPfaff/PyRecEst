@@ -10,7 +10,6 @@ from pathlib import Path
 from time import perf_counter
 
 import numpy as np
-
 from pyrecest.distributions.hypertorus.hypertoroidal_fourier_distribution import (
     HypertoroidalFourierDistribution,
 )

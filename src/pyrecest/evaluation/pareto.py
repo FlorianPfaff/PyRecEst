@@ -309,8 +309,7 @@ def _has_front_eligible_objectives(
             for objective in objectives
         )
     return all(
-        not _is_missing(_lookup_numeric(record, objective))
-        for objective in objectives
+        not _is_missing(_lookup_numeric(record, objective)) for objective in objectives
     )
 
 

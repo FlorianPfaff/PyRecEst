@@ -82,7 +82,9 @@ class PitmanYorCardinalityPrior:
         new_weight = self.strength + self.discount * len(sizes)
         return existing_weights + (float(new_weight),)
 
-    def predictive_probabilities(self, cluster_sizes: Sequence[int]) -> tuple[float, ...]:
+    def predictive_probabilities(
+        self, cluster_sizes: Sequence[int]
+    ) -> tuple[float, ...]:
         """Return CRP predictive probabilities for existing clusters and a new cluster."""
 
         sizes = _validate_cluster_sizes(cluster_sizes)
@@ -91,12 +93,19 @@ class PitmanYorCardinalityPrior:
         denominator = self.strength + float(sum(sizes))
         return tuple(weight / denominator for weight in self.predictive_weights(sizes))
 
-    def predictive_log_probabilities(self, cluster_sizes: Sequence[int]) -> tuple[float, ...]:
+    def predictive_log_probabilities(
+        self, cluster_sizes: Sequence[int]
+    ) -> tuple[float, ...]:
         """Return log predictive probabilities for existing clusters and a new cluster."""
 
-        return tuple(log(probability) for probability in self.predictive_probabilities(cluster_sizes))
+        return tuple(
+            log(probability)
+            for probability in self.predictive_probabilities(cluster_sizes)
+        )
 
-    def log_exchangeable_partition_probability(self, cluster_sizes: Sequence[int]) -> float:
+    def log_exchangeable_partition_probability(
+        self, cluster_sizes: Sequence[int]
+    ) -> float:
         """Return the EPPF log probability of one partition with given block sizes.
 
         The value is the probability of one exchangeable partition whose block
@@ -146,7 +155,9 @@ class PitmanYorCardinalityPrior:
             for num_clusters, probability in enumerate(pmf):
                 if probability == 0.0 or num_clusters == 0:
                     continue
-                stay_weight = float(occupied_observations) - self.discount * float(num_clusters)
+                stay_weight = float(occupied_observations) - self.discount * float(
+                    num_clusters
+                )
                 new_weight = self.strength + self.discount * float(num_clusters)
                 next_pmf[num_clusters] += probability * stay_weight / denominator
                 next_pmf[num_clusters + 1] += probability * new_weight / denominator
@@ -157,9 +168,16 @@ class PitmanYorCardinalityPrior:
         """Return the prior expected number of occupied clusters after ``n`` observations."""
 
         pmf = self.cluster_count_pmf(num_observations)
-        return float(sum(num_clusters * probability for num_clusters, probability in enumerate(pmf)))
+        return float(
+            sum(
+                num_clusters * probability
+                for num_clusters, probability in enumerate(pmf)
+            )
+        )
 
-    def cluster_count_tail_probability(self, num_observations: int, min_clusters: int) -> float:
+    def cluster_count_tail_probability(
+        self, num_observations: int, min_clusters: int
+    ) -> float:
         """Return ``P(K_n >= min_clusters)`` under the prior predictive PMF."""
 
         min_clusters = _validate_nonnegative_int(min_clusters, "min_clusters")

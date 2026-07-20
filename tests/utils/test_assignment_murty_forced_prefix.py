@@ -1,7 +1,6 @@
 import numpy as np
-import pytest
-
 import pyrecest.backend as backend
+import pytest
 from pyrecest.utils.assignment import murty_k_best_assignments
 
 
