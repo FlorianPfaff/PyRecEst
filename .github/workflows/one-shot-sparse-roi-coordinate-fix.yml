@@ -20,78 +20,63 @@ jobs:
       - name: Apply source and regression-test patch
         shell: bash
         run: |
-          python - <<'PY'
-          from pathlib import Path
-
-          source_path = Path("src/pyrecest/utils/roi_assignment.py")
-          source = source_path.read_text()
-
-          helper_anchor = '''def _as_positive_integer(value, name: str) -> int:
-              integer_value = _as_nonnegative_integer(value, name)
-              if integer_value <= 0:
-                  raise ValueError(f"{name} must be a positive integer.")
-              return integer_value
+          cat > /tmp/roi.patch <<'PATCH'
+          --- a/src/pyrecest/utils/roi_assignment.py
+          +++ b/src/pyrecest/utils/roi_assignment.py
+          @@ -155,6 +155,32 @@
+               return integer_value
 
 
-          def _histogram(values, *, bins: int, value_min: float, value_max: float):
-          '''
-          helper_replacement = '''def _as_positive_integer(value, name: str) -> int:
-              integer_value = _as_nonnegative_integer(value, name)
-              if integer_value <= 0:
-                  raise ValueError(f"{name} must be a positive integer.")
-              return integer_value
+          +def _as_sparse_coordinate_vector(values, name: str):
+          +    """Return flattened sparse pixel coordinates after lossless validation."""
+          +
+          +    try:
+          +        values_array = asarray(values).ravel()
+          +    except (TypeError, ValueError, RuntimeError, OverflowError) as exc:
+          +        raise ValueError(
+          +            f"{name} must contain non-negative integer coordinates."
+          +        ) from exc
+          +
+          +    raw_values = values_array.tolist()
+          +    coordinates = []
+          +    for value in raw_values:
+          +        if isinstance(value, (bool, str, bytes, bytearray, complex)):
+          +            raise ValueError(
+          +                f"{name} must contain non-negative integer coordinates."
+          +            )
+          +        try:
+          +            coordinates.append(_as_nonnegative_integer(value, name))
+          +        except ValueError as exc:
+          +            raise ValueError(
+          +                f"{name} must contain non-negative integer coordinates."
+          +            ) from exc
+          +    return array(coordinates, dtype=int64)
+          +
+          +
+           def _histogram(values, *, bins: int, value_min: float, value_max: float):
+               bins = _as_positive_integer(bins, "nbins")
 
+          @@ -189,11 +215,11 @@
+                       raise KeyError(
+                           "Sparse ROI mappings must provide both 'ypix' and 'xpix' keys."
+                       )
+          -        ypix = asarray(roi["ypix"], dtype=int64).ravel()
+          -        xpix = asarray(roi["xpix"], dtype=int64).ravel()
+          +        ypix = _as_sparse_coordinate_vector(roi["ypix"], "ypix")
+          +        xpix = _as_sparse_coordinate_vector(roi["xpix"], "xpix")
+               elif isinstance(roi, tuple) and len(roi) == 2:
+          -        ypix = asarray(roi[0], dtype=int64).ravel()
+          -        xpix = asarray(roi[1], dtype=int64).ravel()
+          +        ypix = _as_sparse_coordinate_vector(roi[0], "ypix")
+          +        xpix = _as_sparse_coordinate_vector(roi[1], "xpix")
+               else:
+                   mask = asarray(roi)
+                   if mask.ndim != 2:
+          PATCH
+          git apply /tmp/roi.patch
 
-          def _as_sparse_coordinate_vector(values, name: str):
-              """Return flattened sparse pixel coordinates after lossless validation."""
-
-              try:
-                  values_array = asarray(values).ravel()
-              except (TypeError, ValueError, RuntimeError, OverflowError) as exc:
-                  raise ValueError(
-                      f"{name} must contain non-negative integer coordinates."
-                  ) from exc
-
-              raw_values = values_array.tolist()
-              coordinates = []
-              for value in raw_values:
-                  if isinstance(value, (bool, str, bytes, bytearray, complex)):
-                      raise ValueError(
-                          f"{name} must contain non-negative integer coordinates."
-                      )
-                  try:
-                      coordinates.append(_as_nonnegative_integer(value, name))
-                  except ValueError as exc:
-                      raise ValueError(
-                          f"{name} must contain non-negative integer coordinates."
-                      ) from exc
-              return array(coordinates, dtype=int64)
-
-
-          def _histogram(values, *, bins: int, value_min: float, value_max: float):
-          '''
-          if source.count(helper_anchor) != 1:
-              raise RuntimeError("unexpected ROI helper anchor count")
-          source = source.replace(helper_anchor, helper_replacement)
-
-          cast_anchor = '''        ypix = asarray(roi["ypix"], dtype=int64).ravel()
-              xpix = asarray(roi["xpix"], dtype=int64).ravel()
-          elif isinstance(roi, tuple) and len(roi) == 2:
-              ypix = asarray(roi[0], dtype=int64).ravel()
-              xpix = asarray(roi[1], dtype=int64).ravel()
-          '''
-          cast_replacement = '''        ypix = _as_sparse_coordinate_vector(roi["ypix"], "ypix")
-              xpix = _as_sparse_coordinate_vector(roi["xpix"], "xpix")
-          elif isinstance(roi, tuple) and len(roi) == 2:
-              ypix = _as_sparse_coordinate_vector(roi[0], "ypix")
-              xpix = _as_sparse_coordinate_vector(roi[1], "xpix")
-          '''
-          if source.count(cast_anchor) != 1:
-              raise RuntimeError("unexpected sparse ROI cast anchor count")
-          source_path.write_text(source.replace(cast_anchor, cast_replacement))
-
-          Path("tests/test_roi_assignment_sparse_coordinate_validation.py").write_text(
-              '''import pytest
+          cat > tests/test_roi_assignment_sparse_coordinate_validation.py <<'PY'
+          import pytest
 
           from pyrecest.utils.roi_assignment import roi_iou
 
@@ -118,8 +103,6 @@ jobs:
               sparse_tuple = ([0, 1], [2, 3])
 
               assert roi_iou(sparse_mapping, sparse_tuple) == 1.0
-          '''
-          )
           PY
 
       - name: Validate patch structure
