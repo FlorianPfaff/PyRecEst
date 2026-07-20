@@ -491,8 +491,14 @@ def fractional_matrix_power(A, t):
     """Compute the fractional power of a matrix."""
     A = _as_linalg_tensor(A)
     A_np = _as_numpy_no_grad(A)
+    exponent = _as_numpy_no_grad(t)
+    if exponent.ndim != 0:
+        raise TypeError("t must be a scalar")
+    exponent = exponent.item()
     out = _np.vectorize(
-        lambda one_matrix: _scipy.linalg.fractional_matrix_power(one_matrix, t),
+        lambda one_matrix: _scipy.linalg.fractional_matrix_power(
+            one_matrix, exponent
+        ),
         signature="(n,n)->(n,n)",
     )(A_np)
 

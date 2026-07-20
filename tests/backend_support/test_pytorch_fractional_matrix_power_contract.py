@@ -56,3 +56,29 @@ print("ok")
 
     assert result.returncode == 0, result.stderr
     assert "ok" in result.stdout
+
+
+@pytest.mark.backend_portable
+def test_pytorch_fractional_matrix_power_accepts_scalar_tensor_exponent():
+    if importlib.util.find_spec("torch") is None:
+        pytest.skip("PyTorch is not installed")
+
+    result = run_backend_code(
+        "pytorch",
+        """
+import pyrecest.backend as backend
+
+values = backend.array([[4.0, 0.0], [0.0, 9.0]], dtype=backend.float64)
+exponent = backend.array(0.5, dtype=backend.float64)
+
+result = backend.linalg.fractional_matrix_power(values, exponent)
+expected = backend.array([[2.0, 0.0], [0.0, 3.0]], dtype=backend.float64)
+
+assert result.dtype == backend.float64
+assert backend.allclose(result, expected, atol=1e-10, rtol=1e-10)
+print("ok")
+""",
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "ok" in result.stdout
