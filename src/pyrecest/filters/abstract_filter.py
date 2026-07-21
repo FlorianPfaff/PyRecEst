@@ -11,7 +11,7 @@ class AbstractFilter(ABC):
 
     @abstractmethod
     def __init__(self, initial_filter_state):
-        self._filter_state = initial_filter_state
+        self._filter_state = copy.deepcopy(initial_filter_state)
         self.history = HistoryRecorder()
 
     @property
