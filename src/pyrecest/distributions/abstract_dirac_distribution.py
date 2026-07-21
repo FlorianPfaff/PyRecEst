@@ -15,7 +15,9 @@ from pyrecest.backend import (
     arange,
     argmax,
     asarray,
-    copy as backend_copy,
+)
+from pyrecest.backend import copy as backend_copy
+from pyrecest.backend import (
     int32,
     int64,
     isclose,
@@ -96,8 +98,10 @@ class AbstractDiracDistribution(AbstractDistributionType):
             total_weight = sum(w)
         except FloatingPointError:
             total_weight = None
-        if total_weight is not None and bool(isfinite(total_weight)) and bool(
-            total_weight > 0
+        if (
+            total_weight is not None
+            and bool(isfinite(total_weight))
+            and bool(total_weight > 0)
         ):
             return 1.0, total_weight
 
@@ -113,9 +117,7 @@ class AbstractDiracDistribution(AbstractDistributionType):
         if not math.isfinite(scaled_total_weight) or scaled_total_weight <= 0:
             raise ValueError("Dirac weights must have positive finite total mass.")
 
-        normalization_root = math.sqrt(weight_scale) * math.sqrt(
-            scaled_total_weight
-        )
+        normalization_root = math.sqrt(weight_scale) * math.sqrt(scaled_total_weight)
         if not math.isfinite(normalization_root) or normalization_root <= 0:
             raise ValueError("Dirac weights must have positive finite total mass.")
 
@@ -131,8 +133,10 @@ class AbstractDiracDistribution(AbstractDistributionType):
             normalized_total = sum(normalized_weights)
         except FloatingPointError:
             normalized_total = None
-        if normalized_total is not None and bool(isfinite(normalized_total)) and bool(
-            normalized_total > 0
+        if (
+            normalized_total is not None
+            and bool(isfinite(normalized_total))
+            and bool(normalized_total > 0)
         ):
             return normalized_weights
 

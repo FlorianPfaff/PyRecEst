@@ -1,7 +1,6 @@
 import unittest
 
 import numpy as np
-
 from pyrecest.utils.cost_matrix_adjustments import apply_cost_matrix_adjustment
 
 
