@@ -32,6 +32,25 @@ def _as_finite_real_scalar(value, name: str) -> float:
     return scalar
 
 
+def _as_finite_real_array(value, name: str):
+    """Normalize finite real evaluation points accepted by every backend."""
+    message = f"{name} must contain only finite real values"
+    try:
+        backend_value = array(value)
+        value_array = np.asarray(to_numpy(backend_value))
+    except (TypeError, ValueError, RuntimeError, OverflowError) as exc:
+        raise ValueError(message) from exc
+
+    if (
+        np.issubdtype(value_array.dtype, np.bool_)
+        or not np.issubdtype(value_array.dtype, np.number)
+        or np.iscomplexobj(value_array)
+        or not np.all(np.isfinite(value_array))
+    ):
+        raise ValueError(message)
+    return backend_value
+
+
 class CircularUniformDistribution(
     HypertoroidalUniformDistribution, AbstractCircularDistribution
 ):
@@ -69,5 +88,5 @@ class CircularUniformDistribution(
         """
 
         starting_point = _as_finite_real_scalar(starting_point, "starting_point")
-        xa = array(xa)
+        xa = _as_finite_real_array(xa, "xa")
         return mod(xa - starting_point, 2.0 * pi) / (2.0 * pi)
