@@ -6,7 +6,9 @@ import numpy.testing as npt
 
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import array, to_numpy
-from pyrecest.distributions.nonperiodic.gaussian_distribution import GaussianDistribution
+from pyrecest.distributions.nonperiodic.gaussian_distribution import (
+    GaussianDistribution,
+)
 from pyrecest.distributions.nonperiodic.gaussian_mixture import GaussianMixture
 
 

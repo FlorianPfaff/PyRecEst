@@ -72,18 +72,24 @@ class HypertoroidalFourierSmoother(AbstractSmoother):
         likelihoods = self._as_distribution_list(likelihoods, "likelihoods")
 
         if len(likelihoods) != len(filtered_states):
-            raise ValueError("likelihoods must have the same length as filtered_states.")
+            raise ValueError(
+                "likelihoods must have the same length as filtered_states."
+            )
 
         n_steps = len(filtered_states)
         reference = filtered_states[0]
         n_coefficients = reference.coeff_mat.shape
 
         filtered_states = [
-            self._ensure_compatible(dist, reference, n_coefficients, f"filtered_states[{idx}]")
+            self._ensure_compatible(
+                dist, reference, n_coefficients, f"filtered_states[{idx}]"
+            )
             for idx, dist in enumerate(filtered_states)
         ]
         likelihoods = [
-            self._ensure_compatible(dist, reference, n_coefficients, f"likelihoods[{idx}]")
+            self._ensure_compatible(
+                dist, reference, n_coefficients, f"likelihoods[{idx}]"
+            )
             for idx, dist in enumerate(likelihoods)
         ]
         system_noises = self._normalize_noise_sequence(
@@ -93,11 +99,17 @@ class HypertoroidalFourierSmoother(AbstractSmoother):
             n_coefficients,
         )
 
-        backward_messages: list[HypertoroidalFourierDistribution | None] = [None] * n_steps
-        smoothed_states: list[HypertoroidalFourierDistribution | None] = [None] * n_steps
+        backward_messages: list[HypertoroidalFourierDistribution | None] = [
+            None
+        ] * n_steps
+        smoothed_states: list[HypertoroidalFourierDistribution | None] = [
+            None
+        ] * n_steps
 
         backward_messages[-1] = self.constant_message_like(filtered_states[-1])
-        smoothed_states[-1] = filtered_states[-1].multiply(backward_messages[-1], n_coefficients)
+        smoothed_states[-1] = filtered_states[-1].multiply(
+            backward_messages[-1], n_coefficients
+        )
 
         for t in range(n_steps - 2, -1, -1):
             next_backward = backward_messages[t + 1]
@@ -105,8 +117,12 @@ class HypertoroidalFourierSmoother(AbstractSmoother):
 
             future_message = likelihoods[t + 1].multiply(next_backward, n_coefficients)
             reversed_noise = self.reverse_frequencies(system_noises[t])
-            backward_messages[t] = future_message.convolve(reversed_noise, n_coefficients)
-            smoothed_states[t] = filtered_states[t].multiply(backward_messages[t], n_coefficients)
+            backward_messages[t] = future_message.convolve(
+                reversed_noise, n_coefficients
+            )
+            smoothed_states[t] = filtered_states[t].multiply(
+                backward_messages[t], n_coefficients
+            )
 
         return (
             [state for state in smoothed_states if state is not None],
@@ -114,7 +130,9 @@ class HypertoroidalFourierSmoother(AbstractSmoother):
         )
 
     @staticmethod
-    def reverse_frequencies(distribution: HypertoroidalFourierDistribution) -> HypertoroidalFourierDistribution:
+    def reverse_frequencies(
+        distribution: HypertoroidalFourierDistribution,
+    ) -> HypertoroidalFourierDistribution:
         """Return a distribution with coefficients indexed by negated frequencies.
 
         For identity coefficients this represents ``p(-x)``. For square-root
@@ -126,11 +144,15 @@ class HypertoroidalFourierSmoother(AbstractSmoother):
             raise TypeError("distribution must be a HypertoroidalFourierDistribution.")
 
         result = copy.deepcopy(distribution)
-        result.coeff_mat = distribution.coeff_mat[(slice(None, None, -1),) * distribution.dim]
+        result.coeff_mat = distribution.coeff_mat[
+            (slice(None, None, -1),) * distribution.dim
+        ]
         return result
 
     @staticmethod
-    def constant_message_like(reference: HypertoroidalFourierDistribution) -> HypertoroidalFourierDistribution:
+    def constant_message_like(
+        reference: HypertoroidalFourierDistribution,
+    ) -> HypertoroidalFourierDistribution:
         """Return a constant backward message compatible with ``reference``."""
 
         if not isinstance(reference, HypertoroidalFourierDistribution):
@@ -146,7 +168,9 @@ class HypertoroidalFourierSmoother(AbstractSmoother):
         elif reference.transformation == "sqrt":
             coeffs[center] = 1.0 / sqrt((2.0 * pi) ** dim)
         else:
-            raise ValueError(f"Unsupported transformation: {reference.transformation!r}")
+            raise ValueError(
+                f"Unsupported transformation: {reference.transformation!r}"
+            )
 
         return HypertoroidalFourierDistribution(coeffs, reference.transformation)
 
@@ -158,19 +182,25 @@ class HypertoroidalFourierSmoother(AbstractSmoother):
             )
 
     @staticmethod
-    def _as_distribution_list(distributions, name: str) -> list[HypertoroidalFourierDistribution]:
+    def _as_distribution_list(
+        distributions, name: str
+    ) -> list[HypertoroidalFourierDistribution]:
         if isinstance(distributions, HypertoroidalFourierDistribution):
             raise ValueError(f"{name} must be a sequence, not a single distribution.")
         try:
             distribution_list = list(distributions)
         except TypeError as exc:
-            raise TypeError(f"{name} must be a sequence of HypertoroidalFourierDistribution instances.") from exc
+            raise TypeError(
+                f"{name} must be a sequence of HypertoroidalFourierDistribution instances."
+            ) from exc
 
         if len(distribution_list) == 0:
             raise ValueError(f"{name} must contain at least one distribution.")
         for idx, distribution in enumerate(distribution_list):
             if not isinstance(distribution, HypertoroidalFourierDistribution):
-                raise TypeError(f"{name}[{idx}] must be a HypertoroidalFourierDistribution.")
+                raise TypeError(
+                    f"{name}[{idx}] must be a HypertoroidalFourierDistribution."
+                )
         return distribution_list
 
     @staticmethod
@@ -181,7 +211,9 @@ class HypertoroidalFourierSmoother(AbstractSmoother):
         name: str,
     ) -> HypertoroidalFourierDistribution:
         if distribution.dim != reference.dim:
-            raise ValueError(f"{name} has dimension {distribution.dim}, expected {reference.dim}.")
+            raise ValueError(
+                f"{name} has dimension {distribution.dim}, expected {reference.dim}."
+            )
         if distribution.transformation != reference.transformation:
             raise ValueError(
                 f"{name} uses transformation {distribution.transformation!r}, expected {reference.transformation!r}."
@@ -224,8 +256,14 @@ class HypertoroidalFourierSmoother(AbstractSmoother):
         normalized = []
         for idx, noise in enumerate(noise_list):
             if not isinstance(noise, HypertoroidalFourierDistribution):
-                raise TypeError(f"system_noises[{idx}] must be a HypertoroidalFourierDistribution.")
-            normalized.append(cls._ensure_compatible(noise, reference, n_coefficients, f"system_noises[{idx}]"))
+                raise TypeError(
+                    f"system_noises[{idx}] must be a HypertoroidalFourierDistribution."
+                )
+            normalized.append(
+                cls._ensure_compatible(
+                    noise, reference, n_coefficients, f"system_noises[{idx}]"
+                )
+            )
         return normalized
 
 

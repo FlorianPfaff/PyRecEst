@@ -65,9 +65,7 @@ class SensorBiasCorrectionModel:
         target_dim = _as_positive_int(self.target_dim, "target_dim")
         feature_dim = _as_nonnegative_int(self.feature_dim, "feature_dim")
         intercept = (
-            _as_numeric_array(self.intercept, "intercept")
-            .reshape(target_dim)
-            .copy()
+            _as_numeric_array(self.intercept, "intercept").reshape(target_dim).copy()
         )
         coefficients = (
             _as_numeric_array(self.coefficients, "coefficients")

@@ -1,7 +1,6 @@
 import importlib.util
 
 import pytest
-
 from tests.support.backend_runner import run_backend_code
 
 pytestmark = pytest.mark.backend_portable
@@ -45,9 +44,7 @@ def test_raw_pytorch_linspace_prefers_existing_non_cpu_endpoint_device():
     if importlib.util.find_spec("torch") is None:
         pytest.skip("PyTorch is not installed")
 
-    result = run_backend_code(
-        "numpy", _linspace_device_contract_code("raw_pytorch")
-    )
+    result = run_backend_code("numpy", _linspace_device_contract_code("raw_pytorch"))
 
     assert result.returncode == 0, result.stderr
     assert "ok" in result.stdout
@@ -57,9 +54,7 @@ def test_public_pytorch_linspace_prefers_existing_non_cpu_endpoint_device():
     if importlib.util.find_spec("torch") is None:
         pytest.skip("PyTorch is not installed")
 
-    result = run_backend_code(
-        "pytorch", _linspace_device_contract_code("backend")
-    )
+    result = run_backend_code("pytorch", _linspace_device_contract_code("backend"))
 
     assert result.returncode == 0, result.stderr
     assert "ok" in result.stdout

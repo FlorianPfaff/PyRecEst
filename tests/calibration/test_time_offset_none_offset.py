@@ -1,5 +1,4 @@
 import numpy as np
-
 from pyrecest.calibration.time_offset import time_offset_error_summary
 
 
