@@ -60,6 +60,25 @@ def _validate_positive_sample_count(n) -> int:
     return count_int
 
 
+def _validate_finite_scalar(value, name: str) -> float:
+    scalar_array = np.asarray(value)
+    if scalar_array.shape != ():
+        raise ValueError(f"{name} must be a scalar")
+
+    scalar = scalar_array.item()
+    if isinstance(scalar, (bool, np.bool_)):
+        raise ValueError(f"{name} must be a finite scalar")
+
+    try:
+        scalar_float = float(scalar)
+    except (OverflowError, TypeError, ValueError) as exc:
+        raise ValueError(f"{name} must be a finite scalar") from exc
+
+    if not np.isfinite(scalar_float):
+        raise ValueError(f"{name} must be a finite scalar")
+    return scalar_float
+
+
 def _validate_nonnegative_finite_scalar(value, name: str) -> float:
     scalar_array = np.asarray(value)
     if scalar_array.shape != ():
@@ -118,13 +137,14 @@ class GaussVonMisesDistribution(AbstractHypercylindricalDistribution):
             raise ValueError("Gamma and mu must have matching size")
         if not bool(allclose(Gamma, Gamma.T)):
             raise ValueError("Gamma must be symmetric")
+        alpha = _validate_finite_scalar(alpha, "alpha")
         kappa = _validate_nonnegative_finite_scalar(kappa, "kappa")
 
         AbstractHypercylindricalDistribution.__init__(self, bound_dim=1, lin_dim=n)
 
         self.mu = array(mu)
         self.P = array(P)
-        self.alpha = float(mod(array(float(alpha)), 2.0 * pi))
+        self.alpha = float(mod(array(alpha), 2.0 * pi))
         self.beta = array(beta)
         self.Gamma = array(Gamma)
         self.kappa = float(kappa)
