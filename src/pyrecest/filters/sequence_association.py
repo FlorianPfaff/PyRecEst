@@ -199,9 +199,7 @@ def solve_top_k_viterbi_sequence_associations(
     for frame_pos in range(1, len(normalized_frames)):
         previous_frame = normalized_frames[frame_pos - 1]
         current_frame = normalized_frames[frame_pos]
-        current_costs: list[dict[int, float]] = [
-            {} for _current_node in current_frame
-        ]
+        current_costs: list[dict[int, float]] = [{} for _current_node in current_frame]
         current_parents: list[dict[int, tuple[int, int]]] = [
             {} for _current_node in current_frame
         ]
@@ -236,13 +234,11 @@ def solve_top_k_viterbi_sequence_associations(
                         + transition_value
                         + float(current_node.unary_cost)
                     )
-                    best_cost = current_costs[current_index].get(
-                        current_miss_streak
-                    )
+                    best_cost = current_costs[current_index].get(current_miss_streak)
                     if best_cost is None or candidate_cost < best_cost:
-                        current_costs[current_index][current_miss_streak] = (
-                            candidate_cost
-                        )
+                        current_costs[current_index][
+                            current_miss_streak
+                        ] = candidate_cost
                         current_parents[current_index][current_miss_streak] = (
                             previous_index,
                             previous_miss_streak,

@@ -15,8 +15,8 @@ from pyrecest._backend._dtype_utils import (
 from pyrecest._backend._dtype_utils import (
     get_default_dtype as _shared_get_default_dtype,
 )
+from torch import bool as torch_bool
 from torch import (
-    bool as torch_bool,
     complex64,
     complex128,
     float16,
@@ -171,9 +171,8 @@ def _is_random_array_parameter(value):
 
 
 def _is_binary_array_operand(value):
-    return (
-        isinstance(value, (list, tuple))
-        or (not isinstance(value, (str, bytes)) and hasattr(value, "__array__"))
+    return isinstance(value, (list, tuple)) or (
+        not isinstance(value, (str, bytes)) and hasattr(value, "__array__")
     )
 
 
@@ -301,7 +300,9 @@ def _box_binary_scalar(target=None, box_x1=True, box_x2=True):
                 x1 = _torch.tensor(x1)
             if box_x2 and not _torch.is_tensor(x2):
                 x2 = _binary_tensor_operand(x2, x1)
-            elif not box_x2 and not _torch.is_tensor(x2) and _is_binary_array_operand(x2):
+            elif (
+                not box_x2 and not _torch.is_tensor(x2) and _is_binary_array_operand(x2)
+            ):
                 x2 = _binary_tensor_operand(x2, x1)
 
             return func(x1, x2, *args, **kwargs)
@@ -318,7 +319,9 @@ def _patch_parent_log1p_arraylike_contract() -> None:
     """Make PyTorch backend ``log1p`` accept NumPy-style array-like inputs."""
     try:
         import pyrecest._backend.pytorch as pytorch_backend  # pylint: disable=import-outside-toplevel
-    except ModuleNotFoundError:  # pragma: no cover - parent backend import failed earlier
+    except (
+        ModuleNotFoundError
+    ):  # pragma: no cover - parent backend import failed earlier
         return
 
     original_log1p = getattr(pytorch_backend, "log1p", None)
