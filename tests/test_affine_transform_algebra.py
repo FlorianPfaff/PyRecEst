@@ -19,6 +19,21 @@ class TestAffineTransformAlgebra(unittest.TestCase):
 
         npt.assert_allclose(recovered, points, atol=_ATOL)
 
+    def test_constructor_rejects_nonfinite_parameters(self):
+        for invalid_value in (float("nan"), float("inf"), -float("inf")):
+            with self.subTest(component="matrix", invalid_value=invalid_value):
+                with self.assertRaisesRegex(ValueError, "matrix.*finite"):
+                    AffineTransform(
+                        array([[1.0, invalid_value], [0.0, 1.0]]),
+                        array([0.0, 0.0]),
+                    )
+            with self.subTest(component="offset", invalid_value=invalid_value):
+                with self.assertRaisesRegex(ValueError, "offset.*finite"):
+                    AffineTransform(
+                        array([[1.0, 0.0], [0.0, 1.0]]),
+                        array([0.0, invalid_value]),
+                    )
+
     def test_compose_matches_sequential_application(self):
         points = array([[0.0, 0.0], [1.0, -2.0], [3.0, 4.0]])
         first = AffineTransform(

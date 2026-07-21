@@ -6,6 +6,7 @@ import builtins
 import warnings
 from math import log, pi
 
+import numpy as np
 import pyrecest.backend
 from pyrecest.backend import any as backend_any
 from pyrecest.backend import (
@@ -107,10 +108,15 @@ class JointProbabilisticDataAssociationFilter(AbstractNearestNeighborTracker):
 
     @staticmethod
     def _log_gaussian_likelihood(innovation, innovation_covariance):
-        det_value = float(linalg.det(innovation_covariance))
-        if det_value <= 0.0:
-            raise ValueError("Innovation covariance must be positive definite.")
-        logdet = log(det_value)
+        try:
+            cholesky_factor = linalg.cholesky(innovation_covariance)
+        except (np.linalg.LinAlgError, RuntimeError, ValueError) as exc:
+            raise ValueError(
+                "Innovation covariance must be positive definite."
+            ) from exc
+        logdet = 2.0 * float(
+            np.log(np.diag(np.asarray(cholesky_factor))).sum()
+        )
 
         mahalanobis_distance = float(
             innovation.T @ linalg.solve(innovation_covariance, innovation)

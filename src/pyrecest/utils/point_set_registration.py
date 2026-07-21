@@ -77,6 +77,10 @@ class AffineTransform:
             raise ValueError("matrix must be square.")
         if offset.shape[0] != matrix.shape[0]:
             raise ValueError("offset dimension must match matrix dimension.")
+        if any(~isfinite(matrix)):
+            raise ValueError("matrix must contain only finite values.")
+        if any(~isfinite(offset)):
+            raise ValueError("offset must contain only finite values.")
         object.__setattr__(self, "matrix", matrix)
         object.__setattr__(self, "offset", offset)
 

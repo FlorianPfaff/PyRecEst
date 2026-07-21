@@ -134,6 +134,7 @@ class VonMisesDistribution(AbstractCircularDistribution):
         xs = array(xs)
         if xs.ndim > 1:
             raise ValueError("xs must be a scalar or one-dimensional array")
+        starting_point = self._as_float_scalar(starting_point, "starting_point")
 
         r = zeros_like(xs)
 
@@ -160,8 +161,18 @@ class VonMisesDistribution(AbstractCircularDistribution):
     @staticmethod
     def _as_float_scalar(value, name: str) -> float:
         try:
+            value_array = array(value)
+        except (TypeError, ValueError, RuntimeError) as exc:
+            raise ValueError(f"{name} must be a scalar.") from exc
+
+        if value_array.ndim > 0:
+            if value_array.shape != (1,):
+                raise ValueError(f"{name} must be a scalar.")
+            value = value_array[0]
+
+        try:
             scalar = float(value)
-        except (TypeError, ValueError) as exc:
+        except (OverflowError, TypeError, ValueError) as exc:
             raise ValueError(f"{name} must be a scalar.") from exc
 
         if not math.isfinite(scalar):
