@@ -8,6 +8,7 @@ import pyrecest.backend
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
 from pyrecest.backend import (
     abs,
+    all,
     angle,
     any,
     array,
@@ -15,6 +16,7 @@ from pyrecest.backend import (
     exp,
     int32,
     int64,
+    isfinite as backend_isfinite,
     log,
     mod,
     ndim,
@@ -34,6 +36,15 @@ from ..hypertorus.hypertoroidal_wrapped_normal_distribution import (
 )
 from .abstract_circular_distribution import AbstractCircularDistribution
 from .von_mises_distribution import VonMisesDistribution
+
+
+def _validate_finite_scalar(value, name):
+    value = array(value)
+    if value.shape not in ((), (1,)):
+        raise ValueError(f"{name} must be a scalar.")
+    if not bool(all(backend_isfinite(value))):
+        raise ValueError(f"{name} must be finite.")
+    return value
 
 
 class WrappedNormalDistribution(
@@ -163,6 +174,7 @@ class WrappedNormalDistribution(
         n_wraps = _validate_series_order(n_wraps)
         mu = self.scalar_mu
         sigma = self.sigma
+        starting_point = _validate_finite_scalar(starting_point, "starting_point")
         starting_point = mod(starting_point, 2 * pi)
         xs = mod(xs, 2 * pi)
 
