@@ -496,9 +496,7 @@ def fractional_matrix_power(A, t):
         raise TypeError("t must be a scalar")
     exponent = exponent.item()
     out = _np.vectorize(
-        lambda one_matrix: _scipy.linalg.fractional_matrix_power(
-            one_matrix, exponent
-        ),
+        lambda one_matrix: _scipy.linalg.fractional_matrix_power(one_matrix, exponent),
         signature="(n,n)->(n,n)",
     )(A_np)
 

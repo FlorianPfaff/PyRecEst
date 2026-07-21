@@ -171,7 +171,9 @@ def _patch_logistic_pairwise_backend_standardization() -> None:
         "__name__",
         "_fit_standardization",
     )
-    _fit_standardization.__doc__ = getattr(original_fit_standardization, "__doc__", None)
+    _fit_standardization.__doc__ = getattr(
+        original_fit_standardization, "__doc__", None
+    )
     _fit_standardization._pyrecest_backend_std_contract = True
     LogisticPairwiseAssociationModel._fit_standardization = _fit_standardization
 
@@ -201,7 +203,9 @@ def _patch_logistic_pairwise_scalar_prediction() -> None:
             if not _backend.all(_backend.isfinite(flattened)):
                 raise ValueError("features must be finite")
             return flattened, ()
-        return original_prepare_prediction_features(features, expected_feature_dimension)
+        return original_prepare_prediction_features(
+            features, expected_feature_dimension
+        )
 
     _prepare_prediction_features.__name__ = getattr(
         original_prepare_prediction_features,
@@ -331,7 +335,9 @@ from .track_metrics import (
 )
 
 _multisession_assignment_module.tracks_to_session_labels = tracks_to_session_labels
-_multisession_assignment_module._validate_scalar_cost = _validate_multisession_scalar_cost
+_multisession_assignment_module._validate_scalar_cost = (
+    _validate_multisession_scalar_cost
+)
 
 __all__ = [
     "MultiSessionAssignmentResult",

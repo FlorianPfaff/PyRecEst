@@ -8,7 +8,9 @@ import numpy as np
 from pyrecest.backend import (
     all,
     asarray,
-    copy as backend_copy,
+)
+from pyrecest.backend import copy as backend_copy
+from pyrecest.backend import (
     exp,
     int32,
     int64,
@@ -100,12 +102,9 @@ def _density_scale_from_log_beta(log_beta):
     """Return ``lambda / (1 - exp(-2*pi*lambda))`` without overflow."""
     if bool(all(log_beta < _SMALL_RATE_SERIES_THRESHOLD)):
         # x / (1 - exp(-x)) = 1 + x/2 + x**2/12 - x**4/720 + O(x**6).
-        return (
-            1.0
-            + log_beta / 2.0
-            + log_beta**2 / 12.0
-            - log_beta**4 / 720.0
-        ) / (2.0 * pi)
+        return (1.0 + log_beta / 2.0 + log_beta**2 / 12.0 - log_beta**4 / 720.0) / (
+            2.0 * pi
+        )
     return (log_beta / (2.0 * pi)) / (1.0 - exp(-log_beta))
 
 

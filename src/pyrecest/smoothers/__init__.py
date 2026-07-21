@@ -1,5 +1,10 @@
 from .abstract_smoother import AbstractSmoother
 from .delayed_output import DelayedStateOutput, DelayedStateOutputMixin
+from .fbfb_mem_qkf_smoother import (
+    FBFBMEMQKFSmoother,
+    ForwardBackwardForwardBackwardMEMQKFSmoother,
+    ForwardBackwardMEMQKFSmoother,
+)
 from .fixed_lag_mem_qkf_smoother import (
     FixedIntervalMEMQKFSmoother,
     FixedIntervalMemQkfSmoother,
@@ -10,11 +15,6 @@ from .fixed_lag_mem_qkf_smoother import (
     FullIntervalMEMQKFSmoother,
     MEMQKFSmootherGain,
     MEMQKFTrackerState,
-)
-from .fbfb_mem_qkf_smoother import (
-    FBFBMEMQKFSmoother,
-    ForwardBackwardForwardBackwardMEMQKFSmoother,
-    ForwardBackwardMEMQKFSmoother,
 )
 from .fixed_lag_random_matrix_smoother import (
     FactorizedGIWRandomMatrixTrackerState,

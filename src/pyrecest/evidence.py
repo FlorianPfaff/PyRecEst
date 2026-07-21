@@ -211,29 +211,41 @@ def resolve_evidence_computation_mode(
 
 
 try:
-    from pyrecest._backend_runtime_patches import (  # pylint: disable=import-outside-toplevel
-        patch_pytorch_close_equal_nan_device_contract as _patch_pytorch_close_equal_nan_device_contract,
+    from pyrecest._backend_runtime_patches import (
+        patch_pytorch_close_equal_nan_device_contract as _patch_pytorch_close_equal_nan_device_contract,  # pylint: disable=import-outside-toplevel
+    )
+    from pyrecest._backend_runtime_patches import (
         patch_pytorch_edge_pad_contract as _patch_pytorch_edge_pad_contract,
+    )
+    from pyrecest._backend_runtime_patches import (
         patch_pytorch_repeat_numpy_contract as _patch_pytorch_repeat_numpy_contract,
+    )
+    from pyrecest._backend_runtime_patches import (
         patch_pytorch_searchsorted_contract as _patch_pytorch_searchsorted_contract,
-        patch_raw_pytorch_reduction_alias_contract as _patch_raw_pytorch_reduction_alias_contract,
+    )
+    from pyrecest._backend_runtime_patches import (
         patch_pytorch_take_axis_contract as _patch_pytorch_take_axis_contract,
+    )
+    from pyrecest._backend_runtime_patches import (
         patch_pytorch_transpose_boolean_axes_contract as _patch_pytorch_transpose_boolean_axes_contract,
     )
-    from pyrecest.backend_support._jax_array_from_sparse_contract import (  # pylint: disable=import-outside-toplevel
-        patch_jax_array_from_sparse_flat_index_contract as _patch_jax_array_from_sparse_flat_index_contract,
+    from pyrecest._backend_runtime_patches import (
+        patch_raw_pytorch_reduction_alias_contract as _patch_raw_pytorch_reduction_alias_contract,
     )
-    from pyrecest.backend_support._pytorch_nonzero_scalar_contract import (  # pylint: disable=import-outside-toplevel
-        patch_pytorch_nonzero_scalar_contract as _patch_pytorch_nonzero_scalar_contract,
+    from pyrecest.backend_support._jax_array_from_sparse_contract import (
+        patch_jax_array_from_sparse_flat_index_contract as _patch_jax_array_from_sparse_flat_index_contract,  # pylint: disable=import-outside-toplevel
     )
-    from pyrecest.backend_support._pytorch_one_hot_scalar_contract import (  # pylint: disable=import-outside-toplevel
-        patch_pytorch_one_hot_scalar_contract as _patch_pytorch_one_hot_scalar_contract,
+    from pyrecest.backend_support._pytorch_nonzero_scalar_contract import (
+        patch_pytorch_nonzero_scalar_contract as _patch_pytorch_nonzero_scalar_contract,  # pylint: disable=import-outside-toplevel
     )
-    from pyrecest.backend_support._pytorch_quantile_empty_batch_contract import (  # pylint: disable=import-outside-toplevel
-        patch_pytorch_quantile_empty_batch_contract as _patch_pytorch_quantile_empty_batch_contract,
+    from pyrecest.backend_support._pytorch_one_hot_scalar_contract import (
+        patch_pytorch_one_hot_scalar_contract as _patch_pytorch_one_hot_scalar_contract,  # pylint: disable=import-outside-toplevel
     )
-    from pyrecest.backend_support._pytorch_reduction_axis_contract import (  # pylint: disable=import-outside-toplevel
-        patch_pytorch_reduction_axis_contract as _patch_pytorch_reduction_axis_contract,
+    from pyrecest.backend_support._pytorch_quantile_empty_batch_contract import (
+        patch_pytorch_quantile_empty_batch_contract as _patch_pytorch_quantile_empty_batch_contract,  # pylint: disable=import-outside-toplevel
+    )
+    from pyrecest.backend_support._pytorch_reduction_axis_contract import (
+        patch_pytorch_reduction_axis_contract as _patch_pytorch_reduction_axis_contract,  # pylint: disable=import-outside-toplevel
     )
 except ModuleNotFoundError:  # pragma: no cover - source tree corruption only
     pass
