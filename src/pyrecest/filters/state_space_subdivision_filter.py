@@ -354,9 +354,10 @@ class StateSpaceSubdivisionFilter(AbstractFilter, HypercylindricalFilterMixin):
 
         combined_covariances = covariances + likelihood_cov
         deltas = means - likelihood_mu
-        combined_determinants = linalg.det(combined_covariances)
-        if bool(backend_any(less_equal(combined_determinants, 0.0))):
+        combined_eigenvalues = linalg.eigvalsh(combined_covariances)
+        if bool(backend_any(less_equal(combined_eigenvalues, 0.0))):
             raise ValueError("Combined covariance matrices must be positive definite.")
+        combined_log_determinants = backend_sum(log(combined_eigenvalues), axis=1)
 
         combined_precisions = linalg.inv(combined_covariances)
         solved_deltas = einsum("nij,nj->ni", combined_precisions, deltas)
@@ -366,7 +367,7 @@ class StateSpaceSubdivisionFilter(AbstractFilter, HypercylindricalFilterMixin):
             -0.5
             * (
                 dimension * log(2.0 * 3.141592653589793)
-                + log(combined_determinants)
+                + combined_log_determinants
                 + exponents
             )
         )

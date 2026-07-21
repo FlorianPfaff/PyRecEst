@@ -1,4 +1,4 @@
-"""PyTorch ``one_hot`` and ``take`` compatibility hooks."""
+"""PyTorch ``one_hot``, ``take``, and gamma compatibility hooks."""
 
 from __future__ import annotations
 
@@ -109,6 +109,82 @@ def _patch_pytorch_one_hot_scalar_contract(
         backend.one_hot = one_hot
 
 
+def _patch_pytorch_gamma_autograd_contract(
+    pytorch_backend,
+    backend,
+    torch_module,
+) -> None:
+    """Keep inactive reflection singularities out of ``gamma`` gradients."""
+    original_gamma = getattr(pytorch_backend, "gamma", None)
+    if original_gamma is None:
+        return
+    if getattr(original_gamma, "_pyrecest_finite_gradient_contract", False):
+        if getattr(backend, "__backend_name__", None) == "pytorch":
+            backend.gamma = original_gamma
+        return
+
+    def gamma(a, out=None):
+        values = pytorch_backend.array(a)
+        if not pytorch_backend.is_floating(values):
+            if pytorch_backend.is_complex(values):
+                raise TypeError(
+                    "gamma is only supported for real-valued PyTorch inputs"
+                )
+            values = pytorch_backend.cast(
+                values, dtype=pytorch_backend.get_default_dtype()
+            )
+
+        positive_branch = torch_module.exp(torch_module.special.gammaln(values))
+        negative_mask = values < 0
+        reflection_values = torch_module.where(
+            negative_mask,
+            values,
+            torch_module.full_like(values, -0.5),
+        )
+        reflected_branch = torch_module.pi / (
+            torch_module.sin(torch_module.pi * reflection_values)
+            * torch_module.exp(
+                torch_module.special.gammaln(1 - reflection_values)
+            )
+        )
+        result = torch_module.where(
+            negative_mask, reflected_branch, positive_branch
+        )
+
+        zero_mask = values == 0
+        signed_zero_inf = torch_module.where(
+            torch_module.signbit(values),
+            torch_module.full_like(values, -torch_module.inf),
+            torch_module.full_like(values, torch_module.inf),
+        )
+        result = torch_module.where(zero_mask, signed_zero_inf, result)
+
+        negative_integer_mask = negative_mask & (
+            values == torch_module.floor(values)
+        )
+        result = torch_module.where(
+            negative_integer_mask,
+            torch_module.full_like(values, torch_module.nan),
+            result,
+        )
+        if out is not None:
+            copy_ = getattr(out, "copy_", None)
+            if copy_ is not None:
+                copy_(result)
+            else:
+                out[...] = pytorch_backend.to_numpy(result)
+            return out
+        return result
+
+    gamma.__name__ = getattr(original_gamma, "__name__", "gamma")
+    gamma.__doc__ = getattr(original_gamma, "__doc__", None)
+    gamma._pyrecest_arraylike_contract = True
+    gamma._pyrecest_finite_gradient_contract = True
+    pytorch_backend.gamma = gamma
+    if getattr(backend, "__backend_name__", None) == "pytorch":
+        backend.gamma = gamma
+
+
 def patch_pytorch_one_hot_scalar_contract() -> None:
     """Patch small PyTorch backend compatibility contracts."""
     try:
@@ -124,6 +200,11 @@ def patch_pytorch_one_hot_scalar_contract() -> None:
         torch_module,
     )
     _patch_pytorch_take_axis_contract(pytorch_backend, torch_module)
+    _patch_pytorch_gamma_autograd_contract(
+        pytorch_backend,
+        backend,
+        torch_module,
+    )
 
 
 __all__ = ["patch_pytorch_one_hot_scalar_contract"]

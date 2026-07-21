@@ -32,9 +32,7 @@ from pyrecest.backend import (
     log,
     maximum,
     moveaxis,
-    prod,
     reshape,
-    sign,
     sqrt,
 )
 from pyrecest.backend import sum as backend_sum
@@ -265,26 +263,23 @@ def _batch_trace(matrices: Any) -> Any:
 
 
 def _floored_log_determinants(matrices: Any, epsilon: float) -> Any:
-    """Return ``log(max(det(matrix), epsilon))`` without forming determinants."""
+    """Return floored log determinants for positive-definite covariances."""
 
     eigenvalues = linalg.eigvalsh(matrices)
-    absolute_eigenvalues = abs(eigenvalues)
-    nonzero_eigenvalues = absolute_eigenvalues > 0.0
-    safe_absolute_eigenvalues = where(
-        nonzero_eigenvalues,
-        absolute_eigenvalues,
+    positive_eigenvalues = eigenvalues > 0.0
+    safe_eigenvalues = where(
+        positive_eigenvalues,
+        eigenvalues,
         1.0,
     )
-    determinant_signs = prod(sign(eigenvalues), axis=-1)
-    log_absolute_determinants = backend_sum(log(safe_absolute_eigenvalues), axis=-1)
+    log_determinants = backend_sum(log(safe_eigenvalues), axis=-1)
     log_epsilon = math.log(epsilon)
     use_log_determinant = (
-        (determinant_signs > 0.0)
-        & backend_all(nonzero_eigenvalues, axis=-1)
-        & isfinite(log_absolute_determinants)
-        & (log_absolute_determinants > log_epsilon)
+        backend_all(positive_eigenvalues, axis=-1)
+        & isfinite(log_determinants)
+        & (log_determinants > log_epsilon)
     )
-    return where(use_log_determinant, log_absolute_determinants, log_epsilon)
+    return where(use_log_determinant, log_determinants, log_epsilon)
 
 
 def _positive_floor(values: Any, epsilon: float) -> Any:
