@@ -1,11 +1,39 @@
 import matplotlib.pyplot as plt
+import numpy as np
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import array, atleast_1d, cos, linspace, log, mod, pi, sin
+from pyrecest.backend import (
+    array,
+    atleast_1d,
+    cos,
+    linspace,
+    log,
+    mod,
+    pi,
+    sin,
+    to_numpy,
+)
 
 from ..hypertorus.abstract_hypertoroidal_distribution import (
     AbstractHypertoroidalDistribution,
 )
+
+
+def _as_finite_real_numpy_array(value, message: str):
+    """Convert an input to a NumPy array and enforce finite real numeric values."""
+    try:
+        value_array = np.asarray(to_numpy(array(value)))
+    except (TypeError, ValueError, RuntimeError, OverflowError) as exc:
+        raise ValueError(message) from exc
+
+    if (
+        np.issubdtype(value_array.dtype, np.bool_)
+        or not np.issubdtype(value_array.dtype, np.number)
+        or np.iscomplexobj(value_array)
+        or not np.all(np.isfinite(value_array))
+    ):
+        raise ValueError(message)
+    return value_array
 
 
 class AbstractCircularDistribution(AbstractHypertoroidalDistribution):
@@ -23,9 +51,22 @@ class AbstractCircularDistribution(AbstractHypertoroidalDistribution):
         Returns:
             : The computed CDF as a numpy array.
         """
-        xs = atleast_1d(array(xs))
+        xs_message = "xs must contain finite real numeric values."
+        try:
+            xs = atleast_1d(array(xs))
+        except (TypeError, ValueError, RuntimeError, OverflowError) as exc:
+            raise ValueError(xs_message) from exc
         if xs.ndim != 1:
             raise ValueError("xs must be a 1D array.")
+        _as_finite_real_numpy_array(xs, xs_message)
+
+        starting_point_message = "starting_point must be a finite real scalar."
+        starting_point_array = _as_finite_real_numpy_array(
+            starting_point, starting_point_message
+        )
+        if starting_point_array.shape != ():
+            raise ValueError(starting_point_message)
+        starting_point = float(starting_point_array.item())
 
         return array([self._cdf_numerical_single(x, starting_point) for x in xs])
 
