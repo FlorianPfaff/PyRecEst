@@ -1,9 +1,8 @@
 """Regression tests for piecewise-constant input validation."""
 
 import numpy as np
-import pytest
 import pyrecest.backend
-
+import pytest
 from pyrecest.distributions.circle.piecewise_constant_distribution import (
     PiecewiseConstantDistribution,
 )

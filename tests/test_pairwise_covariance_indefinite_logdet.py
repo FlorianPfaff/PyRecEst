@@ -1,7 +1,6 @@
 import math
 
 import numpy.testing as npt
-
 from pyrecest.backend import array
 from pyrecest.utils import pairwise_covariance_shape_components
 

@@ -2,7 +2,6 @@ import types
 import unittest
 
 import numpy as np
-
 from pyrecest.filters import adaptive_position_proposal_probability
 
 
@@ -18,9 +17,7 @@ class TestReplayGridEssGating(unittest.TestCase):
         self.assertAlmostEqual(ess_fraction, 1.0)
 
         low_ess_filter = types.SimpleNamespace(
-            filter_state=types.SimpleNamespace(
-                w=np.array([1.0, 0.0, 0.0, 0.0])
-            )
+            filter_state=types.SimpleNamespace(w=np.array([1.0, 0.0, 0.0, 0.0]))
         )
         probability, ess_fraction = adaptive_position_proposal_probability(
             low_ess_filter, 1.0, 0.5
