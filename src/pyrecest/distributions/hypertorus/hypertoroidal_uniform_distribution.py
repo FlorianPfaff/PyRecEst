@@ -35,11 +35,14 @@ def _validate_positive_sample_count(n) -> int:
 
     try:
         count_int = int(count)
-        count_float = float(count)
     except (OverflowError, TypeError, ValueError) as exc:
         raise ValueError("n must be an integer") from exc
 
-    if not np.isfinite(count_float) or not count_float.is_integer():
+    try:
+        is_exact_integer = bool(count == count_int)
+    except (OverflowError, TypeError, ValueError) as exc:
+        raise ValueError("n must be an integer") from exc
+    if not is_exact_integer:
         raise ValueError("n must be a finite integer")
     if count_int <= 0:
         raise ValueError("n must be positive")
@@ -59,11 +62,14 @@ def _validate_trigonometric_moment_order(n: Union[int, int32, int64]) -> int:
 
     try:
         order_int = int(order)
-        order_float = float(order)
     except (OverflowError, TypeError, ValueError) as exc:
         raise ValueError("n must be an integer") from exc
 
-    if not np.isfinite(order_float) or not order_float.is_integer():
+    try:
+        is_exact_integer = bool(order == order_int)
+    except (OverflowError, TypeError, ValueError) as exc:
+        raise ValueError("n must be an integer") from exc
+    if not is_exact_integer:
         raise ValueError("n must be a finite integer")
     return order_int
 
