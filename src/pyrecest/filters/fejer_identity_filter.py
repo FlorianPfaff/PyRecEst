@@ -11,6 +11,7 @@ from pyrecest.backend import array, column_stack, pi, reshape, stack, tile, zero
 from pyrecest.distributions.hypertorus.abstract_hypertoroidal_distribution import AbstractHypertoroidalDistribution
 from pyrecest.distributions.hypertorus.hypertoroidal_fourier_distribution import HypertoroidalFourierDistribution
 from pyrecest.distributions.hypertorus.fejer import (
+    _validate_integer_control,
     normalize_coefficient_shape,
     normalize_kernel_name,
 )
@@ -56,8 +57,12 @@ class FejerIdentityFilter(AbstractFilter, HypertoroidalFilterMixin):
         self.reduction_kernel = normalize_kernel_name(reduction_kernel)
         self.adaptive_reduction = bool(adaptive_reduction)
         self.min_value_tolerance = float(min_value_tolerance)
-        self.oversampling_factor = int(oversampling_factor)
-        self.exponent_search_steps = int(exponent_search_steps)
+        self.oversampling_factor = _validate_integer_control(
+            oversampling_factor, "oversampling_factor", minimum=1
+        )
+        self.exponent_search_steps = _validate_integer_control(
+            exponent_search_steps, "exponent_search_steps", minimum=0
+        )
 
         coeff_mat = zeros(n_coefficients, dtype=complex)
         center = tuple((n - 1) // 2 for n in n_coefficients)
