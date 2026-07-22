@@ -285,17 +285,20 @@ class GlobalNearestNeighbor(AbstractNearestNeighborTracker):
             association = assignment_result["assignment"]
             association = where(association < 0, n_meas, association)
         else:
-            # Pad to square and add max_new_tracks rows and columns
-            pad_to = max(n_targets, n_meas) + self.association_param["max_new_tracks"]
-            association_matrix = full(
-                (pad_to, pad_to), self.association_param["gating_distance_threshold"]
+            # Give every target a dummy option so the gate remains a hard constraint.
+            n_dummy_assignments = max(
+                n_targets, self.association_param["max_new_tracks"]
             )
-            association_matrix[: dists.shape[0], : dists.shape[1]] = dists
+            association_matrix = full(
+                (n_targets, n_meas + n_dummy_assignments),
+                self.association_param["gating_distance_threshold"],
+            )
+            association_matrix[:, :n_meas] = dists
 
-            # Use the Hungarian algorithm to find the optimal assignment
-            _, col_ind = linear_sum_assignment(association_matrix)
-
-            association = col_ind[:n_targets]
+            # Rectangular assignment leaves unused measurements unassigned naturally.
+            row_ind, col_ind = linear_sum_assignment(association_matrix)
+            association = np.full(n_targets, n_meas, dtype=int)
+            association[row_ind] = np.where(col_ind < n_meas, col_ind, n_meas)
 
         if warn_on_no_meas_for_track and any(association >= n_meas):
             warnings.warn(
