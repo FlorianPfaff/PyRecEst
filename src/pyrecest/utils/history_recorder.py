@@ -12,7 +12,14 @@ import numpy as np
 from pyrecest import backend
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import array, asarray, full, hstack, pad
+from pyrecest.backend import (
+    array,
+    asarray,
+    copy as backend_copy,
+    full,
+    hstack,
+    pad,
+)
 
 
 @dataclass
@@ -123,7 +130,7 @@ class HistoryRecorder:
         if initial_value is None:
             initial_value = array([[]]) if pad_with_nan else []
         elif pad_with_nan:
-            initial_value = self._ensure_2d(initial_value)
+            initial_value = backend_copy(self._ensure_2d(initial_value))
         else:
             initial_value = copy.deepcopy(initial_value)
             if not isinstance(initial_value, list):
