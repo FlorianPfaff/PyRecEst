@@ -1,7 +1,6 @@
 import unittest
 
 import numpy.testing as npt
-
 import pyrecest.backend
 from pyrecest.backend import array, to_numpy
 from pyrecest.filters.bingham_filter import BinghamFilter

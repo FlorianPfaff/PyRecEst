@@ -1,5 +1,4 @@
 import pytest
-
 from pyrecest.backend import array
 from pyrecest.distributions.circle.wrapped_cauchy_distribution import (
     WrappedCauchyDistribution,
@@ -14,9 +13,7 @@ def test_wrapped_cauchy_cdf_rejects_non_scalar_starting_points(starting_point):
         distribution.cdf(array([0.5]), starting_point=starting_point)
 
 
-@pytest.mark.parametrize(
-    "starting_point", (float("nan"), float("inf"), float("-inf"))
-)
+@pytest.mark.parametrize("starting_point", (float("nan"), float("inf"), float("-inf")))
 def test_wrapped_cauchy_cdf_rejects_nonfinite_starting_points(starting_point):
     distribution = WrappedCauchyDistribution(0.0, 0.5)
 

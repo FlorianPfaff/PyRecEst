@@ -420,7 +420,9 @@ class AdditiveNoiseMeasurementModel:
 
     def measurement_residual(self, measurement, state, **kwargs):
         """Return ``measurement - h(state)``."""
-        return _array_difference(measurement, self.measurement_function(state, **kwargs))
+        return _array_difference(
+            measurement, self.measurement_function(state, **kwargs)
+        )
 
     def sample_measurement(self, state, n: int = 1, **kwargs):
         """Draw ``n`` samples from ``p(measurement | state)``."""

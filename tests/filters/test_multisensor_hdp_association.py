@@ -1,7 +1,6 @@
 import unittest
 
 import numpy as np
-
 from pyrecest.filters.multisensor_hdp_association import (
     HDPAssociationLabel,
     multisensor_hdp_association,
