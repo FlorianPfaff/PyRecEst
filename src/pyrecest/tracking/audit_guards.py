@@ -135,10 +135,10 @@ def _comparison_is_true(comparison: Any) -> bool:
 
 
 def _results_equal(left: Any, right: Any) -> bool:
-    """Compare normalized selector outputs, including array-valued outputs."""
+    """Compare selector outputs, treating aligned NaN values as unchanged."""
 
     try:
-        comparison = left == right
+        comparison = (left == right) | ((left != left) & (right != right))
     except (TypeError, ValueError, RuntimeError):
         return False
     return _comparison_is_true(comparison)
