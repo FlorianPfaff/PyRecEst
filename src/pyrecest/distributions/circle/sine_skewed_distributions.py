@@ -59,6 +59,9 @@ class GeneralizedKSineSkewedVonMisesDistribution(AbstractCircularDistribution):
         self.validate_parameters()
 
     def validate_parameters(self):
+        self.kappa = _validate_finite_scalar_parameter(self.kappa, "kappa")
+        if self.kappa < 0:
+            raise ValueError("kappa must be nonnegative")
         self.lambda_ = _validate_scalar_parameter(self.lambda_, "lambda_")
         if not (-1.0 <= self.lambda_ <= 1.0):
             raise ValueError("lambda_ must be between -1 and 1 inclusive")
