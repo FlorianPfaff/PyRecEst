@@ -50,7 +50,7 @@ def evaluate_for_simulation_config(
         n_runs, initial_seed, consecutive_seed
     )
     if n_timesteps is None:
-        if "n_timesteps" not in simulation_config:
+        if simulation_config.get("n_timesteps") is None:
             raise ValueError(
                 "n_steps must be provided in simulation_config or as an argument."
             )
