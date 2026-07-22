@@ -79,13 +79,15 @@ def rectangle_contour_samples(
 
     half_width = 0.5 * float(width)
     half_height = 0.5 * float(height)
-    xs = np.linspace(-half_width, half_width, samples_per_edge, endpoint=False)
-    ys = np.linspace(-half_height, half_height, samples_per_edge, endpoint=False)
+    xs_forward = np.linspace(-half_width, half_width, samples_per_edge, endpoint=False)
+    xs_backward = np.linspace(half_width, -half_width, samples_per_edge, endpoint=False)
+    ys_forward = np.linspace(-half_height, half_height, samples_per_edge, endpoint=False)
+    ys_backward = np.linspace(half_height, -half_height, samples_per_edge, endpoint=False)
 
-    top = np.column_stack([xs, np.full(samples_per_edge, half_height)])
-    right = np.column_stack([np.full(samples_per_edge, half_width), ys])
-    bottom = np.column_stack([xs[::-1], np.full(samples_per_edge, -half_height)])
-    left = np.column_stack([np.full(samples_per_edge, -half_width), ys[::-1]])
+    top = np.column_stack([xs_forward, np.full(samples_per_edge, half_height)])
+    right = np.column_stack([np.full(samples_per_edge, half_width), ys_backward])
+    bottom = np.column_stack([xs_backward, np.full(samples_per_edge, -half_height)])
+    left = np.column_stack([np.full(samples_per_edge, -half_width), ys_forward])
 
     points = np.vstack([top, right, bottom, left])
     normals = np.vstack(

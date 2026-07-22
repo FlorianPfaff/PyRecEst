@@ -23,3 +23,20 @@ def test_rectangle_activity_matches_horizontal_translation():
     assert by_edge["right"] == 1.0
     assert by_edge["top"] == 0.0
     assert by_edge["bottom"] == 0.0
+
+
+def test_rectangle_contour_covers_each_corner_once():
+    contour = rectangle_contour_samples(width=2.0, height=1.0, samples_per_edge=4)
+    corners = np.array(
+        [
+            [-1.0, 0.5],
+            [1.0, 0.5],
+            [1.0, -0.5],
+            [-1.0, -0.5],
+        ]
+    )
+
+    assert np.unique(contour.points, axis=0).shape == contour.points.shape
+    for corner in corners:
+        matches = np.all(np.isclose(contour.points, corner), axis=1)
+        assert np.count_nonzero(matches) == 1
