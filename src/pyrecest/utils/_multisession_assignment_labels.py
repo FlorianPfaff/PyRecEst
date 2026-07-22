@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import math
 from collections.abc import Sequence
 from numbers import Integral
 from typing import Any
@@ -46,12 +45,15 @@ def _normalize_fill_value(fill_value: Any, track_count: int) -> int:
         integer_fill_value = int(fill_value_value)
     else:
         try:
-            fill_value_float = float(fill_value_value)
+            integer_fill_value = int(fill_value_value)
         except (TypeError, ValueError, OverflowError) as exc:
             raise ValueError("fill_value must be an integer.") from exc
-        if not math.isfinite(fill_value_float) or not fill_value_float.is_integer():
+        try:
+            is_exact_integer = fill_value_value == integer_fill_value
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError("fill_value must be an integer.") from exc
+        if not bool(is_exact_integer):
             raise ValueError("fill_value must be an integer.")
-        integer_fill_value = int(fill_value_float)
 
     if 0 <= integer_fill_value < int(track_count):
         raise ValueError("fill_value must not collide with track labels.")
