@@ -5,7 +5,9 @@ import numpy as np
 from pyrecest.backend import (
     all,
     asarray,
-    copy as backend_copy,
+)
+from pyrecest.backend import copy as backend_copy
+from pyrecest.backend import (
     exp,
     isfinite,
     mod,
@@ -15,7 +17,6 @@ from pyrecest.backend import (
 )
 
 from .abstract_circular_distribution import AbstractCircularDistribution
-
 
 _SMALL_RATE_SERIES_THRESHOLD = 1e-4
 
@@ -42,10 +43,7 @@ def _wrapped_exponential_density(rate, distance):
     if bool(all(log_beta < _SMALL_RATE_SERIES_THRESHOLD)):
         # rate / (1 - exp(-2*pi*rate)) expanded around rate == 0.
         normalization = (
-            1.0 / (2.0 * pi)
-            + rate / 2.0
-            + pi * rate**2 / 6.0
-            - pi**3 * rate**4 / 90.0
+            1.0 / (2.0 * pi) + rate / 2.0 + pi * rate**2 / 6.0 - pi**3 * rate**4 / 90.0
         )
     else:
         normalization = rate / (1.0 - exp(-log_beta))
@@ -89,7 +87,6 @@ class WrappedLaplaceDistribution(AbstractCircularDistribution):
         mixture_normalization = 1.0 + self.kappa**2
         p = (
             _wrapped_exponential_density(positive_rate, xs)
-            + self.kappa**2
-            * _wrapped_exponential_density(negative_rate, 2.0 * pi - xs)
+            + self.kappa**2 * _wrapped_exponential_density(negative_rate, 2.0 * pi - xs)
         ) / mixture_normalization
         return p

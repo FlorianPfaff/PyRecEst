@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.filters.adaptive_process_noise import (
     AdaptiveProcessNoiseConfig,
     RollingNISProcessNoiseAdapter,
@@ -8,9 +7,7 @@ from pyrecest.filters.adaptive_process_noise import (
 
 
 def test_weighted_ratio_handles_extreme_finite_source_weights():
-    adapter = RollingNISProcessNoiseAdapter(
-        AdaptiveProcessNoiseConfig(ewma_alpha=1.0)
-    )
+    adapter = RollingNISProcessNoiseAdapter(AdaptiveProcessNoiseConfig(ewma_alpha=1.0))
     adapter.observe(source="radar", measurement_dim=2, nis=6.0)
     adapter.observe(source="camera", measurement_dim=2, nis=2.0)
 

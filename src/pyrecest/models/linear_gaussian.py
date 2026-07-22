@@ -5,7 +5,9 @@ from numbers import Complex, Integral, Real
 
 from pyrecest.backend import (
     asarray,
-    copy as backend_copy,
+)
+from pyrecest.backend import copy as backend_copy
+from pyrecest.backend import (
     eye,
     matmul,
     matvec,
