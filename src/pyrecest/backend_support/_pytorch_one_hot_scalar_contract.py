@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from operator import index as _operator_index
 
-
 _INTEGER_MESSAGE = "num_classes must be an integer"
 _NONNEGATIVE_MESSAGE = "num_classes must be non-negative"
 
@@ -143,13 +142,9 @@ def _patch_pytorch_gamma_autograd_contract(
         )
         reflected_branch = torch_module.pi / (
             torch_module.sin(torch_module.pi * reflection_values)
-            * torch_module.exp(
-                torch_module.special.gammaln(1 - reflection_values)
-            )
+            * torch_module.exp(torch_module.special.gammaln(1 - reflection_values))
         )
-        result = torch_module.where(
-            negative_mask, reflected_branch, positive_branch
-        )
+        result = torch_module.where(negative_mask, reflected_branch, positive_branch)
 
         zero_mask = values == 0
         signed_zero_inf = torch_module.where(
@@ -159,9 +154,7 @@ def _patch_pytorch_gamma_autograd_contract(
         )
         result = torch_module.where(zero_mask, signed_zero_inf, result)
 
-        negative_integer_mask = negative_mask & (
-            values == torch_module.floor(values)
-        )
+        negative_integer_mask = negative_mask & (values == torch_module.floor(values))
         result = torch_module.where(
             negative_integer_mask,
             torch_module.full_like(values, torch_module.nan),

@@ -1,7 +1,6 @@
 import unittest
 
 import numpy as np
-
 import pyrecest.backend
 from pyrecest.backend import array
 from pyrecest.utils.point_set_registration import (

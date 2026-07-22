@@ -22,7 +22,9 @@ def _validated_state_vector(state: Any):
 
 def install_sensor_state_validation() -> None:
     """Install shared rank validation for sensor-model state inputs."""
-    _sensor_models._state_vector = _validated_state_vector  # pylint: disable=protected-access
+    _sensor_models._state_vector = (
+        _validated_state_vector  # pylint: disable=protected-access
+    )
 
 
 __all__ = ["install_sensor_state_validation"]

@@ -2,7 +2,6 @@
 
 import numpy as np
 import numpy.testing as npt
-
 import pyrecest.backend
 from pyrecest.backend import array, pi
 from pyrecest.distributions.circle.wrapped_laplace_distribution import (

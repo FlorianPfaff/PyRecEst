@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-
 _NONZERO_SCALAR_MESSAGE = (
     "Calling nonzero on 0d arrays is not allowed. "
     "Use np.atleast_1d(scalar).nonzero() instead."
@@ -13,8 +12,8 @@ def patch_pytorch_nonzero_scalar_contract() -> None:
     """Make public and raw PyTorch ``nonzero`` reject 0-D inputs."""
 
     try:
-        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import torch  # pylint: disable=import-outside-toplevel
     except ModuleNotFoundError:  # pragma: no cover - PyTorch may be unavailable
         return
