@@ -264,9 +264,7 @@ class GeneralizedKSineSkewedWrappedCauchyDistribution(AbstractCircularDistributi
         # large gamma.
         half_angle = (xs - self.mu) / 2.0
         half_gamma_tanh = tanh(self.gamma / 2.0)
-        denominator = sin(half_angle) ** 2 + half_gamma_tanh**2 * cos(
-            half_angle
-        ) ** 2
+        denominator = sin(half_angle) ** 2 + half_gamma_tanh**2 * cos(half_angle) ** 2
         wc_pdf_vals = half_gamma_tanh / (2.0 * pi * denominator)
 
         skew_factor = (1 + self.lambda_ * sin(self.k * (xs - self.mu))) ** self.m

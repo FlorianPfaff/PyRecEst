@@ -7,7 +7,6 @@ from abc import ABC, abstractmethod
 from pyrecest.backend import asarray, copy, ndim
 from pyrecest.distributions import GaussianDistribution
 
-
 _RECTANGULAR_MATRIX_SEQUENCE_NAMES = {"measurement_matrices"}
 
 
@@ -141,9 +140,7 @@ class AbstractSmoother(ABC):
                         )
                     value_arr = asarray([[value_arr]])
                 normalized_values.append(
-                    AbstractSmoother._validate_matrix_shape(
-                        value_arr, name, matrix_dim
-                    )
+                    AbstractSmoother._validate_matrix_shape(value_arr, name, matrix_dim)
                 )
             return normalized_values
 

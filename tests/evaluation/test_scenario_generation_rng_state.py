@@ -9,7 +9,6 @@ from unittest.mock import patch
 
 import numpy as np
 import numpy.testing as npt
-
 import pyrecest.backend
 from pyrecest.backend import random
 
@@ -59,9 +58,7 @@ class TestScenarioGenerationRandomState(unittest.TestCase):
                 return
 
             random.seed(314159)
-            expected_backend = pyrecest.backend.to_numpy(
-                random.rand(size=(4,))
-            ).copy()
+            expected_backend = pyrecest.backend.to_numpy(random.rand(size=(4,))).copy()
             random.seed(314159)
 
             np.random.seed(271828)

@@ -3,7 +3,6 @@
 import unittest
 
 import numpy as np
-
 import pyrecest.backend
 from pyrecest.distributions.hypertorus.low_rank_hypertoroidal_fourier_distribution import (
     LowRankHypertoroidalFourierDistribution,
@@ -19,7 +18,9 @@ class TestLowRankFourierComplexCenter(unittest.TestCase):
         coefficients = np.zeros(3, dtype=np.complex128)
         coefficients[1] = 1.0 + 1.0j
 
-        with self.assertRaisesRegex(ValueError, "Center coefficient must be real-valued"):
+        with self.assertRaisesRegex(
+            ValueError, "Center coefficient must be real-valued"
+        ):
             LowRankHypertoroidalFourierDistribution.from_dense(coefficients)
 
 
