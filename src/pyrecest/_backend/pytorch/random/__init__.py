@@ -44,11 +44,20 @@ def _normalize_nonnegative_probabilities(probabilities):
     return scaled / total
 
 
+def _as_probability_tensor(values, device):
+    """Convert array-like probabilities without narrowing Python floats."""
+
+    torch = _LEGACY._torch
+    if torch.is_tensor(values):
+        return values.to(device=device)
+    return torch.as_tensor(_np.asarray(values), device=device)
+
+
 def _validate_choice_probabilities(p, population_size, device):
     if _LEGACY._contains_boolean_value(p):
         raise TypeError("p must be real numeric, not boolean")
     try:
-        p = _LEGACY._torch.as_tensor(p, device=device)
+        p = _as_probability_tensor(p, device)
     except (TypeError, ValueError, RuntimeError) as exc:
         raise TypeError("p must be real numeric") from exc
     if not _LEGACY._is_real_numeric_dtype(p.dtype):
@@ -62,7 +71,7 @@ def _validate_multinomial_pvals(pvals, device):
     if _LEGACY._contains_boolean_value(pvals):
         raise TypeError("pvals must be real numeric, not boolean")
     try:
-        pvals = _LEGACY._torch.as_tensor(pvals, device=device)
+        pvals = _as_probability_tensor(pvals, device)
     except (TypeError, ValueError, RuntimeError) as exc:
         raise TypeError("pvals must be real numeric") from exc
     if not _LEGACY._is_real_numeric_dtype(pvals.dtype):
