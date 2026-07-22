@@ -126,9 +126,7 @@ class VonMisesFisherDistribution(AbstractHypersphericalDistribution):
             self._log_scaled_normalization = _scaled_log_normalization(
                 self.input_dim, kappa_scalar
             )
-            self.C = array(
-                math.exp(self._log_scaled_normalization - kappa_scalar)
-            )
+            self.C = array(math.exp(self._log_scaled_normalization - kappa_scalar))
 
     def pdf(self, xs):
         """Evaluate the density at unit vectors.
@@ -145,10 +143,7 @@ class VonMisesFisherDistribution(AbstractHypersphericalDistribution):
                 f"xs must have trailing dimension {self.input_dim}, got {xs.shape}."
             )
 
-        return exp(
-            self._log_scaled_normalization
-            + self.kappa * (xs @ self.mu - 1.0)
-        )
+        return exp(self._log_scaled_normalization + self.kappa * (xs @ self.mu - 1.0))
 
     def mean_direction(self):
         """Return the unit mean direction with shape ``(d,)``."""

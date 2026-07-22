@@ -175,8 +175,7 @@ def _is_temporal_dtype(value) -> bool:
     dtype_kind = _dtype_kind(value)
     dtype_name = _dtype_name(value)
     return dtype_kind in {"M", "m"} or any(
-        temporal_name in dtype_name
-        for temporal_name in ("datetime64", "timedelta64")
+        temporal_name in dtype_name for temporal_name in ("datetime64", "timedelta64")
     )
 
 
@@ -246,10 +245,9 @@ def _validate_max_cost(max_cost) -> float:
         max_cost_scalar = max_cost_array.item()
     except (TypeError, ValueError, AttributeError, RuntimeError) as exc:
         raise ValueError("max_cost must be a scalar numeric value.") from exc
-    if (
-        isinstance(max_cost_scalar, (bool, str, bytes, bytearray))
-        or _is_numpy_temporal_scalar(max_cost_scalar)
-    ):
+    if isinstance(
+        max_cost_scalar, (bool, str, bytes, bytearray)
+    ) or _is_numpy_temporal_scalar(max_cost_scalar):
         raise ValueError("max_cost must be a scalar numeric value.")
 
     try:
@@ -275,10 +273,9 @@ def _validate_tolerance(tolerance) -> float:
         raise ValueError("tolerance must be a finite non-negative scalar.")
 
     tolerance_scalar = tolerance_array.item()
-    if (
-        isinstance(tolerance_scalar, (bool, str, bytes, bytearray))
-        or _is_numpy_temporal_scalar(tolerance_scalar)
-    ):
+    if isinstance(
+        tolerance_scalar, (bool, str, bytes, bytearray)
+    ) or _is_numpy_temporal_scalar(tolerance_scalar):
         raise ValueError("tolerance must be a finite non-negative scalar.")
 
     try:
@@ -313,9 +310,7 @@ def solve_gated_assignment(cost_matrix, *, max_cost: float = float("inf")):
     cost_scale = max(float(np.max(np.abs(valid_costs_numpy))), 1.0)
     scaled_costs = costs_numpy / cost_scale
     scaled_valid_costs = scaled_costs[valid_cost_mask_numpy]
-    cardinality_penalty = 2.0 * (
-        float(np.sum(np.abs(scaled_valid_costs))) + 1.0
-    )
+    cardinality_penalty = 2.0 * (float(np.sum(np.abs(scaled_valid_costs))) + 1.0)
     invalid_cost = 2.0 * cardinality_penalty + 1.0
 
     n_reference, n_moving = costs_numpy.shape
@@ -329,9 +324,9 @@ def solve_gated_assignment(cost_matrix, *, max_cost: float = float("inf")):
         invalid_cost,
     )
     for reference_index in range(n_reference):
-        augmented_costs[
-            reference_index, n_moving + reference_index
-        ] = cardinality_penalty
+        augmented_costs[reference_index, n_moving + reference_index] = (
+            cardinality_penalty
+        )
     for moving_index in range(n_moving):
         augmented_costs[n_reference + moving_index, moving_index] = 0.0
     augmented_costs[n_reference:, n_moving:] = 0.0

@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import numpy as np
-import pytest
-
 import pyrecest.calibration as calibration
-
+import pytest
 
 _OBJECT_TEMPORAL_SCALARS = (
     np.array(np.timedelta64(1, "ns"), dtype=object),
