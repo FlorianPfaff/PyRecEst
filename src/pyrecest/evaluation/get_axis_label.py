@@ -7,6 +7,14 @@ def _normalize_manifold_name(manifold_name):
     return compact_name
 
 
+def _is_hypersphere_symmetric_name(normalized_name):
+    return (
+        "hyperspheresymmetric" in normalized_name
+        or "hyperspheresymm" in normalized_name
+        or normalized_name in {"symmetrichypersphere", "symmhypersphere"}
+    )
+
+
 def get_axis_label(manifold_name):
     normalized_name = _normalize_manifold_name(manifold_name)
 
@@ -16,7 +24,7 @@ def get_axis_label(manifold_name):
     elif "circle" in normalized_name or "hypertorus" in normalized_name:
         error_label = "Error in radian"
 
-    elif "hyperspheresymmetric" in normalized_name:
+    elif _is_hypersphere_symmetric_name(normalized_name):
         error_label = "Angular error in radian"
 
     elif "hypersphere" in normalized_name:

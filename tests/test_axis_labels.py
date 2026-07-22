@@ -35,6 +35,9 @@ def test_generic_manifold_axis_labels_are_preserved(manifold_name, expected_labe
         ("SE(2)-linear", "Error in meters"),
         ("SE(3)-bounded", "Error in radian"),
         ("hypersphere_symmetric", "Angular error in radian"),
+        ("hypersphere_symm", "Angular error in radian"),
+        ("symm_hypersphere", "Angular error in radian"),
+        ("symmetric_hypersphere", "Angular error in radian"),
     ],
 )
 def test_axis_label_accepts_common_mathematical_notation(
