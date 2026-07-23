@@ -1,5 +1,4 @@
 import pandas as pd
-
 from pyrecest.evaluation.model_comparison import evidence_margin_table
 
 

@@ -1,5 +1,4 @@
 import pytest
-
 from pyrecest.distributions.circle.wrapped_laplace_distribution import (
     WrappedLaplaceDistribution,
 )
