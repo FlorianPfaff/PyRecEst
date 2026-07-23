@@ -265,9 +265,7 @@ class GaussianMixturePHDFilter(
         mahalanobis_distance = float(dot(whitened_innovation, whitened_innovation))
         log_determinant = 2.0 * sum(log(diag(cholesky_factor)))
         log_likelihood = -0.5 * (
-            innovation.shape[0] * log(2.0 * pi)
-            + log_determinant
-            + mahalanobis_distance
+            innovation.shape[0] * log(2.0 * pi) + log_determinant + mahalanobis_distance
         )
         return float(exp(log_likelihood))
 

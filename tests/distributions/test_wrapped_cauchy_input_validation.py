@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.distributions.circle.wrapped_cauchy_distribution import (
     WrappedCauchyDistribution,
 )
@@ -21,9 +20,7 @@ from pyrecest.distributions.circle.wrapped_cauchy_distribution import (
         "0.5",
     ],
 )
-def test_wrapped_cauchy_rejects_nonfinite_or_nonreal_evaluation_points(
-    method_name, xs
-):
+def test_wrapped_cauchy_rejects_nonfinite_or_nonreal_evaluation_points(method_name, xs):
     distribution = WrappedCauchyDistribution(0.0, 0.5)
 
     with pytest.raises(ValueError, match="xs must contain only finite real values"):

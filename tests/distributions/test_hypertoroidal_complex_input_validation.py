@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.distributions.hypertorus._input_validation import (
     as_hypertoroidal_points,
     as_shift_vector,
