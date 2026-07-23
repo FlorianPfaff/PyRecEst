@@ -13,8 +13,8 @@ def _expand_meas_per_step(simulation_param):
 
     if not _is_integer_count(simulation_param["meas_per_step"]):
         raise TypeError("meas_per_step must be an integer")
-    if simulation_param["meas_per_step"] <= 0:
-        raise ValueError("meas_per_step must be positive")
+    if simulation_param["meas_per_step"] < 0:
+        raise ValueError("meas_per_step must be non-negative")
 
     simulation_param["n_meas_at_individual_time_step"] = [
         simulation_param["meas_per_step"]
@@ -30,8 +30,10 @@ def _validate_measurement_counts(simulation_param):
         )
     if not all(_is_integer_count(x) for x in counts):
         raise TypeError("n_meas_at_individual_time_step must contain integer values")
-    if not all(x > 0 for x in counts):
-        raise ValueError("n_meas_at_individual_time_step must contain positive values")
+    if not all(x >= 0 for x in counts):
+        raise ValueError(
+            "n_meas_at_individual_time_step must contain non-negative values"
+        )
 
 
 def check_and_fix_config(simulation_param):
