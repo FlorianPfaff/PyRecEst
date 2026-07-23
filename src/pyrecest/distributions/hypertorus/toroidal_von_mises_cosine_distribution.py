@@ -116,9 +116,7 @@ class ToroidalVonMisesCosineDistribution(AbstractToroidalBivarVMDistribution):
 
         def s(order):
             return (
-                bessel(order, kappa0)
-                * bessel(order, kappa1)
-                * bessel(order, -kappa3)
+                bessel(order, kappa0) * bessel(order, kappa1) * bessel(order, -kappa3)
             )
 
         scale_floor = 0.0 if scaled else 1.0

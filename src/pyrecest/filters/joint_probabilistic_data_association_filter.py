@@ -114,9 +114,7 @@ class JointProbabilisticDataAssociationFilter(AbstractNearestNeighborTracker):
             raise ValueError(
                 "Innovation covariance must be positive definite."
             ) from exc
-        logdet = 2.0 * float(
-            np.log(np.diag(np.asarray(cholesky_factor))).sum()
-        )
+        logdet = 2.0 * float(np.log(np.diag(np.asarray(cholesky_factor))).sum())
 
         mahalanobis_distance = float(
             innovation.T @ linalg.solve(innovation_covariance, innovation)

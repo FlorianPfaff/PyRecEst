@@ -27,9 +27,7 @@ class OutOfSequenceMaxLagValidationTest(unittest.TestCase):
         for max_lag in (float("nan"), float("inf"), -float("inf")):
             for name, constructor in constructors.items():
                 with self.subTest(max_lag=max_lag, constructor=name):
-                    with self.assertRaisesRegex(
-                        ValueError, "finite and nonnegative"
-                    ):
+                    with self.assertRaisesRegex(ValueError, "finite and nonnegative"):
                         constructor(max_lag)
 
 

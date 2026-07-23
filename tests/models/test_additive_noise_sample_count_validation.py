@@ -3,7 +3,6 @@
 import unittest
 
 import numpy as np
-
 from pyrecest.backend import array, zeros
 from pyrecest.models import AdditiveNoiseMeasurementModel, AdditiveNoiseTransitionModel
 

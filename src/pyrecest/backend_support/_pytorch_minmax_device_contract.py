@@ -127,11 +127,15 @@ def _normalize_pytorch_norm_axis(axis, torch_module):
         return int(axis)
 
     if isinstance(axis, (list, tuple)):
-        return tuple(_pytorch_norm_axis_entry(one_axis, torch_module) for one_axis in axis)
+        return tuple(
+            _pytorch_norm_axis_entry(one_axis, torch_module) for one_axis in axis
+        )
     return _pytorch_norm_axis_entry(axis, torch_module)
 
 
-def _patch_pytorch_linalg_norm_axis_contract(raw_pytorch, backend, torch_module) -> None:
+def _patch_pytorch_linalg_norm_axis_contract(
+    raw_pytorch, backend, torch_module
+) -> None:
     """Patch PyTorch linalg.norm axis normalization for boolean sequences."""
     raw_linalg = getattr(raw_pytorch, "linalg", None)
     if raw_linalg is None:
@@ -143,7 +147,9 @@ def _patch_pytorch_linalg_norm_axis_contract(raw_pytorch, backend, torch_module)
         if getattr(backend, "__backend_name__", None) == "pytorch":
             try:
                 backend_linalg = importlib.import_module("pyrecest.backend.linalg")
-            except ModuleNotFoundError:  # pragma: no cover - backend import failed first
+            except (
+                ModuleNotFoundError
+            ):  # pragma: no cover - backend import failed first
                 return
             backend_linalg.norm = original_norm
         return

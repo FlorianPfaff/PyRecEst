@@ -1,7 +1,6 @@
 from unittest.mock import patch
 
 import numpy.testing as npt
-
 from pyrecest.backend import array, ones, pi, to_numpy
 from pyrecest.distributions.cart_prod.custom_hypercylindrical_distribution import (
     CustomHypercylindricalDistribution,
@@ -21,9 +20,7 @@ def test_custom_numerical_covariance_preserves_matrix_shape_for_boundaries():
     )
 
     with (
-        patch.object(
-            distribution, "linear_mean_numerical", return_value=array([0.0])
-        ),
+        patch.object(distribution, "linear_mean_numerical", return_value=array([0.0])),
         patch.object(distribution, "mode", return_value=array([0.0, 2.0])),
         patch(quadrature_path, return_value=(4.0, 0.0)),
     ):
