@@ -68,6 +68,8 @@ class AbstractCustomDistribution(AbstractDistributionType):
         cd = copy.deepcopy(self)
 
         integral = self.integrate()
+        if isinstance(integral, tuple):
+            integral = integral[0]
         cd.scale_by = cd.scale_by / integral
 
         if verify:
