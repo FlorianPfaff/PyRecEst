@@ -1,7 +1,6 @@
 """Regression tests for missing simulation horizon validation."""
 
 import pytest
-
 from pyrecest.evaluation import evaluate_for_simulation_config
 
 

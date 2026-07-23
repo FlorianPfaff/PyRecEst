@@ -3,7 +3,6 @@
 import unittest
 
 import numpy as np
-
 from pyrecest.utils.track_metrics import score_track_latency, track_latencies
 
 

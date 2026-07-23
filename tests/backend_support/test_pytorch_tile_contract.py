@@ -54,7 +54,9 @@ for tile_func, to_numpy in (
         else:
             raise AssertionError(f"tile accepted non-integer repetitions {bad_reps!r}")
 """
-    subprocess.run([sys.executable, "-c", code], check=True, env=_backend_test_env("pytorch"))
+    subprocess.run(
+        [sys.executable, "-c", code], check=True, env=_backend_test_env("pytorch")
+    )
 
 
 @pytest.mark.backend_portable
@@ -90,4 +92,6 @@ for bad_reps in (1.5, [2.5, 1], "2", pytorch_backend.array([2.5, 1.0])):
     else:
         raise AssertionError(f"raw tile accepted non-integer repetitions {bad_reps!r}")
 """
-    subprocess.run([sys.executable, "-c", code], check=True, env=_backend_test_env("numpy"))
+    subprocess.run(
+        [sys.executable, "-c", code], check=True, env=_backend_test_env("numpy")
+    )

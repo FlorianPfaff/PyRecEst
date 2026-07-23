@@ -107,7 +107,9 @@ def hypotheses_to_diagnostic_dicts(
         hypothesis_diagnostic_to_dict(
             hypothesis,
             rank=index,
-            selected=(selected_ids is not None and hypothesis.candidate_ids == selected_ids),
+            selected=(
+                selected_ids is not None and hypothesis.candidate_ids == selected_ids
+            ),
         )
         for index, hypothesis in enumerate(hypotheses, start=1)
     )
@@ -126,7 +128,9 @@ def selection_ledger_to_dicts(
 
     selected_ids: tuple[str, ...] = ()
     if selected_hypothesis is not None:
-        selected_ids = tuple(str(candidate_id) for candidate_id in selected_hypothesis.candidate_ids)
+        selected_ids = tuple(
+            str(candidate_id) for candidate_id in selected_hypothesis.candidate_ids
+        )
     return {
         "candidates": candidates_to_dicts(
             candidates,

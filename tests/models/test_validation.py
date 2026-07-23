@@ -1,7 +1,6 @@
 import unittest
 
 import numpy as np
-
 from pyrecest.backend import array, eye, zeros
 from pyrecest.models.validation import (
     infer_state_dim_from_distribution,
@@ -62,14 +61,26 @@ class TestModelValidation(unittest.TestCase):
 
         for value in temporal_values:
             invalid_calls = [
-                lambda value=value: validate_state_vector(array([1.0, 2.0]), state_dim=value),
-                lambda value=value: validate_measurement_vector(array([1.0, 2.0]), meas_dim=value),
+                lambda value=value: validate_state_vector(
+                    array([1.0, 2.0]), state_dim=value
+                ),
+                lambda value=value: validate_measurement_vector(
+                    array([1.0, 2.0]), meas_dim=value
+                ),
                 lambda value=value: validate_covariance_matrix(eye(2), dim=value),
                 lambda value=value: validate_noise_covariance(eye(2), dim=value),
-                lambda value=value: validate_transition_matrix(zeros((2, 2)), state_dim=value),
-                lambda value=value: validate_transition_matrix(zeros((2, 2)), pred_dim=value),
-                lambda value=value: validate_measurement_matrix(zeros((2, 2)), state_dim=value),
-                lambda value=value: validate_measurement_matrix(zeros((2, 2)), meas_dim=value),
+                lambda value=value: validate_transition_matrix(
+                    zeros((2, 2)), state_dim=value
+                ),
+                lambda value=value: validate_transition_matrix(
+                    zeros((2, 2)), pred_dim=value
+                ),
+                lambda value=value: validate_measurement_matrix(
+                    zeros((2, 2)), state_dim=value
+                ),
+                lambda value=value: validate_measurement_matrix(
+                    zeros((2, 2)), meas_dim=value
+                ),
             ]
             for call in invalid_calls:
                 with self.subTest(value=value, call=call):
@@ -109,8 +120,12 @@ class TestModelValidation(unittest.TestCase):
             lambda: validate_measurement_vector(timedelta_vector, meas_dim=2),
             lambda: validate_covariance_matrix(timedelta_matrix, dim=2),
             lambda: validate_noise_covariance(object_temporal_matrix, dim=1),
-            lambda: validate_transition_matrix(datetime_matrix, state_dim=2, pred_dim=1),
-            lambda: validate_measurement_matrix(timedelta_matrix, state_dim=2, meas_dim=2),
+            lambda: validate_transition_matrix(
+                datetime_matrix, state_dim=2, pred_dim=1
+            ),
+            lambda: validate_measurement_matrix(
+                timedelta_matrix, state_dim=2, meas_dim=2
+            ),
         ]
 
         for call in invalid_calls:
