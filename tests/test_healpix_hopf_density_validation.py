@@ -4,9 +4,8 @@ import sys
 from types import ModuleType
 
 import numpy as np
-import pytest
-
 import pyrecest.backend
+import pytest
 from pyrecest.sampling.hyperspherical_sampler import (
     HealpixHopfSampler,
     SphericalFibonacciSampler,

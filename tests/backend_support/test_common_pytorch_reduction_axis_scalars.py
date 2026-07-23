@@ -23,7 +23,7 @@ def test_common_pytorch_min_accepts_integer_scalar_axis_tuples():
     if importlib.util.find_spec("torch") is None:
         pytest.skip("torch is not installed")
 
-    code = r'''
+    code = r"""
 import numpy as np
 import torch
 
@@ -41,7 +41,7 @@ for axis in ((np.asarray(True),), (torch.tensor(True),)):
     except TypeError:
         continue
     raise AssertionError(f"accepted boolean axis tuple {axis!r}")
-'''
+"""
     subprocess.run(
         [sys.executable, "-c", code],
         check=True,

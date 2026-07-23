@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import pytest
-
 from pyrecest.utils import pairwise_feature_tensor
 
 

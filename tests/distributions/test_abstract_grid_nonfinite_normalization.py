@@ -1,5 +1,4 @@
 import pytest
-
 from pyrecest.backend import array
 from pyrecest.distributions.abstract_grid_distribution import AbstractGridDistribution
 

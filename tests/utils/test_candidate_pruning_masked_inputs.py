@@ -29,9 +29,7 @@ class TestCandidatePruningMaskedInputs(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "cost_matrix must be numeric"):
             candidate_mask_from_costs(masked_costs)
 
-        masked_probabilities = np.ma.array(
-            [[0.9, 0.1]], mask=[[True, False]]
-        )
+        masked_probabilities = np.ma.array([[0.9, 0.1]], mask=[[True, False]])
         config = CandidatePruningConfig(probability_threshold=0.5)
         with self.assertRaisesRegex(ValueError, "probability_matrix must be numeric"):
             candidate_mask_from_costs(
@@ -42,9 +40,7 @@ class TestCandidatePruningMaskedInputs(unittest.TestCase):
 
     def test_unmasked_masked_arrays_remain_supported(self):
         costs = np.ma.array([[1.0, 2.0]], mask=False)
-        config = CandidatePruningConfig(
-            row_top_k=np.ma.array(1, mask=False)
-        )
+        config = CandidatePruningConfig(row_top_k=np.ma.array(1, mask=False))
 
         np.testing.assert_array_equal(
             candidate_mask_from_costs(costs, config=config),

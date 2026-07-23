@@ -2,7 +2,6 @@ import unittest
 
 import numpy as np
 import numpy.testing as npt
-
 from pyrecest.distributions.hypertorus._tensor_train import TensorTrain
 
 
@@ -12,7 +11,9 @@ class TestHypertoroidalTensorTrainEntryValidation(unittest.TestCase):
         self.tt = TensorTrain.from_dense(self.tensor)
 
     def test_entry_accepts_numpy_integer_and_negative_indices(self):
-        npt.assert_allclose(self.tt.entry((np.int64(1), -1)), self.tensor[1, -1], atol=1e-12)
+        npt.assert_allclose(
+            self.tt.entry((np.int64(1), -1)), self.tensor[1, -1], atol=1e-12
+        )
 
     def test_entry_rejects_non_integer_indices_without_coercion(self):
         invalid_indices = [
