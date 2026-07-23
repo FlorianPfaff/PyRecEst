@@ -1,6 +1,5 @@
 """Reusable linear Gaussian transition and measurement models."""
 
-import math
 from numbers import Complex, Integral, Real
 
 from pyrecest.backend import (
@@ -96,12 +95,11 @@ def _as_positive_integer(value, name):
         parsed = int(scalar)
     else:
         try:
-            scalar_float = float(scalar)
+            parsed = int(scalar)
         except (TypeError, ValueError, OverflowError) as exc:
             raise ValueError(message) from exc
-        if not math.isfinite(scalar_float) or not scalar_float.is_integer():
+        if scalar != parsed:
             raise ValueError(message)
-        parsed = int(scalar_float)
     if parsed <= 0:
         raise ValueError(message)
     return parsed
