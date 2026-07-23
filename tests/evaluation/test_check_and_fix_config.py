@@ -26,10 +26,19 @@ def test_expand_meas_per_step_uses_one_count_per_timestep():
     assert "meas_per_step" not in simulation_param
 
 
-def test_expand_meas_per_step_rejects_nonpositive_count():
+def test_expand_meas_per_step_accepts_zero_count():
     simulation_param = {"n_timesteps": 4, "meas_per_step": 0}
 
-    with pytest.raises(ValueError, match="positive"):
+    _expand_meas_per_step(simulation_param)
+
+    assert simulation_param["n_meas_at_individual_time_step"] == [0, 0, 0, 0]
+    assert "meas_per_step" not in simulation_param
+
+
+def test_expand_meas_per_step_rejects_negative_count():
+    simulation_param = {"n_timesteps": 4, "meas_per_step": -1}
+
+    with pytest.raises(ValueError, match="non-negative"):
         _expand_meas_per_step(simulation_param)
 
 
@@ -60,14 +69,23 @@ def test_validate_measurement_counts_rejects_noninteger_entries():
         _validate_measurement_counts(simulation_param)
 
 
-def test_validate_measurement_counts_rejects_nonpositive_entries():
+def test_validate_measurement_counts_rejects_negative_entries():
     simulation_param = {
         "n_timesteps": 2,
-        "n_meas_at_individual_time_step": [1, 0],
+        "n_meas_at_individual_time_step": [1, -1],
     }
 
-    with pytest.raises(ValueError, match="positive"):
+    with pytest.raises(ValueError, match="non-negative"):
         _validate_measurement_counts(simulation_param)
+
+
+def test_validate_measurement_counts_accepts_zero_entries():
+    simulation_param = {
+        "n_timesteps": 3,
+        "n_meas_at_individual_time_step": [1, 0, 2],
+    }
+
+    _validate_measurement_counts(simulation_param)
 
 
 def test_validate_measurement_counts_accepts_matching_length():
@@ -77,6 +95,14 @@ def test_validate_measurement_counts_accepts_matching_length():
     }
 
     _validate_measurement_counts(simulation_param)
+
+
+def test_check_and_fix_config_accepts_zero_measurement_counts():
+    simulation_param = _base_config(n_meas_at_individual_time_step=[1, 0, 2])
+
+    fixed_config = check_and_fix_config(simulation_param)
+
+    assert fixed_config["n_meas_at_individual_time_step"] == [1, 0, 2]
 
 
 def test_check_and_fix_config_rejects_nonpositive_timesteps():
