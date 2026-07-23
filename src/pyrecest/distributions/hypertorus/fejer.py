@@ -186,18 +186,18 @@ def positive_kernel_weights(shape: CoefficientShape, *, kernel: str = "fejer", d
     raise AssertionError(f"Unhandled normalized kernel {kernel!r}.")
 
 
-def _validate_kernel_exponent(exponent) -> float:
-    """Return a finite nonnegative real scalar kernel exponent."""
+def _validate_nonnegative_real_scalar(value, name: str) -> float:
+    """Return a finite nonnegative real scalar control value."""
 
-    message = "exponent must be a finite nonnegative real scalar."
+    message = f"{name} must be a finite nonnegative real scalar."
     try:
-        exponent_array = np.asarray(exponent)
+        value_array = np.asarray(value)
     except (TypeError, ValueError, OverflowError) as exc:
         raise ValueError(message) from exc
-    if exponent_array.ndim != 0 or exponent_array.dtype.kind in "bSUcMm":
+    if value_array.ndim != 0 or value_array.dtype.kind in "bSUcMm":
         raise ValueError(message)
 
-    scalar = exponent_array.item()
+    scalar = value_array.item()
     if isinstance(
         scalar,
         (
@@ -214,12 +214,18 @@ def _validate_kernel_exponent(exponent) -> float:
     ):
         raise ValueError(message)
     try:
-        exponent_value = float(scalar)
+        parsed_value = float(scalar)
     except (TypeError, ValueError, OverflowError) as exc:
         raise ValueError(message) from exc
-    if not np.isfinite(exponent_value) or exponent_value < 0.0:
+    if not np.isfinite(parsed_value) or parsed_value < 0.0:
         raise ValueError(message)
-    return exponent_value
+    return parsed_value
+
+
+def _validate_kernel_exponent(exponent) -> float:
+    """Return a finite nonnegative real scalar kernel exponent."""
+
+    return _validate_nonnegative_real_scalar(exponent, "exponent")
 
 
 def apply_kernel_weights(coefficients, *, kernel: str = "fejer", exponent: float = 1.0):
@@ -332,8 +338,10 @@ def adaptive_kernel_reduce_coefficients(
     is certified only on the diagnostic grid.
     """
 
-    if min_value_tolerance < 0.0:
-        raise ValueError("min_value_tolerance must be nonnegative.")
+    min_value_tolerance = _validate_nonnegative_real_scalar(
+        min_value_tolerance,
+        "min_value_tolerance",
+    )
     exponent_search_steps = _validate_integer_control(
         exponent_search_steps,
         "exponent_search_steps",
