@@ -49,6 +49,19 @@ def deprecated(
         if replacement:
             message += f" Use {replacement} instead."
 
+        if inspect.isasyncgenfunction(func):
+
+            @functools.wraps(func)
+            async def async_generator_wrapper(*args: P.args, **kwargs: P.kwargs):
+                warnings.warn(message, DeprecationWarning, stacklevel=2)
+                async for item in func(*args, **kwargs):  # type: ignore[attr-defined]
+                    yield item
+
+            async_generator_wrapper.__deprecated_since__ = since  # type: ignore[attr-defined]
+            async_generator_wrapper.__deprecated_remove_in__ = remove_in  # type: ignore[attr-defined]
+            async_generator_wrapper.__deprecated_replacement__ = replacement  # type: ignore[attr-defined]
+            return async_generator_wrapper  # type: ignore[return-value]
+
         if inspect.iscoroutinefunction(func):
 
             @functools.wraps(func)
@@ -60,6 +73,18 @@ def deprecated(
             async_wrapper.__deprecated_remove_in__ = remove_in  # type: ignore[attr-defined]
             async_wrapper.__deprecated_replacement__ = replacement  # type: ignore[attr-defined]
             return async_wrapper  # type: ignore[return-value]
+
+        if inspect.isgeneratorfunction(func):
+
+            @functools.wraps(func)
+            def generator_wrapper(*args: P.args, **kwargs: P.kwargs):
+                warnings.warn(message, DeprecationWarning, stacklevel=2)
+                return (yield from func(*args, **kwargs))  # type: ignore[misc]
+
+            generator_wrapper.__deprecated_since__ = since  # type: ignore[attr-defined]
+            generator_wrapper.__deprecated_remove_in__ = remove_in  # type: ignore[attr-defined]
+            generator_wrapper.__deprecated_replacement__ = replacement  # type: ignore[attr-defined]
+            return generator_wrapper  # type: ignore[return-value]
 
         @functools.wraps(func)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:

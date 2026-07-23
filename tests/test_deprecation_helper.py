@@ -35,6 +35,45 @@ def test_deprecated_decorator_preserves_async_function_contract():
     assert "new_async_function" in str(caught[0].message)
 
 
+def test_deprecated_decorator_preserves_generator_function_contract():
+    @deprecated(since="2.3.0", remove_in="3.0.0", replacement="new_generator")
+    def legacy_generator():
+        yield 1
+        return 2
+
+    assert inspect.isgeneratorfunction(legacy_generator)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        generator = legacy_generator()
+        assert next(generator) == 1
+        with pytest.raises(StopIteration) as stopped:
+            next(generator)
+
+    assert stopped.value.value == 2
+    assert len(caught) == 1
+    assert issubclass(caught[0].category, DeprecationWarning)
+    assert "new_generator" in str(caught[0].message)
+
+
+def test_deprecated_decorator_preserves_async_generator_function_contract():
+    @deprecated(since="2.3.0", remove_in="3.0.0", replacement="new_async_generator")
+    async def legacy_async_generator():
+        yield 1
+        yield 2
+
+    async def consume():
+        return [value async for value in legacy_async_generator()]
+
+    assert inspect.isasyncgenfunction(legacy_async_generator)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        assert asyncio.run(consume()) == [1, 2]
+
+    assert len(caught) == 1
+    assert issubclass(caught[0].category, DeprecationWarning)
+    assert "new_async_generator" in str(caught[0].message)
+
+
 def test_deprecated_decorator_rejects_blank_since():
     with pytest.raises(ValueError, match="since must be a non-empty string"):
         deprecated(since=" ", remove_in="3.0.0")
