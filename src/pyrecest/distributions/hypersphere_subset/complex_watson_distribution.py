@@ -350,7 +350,10 @@ class ComplexWatsonDistribution:
     def log_norm(D, kappa):
         """Compute the log normalization constant log(C_D(kappa)).
 
-        Uses three numerical regimes for stability (Mardia & Dryden 1999).
+        Uses separate negative, low, medium, and high concentration regimes for
+        stability. The positive-concentration formulas follow Mardia & Dryden
+        (1999); negative concentrations are evaluated from the defining
+        confluent hypergeometric function with arbitrary precision.
 
         Parameters:
             D: feature-space dimension (integer >= 1)
@@ -371,12 +374,19 @@ class ComplexWatsonDistribution:
         _validate_numpy_or_pytorch_backend("log_norm()")
         log_c = zeros_like(kappa_arr)
 
+        mask_negative = kappa_arr < 0.0
+        positive_formula_kappa = where(kappa_arr > 0.0, kappa_arr, 1.0)
+        series_kappa = where(mask_negative, 0.0, kappa_arr)
+
         # ----------------------------------------------------------
         # High-kappa asymptotic formula (Mardia1999Watson, p. 917)
         #   log(1/C) ≈ log(2) + D·log(π) + (1-D)·log(κ) + κ
         # ----------------------------------------------------------
         log_c_high = (
-            log(array(2.0)) + D * log(pi) + (1 - D) * log(kappa_arr) + kappa_arr
+            log(array(2.0))
+            + D * log(pi)
+            + (1 - D) * log(positive_formula_kappa)
+            + positive_formula_kappa
         )
 
         # ----------------------------------------------------------
@@ -386,8 +396,9 @@ class ComplexWatsonDistribution:
         # ----------------------------------------------------------
         if D > 1:
             i_arr = arange(D - 1, dtype=float)  # 0, 1, ..., D-2
-            correction = exp(-kappa_arr) * sum(
-                kappa_arr[:, None] ** i_arr / exp(gammaln(i_arr + 1.0)),
+            correction = exp(-positive_formula_kappa) * sum(
+                positive_formula_kappa[:, None] ** i_arr
+                / exp(gammaln(i_arr + 1.0)),
                 axis=1,
             )
             log_c_medium = log_c_high + log(maximum(1.0 - correction, 1e-300))
@@ -398,22 +409,49 @@ class ComplexWatsonDistribution:
         # Low-kappa Taylor series (Mardia1999Watson, Eq. 4, 10 terms)
         #   1F1(1;D;κ) ≈ 1 + Σ_{i=1}^{10} κ^i / (D·(D+1)·…·(D+i-1))
         # ----------------------------------------------------------
-        ratios = kappa_arr[:, None] / arange(D, D + 10, dtype=float)
+        ratios = series_kappa[:, None] / arange(D, D + 10, dtype=float)
         cumprods = cumprod(ratios, axis=1)
         hyp1f1_approx = 1.0 + sum(cumprods, axis=1)
         log_fact_Dm1 = gammaln(array(float(D)))  # log Γ(D) = log (D-1)!
-        log_c_low = log(array(2.0)) + D * log(pi) - log_fact_Dm1 + log(hyp1f1_approx)
+        log_c_low = (
+            log(array(2.0))
+            + D * log(pi)
+            - log_fact_Dm1
+            + log(hyp1f1_approx)
+        )
 
-        # Select the appropriate regime
-        mask_low = kappa_arr < (1.0 / D)
+        # Select the appropriate nonnegative-kappa regime.
+        mask_low = (kappa_arr >= 0.0) & (kappa_arr < (1.0 / D))
         mask_high = kappa_arr >= 100.0
-        mask_medium = ~mask_low & ~mask_high
+        mask_medium = ~(mask_negative | mask_low | mask_high)
 
         log_c[mask_low] = log_c_low[mask_low]
         log_c[mask_medium] = log_c_medium[mask_medium]
         log_c[mask_high] = log_c_high[mask_high]
 
-        # Negate: the three formulas compute log(1/C); we want log(C)
+        # The finite Taylor expansion is only a local approximation and becomes
+        # grossly inaccurate for negative concentrations. Evaluate the defining
+        # hypergeometric normalization directly for those entries instead.
+        negative_indices = np.flatnonzero(
+            np.asarray(pyrecest.backend.to_numpy(mask_negative), dtype=bool)
+        )
+        if negative_indices.size:
+            kappa_values = np.asarray(
+                pyrecest.backend.to_numpy(kappa_arr), dtype=float
+            )
+            with mpmath.workdps(50):
+                log_surface_factor = (
+                    mpmath.log(2.0)
+                    + D * mpmath.log(mpmath.pi)
+                    - mpmath.loggamma(D)
+                )
+                for index in negative_indices:
+                    log_hypergeometric = mpmath.log(
+                        mpmath.hyp1f1(1, D, mpmath.mpf(kappa_values[index]))
+                    )
+                    log_c[index] = float(log_surface_factor + log_hypergeometric)
+
+        # Negate: the formulas compute log(1/C); we want log(C)
         log_c = -log_c
 
         if scalar_input:
