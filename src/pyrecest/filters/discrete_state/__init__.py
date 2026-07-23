@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import runpy
+from functools import wraps
 from pathlib import Path
 from typing import Any
 
 import numpy as np
+from scipy.sparse import issparse
 
 _TEXT_TYPES = (str, bytes, bytearray, np.str_, np.bytes_)
 _BOOLEAN_TYPES = (bool, np.bool_)
@@ -17,9 +19,136 @@ _module_globals = runpy.run_path(
     str(Path(__file__).resolve().parents[1] / "discrete_state.py"),
     run_name=__name__,
 )
+_original_scaled_emissions = _module_globals["scaled_emissions"]
+_original_probabilities_to_log_probabilities = _module_globals[
+    "probabilities_to_log_probabilities"
+]
+_original_discrete_forward_backward = _module_globals[
+    "discrete_forward_backward"
+]
+_original_discrete_forward_backward_time_varying = _module_globals[
+    "discrete_forward_backward_time_varying"
+]
+_original_imm_forward_backward = _module_globals["imm_forward_backward"]
 _original_sparse_gaussian_transition_matrix = _module_globals[
     "sparse_gaussian_transition_matrix"
 ]
+
+
+def _reject_complex_values(values: Any, message: str) -> None:
+    if issparse(values):
+        raw_values = values.data
+    else:
+        try:
+            raw_values = np.asarray(values)
+        except (TypeError, ValueError):
+            return
+
+    contains_complex = raw_values.dtype.kind == "c"
+    if raw_values.dtype == object:
+        contains_complex = any(
+            isinstance(value, _COMPLEX_TYPES) for value in raw_values.ravel()
+        )
+    if contains_complex:
+        raise ValueError(message)
+
+
+@wraps(_original_scaled_emissions)
+def scaled_emissions(log_likelihood):
+    _reject_complex_values(log_likelihood, "log_likelihood must contain real values")
+    return _original_scaled_emissions(log_likelihood)
+
+
+@wraps(_original_probabilities_to_log_probabilities)
+def probabilities_to_log_probabilities(
+    probabilities,
+    axis=-1,
+    *,
+    normalize=True,
+):
+    _reject_complex_values(
+        probabilities,
+        "probabilities must contain real probability values",
+    )
+    return _original_probabilities_to_log_probabilities(
+        probabilities,
+        axis=axis,
+        normalize=normalize,
+    )
+
+
+@wraps(_original_discrete_forward_backward)
+def discrete_forward_backward(
+    log_likelihood,
+    transition,
+    *,
+    initial_probabilities=None,
+    valid_state_mask=None,
+):
+    _reject_complex_values(log_likelihood, "log_likelihood must contain real values")
+    _reject_complex_values(
+        transition,
+        "transition must contain real transition probabilities",
+    )
+    return _original_discrete_forward_backward(
+        log_likelihood,
+        transition,
+        initial_probabilities=initial_probabilities,
+        valid_state_mask=valid_state_mask,
+    )
+
+
+@wraps(_original_discrete_forward_backward_time_varying)
+def discrete_forward_backward_time_varying(
+    log_likelihood,
+    transitions,
+    *,
+    initial_probabilities=None,
+    valid_state_mask=None,
+):
+    _reject_complex_values(log_likelihood, "log_likelihood must contain real values")
+    for index, transition in enumerate(transitions):
+        _reject_complex_values(
+            transition,
+            f"transitions[{index}] must contain real transition probabilities",
+        )
+    return _original_discrete_forward_backward_time_varying(
+        log_likelihood,
+        transitions,
+        initial_probabilities=initial_probabilities,
+        valid_state_mask=valid_state_mask,
+    )
+
+
+@wraps(_original_imm_forward_backward)
+def imm_forward_backward(
+    log_likelihood,
+    state_transitions,
+    mode_transition,
+    *,
+    initial_state_probabilities=None,
+    initial_mode_probabilities=None,
+    valid_state_mask=None,
+):
+    _reject_complex_values(log_likelihood, "log_likelihood must contain real values")
+    for index, transition in enumerate(state_transitions):
+        if transition is not None:
+            _reject_complex_values(
+                transition,
+                f"state_transitions[{index}] must contain real transition probabilities",
+            )
+    _reject_complex_values(
+        mode_transition,
+        "mode_transition must contain real transition probabilities",
+    )
+    return _original_imm_forward_backward(
+        log_likelihood,
+        state_transitions,
+        mode_transition,
+        initial_state_probabilities=initial_state_probabilities,
+        initial_mode_probabilities=initial_mode_probabilities,
+        valid_state_mask=valid_state_mask,
+    )
 
 
 def _validated_state_vectors(state_vectors: Any) -> np.ndarray:
@@ -142,6 +271,15 @@ def sparse_gaussian_transition_matrix(
     )
 
 
+_module_globals["scaled_emissions"] = scaled_emissions
+_module_globals["probabilities_to_log_probabilities"] = (
+    probabilities_to_log_probabilities
+)
+_module_globals["discrete_forward_backward"] = discrete_forward_backward
+_module_globals["discrete_forward_backward_time_varying"] = (
+    discrete_forward_backward_time_varying
+)
+_module_globals["imm_forward_backward"] = imm_forward_backward
 _module_globals["sparse_gaussian_transition_matrix"] = sparse_gaussian_transition_matrix
 _module_globals["_normalize_probability_vector"] = _validated_probability_vector
 for name in _module_globals["__all__"]:
