@@ -108,17 +108,14 @@ class AbstractDiracDistribution(AbstractDistributionType):
         weight_scale = float(np.max(host_weights))
         if not math.isfinite(weight_scale) or weight_scale <= 0:
             raise ValueError("Dirac weights must have positive finite total mass.")
-
         scaled_total_weight = float(np.sum(host_weights / weight_scale))
         if not math.isfinite(scaled_total_weight) or scaled_total_weight <= 0:
             raise ValueError("Dirac weights must have positive finite total mass.")
-
         normalization_root = math.sqrt(weight_scale) * math.sqrt(
             scaled_total_weight
         )
         if not math.isfinite(normalization_root) or normalization_root <= 0:
             raise ValueError("Dirac weights must have positive finite total mass.")
-
         return normalization_root, normalization_root
 
     @staticmethod
@@ -169,9 +166,15 @@ class AbstractDiracDistribution(AbstractDistributionType):
         """
         dist = copy.deepcopy(self)
         if function_is_vectorized:
-            dist.d = f(dist.d)
+            transformed_diracs = asarray(f(dist.d))
         else:
-            dist.d = stack([asarray(f(point)) for point in dist.d])
+            transformed_diracs = stack([asarray(f(point)) for point in dist.d])
+
+        if transformed_diracs.ndim == 0 or transformed_diracs.shape[0] != dist.w.shape[0]:
+            raise ValueError(
+                "Function must preserve the number of Dirac locations."
+            )
+        dist.d = transformed_diracs
         return dist
 
     def reweigh(self, f: Callable) -> "AbstractDiracDistribution":
