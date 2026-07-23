@@ -187,12 +187,19 @@ class AbstractMixture(AbstractDistributionType):
         samples = asarray(samples)
 
         if self.input_dim == 1 and samples.ndim == 0:
-            return reshape(samples, (1, 1))
+            samples = reshape(samples, (1, 1))
+        elif self.input_dim == 1 and samples.ndim == 1:
+            samples = reshape(samples, (-1, 1))
+        else:
+            samples = pyrecest.backend.atleast_2d(samples)
 
-        if self.input_dim == 1 and samples.ndim == 1:
-            return reshape(samples, (n_samples, 1))
-
-        return pyrecest.backend.atleast_2d(samples)
+        expected_shape = (n_samples, self.input_dim)
+        if tuple(samples.shape) != expected_shape:
+            raise ValueError(
+                "Mixture component sample output must have shape "
+                f"{expected_shape}, got {tuple(samples.shape)}"
+            )
+        return samples
 
     def _sample_component_matrix(self, component_index: int, n_samples: int):
         try:
