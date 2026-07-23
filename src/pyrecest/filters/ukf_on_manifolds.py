@@ -40,6 +40,17 @@ class _Weights:
         self.w0 = m / (m + d) + 3.0 - alpha**2
 
 
+def _as_measurement_vector(value: Any, expected_dim: int, name: str):
+    """Validate a measurement-like value without flattening or broadcasting it."""
+
+    vector = asarray(value)
+    expected_shape = (expected_dim,)
+    actual_shape = tuple(vector.shape)
+    if actual_shape != expected_shape:
+        raise ValueError(f"{name} must have shape {expected_shape}, got {actual_shape}")
+    return vector
+
+
 class UKFOnManifolds(AbstractFilter):  # pylint: disable=too-many-instance-attributes
     """Unscented Kalman Filter on (parallelizable) Manifolds.
 
@@ -263,7 +274,7 @@ class UKFOnManifolds(AbstractFilter):  # pylint: disable=too-many-instance-attri
         """
         if pyrecest.backend.__backend_name__ == "jax":  # pylint: disable=no-member
             raise NotImplementedError("update is not supported on the JAX backend.")
-        y = asarray(y).ravel()
+        y = _as_measurement_vector(y, self.meas_dim, "measurement")
         P = self._P + self.TOL * eye(self.d)
 
         w_u = self._w_u
@@ -272,12 +283,18 @@ class UKFOnManifolds(AbstractFilter):  # pylint: disable=too-many-instance-attri
 
         # Compute predicted measurements at sigma points
         ys = zeros((2 * self.d, self.meas_dim))
-        hat_y = asarray(self.h(self._state)).ravel()
+        hat_y = _as_measurement_vector(
+            self.h(self._state), self.meas_dim, "observation function output"
+        )
         for j in range(self.d):
             s_plus = self.phi(self._state, xis[j])
             s_minus = self.phi(self._state, -xis[j])
-            ys[j] = asarray(self.h(s_plus)).ravel()
-            ys[self.d + j] = asarray(self.h(s_minus)).ravel()
+            ys[j] = _as_measurement_vector(
+                self.h(s_plus), self.meas_dim, "observation function output"
+            )
+            ys[self.d + j] = _as_measurement_vector(
+                self.h(s_minus), self.meas_dim, "observation function output"
+            )
 
         # Predicted measurement mean
         y_bar = w_u.wm * hat_y + w_u.wj * sum(ys, axis=0)
