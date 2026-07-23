@@ -7,8 +7,12 @@ from pyrecest.distributions.nonperiodic.linear_mixture import LinearMixture
 
 class _MalformedSamplingGaussian(GaussianDistribution):
     def sample(self, n):
-        del n
-        return zeros((1, self.dim))
+        # Non-JAX mixture sampling requests all samples from a selected component
+        # in one batch, while the JAX path requests one sample at a time. Violate
+        # both contracts so this regression test exercises the shape validation
+        # consistently across backends.
+        returned_count = 0 if n == 1 else 1
+        return zeros((returned_count, self.dim))
 
 
 def test_mixture_rejects_component_that_returns_too_few_samples():
@@ -20,7 +24,7 @@ def test_mixture_rejects_component_that_returns_too_few_samples():
 
     with pytest.raises(
         ValueError,
-        match=r"Mixture component sample output must have shape \(3, 2\), got \(1, 2\)",
+        match=r"Mixture component sample output must have shape",
     ):
         mixture.sample(3)
 
