@@ -1,6 +1,6 @@
 # pylint: disable=no-name-in-module,no-member
 import numpy as np
-from pyrecest.backend import asarray, concatenate, hstack, prod, reshape, stack
+from pyrecest.backend import asarray, concatenate, prod, reshape, stack
 
 from .abstract_cart_prod_distribution import AbstractCartProdDistribution
 
@@ -56,7 +56,11 @@ class CartProdStackedDistribution(AbstractCartProdDistribution):
 
     def sample(self, n: int):
         n = _validate_positive_sample_count(n)
-        return hstack([dist.sample(n) for dist in self.dists])
+        component_samples = [
+            reshape(asarray(dist.sample(n)), (n, dist.input_dim))
+            for dist in self.dists
+        ]
+        return concatenate(component_samples, axis=1)
 
     def pdf(self, xs):
         xs = asarray(xs)
