@@ -1,3 +1,4 @@
+from ._record_smoother_numeric_contract import install_record_smoother_numeric_contract
 from .abstract_smoother import AbstractSmoother
 from .delayed_output import DelayedStateOutput, DelayedStateOutputMixin
 from .fixed_lag_mem_qkf_smoother import (
@@ -67,6 +68,8 @@ from .unscented_rauch_tung_striebel_smoother import (
     UnscentedRauchTungStriebelSmoother,
     URTSSmoother,
 )
+
+install_record_smoother_numeric_contract()
 
 __all__ = [
     "AbstractSmoother",
