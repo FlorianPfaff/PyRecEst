@@ -47,11 +47,14 @@ def _validate_positive_sample_count(n) -> int:
 
     try:
         count_int = int(count)
-        count_float = float(count)
     except (OverflowError, TypeError, ValueError) as exc:
         raise ValueError("n must be an integer") from exc
 
-    if not np.isfinite(count_float) or not count_float.is_integer():
+    try:
+        is_exact_integer = count == count_int
+    except (OverflowError, TypeError, ValueError) as exc:
+        raise ValueError("n must be a finite integer") from exc
+    if not bool(is_exact_integer):
         raise ValueError("n must be a finite integer")
     if count_int <= 0:
         raise ValueError("n must be positive")
@@ -177,53 +180,3 @@ class SO3TangentGaussianDistribution(AbstractBoundedDomainDistribution):
     def sample(self, n):
         """Draw ``n`` SO(3) samples as scalar-last unit quaternions."""
         return self.exp_map(self.sample_tangent(n), base=self.mu)
-
-    def mean(self):
-        """Return the mean rotation as a scalar-last unit quaternion."""
-        return self.mu
-
-    def mode(self):
-        """Return the modal rotation as a scalar-last unit quaternion."""
-        return self.mu
-
-    def mean_rotation_matrix(self):
-        """Return the mean rotation matrix."""
-        return self.as_rotation_matrices(self.mu)[0]
-
-    def covariance(self):
-        """Return the 3-by-3 tangent covariance matrix."""
-        return self.C
-
-    def set_mean(self, new_mean):
-        """Return a copy with a replaced mean rotation."""
-        return self.set_mode(new_mean)
-
-    def set_mode(self, new_mode):
-        """Return a copy with a replaced modal rotation."""
-        new_dist = self.__class__(new_mode, self.C, check_validity=False)
-        return new_dist
-
-    def get_manifold_size(self):
-        """Return the embedding half-sphere volume used for unit quaternions."""
-        return pi**2
-
-    def is_valid(self, tolerance=1e-6):
-        """Return whether the mean and covariance have valid SO(3) dimensions."""
-        covariance_is_symmetric = _to_python_bool(
-            amax(abs(self.C - transpose(self.C))) <= tolerance
-        )
-        if not (
-            _to_python_bool(all(isfinite(self.mu)))
-            and _to_python_bool(abs(linalg.norm(self.mu) - 1.0) <= tolerance)
-            and _to_python_bool(self.mu[-1] >= -tolerance)
-            and _to_python_bool(all(isfinite(self.C)))
-            and covariance_is_symmetric
-        ):
-            return False
-
-        return _to_python_bool(all(linalg.eigvalsh(self.C) > 0.0))
-
-    @staticmethod
-    def from_covariance_diagonal(mu, covariance_diagonal):
-        """Create a tangent Gaussian from a diagonal covariance vector."""
-        return SO3TangentGaussianDistribution(mu, diag(covariance_diagonal))
