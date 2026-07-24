@@ -1,8 +1,7 @@
 """Regression tests for tuple-valued custom-distribution integrals."""
 
-import pytest
-
 import pyrecest.backend
+import pytest
 from pyrecest.distributions.circle.custom_circular_distribution import (
     CustomCircularDistribution,
 )

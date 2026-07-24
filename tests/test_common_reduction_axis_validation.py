@@ -1,7 +1,6 @@
 import importlib.util
 
 import pytest
-
 from pyrecest._backend import _common
 
 

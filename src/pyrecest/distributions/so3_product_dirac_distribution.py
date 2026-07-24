@@ -5,7 +5,6 @@ from math import prod
 from numbers import Integral
 
 import numpy as np
-
 from pyrecest.backend import (
     abs,
     all,

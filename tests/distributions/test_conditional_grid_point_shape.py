@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.backend import array
 from pyrecest.distributions.conditional.td_cond_td_grid_distribution import (
     TdCondTdGridDistribution,

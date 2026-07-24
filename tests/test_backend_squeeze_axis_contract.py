@@ -1,7 +1,6 @@
 """Regression tests for JAX squeeze axis validation."""
 
 import pytest
-
 from tests.support.backend_runner import run_backend_code
 
 

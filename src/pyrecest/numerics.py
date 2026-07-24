@@ -42,9 +42,7 @@ def _object_item_contains_unsupported_numeric_values(
         active_ids.add(item_id)
         try:
             return any(
-                _object_item_contains_unsupported_numeric_values(
-                    subitem, active_ids
-                )
+                _object_item_contains_unsupported_numeric_values(subitem, active_ids)
                 for subitem in item
             )
         finally:

@@ -1,5 +1,4 @@
 import numpy.testing as npt
-
 from pyrecest.backend import array, pi
 from pyrecest.distributions.hypertorus.hypertoroidal_grid_distribution import (
     HypertoroidalGridDistribution,
