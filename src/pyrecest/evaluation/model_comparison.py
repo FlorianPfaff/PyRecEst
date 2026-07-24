@@ -170,8 +170,8 @@ def paired_model_margin_decisions(
     """Classify paired model wins using a symmetric log-evidence margin."""
 
     threshold = float(margin_threshold)
-    if threshold < 0.0:
-        raise ValueError("margin_threshold must be non-negative")
+    if not np.isfinite(threshold) or threshold < 0.0:
+        raise ValueError("margin_threshold must be finite and non-negative")
     group_cols = tuple(group_cols)
     columns = [
         *group_cols,
