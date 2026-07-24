@@ -209,9 +209,7 @@ def _contains_values_of_type(
         return False
     active_ids.add(value_id)
     try:
-        return any(
-            _contains_values_of_type(item, types, active_ids) for item in items
-        )
+        return any(_contains_values_of_type(item, types, active_ids) for item in items)
     finally:
         active_ids.remove(value_id)
 
@@ -435,7 +433,9 @@ def _as_probability_matrix(
     if probabilities.shape != shape:
         raise ValueError("probability_matrix must match cost_matrix shape")
     if np.any(np.isinf(probabilities)):
-        raise ValueError("probability_matrix may only contain finite probabilities or NaN")
+        raise ValueError(
+            "probability_matrix may only contain finite probabilities or NaN"
+        )
     finite = np.isfinite(probabilities)
     if np.any(finite & ((probabilities < 0.0) | (probabilities > 1.0))):
         raise ValueError("finite probability_matrix entries must lie in [0, 1]")

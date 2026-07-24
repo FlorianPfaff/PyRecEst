@@ -11,7 +11,9 @@ from pyrecest.backend import (
     linalg,
     ones,
     pi,
-    random as backend_random,
+)
+from pyrecest.backend import random as backend_random
+from pyrecest.backend import (
     sin,
     sqrt,
     stack,

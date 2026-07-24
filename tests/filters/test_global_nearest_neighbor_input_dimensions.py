@@ -1,7 +1,6 @@
 import unittest
 
 import numpy as np
-
 import pyrecest.backend
 from pyrecest.distributions import GaussianDistribution
 from pyrecest.filters import KalmanFilter
