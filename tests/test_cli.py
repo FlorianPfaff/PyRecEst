@@ -50,3 +50,39 @@ def test_cli_run_scenario_rejects_final_estimate_length_mismatch(tmp_path, capsy
     )
     captured = capsys.readouterr()
     assert "final_estimate length mismatch" in captured.err
+
+
+def test_cli_run_scenario_rejects_malformed_expected_json(tmp_path, capsys):
+    expected_path = tmp_path / "malformed.json"
+    expected_path.write_text("{not valid json", encoding="utf-8")
+
+    assert (
+        main(
+            [
+                "run-scenario",
+                "scenarios/linear_gaussian_cv_1d/config.toml",
+                "--expected",
+                str(expected_path),
+            ]
+        )
+        == 2
+    )
+    assert "failed to read expected results" in capsys.readouterr().err
+
+
+def test_cli_run_scenario_rejects_nonobject_expected_json(tmp_path, capsys):
+    expected_path = tmp_path / "expected_list.json"
+    expected_path.write_text("[]", encoding="utf-8")
+
+    assert (
+        main(
+            [
+                "run-scenario",
+                "scenarios/linear_gaussian_cv_1d/config.toml",
+                "--expected",
+                str(expected_path),
+            ]
+        )
+        == 2
+    )
+    assert "expected results must be a JSON object" in capsys.readouterr().err
