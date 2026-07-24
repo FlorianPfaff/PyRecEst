@@ -29,6 +29,8 @@ def _validate_positive_scalar(value, name):
         raise ValueError(message) from exc
     if numpy_value.shape not in ((), (1,)) or numpy_value.dtype.kind not in "iuf":
         raise ValueError(message)
+    if numpy_value.shape == (1,):
+        value = value.reshape(())
     if not bool(all(isfinite(value))):
         raise ValueError(f"{name} must be finite.")
     if not bool(all(value > 0.0)):
