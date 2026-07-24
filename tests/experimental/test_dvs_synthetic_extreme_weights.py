@@ -2,9 +2,7 @@
 
 import numpy as np
 import pytest
-
 from pyrecest.experimental.dvs import edge_probabilities_from_activity
-
 
 _EDGES = ("left", "right", "top", "bottom")
 

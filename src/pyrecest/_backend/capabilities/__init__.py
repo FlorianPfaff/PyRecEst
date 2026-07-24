@@ -74,7 +74,9 @@ def _patch_pytorch_dot_outer_device_contract() -> None:
 
     helper_names = ("dot", "outer")
     if all(
-        getattr(getattr(raw_pytorch, helper_name, None), "_pyrecest_device_contract", False)
+        getattr(
+            getattr(raw_pytorch, helper_name, None), "_pyrecest_device_contract", False
+        )
         for helper_name in helper_names
     ):
         if getattr(backend, "__backend_name__", None) == "pytorch":
@@ -157,7 +159,8 @@ def get_api_backend_support(api_name: str) -> dict[str, str]:
 def iter_api_backend_capabilities() -> tuple[tuple[str, dict[str, str]], ...]:
     """Return public API backend support rows in a stable order."""
     return tuple(
-        (api_name, dict(row)) for api_name, row in sorted(API_BACKEND_CAPABILITIES.items())
+        (api_name, dict(row))
+        for api_name, row in sorted(API_BACKEND_CAPABILITIES.items())
     )
 
 

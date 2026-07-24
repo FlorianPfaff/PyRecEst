@@ -2,7 +2,6 @@ import unittest
 
 import numpy as np
 import numpy.testing as npt
-
 from pyrecest.utils.cost_matrix_adjustments import (
     additive_cost_matrix_adjustment,
     apply_cost_matrix_adjustment,
@@ -16,9 +15,7 @@ class TestAdditiveCostMatrixAdjustmentOwnership(unittest.TestCase):
 
         penalty[:] = 100.0
 
-        result = apply_cost_matrix_adjustment(
-            np.array([[10.0, 20.0]]), adjustment
-        )
+        result = apply_cost_matrix_adjustment(np.array([[10.0, 20.0]]), adjustment)
         npt.assert_allclose(result.adjusted_cost_matrix, np.array([[11.0, 22.0]]))
 
 

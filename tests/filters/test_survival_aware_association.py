@@ -142,7 +142,9 @@ class SurvivalAwareAssociationTest(unittest.TestCase):
         self.assertIn("survival_aware_crp_weight", metadata)
         self.assertIn("survival_aware_measurement_log_score", metadata)
         self.assertIsNone(hypotheses[0].probability)
-        self.assertAlmostEqual(hypotheses[0].cost, -metadata["survival_aware_log_score"])
+        self.assertAlmostEqual(
+            hypotheses[0].cost, -metadata["survival_aware_log_score"]
+        )
 
     def test_track_manager_associator_keeps_far_measurement_unassigned(self):
         tracks = [_track(0.0, hits=5, misses=0, existence=0.95)]

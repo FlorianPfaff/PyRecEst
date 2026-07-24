@@ -18,7 +18,9 @@ def _provider_with(candidate):
 def _assert_candidate_rejected(candidate):
     try:
         enumerate_fragment_completion_paths(
-            [[0, None]], direction="suffix", candidate_provider=_provider_with(candidate)
+            [[0, None]],
+            direction="suffix",
+            candidate_provider=_provider_with(candidate),
         )
     except ValueError as exc:
         assert "candidate observations must be non-negative integers" in str(exc)

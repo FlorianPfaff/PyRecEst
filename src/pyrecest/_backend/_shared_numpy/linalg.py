@@ -53,11 +53,7 @@ def _cast_scipy_linalg_result_to_input_dtype(result, input_array):
 def _empty_batched_square_matrix_result(array):
     """Return an empty matrix-function result for a valid empty batch."""
 
-    if (
-        array.ndim > 2
-        and 0 in array.shape[:-2]
-        and array.shape[-2] == array.shape[-1]
-    ):
+    if array.ndim > 2 and 0 in array.shape[:-2] and array.shape[-2] == array.shape[-1]:
         return _np.empty_like(array)
     return None
 
