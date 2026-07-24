@@ -85,6 +85,10 @@ def _preferred_tensor_device(*values):
     )
 
 
+def _is_inexact_dtype(dtype):
+    return dtype.is_floating_point or dtype.is_complex
+
+
 def _as_tensor_pair(in1, in2):
     device = _preferred_tensor_device(in1, in2)
     x = (
@@ -101,8 +105,15 @@ def _as_tensor_pair(in1, in2):
     )
     y = y.to(device=x.device)
 
-    dtype = _torch.promote_types(x.dtype, y.dtype)
-    if not (dtype.is_floating_point or dtype.is_complex):
+    x_is_inexact = _is_inexact_dtype(x.dtype)
+    y_is_inexact = _is_inexact_dtype(y.dtype)
+    if x_is_inexact and y_is_inexact:
+        dtype = _torch.promote_types(x.dtype, y.dtype)
+    elif x_is_inexact:
+        dtype = x.dtype
+    elif y_is_inexact:
+        dtype = y.dtype
+    else:
         dtype = _torch.get_default_dtype()
     return x.to(dtype=dtype), y.to(dtype=dtype)
 
