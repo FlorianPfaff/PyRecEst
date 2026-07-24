@@ -1,5 +1,4 @@
 import pytest
-
 from pyrecest.filters.survival_aware_crp import SurvivalAwareCRPAssociationPrior
 
 

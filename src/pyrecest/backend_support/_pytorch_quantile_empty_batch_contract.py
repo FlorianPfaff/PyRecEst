@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-
 _QUANTILE_METHOD_CONFLICT_MESSAGE = (
     "quantile() cannot specify both 'method' and 'interpolation'"
 )
@@ -13,8 +12,8 @@ def patch_pytorch_quantile_empty_batch_contract() -> None:
 
     try:
         import numpy as np  # pylint: disable=import-outside-toplevel
-        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import torch  # pylint: disable=import-outside-toplevel
     except ModuleNotFoundError:  # pragma: no cover - PyTorch may be unavailable
         return

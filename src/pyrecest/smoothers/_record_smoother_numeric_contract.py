@@ -72,9 +72,7 @@ def _call_model(
     elif arity == 1:
         matrix = model(dt)
     else:
-        matrix = _record_smoother._call_model_with_fallback(
-            model, dt, state_dim, name
-        )
+        matrix = _record_smoother._call_model_with_fallback(model, dt, state_dim, name)
 
     _reject_complex_values(matrix, f"{name} must return real values")
     array = np.asarray(matrix, dtype=float)
