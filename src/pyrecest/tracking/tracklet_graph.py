@@ -19,6 +19,19 @@ import numpy as np
 CostFn = Callable[["Tracklet"], float]
 EdgeCostFn = Callable[["Tracklet", "Tracklet"], float | None]
 
+_REAL_STATE_ARRAY_KINDS = {"i", "u", "f"}
+_INVALID_STATE_SCALAR_TYPES = (
+    bool,
+    np.bool_,
+    str,
+    bytes,
+    bytearray,
+    complex,
+    np.complexfloating,
+    np.datetime64,
+    np.timedelta64,
+)
+
 
 @dataclass(frozen=True)
 class Tracklet:
@@ -478,8 +491,39 @@ def _path_sort_key(path: TrackletPath) -> tuple[float, int, tuple[str, ...]]:
     )
 
 
+def _raw_state_item_is_invalid(value: Any) -> bool:
+    if isinstance(value, _INVALID_STATE_SCALAR_TYPES):
+        return True
+    if isinstance(value, np.ndarray):
+        if value.dtype == object:
+            return any(
+                _raw_state_item_is_invalid(item) for item in value.reshape(-1)
+            )
+        return value.dtype.kind not in _REAL_STATE_ARRAY_KINDS
+    if isinstance(value, (list, tuple)):
+        return any(_raw_state_item_is_invalid(item) for item in value)
+    return False
+
+
 def _state_vector(value: Any, name: str) -> np.ndarray:
-    vector = np.asarray(value, dtype=float).reshape(-1)
+    message = f"{name} must contain real-valued numeric entries"
+    if _raw_state_item_is_invalid(value):
+        raise ValueError(message)
+
+    try:
+        raw = np.asarray(value)
+    except (OverflowError, TypeError, ValueError, RuntimeError) as exc:
+        raise ValueError(message) from exc
+    if raw.dtype == object:
+        if any(_raw_state_item_is_invalid(item) for item in raw.reshape(-1)):
+            raise ValueError(message)
+    elif raw.dtype.kind not in _REAL_STATE_ARRAY_KINDS:
+        raise ValueError(message)
+
+    try:
+        vector = raw.astype(float, copy=False).reshape(-1)
+    except (OverflowError, TypeError, ValueError) as exc:
+        raise ValueError(message) from exc
     if vector.size == 0:
         raise ValueError(f"{name} must contain at least one value")
     if not np.isfinite(vector).all():
