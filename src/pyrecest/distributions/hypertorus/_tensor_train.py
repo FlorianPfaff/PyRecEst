@@ -39,6 +39,19 @@ def _normalize_nonnegative_tolerance(value, name):
     return tolerance
 
 
+def _normalize_target_mode_size(value):
+    """Return a positive integer tensor-train convolution mode size."""
+    if isinstance(value, (bool, np.bool_)):
+        raise TypeError("target mode sizes must be integers.")
+    try:
+        mode_size = _operator_index(value)
+    except TypeError as exc:
+        raise TypeError("target mode sizes must be integers.") from exc
+    if mode_size < 1:
+        raise ValueError("target mode sizes must be positive.")
+    return mode_size
+
+
 def _check_dense_validation_size(size, max_entries):
     if max_entries is None:
         return
@@ -223,9 +236,14 @@ class TensorTrain:
             target_shape = self.shape
         if len(target_shape) != self.ndim:
             raise ValueError("target_shape must contain one mode size per dimension.")
+        normalized_target_shape = tuple(
+            _normalize_target_mode_size(mode_size) for mode_size in target_shape
+        )
         cores = [
-            _convolve_cores_centered(left_core, right_core, int(mode_size))
-            for left_core, right_core, mode_size in zip(self.cores, other.cores, target_shape)
+            _convolve_cores_centered(left_core, right_core, mode_size)
+            for left_core, right_core, mode_size in zip(
+                self.cores, other.cores, normalized_target_shape
+            )
         ]
         return TensorTrain(cores)
 
