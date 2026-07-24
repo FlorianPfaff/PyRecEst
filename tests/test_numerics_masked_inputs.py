@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.numerics import (
     assert_covariance_matrix,
     is_positive_semidefinite,
@@ -35,21 +34,13 @@ def test_covariance_helpers_reject_masked_scalar_controls():
 
     invalid_calls = (
         lambda: is_symmetric(matrix, atol=np.ma.array(1e-10, mask=True)),
-        lambda: is_positive_semidefinite(
-            matrix, atol=np.ma.array(1e-10, mask=True)
-        ),
+        lambda: is_positive_semidefinite(matrix, atol=np.ma.array(1e-10, mask=True)),
         lambda: nearest_symmetric_psd(
             matrix, min_eigenvalue=np.ma.array(0.0, mask=True)
         ),
-        lambda: jittered_cholesky(
-            matrix, initial_jitter=np.ma.array(1e-12, mask=True)
-        ),
-        lambda: jittered_cholesky(
-            matrix, max_attempts=np.ma.array(2, mask=True)
-        ),
-        lambda: assert_covariance_matrix(
-            matrix, dim=np.ma.array(2, mask=True)
-        ),
+        lambda: jittered_cholesky(matrix, initial_jitter=np.ma.array(1e-12, mask=True)),
+        lambda: jittered_cholesky(matrix, max_attempts=np.ma.array(2, mask=True)),
+        lambda: assert_covariance_matrix(matrix, dim=np.ma.array(2, mask=True)),
     )
 
     for call in invalid_calls:
@@ -61,9 +52,7 @@ def test_covariance_helpers_accept_unmasked_masked_arrays():
     matrix = np.ma.array(np.eye(2), mask=False)
 
     assert is_symmetric(matrix, atol=np.ma.array(1e-10, mask=False))
-    assert is_positive_semidefinite(
-        matrix, atol=np.ma.array(1e-10, mask=False)
-    )
+    assert is_positive_semidefinite(matrix, atol=np.ma.array(1e-10, mask=False))
     np.testing.assert_array_equal(
         np.asarray(
             assert_covariance_matrix(

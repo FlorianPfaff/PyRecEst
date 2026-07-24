@@ -10,8 +10,8 @@ from numbers import Integral
 import numpy as _np
 import pyrecest.backend
 from pyrecest.backend import abs as _abs
-from pyrecest.backend import any as _any
 from pyrecest.backend import amax as _amax
+from pyrecest.backend import any as _any
 from pyrecest.backend import array as _array
 from pyrecest.backend import asarray as _asarray
 from pyrecest.backend import concatenate as _concatenate
@@ -475,9 +475,7 @@ def min_cost_max_cardinality_assignment(cost_matrix):
     if maximum_absolute_cost > 0.0:
         optimization_cost_matrix[finite_cost_mask] /= maximum_absolute_cost
     scaled_finite_costs = optimization_cost_matrix[finite_cost_mask]
-    cardinality_priority_cost = 2.0 * (
-        float(_sum(_abs(scaled_finite_costs))) + 1.0
-    )
+    cardinality_priority_cost = 2.0 * (float(_sum(_abs(scaled_finite_costs))) + 1.0)
     solutions = murty_k_best_assignments(
         optimization_cost_matrix,
         k=1,

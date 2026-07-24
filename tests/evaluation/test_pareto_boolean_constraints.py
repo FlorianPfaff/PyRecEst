@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import pandas as pd
 import pytest
-
 from pyrecest.evaluation import constraint_mask, select_under_constraints
 
 
