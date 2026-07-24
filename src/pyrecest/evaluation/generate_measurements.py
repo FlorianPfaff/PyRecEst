@@ -15,14 +15,33 @@ from scipy.stats import poisson
 from shapely.affinity import rotate, translate
 from shapely.geometry import Polygon
 
+_TEMPORAL_SCALAR_TYPES = (np.datetime64, np.timedelta64)
+_TEMPORAL_DTYPE_KINDS = {"M", "m"}
+
 
 def _as_shapely_scalar(value, name="groundtruth component"):
     value_array = np.asarray(value)
-    if value_array.dtype == np.bool_ or value_array.size != 1:
+    if (
+        value_array.dtype == np.bool_
+        or value_array.dtype.kind in _TEMPORAL_DTYPE_KINDS
+        or value_array.size != 1
+    ):
         raise ValueError(f"{name} must be a finite scalar.")
 
     scalar = value_array.reshape(-1)[0]
-    if isinstance(scalar, (bool, np.bool_, str, bytes, bytearray, np.str_, np.bytes_)):
+    if isinstance(
+        scalar,
+        (
+            bool,
+            np.bool_,
+            str,
+            bytes,
+            bytearray,
+            np.str_,
+            np.bytes_,
+            *_TEMPORAL_SCALAR_TYPES,
+        ),
+    ):
         raise ValueError(f"{name} must be a finite scalar.")
     try:
         result = float(scalar)
@@ -35,11 +54,27 @@ def _as_shapely_scalar(value, name="groundtruth component"):
 
 def _as_nonnegative_measurement_count(value, name="measurement count") -> int:
     value_array = np.asarray(value)
-    if value_array.shape != () or value_array.dtype == np.bool_:
+    if (
+        value_array.shape != ()
+        or value_array.dtype == np.bool_
+        or value_array.dtype.kind in _TEMPORAL_DTYPE_KINDS
+    ):
         raise ValueError(f"{name} must be a non-negative integer.")
 
     scalar = value_array.item()
-    if isinstance(scalar, (bool, np.bool_, str, bytes, bytearray, np.str_, np.bytes_)):
+    if isinstance(
+        scalar,
+        (
+            bool,
+            np.bool_,
+            str,
+            bytes,
+            bytearray,
+            np.str_,
+            np.bytes_,
+            *_TEMPORAL_SCALAR_TYPES,
+        ),
+    ):
         raise ValueError(f"{name} must be a non-negative integer.")
     if isinstance(scalar, (int, np.integer)):
         count = int(scalar)
@@ -59,11 +94,25 @@ def _as_nonnegative_measurement_count(value, name="measurement count") -> int:
 
 def _as_nonnegative_finite_scalar(value, name: str) -> float:
     value_array = np.asarray(value)
-    if value_array.shape != () or value_array.dtype == np.bool_:
+    if (
+        value_array.shape != ()
+        or value_array.dtype == np.bool_
+        or value_array.dtype.kind in _TEMPORAL_DTYPE_KINDS
+    ):
         raise ValueError(f"{name} must be a finite non-negative scalar.")
 
     scalar = value_array.item()
-    if isinstance(scalar, (bool, np.bool_, str, bytes, bytearray)):
+    if isinstance(
+        scalar,
+        (
+            bool,
+            np.bool_,
+            str,
+            bytes,
+            bytearray,
+            *_TEMPORAL_SCALAR_TYPES,
+        ),
+    ):
         raise ValueError(f"{name} must be a finite non-negative scalar.")
     try:
         result = float(scalar)
