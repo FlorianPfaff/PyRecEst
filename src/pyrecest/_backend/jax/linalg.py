@@ -188,6 +188,12 @@ def is_single_matrix_pd(mat):
     if mat.ndim != 2 or mat.shape[0] != mat.shape[1]:
         return False
 
+    # JAX's Cholesky and Hermitian eigensolvers do not support float16 or
+    # bfloat16. Promote only for this predicate so valid low-precision inputs
+    # produce a boolean result instead of leaking NotImplementedError.
+    if mat.dtype in (_jnp.float16, _jnp.bfloat16):
+        mat = mat.astype(_jnp.float32)
+
     if mat.dtype in (_jnp.complex64, _jnp.complex128):
         is_hermitian = _jnp.all(_jnp.abs(mat - _jnp.conj(_jnp.transpose(mat))) < atol)
         eigvals = _jnp.linalg.eigvalsh(mat)
