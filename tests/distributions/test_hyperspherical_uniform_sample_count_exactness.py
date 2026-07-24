@@ -1,7 +1,6 @@
 from fractions import Fraction
 
 import pytest
-
 from pyrecest.distributions.hypersphere_subset.hyperspherical_uniform_distribution import (
     _validate_positive_sample_count,
 )

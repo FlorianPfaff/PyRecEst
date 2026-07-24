@@ -1,5 +1,4 @@
 import pytest
-
 from pyrecest.backend import array, zeros
 from pyrecest.distributions import GaussianDistribution
 from pyrecest.distributions.nonperiodic.linear_mixture import LinearMixture

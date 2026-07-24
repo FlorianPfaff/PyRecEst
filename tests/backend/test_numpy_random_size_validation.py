@@ -1,8 +1,6 @@
 import numpy as np
 import pytest
-
 from pyrecest._backend.numpy import random
-
 
 _INVALID_SIZE_ARGUMENTS = (
     True,

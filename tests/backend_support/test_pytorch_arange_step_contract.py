@@ -5,7 +5,6 @@ import sys
 
 import pytest
 
-
 SCRIPT = """
 import numpy as np
 import pyrecest.backend as backend

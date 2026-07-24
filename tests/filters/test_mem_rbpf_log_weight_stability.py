@@ -4,7 +4,6 @@ from pyrecest import backend
 from pyrecest.backend import array, diag, eye, zeros
 from pyrecest.filters.mem_rbpf_tracker import MEMRBPFTracker
 
-
 pytestmark = pytest.mark.skipif(
     backend.__backend_name__ != "numpy",
     reason="MEM-RBPF particle-weight stability is currently exercised on NumPy only",

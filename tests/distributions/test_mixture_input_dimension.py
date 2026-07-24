@@ -1,7 +1,6 @@
 from types import SimpleNamespace
 
 import pytest
-
 from pyrecest.backend import array
 from pyrecest.distributions.abstract_mixture import AbstractMixture
 
