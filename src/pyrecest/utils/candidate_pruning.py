@@ -188,14 +188,32 @@ def _normalize_bounded_scalar(
     return parsed
 
 
-def _contains_values_of_type(value: Any, types: tuple[type, ...]) -> bool:
+def _contains_values_of_type(
+    value: Any,
+    types: tuple[type, ...],
+    active_ids: set[int] | None = None,
+) -> bool:
     if isinstance(value, types):
         return True
-    try:
-        values = np.asarray(value, dtype=object).reshape(-1)
-    except (TypeError, ValueError, RuntimeError):
+    if isinstance(value, np.ndarray):
+        items = value.reshape(-1)
+    elif isinstance(value, (list, tuple)):
+        items = value
+    else:
         return False
-    return any(isinstance(item, types) for item in values)
+
+    if active_ids is None:
+        active_ids = set()
+    value_id = id(value)
+    if value_id in active_ids:
+        return False
+    active_ids.add(value_id)
+    try:
+        return any(
+            _contains_values_of_type(item, types, active_ids) for item in items
+        )
+    finally:
+        active_ids.remove(value_id)
 
 
 def _contains_text_values(value: Any) -> bool:
