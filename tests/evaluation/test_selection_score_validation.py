@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.evaluation.selection import sanitized_score_vector, top_count_mask
 
 

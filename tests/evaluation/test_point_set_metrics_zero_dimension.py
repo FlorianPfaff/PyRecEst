@@ -1,7 +1,9 @@
 import numpy as np
 import pytest
-
-from pyrecest.evaluation.point_set_metrics import as_point_set, nearest_neighbor_distances
+from pyrecest.evaluation.point_set_metrics import (
+    as_point_set,
+    nearest_neighbor_distances,
+)
 
 
 def test_as_point_set_rejects_zero_coordinate_dimension():
