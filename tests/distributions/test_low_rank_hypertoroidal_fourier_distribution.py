@@ -2,7 +2,6 @@ import unittest
 
 import numpy as np
 import numpy.testing as npt
-
 import pyrecest.backend
 from pyrecest.distributions.hypertorus._tensor_train import TensorTrain
 from pyrecest.distributions.hypertorus.hypertoroidal_fourier_distribution import (
@@ -66,7 +65,9 @@ class TestLowRankHypertoroidalFourierDistribution(unittest.TestCase):
                     LowRankHypertoroidalFourierDistribution.uniform(shape)
 
     def test_value_and_pdf_match_dense_1d(self):
-        dense = HypertoroidalFourierDistribution(_identity_coefficients_1d(), "identity")
+        dense = HypertoroidalFourierDistribution(
+            _identity_coefficients_1d(), "identity"
+        )
         low_rank = LowRankHypertoroidalFourierDistribution.from_dense(dense)
         xs = np.linspace(0.0, 2.0 * np.pi, 17, endpoint=False)
         npt.assert_allclose(low_rank.value(xs), dense.value(xs), atol=1e-10)
@@ -88,7 +89,9 @@ class TestLowRankHypertoroidalFourierDistribution(unittest.TestCase):
                     low_rank_2d.value(points)
 
     def test_shift_matches_dense_2d(self):
-        dense = HypertoroidalFourierDistribution(_identity_coefficients_2d(), "identity")
+        dense = HypertoroidalFourierDistribution(
+            _identity_coefficients_2d(), "identity"
+        )
         low_rank = LowRankHypertoroidalFourierDistribution.from_dense(dense)
         shift = np.array([0.2, -0.5])
         npt.assert_allclose(
@@ -96,16 +99,24 @@ class TestLowRankHypertoroidalFourierDistribution(unittest.TestCase):
         )
 
     def test_predict_additive_noise_matches_dense_2d(self):
-        prior_dense = HypertoroidalFourierDistribution(_identity_coefficients_2d(), "identity")
-        noise_dense = HypertoroidalFourierDistribution(_identity_coefficients_2d(), "identity")
+        prior_dense = HypertoroidalFourierDistribution(
+            _identity_coefficients_2d(), "identity"
+        )
+        noise_dense = HypertoroidalFourierDistribution(
+            _identity_coefficients_2d(), "identity"
+        )
         predicted_dense = prior_dense.convolve(noise_dense)
         predicted_low_rank = LowRankHypertoroidalFourierDistribution.from_dense(
             prior_dense
         ).convolve(LowRankHypertoroidalFourierDistribution.from_dense(noise_dense))
-        npt.assert_allclose(predicted_low_rank.to_dense(), predicted_dense.coeff_mat, atol=1e-10)
+        npt.assert_allclose(
+            predicted_low_rank.to_dense(), predicted_dense.coeff_mat, atol=1e-10
+        )
 
     def test_update_multiply_matches_dense_1d(self):
-        prior_dense = HypertoroidalFourierDistribution(_identity_coefficients_1d(), "identity")
+        prior_dense = HypertoroidalFourierDistribution(
+            _identity_coefficients_1d(), "identity"
+        )
         likelihood_dense = HypertoroidalFourierDistribution(
             _identity_coefficients_1d(), "identity"
         ).shift(np.array([1.5]))
@@ -113,7 +124,9 @@ class TestLowRankHypertoroidalFourierDistribution(unittest.TestCase):
         updated_low_rank = LowRankHypertoroidalFourierDistribution.from_dense(
             prior_dense
         ).multiply(LowRankHypertoroidalFourierDistribution.from_dense(likelihood_dense))
-        npt.assert_allclose(updated_low_rank.to_dense(), updated_dense.coeff_mat, atol=1e-10)
+        npt.assert_allclose(
+            updated_low_rank.to_dense(), updated_dense.coeff_mat, atol=1e-10
+        )
 
     def test_high_dimensional_uniform_smoke(self):
         dist = LowRankHypertoroidalFourierDistribution.uniform((3,) * 8)
@@ -143,7 +156,9 @@ class TestLowRankHypertoroidalFourierDistribution(unittest.TestCase):
         npt.assert_allclose(repaired.integrate(), 1.0, atol=1e-12)
 
     def test_hermitian_helpers_reject_sqrt_transformation(self):
-        dist = LowRankHypertoroidalFourierDistribution.uniform((3,), transformation="sqrt")
+        dist = LowRankHypertoroidalFourierDistribution.uniform(
+            (3,), transformation="sqrt"
+        )
         with self.assertRaises(NotImplementedError):
             dist.centered_hermitian_deviation()
         with self.assertRaises(NotImplementedError):
@@ -151,7 +166,9 @@ class TestLowRankHypertoroidalFourierDistribution(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             dist.centered_hermitianized()
 
-    def test_tensor_train_from_dense_validates_max_rank_before_one_dimensional_return(self):
+    def test_tensor_train_from_dense_validates_max_rank_before_one_dimensional_return(
+        self,
+    ):
         for max_rank in (0, -1, np.array(0)):
             with self.subTest(max_rank=repr(max_rank)):
                 with self.assertRaises(ValueError):
@@ -180,7 +197,9 @@ class TestLowRankHypertoroidalFourierDistribution(unittest.TestCase):
         self.assertEqual(tensor_train.ranks, (1, 1, 1))
 
     def test_update_multiply_accepts_scalar_1d_coefficient_count(self):
-        prior_dense = HypertoroidalFourierDistribution(_identity_coefficients_1d(), "identity")
+        prior_dense = HypertoroidalFourierDistribution(
+            _identity_coefficients_1d(), "identity"
+        )
         likelihood_dense = HypertoroidalFourierDistribution(
             _identity_coefficients_1d(), "identity"
         ).shift(np.array([1.5]))
@@ -191,11 +210,17 @@ class TestLowRankHypertoroidalFourierDistribution(unittest.TestCase):
             LowRankHypertoroidalFourierDistribution.from_dense(likelihood_dense),
             n_coefficients=5,
         )
-        npt.assert_allclose(updated_low_rank.to_dense(), updated_dense.coeff_mat, atol=1e-10)
+        npt.assert_allclose(
+            updated_low_rank.to_dense(), updated_dense.coeff_mat, atol=1e-10
+        )
 
     def test_predict_convolve_accepts_scalar_1d_coefficient_count(self):
-        prior_dense = HypertoroidalFourierDistribution(_identity_coefficients_1d(), "identity")
-        noise_dense = HypertoroidalFourierDistribution(_identity_coefficients_1d(), "identity")
+        prior_dense = HypertoroidalFourierDistribution(
+            _identity_coefficients_1d(), "identity"
+        )
+        noise_dense = HypertoroidalFourierDistribution(
+            _identity_coefficients_1d(), "identity"
+        )
         predicted_dense = prior_dense.convolve(noise_dense)
         predicted_low_rank = LowRankHypertoroidalFourierDistribution.from_dense(
             prior_dense
@@ -203,7 +228,9 @@ class TestLowRankHypertoroidalFourierDistribution(unittest.TestCase):
             LowRankHypertoroidalFourierDistribution.from_dense(noise_dense),
             n_coefficients=5,
         )
-        npt.assert_allclose(predicted_low_rank.to_dense(), predicted_dense.coeff_mat, atol=1e-10)
+        npt.assert_allclose(
+            predicted_low_rank.to_dense(), predicted_dense.coeff_mat, atol=1e-10
+        )
 
 
 if __name__ == "__main__":

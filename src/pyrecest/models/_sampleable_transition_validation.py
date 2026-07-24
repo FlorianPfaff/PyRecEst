@@ -40,7 +40,9 @@ def _patch_sampler_count_check(model_cls) -> None:
 
     def checked_sample_next(self, state, n=1):
         has_sampler = getattr(self, "_sample_next", None) is not None
-        has_count_argument = getattr(self, "_sample_next_count_call_mode", None) is not None
+        has_count_argument = (
+            getattr(self, "_sample_next_count_call_mode", None) is not None
+        )
         if has_sampler and not has_count_argument and _requested_sample_count(n) != 1:
             raise TypeError("sample count is not supported by this sampler.")
         return original(self, state, n=n)

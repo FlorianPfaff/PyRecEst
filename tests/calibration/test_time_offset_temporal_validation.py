@@ -1,7 +1,6 @@
 import unittest
 
 import numpy as np
-
 from pyrecest.calibration.time_offset import (
     aggregate_time_offset_sweeps,
     apply_time_offset,
