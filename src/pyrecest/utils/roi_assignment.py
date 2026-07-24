@@ -169,9 +169,7 @@ def _as_sparse_coordinate_vector(values, name: str):
     coordinates = []
     for value in raw_values:
         if isinstance(value, (bool, str, bytes, bytearray, complex)):
-            raise ValueError(
-                f"{name} must contain non-negative integer coordinates."
-            )
+            raise ValueError(f"{name} must contain non-negative integer coordinates.")
         try:
             coordinates.append(_as_nonnegative_integer(value, name))
         except ValueError as exc:

@@ -1,7 +1,6 @@
 from fractions import Fraction
 
 import pytest
-
 from pyrecest.filters.euclidean_particle_filter import EuclideanParticleFilter
 from pyrecest.filters.hypertoroidal_particle_filter import _validate_positive_integer
 

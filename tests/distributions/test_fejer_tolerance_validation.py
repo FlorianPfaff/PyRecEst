@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.distributions.hypertorus.fejer import (
     adaptive_kernel_reduce_coefficients,
     minimum_on_fft_grid,
@@ -35,9 +34,7 @@ def test_adaptive_reduction_rejects_invalid_min_value_tolerance(
 
 
 def test_adaptive_reduction_accepts_numpy_scalar_tolerance():
-    coefficients = np.array(
-        [0.0, -0.1, 1.0 / (2.0 * np.pi), -0.1, 0.0]
-    )
+    coefficients = np.array([0.0, -0.1, 1.0 / (2.0 * np.pi), -0.1, 0.0])
 
     reduced, exponent = adaptive_kernel_reduce_coefficients(
         coefficients,

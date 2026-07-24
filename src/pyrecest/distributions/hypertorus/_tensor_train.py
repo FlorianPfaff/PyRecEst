@@ -74,7 +74,9 @@ def _choose_rank(singular_values, max_rank, local_tolerance):
         squared_tail = np.cumsum(singular_values[::-1] ** 2)[::-1]
         rank = full_rank
         for candidate in range(1, full_rank + 1):
-            tail = 0.0 if candidate == full_rank else sqrt(float(squared_tail[candidate]))
+            tail = (
+                0.0 if candidate == full_rank else sqrt(float(squared_tail[candidate]))
+            )
             if tail <= local_tolerance:
                 rank = candidate
                 break
@@ -108,7 +110,9 @@ class TensorTrain:
             raise ValueError("At least one TT core is required.")
         for core in checked:
             if core.ndim != 3:
-                raise ValueError("TT cores must have shape (left_rank, mode_size, right_rank).")
+                raise ValueError(
+                    "TT cores must have shape (left_rank, mode_size, right_rank)."
+                )
         if checked[0].shape[0] != 1 or checked[-1].shape[2] != 1:
             raise ValueError("Boundary TT ranks must be one.")
         for left, right in zip(checked, checked[1:]):
@@ -151,7 +155,9 @@ class TensorTrain:
 
         norm = float(np.linalg.norm(array.ravel()))
         global_tolerance = max(atol, rtol * norm)
-        local_tolerance = global_tolerance / sqrt(array.ndim - 1) if global_tolerance > 0 else 0.0
+        local_tolerance = (
+            global_tolerance / sqrt(array.ndim - 1) if global_tolerance > 0 else 0.0
+        )
 
         cores = []
         unfolding = array
@@ -188,7 +194,9 @@ class TensorTrain:
     def norm_squared(self):
         environment = np.ones((1, 1), dtype=np.complex128)
         for core in self.cores:
-            next_environment = np.zeros((core.shape[2], core.shape[2]), dtype=np.complex128)
+            next_environment = np.zeros(
+                (core.shape[2], core.shape[2]), dtype=np.complex128
+            )
             for mode_index in range(core.shape[1]):
                 core_slice = core[:, mode_index, :]
                 next_environment += core_slice.conj().T @ environment @ core_slice
@@ -210,7 +218,9 @@ class TensorTrain:
         for core, factor in zip(self.cores, factors):
             vector = np.asarray(factor, dtype=np.complex128)
             if vector.shape != (core.shape[1],):
-                raise ValueError("Each factor vector must match the corresponding mode size.")
+                raise ValueError(
+                    "Each factor vector must match the corresponding mode size."
+                )
             cores.append(core * vector[None, :, None])
         return TensorTrain(cores)
 
@@ -231,7 +241,9 @@ class TensorTrain:
 
     def coefficient_convolution(self, other, *, target_shape=None):
         if self.ndim != other.ndim:
-            raise ValueError("Convolution operands must have the same number of dimensions.")
+            raise ValueError(
+                "Convolution operands must have the same number of dimensions."
+            )
         if target_shape is None:
             target_shape = self.shape
         if len(target_shape) != self.ndim:
@@ -296,7 +308,9 @@ class TensorTrain:
 
         norm = self.norm()
         global_tolerance = max(atol, rtol * norm)
-        local_tolerance = global_tolerance / sqrt(self.ndim - 1) if global_tolerance > 0 else 0.0
+        local_tolerance = (
+            global_tolerance / sqrt(self.ndim - 1) if global_tolerance > 0 else 0.0
+        )
 
         cores = [core.copy() for core in self.cores]
 
@@ -311,9 +325,7 @@ class TensorTrain:
             new_left_rank = q_trans.shape[1]
             cores[axis] = q_trans.T.reshape(new_left_rank, mode_size, right_rank)
             transfer = r_trans.T
-            cores[axis - 1] = np.tensordot(
-                cores[axis - 1], transfer, axes=([2], [0])
-            )
+            cores[axis - 1] = np.tensordot(cores[axis - 1], transfer, axes=([2], [0]))
 
         # Sweep left to right, truncate every bond, and absorb singular values
         # into the following core.

@@ -3,7 +3,6 @@
 from fractions import Fraction
 
 import pytest
-
 from pyrecest.distributions.cart_prod.gauss_von_mises_distribution import (
     _validate_positive_sample_count,
 )

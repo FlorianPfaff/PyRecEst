@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-
 from pyrecest.tracking import assert_selector_invariant_under_forbidden_key_changes
-
 
 _ROWS = [
     {"candidate_id": "a", "score": 2.0, "audit_delta": -100.0},

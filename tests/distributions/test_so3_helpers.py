@@ -55,9 +55,7 @@ class SO3HelpersTest(unittest.TestCase):
         invalid_calls = [
             lambda: so3_helpers.normalize_quaternions(complex_quaternion),
             lambda: private_normalize_quaternions(complex_quaternion),
-            lambda: so3_helpers.as_batch(
-                complex_tangent, 3, "SO(3) tangent vectors"
-            ),
+            lambda: so3_helpers.as_batch(complex_tangent, 3, "SO(3) tangent vectors"),
             lambda: so3_helpers.so3_exp_map_volume_log_jacobian(complex_tangent),
             lambda: so3_helpers.exp_map_identity(complex_tangent),
             lambda: so3_helpers.geodesic_distance(complex_quaternion, identity),

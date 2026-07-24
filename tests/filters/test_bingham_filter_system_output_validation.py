@@ -40,7 +40,9 @@ class TestBinghamFilterSystemOutputValidation(unittest.TestCase):
         reason="Not supported on this backend",
     )
     def test_rejects_scalar_output_before_column_broadcast(self):
-        with self.assertRaisesRegex(ValueError, "system function output must have shape"):
+        with self.assertRaisesRegex(
+            ValueError, "system function output must have shape"
+        ):
             self._predict_with_first_output(2**-0.5)
 
     @unittest.skipIf(
@@ -48,7 +50,9 @@ class TestBinghamFilterSystemOutputValidation(unittest.TestCase):
         reason="Not supported on this backend",
     )
     def test_rejects_nonfinite_output(self):
-        with self.assertRaisesRegex(ValueError, "system function output must be finite"):
+        with self.assertRaisesRegex(
+            ValueError, "system function output must be finite"
+        ):
             self._predict_with_first_output(array([float("nan"), 0.0]))
 
     @unittest.skipIf(
@@ -56,7 +60,9 @@ class TestBinghamFilterSystemOutputValidation(unittest.TestCase):
         reason="Not supported on this backend",
     )
     def test_rejects_nonunit_output(self):
-        with self.assertRaisesRegex(ValueError, "system function output must be a unit vector"):
+        with self.assertRaisesRegex(
+            ValueError, "system function output must be a unit vector"
+        ):
             self._predict_with_first_output(array([2.0, 0.0]))
 
 
