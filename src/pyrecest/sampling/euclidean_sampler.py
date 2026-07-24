@@ -300,7 +300,6 @@ def _validate_gaussian_transform_args(d, covariance, mean):
         mean = np.zeros(d)
     else:
         mean = _as_real_float_array(mean, "mean")
-    mean = mean.ravel()
     if mean.shape != (d,):
         raise ValueError("mean must have shape (dim,)")
     if not np.all(np.isfinite(mean)):
