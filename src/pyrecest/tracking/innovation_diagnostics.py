@@ -31,11 +31,14 @@ class InnovationDiagnostic:
 
     @property
     def mahalanobis_distance(self) -> float | None:
-        """Return ``sqrt(max(nis, 0))`` when NIS is available."""
+        """Return ``sqrt(max(nis, 0))`` when a finite NIS is available."""
 
         if self.nis is None:
             return None
-        return float(np.sqrt(max(0.0, float(self.nis))))
+        nis = float(self.nis)
+        if not np.isfinite(nis):
+            return None
+        return float(np.sqrt(max(0.0, nis)))
 
     def to_dict(self, *, include_arrays: bool = False) -> dict[str, Any]:
         """Return a JSON/CSV-friendly representation."""
