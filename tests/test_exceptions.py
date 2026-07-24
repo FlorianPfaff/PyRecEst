@@ -47,6 +47,18 @@ def test_backend_not_supported_error_accepts_single_binary_supported_backend():
     assert "n, u, m, p, y" not in str(error)
 
 
+def test_backend_not_supported_error_decodes_binary_active_backend():
+    error = BackendNotSupportedError(
+        "ExampleAPI.update",
+        bytearray(b"jax"),
+        supported_backends=("numpy", "pytorch"),
+    )
+
+    assert error.backend == "jax"
+    assert "backend 'jax'" in str(error)
+    assert "bytearray" not in str(error)
+
+
 def test_backend_not_supported_error_keeps_backendless_context():
     error = BackendNotSupportedError(
         "ExampleAPI.batch_update",
