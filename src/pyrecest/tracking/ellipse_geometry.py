@@ -146,7 +146,7 @@ def wrap_ellipse_angle_to_reference(reference, theta):
 def ellipse_extent_matrix(orientation, semi_axes):
     """Return the SPD extent matrix encoded by ``orientation`` and semi-axes."""
 
-    semi_axes = maximum(asarray(semi_axes).reshape(2), 0.0)
+    semi_axes = backend_abs(asarray(semi_axes).reshape(2))
     rotation = rotation_matrix_2d(orientation)
     return symmetrize(rotation @ diag(semi_axes**2) @ rotation.T)
 
