@@ -11,6 +11,7 @@ from pyrecest.backend import (
     clip,
     concatenate,
     cos,
+    is_complex,
     isfinite,
     linalg,
     log,
@@ -24,9 +25,17 @@ from pyrecest.backend import (
 )
 
 
+def _as_real_array(values, name):
+    """Convert array-like values without discarding complex components."""
+    values = array(values)
+    if is_complex(values):
+        raise ValueError(f"{name} must contain real values.")
+    return array(values, dtype=float)
+
+
 def as_batch(values, width, name):
     """Return values with a fixed trailing width as a two-dimensional batch."""
-    values = array(values, dtype=float)
+    values = _as_real_array(values, name)
     if ndim(values) == 1:
         if values.shape[0] != width:
             raise ValueError(f"{name} must have length {width}.")
@@ -42,7 +51,7 @@ def as_batch(values, width, name):
 
 def normalize_quaternions(quaternions):
     """Return canonical scalar-last unit quaternions."""
-    quaternions = array(quaternions, dtype=float)
+    quaternions = _as_real_array(quaternions, "SO(3) quaternions")
     if ndim(quaternions) == 1:
         if quaternions.shape[0] != 4:
             raise ValueError("SO(3) quaternions must have length 4.")
@@ -111,7 +120,7 @@ def so3_exp_map_volume_log_jacobian(tangent_vectors):
     with limiting value ``1 / 8`` at the identity.  The returned value is
     ``log(dV / dv)`` and preserves all leading dimensions of ``tangent_vectors``.
     """
-    tangent_vectors = array(tangent_vectors, dtype=float)
+    tangent_vectors = _as_real_array(tangent_vectors, "SO(3) tangent vectors")
     if ndim(tangent_vectors) == 0 or tangent_vectors.shape[-1] != 3:
         raise ValueError("SO(3) tangent vectors must have length 3.")
 
@@ -124,7 +133,7 @@ def so3_exp_map_volume_log_jacobian(tangent_vectors):
 
 def exp_map_identity(tangent_vectors):
     """Map SO(3) tangent vectors at identity to scalar-last quaternions."""
-    tangent_vectors = array(tangent_vectors, dtype=float)
+    tangent_vectors = _as_real_array(tangent_vectors, "SO(3) tangent vectors")
     if ndim(tangent_vectors) == 1:
         if tangent_vectors.shape[0] != 3:
             raise ValueError("SO(3) tangent vectors must have length 3.")
@@ -170,10 +179,7 @@ def log_map_identity(rotations):
 
 def geodesic_distance(rotation_a, rotation_b):
     """Return the SO(3) geodesic distance between quaternions in radians."""
-    scalar_input = (
-        ndim(array(rotation_a, dtype=float)) == 1
-        and ndim(array(rotation_b, dtype=float)) == 1
-    )
+    scalar_input = ndim(array(rotation_a)) == 1 and ndim(array(rotation_b)) == 1
     quat_a = normalize_quaternions(rotation_a)
     quat_b = normalize_quaternions(rotation_b)
     inner = abs(sum(quat_a * quat_b, axis=-1))
