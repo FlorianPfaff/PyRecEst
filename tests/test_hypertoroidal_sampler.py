@@ -1,4 +1,5 @@
 import unittest
+from fractions import Fraction
 
 import numpy as np
 import numpy.testing as npt
@@ -6,7 +7,10 @@ import numpy.testing as npt
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import all, diff, pi, std
-from pyrecest.sampling.hypertoroidal_sampler import CircularUniformSampler
+from pyrecest.sampling.hypertoroidal_sampler import (
+    CircularUniformSampler,
+    _validate_integral_scalar,
+)
 
 
 class TestCircularUniformSampler(unittest.TestCase):
@@ -41,6 +45,20 @@ class TestCircularUniformSampler(unittest.TestCase):
             with self.subTest(dim=dim):
                 with self.assertRaises(ValueError):
                     self.sampler.sample_stochastic(2, dim=dim)
+
+    def test_integral_controls_reject_fractional_values_rounded_by_binary64(self):
+        rounded_half_integer = Fraction(2**54 + 1, 2)
+
+        with self.assertRaisesRegex(ValueError, "must be a finite integer"):
+            _validate_integral_scalar(rounded_half_integer, "value", minimum=0)
+
+    def test_integral_controls_preserve_exact_large_integer(self):
+        exact_integer = Fraction(2**54 + 2, 2)
+
+        self.assertEqual(
+            _validate_integral_scalar(exact_integer, "value", minimum=0),
+            2**53 + 1,
+        )
 
     def test_get_grid(self):
         grid_density_parameter = 100

@@ -25,11 +25,11 @@ def _validate_integral_scalar(value, name: str, *, minimum: int) -> int:
         raise ValueError(f"{name} must be an integer") from exc
 
     try:
-        float_value = float(scalar_value)
+        is_exact_integer = bool(scalar_value == integer_value)
     except (OverflowError, TypeError, ValueError) as exc:
         raise ValueError(f"{name} must be an integer") from exc
 
-    if not np.isfinite(float_value) or not float_value.is_integer():
+    if not is_exact_integer:
         raise ValueError(f"{name} must be a finite integer")
     if integer_value < minimum:
         if minimum == 0:
