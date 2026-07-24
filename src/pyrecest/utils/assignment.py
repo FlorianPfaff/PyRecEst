@@ -107,44 +107,61 @@ def _has_temporal_dtype(value) -> bool:
         return "datetime64" in dtype_name or "timedelta64" in dtype_name
 
 
-def _contains_boolean_values(value) -> bool:
-    if isinstance(value, _BOOLEAN_TYPES):
+def _contains_values_of_type(
+    value,
+    types: tuple[type, ...],
+    active_ids: set[int] | None = None,
+) -> bool:
+    if isinstance(value, types):
         return True
-    try:
-        values = _np.asarray(_to_numpy(value), dtype=object).reshape(-1)
-    except (TypeError, ValueError, RuntimeError):
+    if _np.isscalar(value):
         return False
-    return any(isinstance(item, _BOOLEAN_TYPES) for item in values)
+
+    if isinstance(value, _np.ndarray):
+        items = value.reshape(-1)
+    elif isinstance(value, (list, tuple)):
+        items = value
+    else:
+        try:
+            converted = _np.asarray(_to_numpy(value), dtype=object)
+        except (TypeError, ValueError, OverflowError, RuntimeError):
+            return False
+        if converted.shape == ():
+            item = converted.item()
+            if item is value:
+                return False
+            return _contains_values_of_type(item, types, active_ids)
+        value = converted
+        items = converted.reshape(-1)
+
+    if active_ids is None:
+        active_ids = set()
+    value_id = id(value)
+    if value_id in active_ids:
+        return False
+    active_ids.add(value_id)
+    try:
+        return any(
+            _contains_values_of_type(item, types, active_ids) for item in items
+        )
+    finally:
+        active_ids.remove(value_id)
+
+
+def _contains_boolean_values(value) -> bool:
+    return _contains_values_of_type(value, _BOOLEAN_TYPES)
 
 
 def _contains_text_values(value) -> bool:
-    if isinstance(value, _TEXT_TYPES):
-        return True
-    try:
-        values = _np.asarray(_to_numpy(value), dtype=object).reshape(-1)
-    except (TypeError, ValueError, RuntimeError):
-        return False
-    return any(isinstance(item, _TEXT_TYPES) for item in values)
+    return _contains_values_of_type(value, _TEXT_TYPES)
 
 
 def _contains_temporal_values(value) -> bool:
-    if isinstance(value, _TEMPORAL_TYPES):
-        return True
-    try:
-        values = _np.asarray(_to_numpy(value), dtype=object).reshape(-1)
-    except (TypeError, ValueError, RuntimeError):
-        return False
-    return any(isinstance(item, _TEMPORAL_TYPES) for item in values)
+    return _contains_values_of_type(value, _TEMPORAL_TYPES)
 
 
 def _contains_complex_values(value) -> bool:
-    if isinstance(value, _COMPLEX_TYPES):
-        return True
-    try:
-        values = _np.asarray(_to_numpy(value), dtype=object).reshape(-1)
-    except (TypeError, ValueError, RuntimeError):
-        return False
-    return any(isinstance(item, _COMPLEX_TYPES) for item in values)
+    return _contains_values_of_type(value, _COMPLEX_TYPES)
 
 
 def _coerce_cost_matrix(cost_matrix):
