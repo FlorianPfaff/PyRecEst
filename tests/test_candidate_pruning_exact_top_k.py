@@ -1,5 +1,5 @@
-from fractions import Fraction
 import unittest
+from fractions import Fraction
 
 from pyrecest.utils import CandidatePruningConfig
 
