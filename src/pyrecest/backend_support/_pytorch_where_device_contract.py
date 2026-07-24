@@ -4,6 +4,10 @@ from __future__ import annotations
 
 import importlib
 
+from pyrecest.backend_support._pytorch_array_equal_mixed_dtype_contract import (
+    patch_pytorch_array_equal_mixed_dtype_contract as _patch_pytorch_array_equal_mixed_dtype_contract,
+)
+
 
 def _preferred_pytorch_device(torch_module, *values):
     """Return a non-CPU tensor device when mixed-device operands are present."""
@@ -42,6 +46,8 @@ def _raw_pytorch_module():
 
 def patch_pytorch_where_device_contract() -> None:
     """Patch raw/public PyTorch ``where`` to preserve an existing non-CPU device."""
+    _patch_pytorch_array_equal_mixed_dtype_contract()
+
     try:
         import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import torch  # pylint: disable=import-outside-toplevel
