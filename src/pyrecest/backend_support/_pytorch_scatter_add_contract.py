@@ -5,9 +5,7 @@ from __future__ import annotations
 from operator import index as _operator_index
 
 
-_SCATTER_INDEX_RANGE_ERROR = (
-    "scatter_add indices must fit in signed 64-bit integers"
-)
+_SCATTER_INDEX_RANGE_ERROR = "scatter_add indices must fit in signed 64-bit integers"
 
 
 def _normalize_pytorch_scatter_dim(dim, torch_module) -> int:
