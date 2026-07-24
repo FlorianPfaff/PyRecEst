@@ -22,6 +22,9 @@ from pyrecest.backend import (
     isfinite,
     linalg,
     log,
+)
+from pyrecest.backend import max as backend_max
+from pyrecest.backend import (
     maximum,
     ndim,
     outer,
@@ -34,7 +37,6 @@ from pyrecest.backend import (
     zeros,
     zeros_like,
 )
-from pyrecest.backend import max as backend_max
 from scipy.optimize import brentq
 
 
@@ -276,11 +278,7 @@ class ComplexWatsonDistribution:
             # Weighted scatter: Σ_i w_i·z_i·z_i^H, normalised so uniform
             # weights (w_i=1) reproduce the unweighted result Z^H Z. Scaling
             # by max(weights) preserves the estimate while avoiding overflow.
-            S = (
-                (Z * scaled_weights[:, None]).conj().T
-                @ Z
-                * (N / scaled_weight_sum)
-            )
+            S = (Z * scaled_weights[:, None]).conj().T @ Z * (N / scaled_weight_sum)
 
         # Force Hermitian
         S = 0.5 * (S + conj(S).T)
@@ -397,8 +395,7 @@ class ComplexWatsonDistribution:
         if D > 1:
             i_arr = arange(D - 1, dtype=float)  # 0, 1, ..., D-2
             correction = exp(-positive_formula_kappa) * sum(
-                positive_formula_kappa[:, None] ** i_arr
-                / exp(gammaln(i_arr + 1.0)),
+                positive_formula_kappa[:, None] ** i_arr / exp(gammaln(i_arr + 1.0)),
                 axis=1,
             )
             log_c_medium = log_c_high + log(maximum(1.0 - correction, 1e-300))
@@ -413,12 +410,7 @@ class ComplexWatsonDistribution:
         cumprods = cumprod(ratios, axis=1)
         hyp1f1_approx = 1.0 + sum(cumprods, axis=1)
         log_fact_Dm1 = gammaln(array(float(D)))  # log Γ(D) = log (D-1)!
-        log_c_low = (
-            log(array(2.0))
-            + D * log(pi)
-            - log_fact_Dm1
-            + log(hyp1f1_approx)
-        )
+        log_c_low = log(array(2.0)) + D * log(pi) - log_fact_Dm1 + log(hyp1f1_approx)
 
         # Select the appropriate nonnegative-kappa regime.
         mask_low = (kappa_arr >= 0.0) & (kappa_arr < (1.0 / D))
@@ -436,14 +428,10 @@ class ComplexWatsonDistribution:
             np.asarray(pyrecest.backend.to_numpy(mask_negative), dtype=bool)
         )
         if negative_indices.size:
-            kappa_values = np.asarray(
-                pyrecest.backend.to_numpy(kappa_arr), dtype=float
-            )
+            kappa_values = np.asarray(pyrecest.backend.to_numpy(kappa_arr), dtype=float)
             with mpmath.workdps(50):
                 log_surface_factor = (
-                    mpmath.log(2.0)
-                    + D * mpmath.log(mpmath.pi)
-                    - mpmath.loggamma(D)
+                    mpmath.log(2.0) + D * mpmath.log(mpmath.pi) - mpmath.loggamma(D)
                 )
                 for index in negative_indices:
                     log_hypergeometric = mpmath.log(

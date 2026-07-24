@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.distributions.cart_prod.gauss_von_mises_distribution import (
     GaussVonMisesDistribution,
 )

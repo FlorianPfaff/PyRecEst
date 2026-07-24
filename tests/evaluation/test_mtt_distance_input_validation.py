@@ -50,14 +50,10 @@ class EuclideanMttDistanceInputValidationTest(unittest.TestCase):
 
         for state in invalid_states:
             with self.subTest(state_shape=np.asarray(state).shape, argument="x1"):
-                with self.assertRaisesRegex(
-                    ValueError, "x1.*one- or two-dimensional"
-                ):
+                with self.assertRaisesRegex(ValueError, "x1.*one- or two-dimensional"):
                     distance(state, valid_state)
             with self.subTest(state_shape=np.asarray(state).shape, argument="x2"):
-                with self.assertRaisesRegex(
-                    ValueError, "x2.*one- or two-dimensional"
-                ):
+                with self.assertRaisesRegex(ValueError, "x2.*one- or two-dimensional"):
                     distance(valid_state, state)
 
     def test_valid_empty_target_behavior_is_preserved(self):

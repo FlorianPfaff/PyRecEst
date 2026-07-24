@@ -13,7 +13,6 @@ def test_jax_pd_predicate_supports_low_precision_real_matrices():
         pytest.skip("JAX is not installed")
 
     import jax.numpy as jnp
-
     from pyrecest._backend.jax import linalg
 
     positive_definite = [[2.0, 0.0], [0.0, 1.0]]
@@ -23,4 +22,6 @@ def test_jax_pd_predicate_supports_low_precision_real_matrices():
         assert bool(
             linalg.is_single_matrix_pd(jnp.asarray(positive_definite, dtype=dtype))
         )
-        assert not bool(linalg.is_single_matrix_pd(jnp.asarray(indefinite, dtype=dtype)))
+        assert not bool(
+            linalg.is_single_matrix_pd(jnp.asarray(indefinite, dtype=dtype))
+        )
