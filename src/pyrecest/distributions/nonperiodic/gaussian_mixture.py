@@ -69,8 +69,10 @@ class GaussianMixture(LinearMixture, AbstractLinearDistribution):
     ):
         if weights is None:
             weights = ones(means.shape[0]) / means.shape[0]
+        else:
+            weights = array(weights)
 
-        C_from_cov = sum(covariance_matrices * weights.reshape(1, 1, -1), axis=2)
+        C_from_cov = sum(covariance_matrices * reshape(weights, (1, 1, -1)), axis=2)
         mu, C_from_means = LinearDiracDistribution.weighted_samples_to_mean_and_cov(
             means, weights
         )
