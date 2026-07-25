@@ -347,6 +347,8 @@ def _json_value(value: Any) -> Any:
     if value is None:
         return None
     if isinstance(value, np.ndarray):
+        if value.ndim == 0:
+            return _json_value(value.item())
         return [_json_value(item) for item in value.tolist()]
     if isinstance(value, Mapping):
         return _json_record(value)
