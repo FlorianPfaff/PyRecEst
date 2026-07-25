@@ -1,6 +1,7 @@
 from math import isfinite as _isfinite
 from math import isinf as _isinf
 
+from . import get_distance_function as _get_distance_function_module
 from . import model_comparison as _model_comparison
 from .check_and_fix_config import check_and_fix_config
 from .configure_for_filter import configure_for_filter
@@ -103,6 +104,41 @@ _original_paired_model_margin_decisions = getattr(
 _original_evidence_margin_table = getattr(
     _model_comparison, _ORIGINAL_EVIDENCE_TABLE_ATTR
 )
+
+
+def _validate_symmetry_count(n_symm):
+    """Validate symmetry counts without binary64 integer rounding."""
+
+    count_array = _get_distance_function_module.numpy.asarray(
+        _get_distance_function_module.to_numpy(n_symm)
+    )
+    if (
+        count_array.shape != ()
+        or count_array.dtype.kind in "bMm"
+        or _get_distance_function_module._contains_unsupported_numeric_config_values(
+            n_symm
+        )
+        or _get_distance_function_module._contains_unsupported_numeric_config_values(
+            count_array
+        )
+    ):
+        raise ValueError("nSymm must be a finite positive integer")
+    scalar = count_array.item()
+    try:
+        count = int(scalar)
+        is_exact_integer = scalar == count
+    except (OverflowError, TypeError, ValueError) as exc:
+        raise ValueError("nSymm must be a finite positive integer") from exc
+    try:
+        is_exact_integer = bool(is_exact_integer)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("nSymm must be a finite positive integer") from exc
+    if not is_exact_integer or count <= 0:
+        raise ValueError("nSymm must be a finite positive integer")
+    return count
+
+
+_get_distance_function_module._validate_symmetry_count = _validate_symmetry_count
 
 
 def _classify_evidence_margin(delta_log_evidence: float) -> str:
