@@ -66,8 +66,8 @@ class OnlineTimeOffsetEstimator:
         measurement_variance: float,
     ) -> float:
         """Update the offset from a position residual and return innovation NIS."""
-        residual = _as_real_numeric_array(residual, "residual").reshape(-1)
-        velocity = _as_real_numeric_array(velocity, "velocity").reshape(-1)
+        residual = _as_real_numeric_vector(residual, "residual")
+        velocity = _as_real_numeric_vector(velocity, "velocity")
         if residual.size != velocity.size:
             raise ValueError("residual and velocity must have the same dimension")
         if not np.isfinite(residual).all() or not np.isfinite(velocity).all():
@@ -118,6 +118,15 @@ def _as_real_numeric_array(value: Any, name: str) -> np.ndarray:
         return np.asarray(value, dtype=float)
     except (TypeError, ValueError, OverflowError) as exc:
         raise ValueError(f"{name} must be real-valued numeric") from exc
+
+
+def _as_real_numeric_vector(value: Any, name: str) -> np.ndarray:
+    value_array = _as_real_numeric_array(value, name)
+    if value_array.ndim == 0:
+        return value_array.reshape(1)
+    if value_array.ndim != 1:
+        raise ValueError(f"{name} must be one-dimensional")
+    return value_array
 
 
 def _as_finite_scalar(value: Any, name: str) -> float:
