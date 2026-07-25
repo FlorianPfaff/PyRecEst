@@ -140,7 +140,11 @@ class LinearDiracDistribution(AbstractDiracDistribution, AbstractLinearDistribut
         if weights is None:
             weights = ones(sample_matrix.shape[0]) / sample_matrix.shape[0]
         else:
-            weights = reshape(asarray(weights), (-1,))
+            weights = asarray(weights)
+            if weights.ndim == 0:
+                weights = reshape(weights, (1,))
+            elif weights.ndim != 1:
+                raise ValueError("weights must be scalar or one-dimensional")
             if weights.shape[0] != sample_matrix.shape[0]:
                 raise ValueError("Number of weights and samples must match")
             weights = AbstractDiracDistribution._normalized_weights(weights)
