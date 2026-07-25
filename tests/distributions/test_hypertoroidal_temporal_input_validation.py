@@ -22,11 +22,19 @@ from pyrecest.distributions.hypertorus._input_validation import (
         np.array([np.datetime64(1, "ns")], dtype=object),
     ],
 )
-def test_hypertoroidal_angle_helpers_reject_temporal_values(value) -> None:
+@pytest.mark.parametrize(
+    "validate",
+    [
+        pytest.param(lambda value: as_shift_vector(value, 1), id="shift-vector"),
+        pytest.param(
+            lambda value: as_hypertoroidal_points(value, 1),
+            id="evaluation-points",
+        ),
+    ],
+)
+def test_hypertoroidal_angle_helpers_reject_temporal_values(value, validate) -> None:
     with pytest.raises(ValueError, match="temporal"):
-        as_shift_vector(value, 1)
-    with pytest.raises(ValueError, match="temporal"):
-        as_hypertoroidal_points(value, 1)
+        validate(value)
 
 
 def test_circular_uniform_shift_rejects_temporal_angle() -> None:
