@@ -32,4 +32,4 @@ def test_fixed_lag_buffers_accept_integer_scalar_maxlen(buffer_type, maxlen):
     if buffer_type is FixedLagBuffer:
         assert [item.value for item in buffer.items] == [1, 2]
     else:
-        assert buffer.measurements == (1, 2)
+        assert [record.measurement for record in buffer.measurements] == [1, 2]
