@@ -6,7 +6,6 @@ import jax.numpy as _jnp
 import numpy as _np
 from jax.numpy import fft as _fft
 
-
 _BOOLEAN_FFT_AXIS_ERROR = "axis must be an integer, not boolean"
 _BOOLEAN_FFT_LENGTH_ERROR = "n must be an integer length, not boolean"
 _FFT_SHAPE_SEQUENCE_ERROR = "s must be None or a sequence of integer lengths"
@@ -82,7 +81,9 @@ def _normalize_fft_sequence_item(value, boolean_error, integer_error):
         raise TypeError(integer_error) from exc
 
 
-def _normalize_fft_integer_sequence(value, sequence_error, boolean_error, integer_error):
+def _normalize_fft_integer_sequence(
+    value, sequence_error, boolean_error, integer_error
+):
     """Normalize NumPy/JAX scalar-array entries inside FFT integer sequences."""
     if value is None:
         return None

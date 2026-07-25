@@ -2,7 +2,6 @@ import unittest
 
 import numpy as np
 import pyrecest.backend
-
 from pyrecest.distributions.circle.wrapped_exponential_distribution import (
     WrappedExponentialDistribution,
 )

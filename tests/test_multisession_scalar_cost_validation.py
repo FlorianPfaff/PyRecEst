@@ -23,13 +23,17 @@ class TestMultiSessionScalarCostValidation(unittest.TestCase):
 
         for name, value in invalid_costs:
             with self.subTest(name=name):
-                with self.assertRaisesRegex(ValueError, f"{name} must be a finite scalar"):
+                with self.assertRaisesRegex(
+                    ValueError, f"{name} must be a finite scalar"
+                ):
                     solve_multisession_assignment(
                         {},
                         session_sizes=[1],
                         **{name: value},
                     )
-                with self.assertRaisesRegex(ValueError, f"{name} must be a finite scalar"):
+                with self.assertRaisesRegex(
+                    ValueError, f"{name} must be a finite scalar"
+                ):
                     multisession_assignment_module.solve_multisession_assignment(
                         {},
                         session_sizes=[1],

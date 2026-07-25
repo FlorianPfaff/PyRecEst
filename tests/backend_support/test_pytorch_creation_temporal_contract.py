@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.backend_support._pytorch_creation_shape_contract import (
     _pytorch_creation_scalar,
     _pytorch_creation_shape,
@@ -41,7 +40,9 @@ def test_pytorch_creation_shape_rejects_native_temporal_dtypes(shape):
 )
 def test_pytorch_creation_scalar_rejects_native_temporal_dtypes(value):
     with pytest.raises(TypeError, match="arange start must be numeric"):
-        _pytorch_creation_scalar(value, np, _NoTensorTorch, argument_name="arange start")
+        _pytorch_creation_scalar(
+            value, np, _NoTensorTorch, argument_name="arange start"
+        )
 
 
 def test_pytorch_creation_shape_still_accepts_numpy_integer_scalars():
@@ -49,9 +50,12 @@ def test_pytorch_creation_shape_still_accepts_numpy_integer_scalars():
 
 
 def test_pytorch_creation_scalar_still_accepts_numpy_numeric_scalars():
-    assert _pytorch_creation_scalar(
-        np.asarray(3.5),
-        np,
-        _NoTensorTorch,
-        argument_name="arange start",
-    ) == 3.5
+    assert (
+        _pytorch_creation_scalar(
+            np.asarray(3.5),
+            np,
+            _NoTensorTorch,
+            argument_name="arange start",
+        )
+        == 3.5
+    )

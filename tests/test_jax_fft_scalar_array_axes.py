@@ -34,6 +34,11 @@ def test_jax_fft_rejects_non_singleton_length_arrays():
 
     values = jnp.arange(4.0)
 
-    for n in (np.array([3, 4]), np.array([[3, 4]]), jnp.array([3, 4]), jnp.array([[3, 4]])):
+    for n in (
+        np.array([3, 4]),
+        np.array([[3, 4]]),
+        jnp.array([3, 4]),
+        jnp.array([[3, 4]]),
+    ):
         with pytest.raises(TypeError):
             fft.rfft(values, n=n)

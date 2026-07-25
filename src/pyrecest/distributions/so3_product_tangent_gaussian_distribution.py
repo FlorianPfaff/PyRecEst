@@ -101,9 +101,7 @@ def _normalize_rotation_indices(rotation_indices, num_rotations: int) -> list[in
             raise ValueError(message)
         parsed_index = int(index)
         if parsed_index < 0 or parsed_index >= num_rotations:
-            raise ValueError(
-                f"rotation_indices must be in [0, {num_rotations - 1}]."
-            )
+            raise ValueError(f"rotation_indices must be in [0, {num_rotations - 1}].")
         normalized_indices.append(parsed_index)
 
     if len(set(normalized_indices)) != len(normalized_indices):

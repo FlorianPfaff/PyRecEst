@@ -7,7 +7,9 @@ from pyrecest.backend import (
     allclose,
     array,
     asarray,
-    copy as backend_copy,
+)
+from pyrecest.backend import copy as backend_copy
+from pyrecest.backend import (
     diag,
     eye,
     isclose,

@@ -1,7 +1,6 @@
 import numpy as np
 import numpy.testing as npt
 import pytest
-
 from pyrecest.distributions.hypertorus.fejer import apply_kernel_weights, fejer_weights
 
 

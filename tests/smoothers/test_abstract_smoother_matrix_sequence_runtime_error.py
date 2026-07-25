@@ -1,5 +1,4 @@
 import numpy as np
-
 import pyrecest.smoothers.abstract_smoother as abstract_smoother_module
 from pyrecest.smoothers.abstract_smoother import AbstractSmoother
 

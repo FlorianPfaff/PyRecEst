@@ -23,9 +23,7 @@ _original_scaled_emissions = _module_globals["scaled_emissions"]
 _original_probabilities_to_log_probabilities = _module_globals[
     "probabilities_to_log_probabilities"
 ]
-_original_discrete_forward_backward = _module_globals[
-    "discrete_forward_backward"
-]
+_original_discrete_forward_backward = _module_globals["discrete_forward_backward"]
 _original_discrete_forward_backward_time_varying = _module_globals[
     "discrete_forward_backward_time_varying"
 ]

@@ -1,7 +1,6 @@
 from fractions import Fraction
 
 import pytest
-
 from pyrecest.evaluation.get_distance_function import _validate_symmetry_count
 
 

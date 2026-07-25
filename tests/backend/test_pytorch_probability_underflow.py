@@ -8,7 +8,9 @@ def _pytorch_random_backend():
     if importlib.util.find_spec("torch") is None:
         pytest.skip("torch is not installed")
     import torch  # pylint: disable=import-outside-toplevel
-    from pyrecest._backend.pytorch import random  # pylint: disable=import-outside-toplevel
+    from pyrecest._backend.pytorch import (  # pylint: disable=import-outside-toplevel
+        random,
+    )
 
     return torch, random
 

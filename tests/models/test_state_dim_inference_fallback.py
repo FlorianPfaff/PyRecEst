@@ -14,7 +14,9 @@ class TestStateDimInferenceFallback(unittest.TestCase):
             dim = UncoercibleDimension()
             mu = array([0.0, 1.0, 2.0])
 
-        self.assertEqual(infer_state_dim_from_distribution(DistributionWithFallbackMean()), 3)
+        self.assertEqual(
+            infer_state_dim_from_distribution(DistributionWithFallbackMean()), 3
+        )
 
 
 if __name__ == "__main__":

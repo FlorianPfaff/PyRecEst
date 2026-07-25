@@ -35,9 +35,7 @@ class ToroidalVMRivestDistribution(AbstractToroidalDistribution):
 
         self._bessel_exponential_scale = self._series_exponential_scale()
         self._scaled_norm_series_sum = self._compute_scaled_norm_series_sum()
-        self._scaled_norm_const = (
-            4.0 * math.pi**2 * self._scaled_norm_series_sum
-        )
+        self._scaled_norm_const = 4.0 * math.pi**2 * self._scaled_norm_series_sum
         if not math.isfinite(self._scaled_norm_const) or self._scaled_norm_const <= 0.0:
             raise FloatingPointError(
                 "Rivest normalization series must be positive and finite"
@@ -94,12 +92,8 @@ class ToroidalVMRivestDistribution(AbstractToroidalDistribution):
         log_unnormalized = (
             self.kappa[0] * cos(xs[..., 0] - self.mu[0])
             + self.kappa[1] * cos(xs[..., 1] - self.mu[1])
-            + self.alpha
-            * cos(xs[..., 0] - self.mu[0])
-            * cos(xs[..., 1] - self.mu[1])
-            + self.beta
-            * sin(xs[..., 0] - self.mu[0])
-            * sin(xs[..., 1] - self.mu[1])
+            + self.alpha * cos(xs[..., 0] - self.mu[0]) * cos(xs[..., 1] - self.mu[1])
+            + self.beta * sin(xs[..., 0] - self.mu[0]) * sin(xs[..., 1] - self.mu[1])
         )
         return exp(log_unnormalized - self._bessel_exponential_scale) / (
             self._scaled_norm_const
@@ -114,14 +108,11 @@ class ToroidalVMRivestDistribution(AbstractToroidalDistribution):
             for j in range(-m, m + 1):
                 for ell in range(-m, m + 1):
                     if (j + ell) % 2 == 0:
-                        bessel_jl = float(
-                            ive((j + ell) // 2, alpha_plus)
-                        ) * float(ive((j - ell) // 2, alpha_minus))
+                        bessel_jl = float(ive((j + ell) // 2, alpha_plus)) * float(
+                            ive((j - ell) // 2, alpha_minus)
+                        )
                         terms1.append(
-                            (
-                                float(ive(j + 1, kappa0))
-                                + float(ive(j - 1, kappa0))
-                            )
+                            (float(ive(j + 1, kappa0)) + float(ive(j - 1, kappa0)))
                             * float(ive(ell, kappa1))
                             * bessel_jl
                         )
