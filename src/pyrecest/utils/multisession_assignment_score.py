@@ -144,55 +144,42 @@ def _normalize_min_score(min_score: Any) -> float:
     return min_score_float
 
 
-def _normalize_max_gap(max_gap: Any) -> int:
-    max_gap_array = np.asarray(max_gap)
-    if max_gap_array.shape != () or _is_rejected_scalar_array(max_gap_array):
-        raise ValueError("max_gap must be a non-negative integer.")
+def _normalize_exact_integer(value: Any, message: str) -> int:
+    """Return an exact integer scalar without binary64 rounding."""
+    value_array = np.asarray(value)
+    if value_array.shape != () or _is_rejected_scalar_array(value_array):
+        raise ValueError(message)
 
-    max_gap_value = max_gap_array.item()
-    if _is_rejected_scalar(max_gap_value):
-        raise ValueError("max_gap must be a non-negative integer.")
-
-    if isinstance(max_gap_value, (int, np.integer)):
-        if max_gap_value < 0:
-            raise ValueError("max_gap must be a non-negative integer.")
-        return int(max_gap_value)
+    scalar = value_array.item()
+    if _is_rejected_scalar(scalar):
+        raise ValueError(message)
 
     try:
-        max_gap_float = float(max_gap_value)
+        parsed = int(scalar)
     except (TypeError, ValueError, OverflowError) as exc:
-        raise ValueError("max_gap must be a non-negative integer.") from exc
-    if (
-        not math.isfinite(max_gap_float)
-        or max_gap_float < 0
-        or not max_gap_float.is_integer()
-    ):
-        raise ValueError("max_gap must be a non-negative integer.")
-    return int(max_gap_float)
+        raise ValueError(message) from exc
+    try:
+        is_exact_integer = bool(scalar == parsed)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(message) from exc
+    if not is_exact_integer:
+        raise ValueError(message)
+    return parsed
+
+
+def _normalize_max_gap(max_gap: Any) -> int:
+    message = "max_gap must be a non-negative integer."
+    parsed = _normalize_exact_integer(max_gap, message)
+    if parsed < 0:
+        raise ValueError(message)
+    return parsed
 
 
 def _normalize_index_matrix_fill_value(fill_value: Any) -> int:
-    fill_value_array = np.asarray(fill_value)
-    if fill_value_array.shape != () or _is_rejected_scalar_array(fill_value_array):
-        raise ValueError("fill_value must be a negative integer.")
-
-    fill_value_value = fill_value_array.item()
-    if _is_rejected_scalar(fill_value_value):
-        raise ValueError("fill_value must be a negative integer.")
-
-    if isinstance(fill_value_value, (int, np.integer)):
-        integer_fill_value = int(fill_value_value)
-    else:
-        try:
-            fill_value_float = float(fill_value_value)
-        except (TypeError, ValueError, OverflowError) as exc:
-            raise ValueError("fill_value must be a negative integer.") from exc
-        if not math.isfinite(fill_value_float) or not fill_value_float.is_integer():
-            raise ValueError("fill_value must be a negative integer.")
-        integer_fill_value = int(fill_value_float)
-
+    message = "fill_value must be a negative integer."
+    integer_fill_value = _normalize_exact_integer(fill_value, message)
     if integer_fill_value >= 0:
-        raise ValueError("fill_value must be a negative integer.")
+        raise ValueError(message)
     return integer_fill_value
 
 
