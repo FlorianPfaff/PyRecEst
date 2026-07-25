@@ -1,7 +1,6 @@
 import unittest
 
 import numpy.testing as npt
-
 from pyrecest.backend import array, reshape
 from pyrecest.distributions.cart_prod.partially_wrapped_normal_distribution import (
     PartiallyWrappedNormalDistribution,

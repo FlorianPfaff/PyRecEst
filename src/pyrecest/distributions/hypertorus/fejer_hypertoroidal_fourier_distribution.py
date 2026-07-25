@@ -8,8 +8,12 @@ from typing import Any
 
 import numpy as np
 from pyrecest.backend import signal
-from pyrecest.distributions.hypertorus.abstract_hypertoroidal_distribution import AbstractHypertoroidalDistribution
-from pyrecest.distributions.hypertorus.hypertoroidal_fourier_distribution import HypertoroidalFourierDistribution
+from pyrecest.distributions.hypertorus.abstract_hypertoroidal_distribution import (
+    AbstractHypertoroidalDistribution,
+)
+from pyrecest.distributions.hypertorus.hypertoroidal_fourier_distribution import (
+    HypertoroidalFourierDistribution,
+)
 
 from .fejer import (
     adaptive_kernel_reduce_coefficients,
@@ -62,10 +66,14 @@ class FejerHypertoroidalFourierDistribution(HypertoroidalFourierDistribution):
             "exponent_search_steps": self.exponent_search_steps,
         }
 
-    def _new_with_same_reduction(self, coeff_mat, *, reduction_exponent: float | None = None) -> "FejerHypertoroidalFourierDistribution":
+    def _new_with_same_reduction(
+        self, coeff_mat, *, reduction_exponent: float | None = None
+    ) -> "FejerHypertoroidalFourierDistribution":
         result = type(self)(coeff_mat, **self.reduction_options)
         result.last_reduction_exponent = reduction_exponent
-        result.last_used_prior_smoothing_fallback = self.last_used_prior_smoothing_fallback
+        result.last_used_prior_smoothing_fallback = (
+            self.last_used_prior_smoothing_fallback
+        )
         return result
 
     @classmethod
@@ -86,11 +94,15 @@ class FejerHypertoroidalFourierDistribution(HypertoroidalFourierDistribution):
         if not isinstance(distribution, HypertoroidalFourierDistribution):
             raise TypeError("distribution must be a HypertoroidalFourierDistribution.")
         if distribution.transformation != "identity":
-            raise ValueError("FejerHypertoroidalFourierDistribution requires identity coefficients.")
+            raise ValueError(
+                "FejerHypertoroidalFourierDistribution requires identity coefficients."
+            )
 
         if n_coefficients is None:
             n_coefficients = distribution.coeff_mat.shape
-        n_coefficients = normalize_coefficient_shape(n_coefficients, dim=distribution.dim)
+        n_coefficients = normalize_coefficient_shape(
+            n_coefficients, dim=distribution.dim
+        )
 
         result = cls(
             centered_coefficients(distribution.coeff_mat, n_coefficients),
@@ -131,9 +143,13 @@ class FejerHypertoroidalFourierDistribution(HypertoroidalFourierDistribution):
                 exponent_search_steps=exponent_search_steps,
             )
         if not isinstance(distribution, AbstractHypertoroidalDistribution):
-            raise TypeError("distribution must be an AbstractHypertoroidalDistribution.")
+            raise TypeError(
+                "distribution must be an AbstractHypertoroidalDistribution."
+            )
 
-        base = HypertoroidalFourierDistribution.from_distribution(distribution, n_coefficients, "identity")
+        base = HypertoroidalFourierDistribution.from_distribution(
+            distribution, n_coefficients, "identity"
+        )
         return cls.from_fourier_distribution(
             base,
             n_coefficients,
@@ -160,7 +176,9 @@ class FejerHypertoroidalFourierDistribution(HypertoroidalFourierDistribution):
     ) -> "FejerHypertoroidalFourierDistribution":
         """Construct a positive-kernel identity HFD by sampling a vectorized function."""
 
-        base = HypertoroidalFourierDistribution.from_function(fun, n_coefficients, "identity")
+        base = HypertoroidalFourierDistribution.from_function(
+            fun, n_coefficients, "identity"
+        )
         return cls.from_fourier_distribution(
             base,
             n_coefficients,
@@ -194,7 +212,9 @@ class FejerHypertoroidalFourierDistribution(HypertoroidalFourierDistribution):
             desired_transformation="identity",
             already_transformed=already_transformed,
         )
-        target_shape = base.coeff_mat.shape if n_coefficients is None else n_coefficients
+        target_shape = (
+            base.coeff_mat.shape if n_coefficients is None else n_coefficients
+        )
         return cls.from_fourier_distribution(
             base,
             target_shape,
@@ -206,16 +226,22 @@ class FejerHypertoroidalFourierDistribution(HypertoroidalFourierDistribution):
             exponent_search_steps=exponent_search_steps,
         )
 
-    def fejer_reduce(self, n_coefficients: int | tuple[int, ...] | None = None) -> "FejerHypertoroidalFourierDistribution":
+    def fejer_reduce(
+        self, n_coefficients: int | tuple[int, ...] | None = None
+    ) -> "FejerHypertoroidalFourierDistribution":
         """Center-crop/pad and reduce coefficients with the configured kernel."""
 
         if n_coefficients is None:
             n_coefficients = self.coeff_mat.shape
         n_coefficients = normalize_coefficient_shape(n_coefficients, dim=self.dim)
         coeff = self._reduce_coefficients(self.coeff_mat, n_coefficients)
-        return self._new_with_same_reduction(coeff, reduction_exponent=self.last_reduction_exponent)
+        return self._new_with_same_reduction(
+            coeff, reduction_exponent=self.last_reduction_exponent
+        )
 
-    def truncate(self, n_coefficients: int | tuple[int, ...], force_normalization: bool = False):
+    def truncate(
+        self, n_coefficients: int | tuple[int, ...], force_normalization: bool = False
+    ):
         """Return a distribution with the requested centered coefficient shape.
 
         If the shape changes, reduction is performed with the configured kernel
@@ -253,7 +279,9 @@ class FejerHypertoroidalFourierDistribution(HypertoroidalFourierDistribution):
                 conv = retry_conv
                 self.last_used_prior_smoothing_fallback = True
         coeff = self._reduce_coefficients(conv, n_coefficients)
-        return self._new_with_same_reduction(coeff, reduction_exponent=self.last_reduction_exponent)
+        return self._new_with_same_reduction(
+            coeff, reduction_exponent=self.last_reduction_exponent
+        )
 
     def convolve(self, f2: HypertoroidalFourierDistribution, n_coefficients=None):
         """Topology-aware convolution for additive noise in identity form.
@@ -268,11 +296,17 @@ class FejerHypertoroidalFourierDistribution(HypertoroidalFourierDistribution):
             n_coefficients = self.coeff_mat.shape
         n_coefficients = normalize_coefficient_shape(n_coefficients, dim=self.dim)
 
-        f1_aligned = self if tuple(self.coeff_mat.shape) == n_coefficients else self.fejer_reduce(n_coefficients)
+        f1_aligned = (
+            self
+            if tuple(self.coeff_mat.shape) == n_coefficients
+            else self.fejer_reduce(n_coefficients)
+        )
         if tuple(f2.coeff_mat.shape) == n_coefficients:
             f2_aligned = f2
         else:
-            f2_aligned = type(self).from_fourier_distribution(f2, n_coefficients, apply_fejer=True, **self.reduction_options)
+            f2_aligned = type(self).from_fourier_distribution(
+                f2, n_coefficients, apply_fejer=True, **self.reduction_options
+            )
 
         c_conv = (2.0 * np.pi) ** self.dim * f1_aligned.coeff_mat * f2_aligned.coeff_mat
         with warnings.catch_warnings():
@@ -283,7 +317,12 @@ class FejerHypertoroidalFourierDistribution(HypertoroidalFourierDistribution):
         """Shift the distribution on the hypertorus and keep reduction settings."""
 
         shifted = super().shift(shift_by)
-        return type(self).from_fourier_distribution(shifted, shifted.coeff_mat.shape, apply_fejer=False, **self.reduction_options)
+        return type(self).from_fourier_distribution(
+            shifted,
+            shifted.coeff_mat.shape,
+            apply_fejer=False,
+            **self.reduction_options,
+        )
 
     def _reduce_coefficients(self, coefficients, n_coefficients: tuple[int, ...]):
         if self.adaptive_reduction:
@@ -300,7 +339,9 @@ class FejerHypertoroidalFourierDistribution(HypertoroidalFourierDistribution):
             return coeff
 
         self.last_reduction_exponent = 1.0 if self.reduction_kernel != "sharp" else 0.0
-        return reduce_coefficients(coefficients, n_coefficients, kernel=self.reduction_kernel)
+        return reduce_coefficients(
+            coefficients, n_coefficients, kernel=self.reduction_kernel
+        )
 
     def _has_positive_update_evidence(self, coefficients) -> bool:
         coeff_arr = np.asarray(coefficients)
@@ -313,8 +354,12 @@ class FejerHypertoroidalFourierDistribution(HypertoroidalFourierDistribution):
 
     def _validate_compatible_identity(self, other, operation: str) -> None:
         if not isinstance(other, HypertoroidalFourierDistribution):
-            raise TypeError(f"{operation}: other must be a HypertoroidalFourierDistribution.")
+            raise TypeError(
+                f"{operation}: other must be a HypertoroidalFourierDistribution."
+            )
         if self.dim != other.dim:
             raise ValueError(f"{operation}: dimensions must match.")
         if self.transformation != "identity" or other.transformation != "identity":
-            raise ValueError(f"{operation}: both distributions must use the identity transformation.")
+            raise ValueError(
+                f"{operation}: both distributions must use the identity transformation."
+            )

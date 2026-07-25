@@ -1,6 +1,5 @@
 import numpy as np
 import numpy.testing as npt
-
 from pyrecest.backend import array, pi, sin, tanh
 from pyrecest.distributions.circle.sine_skewed_distributions import (
     GeneralizedKSineSkewedWrappedCauchyDistribution,

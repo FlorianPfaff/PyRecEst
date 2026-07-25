@@ -1,6 +1,5 @@
 import numpy as np
 import numpy.testing as npt
-
 from pyrecest.backend import array
 from pyrecest.evaluation import perform_predict_update_cycles
 from pyrecest.evaluation.configure_for_filter import register_filter_factory

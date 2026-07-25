@@ -97,9 +97,7 @@ def test_integrate_rejects_reversed_boundaries():
 def test_integrate_preserves_signed_scalar_boundaries():
     dist = HypertoroidalUniformDistribution(1)
 
-    assert dist.integrate((array(1.0), array(0.0))) == pytest.approx(
-        -1.0 / (2.0 * pi)
-    )
+    assert dist.integrate((array(1.0), array(0.0))) == pytest.approx(-1.0 / (2.0 * pi))
 
 
 def test_integrate_accepts_scalar_boundaries_for_one_dimension():

@@ -60,8 +60,7 @@ class CartProdStackedDistribution(AbstractCartProdDistribution):
     def sample(self, n: int):
         n = _validate_positive_sample_count(n)
         component_samples = [
-            reshape(asarray(dist.sample(n)), (n, dist.input_dim))
-            for dist in self.dists
+            reshape(asarray(dist.sample(n)), (n, dist.input_dim)) for dist in self.dists
         ]
         return concatenate(component_samples, axis=1)
 

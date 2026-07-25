@@ -187,7 +187,9 @@ def test_assert_covariance_matrix_validates_dimension_argument():
         np.asarray(assert_covariance_matrix(matrix, dim=2)), matrix
     )
 
-    with pytest.raises(DimensionMismatchError, match="covariance has dimension 2") as exc_info:
+    with pytest.raises(
+        DimensionMismatchError, match="covariance has dimension 2"
+    ) as exc_info:
         assert_covariance_matrix(matrix, dim=3)
     error = exc_info.value
     assert error.left_name == "covariance"

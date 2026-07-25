@@ -2,7 +2,6 @@ import unittest
 
 import numpy as np
 import numpy.testing as npt
-
 import pyrecest.backend
 from pyrecest.distributions.hypertorus.hypertoroidal_fourier_distribution import (
     HypertoroidalFourierDistribution,
@@ -36,8 +35,12 @@ class TestLowRankHypertoroidalFourierScalarShape(unittest.TestCase):
         updated_dense = prior_dense.multiply(other_dense, n_coefficients=3)
         updated_low_rank = prior_low_rank.multiply(other_low_rank, n_coefficients=3)
         self.assertEqual(updated_low_rank.coeff_shape, (3,))
-        npt.assert_allclose(updated_low_rank.to_dense(), updated_dense.coeff_mat, atol=1e-10)
+        npt.assert_allclose(
+            updated_low_rank.to_dense(), updated_dense.coeff_mat, atol=1e-10
+        )
 
         predicted_dense = prior_dense.convolve(other_dense, n_coefficients=5)
         predicted_low_rank = prior_low_rank.convolve(other_low_rank, n_coefficients=5)
-        npt.assert_allclose(predicted_low_rank.to_dense(), predicted_dense.coeff_mat, atol=1e-10)
+        npt.assert_allclose(
+            predicted_low_rank.to_dense(), predicted_dense.coeff_mat, atol=1e-10
+        )

@@ -2,7 +2,6 @@
 
 import numpy as np
 import pytest
-
 from pyrecest.distributions.circle.piecewise_constant_distribution import (
     _validate_positive_sample_count,
 )

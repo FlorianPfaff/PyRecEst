@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from operator import index as _operator_index
 
-
 _SCATTER_INDEX_RANGE_ERROR = "scatter_add indices must fit in signed 64-bit integers"
 
 
@@ -56,14 +55,11 @@ def _pytorch_scatter_index(index, numpy_module, torch_module, *, device):
     if isinstance(index, numpy_module.ndarray) or index_array.size:
         if not _is_integer_scatter_index_dtype(index_array.dtype, numpy_module):
             raise TypeError("scatter_add indices must be integers")
-        if (
-            numpy_module.issubdtype(
-                index_array.dtype,
-                numpy_module.unsignedinteger,
-            )
-            and numpy_module.any(
-                index_array > numpy_module.iinfo(numpy_module.int64).max
-            )
+        if numpy_module.issubdtype(
+            index_array.dtype,
+            numpy_module.unsignedinteger,
+        ) and numpy_module.any(
+            index_array > numpy_module.iinfo(numpy_module.int64).max
         ):
             raise ValueError(_SCATTER_INDEX_RANGE_ERROR)
     return torch_module.as_tensor(index_array, dtype=torch_module.long, device=device)

@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import pandas as pd
-
 from pyrecest.evaluation import is_pareto_front, pareto_front_indices
 
 
-def test_pareto_front_excludes_rows_without_numeric_objectives_when_missing_allowed() -> None:
+def test_pareto_front_excludes_rows_without_numeric_objectives_when_missing_allowed() -> (
+    None
+):
     table = pd.DataFrame(
         [
             {"name": "invalid", "error": "unknown", "runtime": [1.0, 2.0]},

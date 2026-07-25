@@ -1,5 +1,4 @@
 import pytest
-
 from pyrecest.distributions.circle.circular_dirac_distribution import (
     CircularDiracDistribution,
 )

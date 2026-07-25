@@ -1,6 +1,7 @@
 import pytest
-
-from pyrecest.distributions.nonperiodic.gaussian_distribution import GaussianDistribution
+from pyrecest.distributions.nonperiodic.gaussian_distribution import (
+    GaussianDistribution,
+)
 from pyrecest.distributions.nonperiodic.gaussian_mixture import GaussianMixture
 
 

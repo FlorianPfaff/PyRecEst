@@ -1,7 +1,6 @@
 import unittest
 
 import numpy.testing as npt
-
 from pyrecest.filters.survival_aware_crp import (
     SurvivalAwareCRPAssociationPrior,
     SurvivalAwareTrackEvidence,

@@ -222,12 +222,12 @@ from .hypertorus.custom_hypertoroidal_distribution import (
     CustomHypertoroidalDistribution,
 )
 from .hypertorus.custom_toroidal_distribution import CustomToroidalDistribution
+from .hypertorus.fejer_hypertoroidal_fourier_distribution import (
+    FejerHypertoroidalFourierDistribution,
+)
 from .hypertorus.hypertoroidal_dirac_distribution import HypertoroidalDiracDistribution
 from .hypertorus.hypertoroidal_fourier_distribution import (
     HypertoroidalFourierDistribution,
-)
-from .hypertorus.fejer_hypertoroidal_fourier_distribution import (
-    FejerHypertoroidalFourierDistribution,
 )
 from .hypertorus.hypertoroidal_grid_distribution import HypertoroidalGridDistribution
 from .hypertorus.hypertoroidal_mixture import HypertoroidalMixture

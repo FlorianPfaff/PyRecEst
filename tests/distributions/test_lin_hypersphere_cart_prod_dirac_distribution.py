@@ -1,5 +1,4 @@
 import numpy as np
-
 from pyrecest.distributions.cart_prod.lin_hypersphere_cart_prod_dirac_distribution import (
     LinHypersphereCartProdDiracDistribution,
 )

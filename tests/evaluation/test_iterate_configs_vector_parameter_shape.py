@@ -9,7 +9,9 @@ def test_iterate_configs_and_runs_uses_config_count_for_vector_parameters(monkey
     if backend.__backend_name__ not in ("numpy", "autograd"):
         pytest.skip("iterate_configs_and_runs stores object-valued filter states")
 
-    iterate_module = importlib.import_module("pyrecest.evaluation.iterate_configs_and_runs")
+    iterate_module = importlib.import_module(
+        "pyrecest.evaluation.iterate_configs_and_runs"
+    )
     vector_parameter = np.array([1.0, 2.0])
     calls = []
 
@@ -46,12 +48,14 @@ def test_iterate_configs_and_runs_uses_config_count_for_vector_parameters(monkey
         "auto_warning_on_off": False,
     }
 
-    last_filter_states, runtimes, run_failed, *_ = iterate_module.iterate_configs_and_runs(
-        groundtruths,
-        measurements,
-        {"name": "dummy"},
-        [{"name": "dummy_filter", "parameter": vector_parameter}],
-        evaluation_config,
+    last_filter_states, runtimes, run_failed, *_ = (
+        iterate_module.iterate_configs_and_runs(
+            groundtruths,
+            measurements,
+            {"name": "dummy"},
+            [{"name": "dummy_filter", "parameter": vector_parameter}],
+            evaluation_config,
+        )
     )
 
     assert np.shape(last_filter_states) == (1, 2)

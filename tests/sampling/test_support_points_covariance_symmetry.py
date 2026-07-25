@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-
 from pyrecest.sampling import (
     ellipsoid_axis_offsets,
     ellipsoid_sigma_points,

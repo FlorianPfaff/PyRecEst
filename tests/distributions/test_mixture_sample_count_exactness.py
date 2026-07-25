@@ -1,7 +1,6 @@
 from fractions import Fraction
 
 import pytest
-
 from pyrecest.distributions.abstract_mixture import _validate_positive_sample_count
 
 
