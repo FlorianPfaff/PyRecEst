@@ -25,6 +25,13 @@ class CircularWeightedMeanValidationTest(unittest.TestCase):
                         array([0.0, invalid_angle]), array([0.5, 0.5])
                     )
 
+    def test_rejects_undefined_antipodal_mean(self):
+        with self.assertRaisesRegex(ValueError, "undefined"):
+            circular_weighted_mean(
+                array([0.0, math.pi]),
+                array([0.5, 0.5]),
+            )
+
     def test_valid_inputs_are_unchanged(self):
         mean_angle = circular_weighted_mean(
             array([0.0, 0.5 * math.pi]), array([0.5, 0.5])
