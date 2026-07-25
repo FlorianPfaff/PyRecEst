@@ -32,6 +32,26 @@ def test_evidence_computation_mode_accepts_none_metadata_constructor():
     assert mode.to_diagnostics()["evidence_computation_mode"] == "full_smoothing"
 
 
+def test_mutated_metadata_cannot_overwrite_reserved_evidence_diagnostics():
+    mode = EvidenceComputationMode.full_smoothing(metadata={"source": "test"})
+    mode.metadata.update(
+        {
+            "computation_mode": "corrupted",
+            "only": 99,
+            "return_smoothed": 0,
+            "terminal_posterior": 0,
+        }
+    )
+
+    diagnostics = mode.to_diagnostics()
+
+    assert diagnostics["evidence_source"] == "test"
+    assert diagnostics["evidence_computation_mode"] == "full_smoothing"
+    assert diagnostics["evidence_only"] == 0
+    assert diagnostics["evidence_return_smoothed"] == 1
+    assert diagnostics["evidence_terminal_posterior"] == 1
+
+
 def test_evidence_computation_mode_rejects_invalid_boolean_strings():
     with pytest.raises(ValueError, match="return_smoothed"):
         resolve_evidence_computation_mode(return_smoothed="definitely")
