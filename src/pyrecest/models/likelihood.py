@@ -214,6 +214,8 @@ class SampleableTransitionModel:
         """Draw ``n`` next-state samples conditioned on ``state``."""
 
         n = _validate_sample_count(n)
+        if self._sample_next_count_call_mode is None and n != 1:
+            raise TypeError("sample count is not supported by this sampler.")
         if self._sample_next_count_call_mode == "positional":
             return self._sample_next(state, n)
         if self._sample_next_count_call_mode == "keyword":
@@ -250,7 +252,7 @@ class DensityTransitionModel:
         self.name = name
 
     @property
-    def has_sampler(self) -> bool:
+       def has_sampler(self) -> bool:
         """Whether this model also has a sampler callback."""
 
         return self._sample_next is not None
@@ -266,6 +268,8 @@ class DensityTransitionModel:
         if self._sample_next is None:
             raise NotImplementedError("No sample_next callback was provided.")
         n = _validate_sample_count(n)
+        if self._sample_next_count_call_mode is None and n != 1:
+            raise TypeError("sample count is not supported by this sampler.")
         if self._sample_next_count_call_mode == "positional":
             return self._sample_next(state, n)
         if self._sample_next_count_call_mode == "keyword":
