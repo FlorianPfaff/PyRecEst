@@ -96,11 +96,30 @@ def _as_nonnegative_summary_count(value: Any, name: str) -> float:
     return result
 
 
+_base_aggregate_summary_metric = _time_offset_module._aggregate_summary_metric
+
+
+def _aggregate_summary_metric(
+    key: str,
+    values: np.ndarray,
+    counts: np.ndarray,
+) -> float:
+    """Aggregate composable metrics without inventing pooled percentiles."""
+    if key != "p95":
+        return _base_aggregate_summary_metric(key, values, counts)
+
+    valid = np.isfinite(values) & (counts > 0.0)
+    if np.count_nonzero(valid) == 1:
+        return float(values[valid][0])
+    return float("nan")
+
+
 _time_offset_module._as_finite_float = _as_finite_float
 _time_offset_module._as_nonnegative_time_delta = _as_nonnegative_time_delta
 _time_offset_module._as_real_numeric_array = _as_real_numeric_array
 _time_offset_module._as_summary_scalar = _as_summary_scalar
 _time_offset_module._as_nonnegative_summary_count = _as_nonnegative_summary_count
+_time_offset_module._aggregate_summary_metric = _aggregate_summary_metric
 
 from .bias import (  # noqa: E402
     BiasTrainingExamples,
