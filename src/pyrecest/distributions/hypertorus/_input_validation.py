@@ -1,5 +1,7 @@
 """Input-normalization helpers for hypertoroidal distributions."""
 
+import datetime as _datetime
+
 import numpy as np
 
 # pylint: disable=no-name-in-module,no-member
@@ -8,6 +10,13 @@ from pyrecest.backend import array
 _BOOLEAN_DTYPE_NAMES = {"bool", "bool_", "torch.bool"}
 _BOOLEAN_SCALAR_TYPES = (bool, np.bool_)
 _COMPLEX_SCALAR_TYPES = (complex, np.complexfloating)
+_TEMPORAL_SCALAR_TYPES = (
+    np.datetime64,
+    np.timedelta64,
+    _datetime.date,
+    _datetime.datetime,
+    _datetime.timedelta,
+)
 
 
 def _reject_boolean_array(value, name: str) -> None:
@@ -43,6 +52,22 @@ def _reject_complex_array(value, name: str) -> None:
         raise ValueError(f"{name} must contain real angles, not complex values.")
 
 
+def _reject_temporal_array(value, name: str) -> None:
+    if isinstance(value, _TEMPORAL_SCALAR_TYPES):
+        raise ValueError(f"{name} must contain real angles, not temporal values.")
+
+    dtype = getattr(value, "dtype", None)
+    if getattr(dtype, "kind", None) in {"M", "m"}:
+        raise ValueError(f"{name} must contain real angles, not temporal values.")
+
+    try:
+        object_values = np.asarray(value, dtype=object).reshape(-1)
+    except (TypeError, ValueError, RuntimeError):
+        return
+    if any(isinstance(item, _TEMPORAL_SCALAR_TYPES) for item in object_values):
+        raise ValueError(f"{name} must contain real angles, not temporal values.")
+
+
 def as_shift_vector(shift_by, dim: int, *, name: str = "shift_by"):
     """Return ``shift_by`` as a one-dimensional backend vector of length ``dim``.
 
@@ -52,9 +77,11 @@ def as_shift_vector(shift_by, dim: int, *, name: str = "shift_by"):
     """
     _reject_boolean_array(shift_by, name)
     _reject_complex_array(shift_by, name)
+    _reject_temporal_array(shift_by, name)
     shift_by = array(shift_by)
     _reject_boolean_array(shift_by, name)
     _reject_complex_array(shift_by, name)
+    _reject_temporal_array(shift_by, name)
     if shift_by.ndim == 0:
         if dim != 1:
             raise ValueError(f"{name} must have shape ({dim},), got scalar.")
@@ -74,9 +101,11 @@ def as_hypertoroidal_points(xs, dim: int, *, name: str = "xs"):
     """
     _reject_boolean_array(xs, name)
     _reject_complex_array(xs, name)
+    _reject_temporal_array(xs, name)
     xs = array(xs)
     _reject_boolean_array(xs, name)
     _reject_complex_array(xs, name)
+    _reject_temporal_array(xs, name)
     if xs.ndim == 0:
         if dim != 1:
             raise ValueError(f"{name} must have trailing dimension {dim}, got scalar.")
