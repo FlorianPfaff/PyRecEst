@@ -313,7 +313,9 @@ def _patch_pytorch_stack_helpers_numpy_contract() -> None:
 
     helper_names = ("stack", "hstack", "vstack", "column_stack", "dstack")
     if all(
-        getattr(getattr(pytorch_backend, helper_name), "_pyrecest_numpy_contract", False)
+        getattr(
+            getattr(pytorch_backend, helper_name), "_pyrecest_numpy_contract", False
+        )
         for helper_name in helper_names
     ):
         if active_pytorch_backend:

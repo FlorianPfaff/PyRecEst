@@ -2,10 +2,8 @@ import math
 
 import numpy as np
 import numpy.testing as npt
-import pytest
-from scipy.special import ive
-
 import pyrecest.backend
+import pytest
 from pyrecest.backend import array, to_numpy
 from pyrecest.distributions.hypertorus.toroidal_von_mises_cosine_distribution import (
     ToroidalVonMisesCosineDistribution,
@@ -13,7 +11,7 @@ from pyrecest.distributions.hypertorus.toroidal_von_mises_cosine_distribution im
 from pyrecest.distributions.hypertorus.toroidal_von_mises_sine_distribution import (
     ToroidalVonMisesSineDistribution,
 )
-
+from scipy.special import ive
 
 pytestmark = pytest.mark.skipif(
     pyrecest.backend.__backend_name__ != "numpy",
@@ -34,9 +32,7 @@ def _expected_independent_mode_density(kappa):
 def test_large_independent_concentrations_have_finite_mode_density(
     distribution_class,
 ):
-    distribution = distribution_class(
-        array([0.3, 1.2]), array([1000.0, 1000.0]), 0.0
-    )
+    distribution = distribution_class(array([0.3, 1.2]), array([1000.0, 1000.0]), 0.0)
     density = float(np.asarray(to_numpy(distribution.pdf(distribution.mu))))
 
     assert math.isfinite(density)
@@ -51,9 +47,7 @@ def test_large_independent_concentrations_have_finite_mode_density(
 def test_cosine_large_concentration_first_moment_remains_finite():
     mu = array([0.3, 1.2])
     kappa = 1000.0
-    distribution = ToroidalVonMisesCosineDistribution(
-        mu, array([kappa, kappa]), 0.0
-    )
+    distribution = ToroidalVonMisesCosineDistribution(mu, array([kappa, kappa]), 0.0)
 
     actual = np.asarray(distribution.trigonometric_moment(1))
     expected_magnitude = float(ive(1, kappa) / ive(0, kappa))

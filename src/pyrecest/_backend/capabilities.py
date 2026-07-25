@@ -389,7 +389,8 @@ def get_api_backend_support(api_name: str) -> dict[str, str]:
 def iter_api_backend_capabilities() -> tuple[tuple[str, dict[str, str]], ...]:
     """Return public API backend support rows in a stable order."""
     return tuple(
-        (api_name, dict(row)) for api_name, row in sorted(API_BACKEND_CAPABILITIES.items())
+        (api_name, dict(row))
+        for api_name, row in sorted(API_BACKEND_CAPABILITIES.items())
     )
 
 

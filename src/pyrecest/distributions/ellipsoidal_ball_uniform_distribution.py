@@ -2,8 +2,8 @@ from numbers import Integral
 from typing import Union
 
 # pylint: disable=no-name-in-module,no-member
+from pyrecest.backend import all as backend_all
 from pyrecest.backend import (
-    all as backend_all,
     array,
     int32,
     int64,

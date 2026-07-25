@@ -1,7 +1,6 @@
 import unittest
 
 import numpy as np
-
 from pyrecest.experimental.dvs.event_likelihood import (
     ContourSample,
     EventLikelihoodConfig,

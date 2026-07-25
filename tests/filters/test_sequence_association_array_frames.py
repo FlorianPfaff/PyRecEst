@@ -1,5 +1,4 @@
 import numpy as np
-
 from pyrecest.filters import (
     SequenceAssociationNode,
     solve_viterbi_sequence_association,
@@ -19,9 +18,9 @@ def test_viterbi_accepts_numpy_object_array_of_frames():
 
     path = solve_viterbi_sequence_association(
         frames,
-        lambda previous, current, _context: 0.0
-        if previous.payload == current.payload
-        else 10.0,
+        lambda previous, current, _context: (
+            0.0 if previous.payload == current.payload else 10.0
+        ),
     )
 
     assert path.candidate_indices == (0, 0)

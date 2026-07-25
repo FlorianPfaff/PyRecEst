@@ -2,12 +2,10 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-
 from pyrecest.utils.cost_matrix_adjustments import (
     additive_cost_matrix_adjustment,
     apply_cost_matrix_adjustment,
 )
-
 
 TEMPORAL_MATRICES = (
     np.array([[np.timedelta64(2, "ns")]]),
@@ -26,7 +24,9 @@ def test_cost_matrix_adjustment_rejects_temporal_input_matrices(matrix) -> None:
 
 
 @pytest.mark.parametrize("matrix", TEMPORAL_MATRICES)
-def test_additive_cost_matrix_adjustment_rejects_temporal_penalty_matrices(matrix) -> None:
+def test_additive_cost_matrix_adjustment_rejects_temporal_penalty_matrices(
+    matrix,
+) -> None:
     with pytest.raises(ValueError, match="real-valued numeric"):
         additive_cost_matrix_adjustment(matrix)
 

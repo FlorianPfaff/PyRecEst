@@ -70,13 +70,17 @@ def _patch_shared_numpy_uniform_empty_bounds_contract() -> None:
             return None
         dtype = kwargs.get("dtype", None)
         numpy_module = raw_random._np  # pylint: disable=protected-access
-        low_array = raw_random._validate_uniform_bound(  # pylint: disable=protected-access
-            low,
-            "low",
+        low_array = (
+            raw_random._validate_uniform_bound(  # pylint: disable=protected-access
+                low,
+                "low",
+            )
         )
-        high_array = raw_random._validate_uniform_bound(  # pylint: disable=protected-access
-            high,
-            "high",
+        high_array = (
+            raw_random._validate_uniform_bound(  # pylint: disable=protected-access
+                high,
+                "high",
+            )
         )
         sample_shape = _sample_shape_from_numpy_size(
             raw_random._normalize_size(size),  # pylint: disable=protected-access
@@ -138,7 +142,9 @@ def _patch_pytorch_uniform_empty_bounds_contract() -> None:
             default=None,
         )
         tensor_bounds = [bound for bound in (low, high) if torch.is_tensor(bound)]
-        non_cpu_bounds = [bound for bound in tensor_bounds if bound.device.type != "cpu"]
+        non_cpu_bounds = [
+            bound for bound in tensor_bounds if bound.device.type != "cpu"
+        ]
         device = (
             non_cpu_bounds[0].device
             if non_cpu_bounds
@@ -153,7 +159,9 @@ def _patch_pytorch_uniform_empty_bounds_contract() -> None:
                     dtype=dtype,
                     device=device,
                 )
-            if raw_random._contains_boolean_value(bound):  # pylint: disable=protected-access
+            if raw_random._contains_boolean_value(
+                bound
+            ):  # pylint: disable=protected-access
                 raise TypeError(f"{name} must be real numeric, not boolean")
             try:
                 bound_tensor = torch.as_tensor(bound, dtype=dtype, device=device)
@@ -219,20 +227,24 @@ def _patch_jax_uniform_empty_bounds_contract() -> None:
     def _empty_result(low, high, size, args, kwargs):
         if args:
             return None
-        low_value, high_value = raw_random._validate_uniform_bounds(  # pylint: disable=protected-access
-            low,
-            high,
+        low_value, high_value = (
+            raw_random._validate_uniform_bounds(  # pylint: disable=protected-access
+                low,
+                high,
+            )
         )
-        sample_shape = raw_random._bounded_sampler_shape(  # pylint: disable=protected-access
-            size,
-            low_value,
-            high_value,
+        sample_shape = (
+            raw_random._bounded_sampler_shape(  # pylint: disable=protected-access
+                size,
+                low_value,
+                high_value,
+            )
         )
         if not _shape_has_no_samples(sample_shape):
             return None
-        state, has_state, remaining_kwargs = raw_random._get_state(  # pylint: disable=protected-access
+        state, has_state, remaining_kwargs = raw_random._get_state(
             **kwargs
-        )
+        )  # pylint: disable=protected-access
         state, _ = raw_random.jax.random.split(state)
         dtype = remaining_kwargs.get("dtype", None)
         result = jnp.empty(sample_shape, dtype=dtype)

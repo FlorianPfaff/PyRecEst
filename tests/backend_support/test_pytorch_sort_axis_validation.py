@@ -1,5 +1,4 @@
 import pytest
-
 from pyrecest.backend_support._pytorch_sort_numpy_contract import normalize_sort_axis
 
 

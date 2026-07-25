@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import numpy as np
-
-from pyrecest.experimental import SensorAssociationBlock, multisensor_ddp_association_update
+from pyrecest.experimental import (
+    SensorAssociationBlock,
+    multisensor_ddp_association_update,
+)
 
 
 def main() -> None:
@@ -37,7 +39,10 @@ def main() -> None:
     for sensor_id, posterior in result.sensor_posteriors.items():
         print(sensor_id, posterior.hard_assignments)
 
-    print("updated target weights:", dict(zip(target_labels, result.updated_target_weights, strict=True)))
+    print(
+        "updated target weights:",
+        dict(zip(target_labels, result.updated_target_weights, strict=True)),
+    )
     print("updated birth weight:", result.updated_birth_weight)
     print("expected clutter count:", result.expected_clutter_count)
 

@@ -213,9 +213,7 @@ class LinearMixtureTest(unittest.TestCase):
             np.array(np.timedelta64(4, "ns")),
             np.array(np.datetime64("1970-01-01T00:00:00.000000004")),
             np.array(np.timedelta64(4, "ns"), dtype=object),
-            np.array(
-                np.datetime64("1970-01-01T00:00:00.000000004"), dtype=object
-            ),
+            np.array(np.datetime64("1970-01-01T00:00:00.000000004"), dtype=object),
         )
         for n in invalid_counts:
             with self.subTest(n=n):

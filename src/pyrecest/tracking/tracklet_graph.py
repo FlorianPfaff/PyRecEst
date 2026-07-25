@@ -496,9 +496,7 @@ def _raw_state_item_is_invalid(value: Any) -> bool:
         return True
     if isinstance(value, np.ndarray):
         if value.dtype == object:
-            return any(
-                _raw_state_item_is_invalid(item) for item in value.reshape(-1)
-            )
+            return any(_raw_state_item_is_invalid(item) for item in value.reshape(-1))
         return value.dtype.kind not in _REAL_STATE_ARRAY_KINDS
     if isinstance(value, (list, tuple)):
         return any(_raw_state_item_is_invalid(item) for item in value)

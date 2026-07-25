@@ -110,7 +110,9 @@ def _as_float_array(value: Any, name: str) -> np.ndarray:
         raise ValueError(f"{name} must contain real numeric values") from exc
     if array.dtype.kind in _INVALID_FLOAT_ARRAY_KINDS or (
         array.dtype.kind == "O"
-        and any(isinstance(item, _INVALID_FLOAT_ARRAY_SCALAR_TYPES) for item in array.flat)
+        and any(
+            isinstance(item, _INVALID_FLOAT_ARRAY_SCALAR_TYPES) for item in array.flat
+        )
     ):
         raise ValueError(f"{name} must contain real numeric values")
     try:
@@ -135,7 +137,5 @@ def _symmetrized(matrix: np.ndarray) -> np.ndarray:
         symmetrized = 0.5 * (array + array.T)
     overflowed = ~np.isfinite(symmetrized) & np.isfinite(array) & np.isfinite(array.T)
     if np.any(overflowed):
-        symmetrized[overflowed] = (
-            0.5 * array[overflowed] + 0.5 * array.T[overflowed]
-        )
+        symmetrized[overflowed] = 0.5 * array[overflowed] + 0.5 * array.T[overflowed]
     return symmetrized

@@ -1,7 +1,6 @@
 """Regression coverage for non-finite SO(3) chordal smoother weights."""
 
 import pytest
-
 from pyrecest.backend import eye
 from pyrecest.smoothers import SO3ChordalMeanSmoother
 

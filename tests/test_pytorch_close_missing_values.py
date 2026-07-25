@@ -21,7 +21,9 @@ class TestPytorchBackendCloseMissingValues(unittest.TestCase):
         left = pytorch_backend.array([1.0, float("nan"), 3.0])
         right = pytorch_backend.array([1.0, float("nan"), 4.0])
 
-        self.assertEqual(pytorch_backend.isclose(left, right).tolist(), [True, False, False])
+        self.assertEqual(
+            pytorch_backend.isclose(left, right).tolist(), [True, False, False]
+        )
         self.assertEqual(
             pytorch_backend.isclose(left, right, equal_nan=True).tolist(),
             [True, True, False],

@@ -2,7 +2,6 @@
 
 import numpy as np
 import pytest
-
 from pyrecest.distributions.circle.wrapped_normal_distribution import (
     WrappedNormalDistribution,
 )

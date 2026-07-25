@@ -1,6 +1,5 @@
-import pytest
-
 import pyrecest.backend as backend
+import pytest
 from pyrecest.backend import array
 
 

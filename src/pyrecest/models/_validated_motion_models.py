@@ -44,9 +44,7 @@ def _contains_complex_values(value: Any, seen: set[int] | None = None) -> bool:
         return True
     if value_array.dtype != object:
         return False
-    return any(
-        _contains_complex_values(item, seen) for item in value_array.flat
-    )
+    return any(_contains_complex_values(item, seen) for item in value_array.flat)
 
 
 def _reject_complex_matrix(value: Any, name: str) -> None:
