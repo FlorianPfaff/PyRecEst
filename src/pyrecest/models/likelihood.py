@@ -252,7 +252,7 @@ class DensityTransitionModel:
         self.name = name
 
     @property
-       def has_sampler(self) -> bool:
+    def has_sampler(self) -> bool:
         """Whether this model also has a sampler callback."""
 
         return self._sample_next is not None
