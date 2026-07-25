@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from pyrecest.tracking import (
     ResidualEditCandidate,
     ResidualMHTConfig,
@@ -165,3 +167,37 @@ def test_residual_mht_presets_are_generic_selector_breadth_controls():
     assert frontier.candidate_top_k == 8
     assert multi_family.max_edits == 4
     assert multi_family.max_hypotheses == 64
+
+
+@pytest.mark.parametrize(
+    ("config", "message"),
+    [
+        (ResidualMHTConfig(max_edits=1.5), "max_edits"),
+        (ResidualMHTConfig(max_edits=True), "max_edits"),
+        (ResidualMHTConfig(max_hypotheses=0), "max_hypotheses"),
+        (ResidualMHTConfig(candidate_top_k=-1), "candidate_top_k"),
+        (
+            ResidualMHTConfig(max_edits_per_group_key=1.5),
+            "max_edits_per_group_key",
+        ),
+        (
+            ResidualMHTConfig(max_edits_per_family={"cell_gated": 1.5}),
+            "max_edits_per_family",
+        ),
+    ],
+)
+def test_rejects_invalid_residual_mht_integer_limits(config, message):
+    with pytest.raises(ValueError, match=message):
+        enumerate_residual_hypotheses([], config=config)
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "message"),
+    [
+        ({"max_edits": 1.5}, "max_edits"),
+        ({"max_hypotheses": True}, "max_hypotheses"),
+    ],
+)
+def test_preset_rejects_invalid_integer_limit_overrides(kwargs, message):
+    with pytest.raises(ValueError, match=message):
+        residual_mht_config_for_preset("frontier", **kwargs)
