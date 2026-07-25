@@ -286,9 +286,16 @@ class EuclideanBoxParticleFilter(AbstractParticleFilter, EuclideanFilterMixin):
             zeros_like(previous_volumes),
         )
 
+        valid_column = expand_dims(valid, 1)
+        safe_lower = where(valid_column, contracted_lower, predicted.lower)
+        safe_upper = where(valid_column, contracted_upper, predicted.upper)
+
         if likelihood is not None:
-            centers = 0.5 * (contracted_lower + contracted_upper)
+            centers = 0.5 * (safe_lower + safe_upper)
             likelihood_values = likelihood(centers)
+            likelihood_values = where(
+                ratios > 0, likelihood_values, zeros_like(ratios)
+            )
             ratios = ratios * likelihood_values
 
         new_weights = predicted.w * ratios
@@ -299,9 +306,6 @@ class EuclideanBoxParticleFilter(AbstractParticleFilter, EuclideanFilterMixin):
             )
         new_weights = new_weights / sum(new_weights)
 
-        valid_column = expand_dims(valid, 1)
-        safe_lower = where(valid_column, contracted_lower, predicted.lower)
-        safe_upper = where(valid_column, contracted_upper, predicted.upper)
         self._filter_state = LinearBoxParticleDistribution(
             safe_lower,
             safe_upper,

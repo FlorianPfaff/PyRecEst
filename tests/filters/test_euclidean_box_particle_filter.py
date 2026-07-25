@@ -41,6 +41,27 @@ class EuclideanBoxParticleFilterTest(unittest.TestCase):
         npt.assert_allclose(pf.filter_state.upper, array([[1.0], [4.0]]))
         npt.assert_allclose(pf.filter_state.w, array([1.0, 0.0]))
 
+    def test_invalid_contraction_cannot_inject_nan_likelihood_weight(self):
+        pf = EuclideanBoxParticleFilter(2, 1)
+        pf.filter_state = LinearBoxParticleDistribution(
+            array([[0.0], [2.0]]),
+            array([[2.0], [4.0]]),
+            array([0.5, 0.5]),
+        )
+        pf.set_resampling_criterion(lambda _state: False)
+
+        pf.update_contracted(
+            lambda _lower, _upper: (
+                array([[0.0], [3.0]]),
+                array([[1.0], [2.0]]),
+            ),
+            likelihood=lambda _centers: array([1.0, float("nan")]),
+        )
+
+        npt.assert_allclose(pf.filter_state.lower, array([[0.0], [2.0]]))
+        npt.assert_allclose(pf.filter_state.upper, array([[1.0], [4.0]]))
+        npt.assert_allclose(pf.filter_state.w, array([1.0, 0.0]))
+
     def test_resample_splits_duplicate_boxes_along_widest_dimension(self):
         random.seed(1)
         pf = EuclideanBoxParticleFilter(4, 1)
