@@ -53,6 +53,8 @@ def _contains_complex_values(value):
 
 def _as_matrix(value, name):
     arr = asarray(value)
+    if _has_boolean_dtype(arr):
+        raise ValueError(f"{name} must contain real numeric values")
     if _contains_complex_values(arr):
         raise ValueError(f"{name} must be real-valued")
     if ndim(arr) != 2:
@@ -62,6 +64,8 @@ def _as_matrix(value, name):
 
 def _as_vector(value, name):
     arr = asarray(value)
+    if _has_boolean_dtype(arr):
+        raise ValueError(f"{name} must contain real numeric values")
     if _contains_complex_values(arr):
         raise ValueError(f"{name} must be real-valued")
     if ndim(arr) == 0:
