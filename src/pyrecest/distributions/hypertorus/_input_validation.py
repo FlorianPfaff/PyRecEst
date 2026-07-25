@@ -1,13 +1,22 @@
 """Input-normalization helpers for hypertoroidal distributions."""
 
+import datetime as _datetime
+
 import numpy as np
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import array
+from pyrecest.backend import all, array, isfinite
 
 _BOOLEAN_DTYPE_NAMES = {"bool", "bool_", "torch.bool"}
 _BOOLEAN_SCALAR_TYPES = (bool, np.bool_)
 _COMPLEX_SCALAR_TYPES = (complex, np.complexfloating)
+_TEMPORAL_SCALAR_TYPES = (
+    np.datetime64,
+    np.timedelta64,
+    _datetime.date,
+    _datetime.datetime,
+    _datetime.timedelta,
+)
 
 
 def _reject_boolean_array(value, name: str) -> None:
@@ -43,6 +52,53 @@ def _reject_complex_array(value, name: str) -> None:
         raise ValueError(f"{name} must contain real angles, not complex values.")
 
 
+def _reject_temporal_array(value, name: str) -> None:
+    """Reject datetime and duration values before numeric conversion."""
+
+    if isinstance(value, _TEMPORAL_SCALAR_TYPES):
+        raise ValueError(f"{name} must contain real angles, not temporal values.")
+
+    dtype = getattr(value, "dtype", None)
+    if getattr(dtype, "kind", None) in {"M", "m"}:
+        raise ValueError(f"{name} must contain real angles, not temporal values.")
+
+    try:
+        object_values = np.asarray(value, dtype=object).reshape(-1)
+    except (TypeError, ValueError, RuntimeError):
+        return
+    if any(isinstance(item, _TEMPORAL_SCALAR_TYPES) for item in object_values):
+        raise ValueError(f"{name} must contain real angles, not temporal values.")
+
+
+def _reject_nonfinite_array(value, name: str) -> None:
+    """Reject NaN and infinite angles before circular operations."""
+
+    try:
+        finite = bool(all(isfinite(value)))
+    except (OverflowError, TypeError, ValueError, RuntimeError) as exc:
+        raise ValueError(f"{name} must contain only finite real angles.") from exc
+    if not finite:
+        raise ValueError(f"{name} must contain only finite real angles.")
+
+
+def _reject_non_numeric_angle_types(value, name: str) -> None:
+    """Reject values that must not be interpreted as real angles."""
+
+    _reject_boolean_array(value, name)
+    _reject_complex_array(value, name)
+    _reject_temporal_array(value, name)
+
+
+def _validated_real_angle_array(value, name: str):
+    """Convert an input after validating its semantic and numeric domain."""
+
+    _reject_non_numeric_angle_types(value, name)
+    value = array(value)
+    _reject_non_numeric_angle_types(value, name)
+    _reject_nonfinite_array(value, name)
+    return value
+
+
 def as_shift_vector(shift_by, dim: int, *, name: str = "shift_by"):
     """Return ``shift_by`` as a one-dimensional backend vector of length ``dim``.
 
@@ -50,11 +106,7 @@ def as_shift_vector(shift_by, dim: int, *, name: str = "shift_by"):
     This keeps public APIs robust for ordinary Python scalar/list inputs before
     shape validation is performed.
     """
-    _reject_boolean_array(shift_by, name)
-    _reject_complex_array(shift_by, name)
-    shift_by = array(shift_by)
-    _reject_boolean_array(shift_by, name)
-    _reject_complex_array(shift_by, name)
+    shift_by = _validated_real_angle_array(shift_by, name)
     if shift_by.ndim == 0:
         if dim != 1:
             raise ValueError(f"{name} must have shape ({dim},), got scalar.")
@@ -72,11 +124,7 @@ def as_hypertoroidal_points(xs, dim: int, *, name: str = "xs"):
     For higher-dimensional distributions, a one-dimensional array of length
     ``dim`` is treated as a single query point.
     """
-    _reject_boolean_array(xs, name)
-    _reject_complex_array(xs, name)
-    xs = array(xs)
-    _reject_boolean_array(xs, name)
-    _reject_complex_array(xs, name)
+    xs = _validated_real_angle_array(xs, name)
     if xs.ndim == 0:
         if dim != 1:
             raise ValueError(f"{name} must have trailing dimension {dim}, got scalar.")
