@@ -254,6 +254,14 @@ def circular_weighted_mean(angles: Any, weights: Any) -> float:
         raise ValueError("angles and weights must contain the same number of entries.")
 
     moment = backend_sum(weights * exp(1j * angles))
+    resultant_length = float(backend_abs(moment))
+    dtype_name = str(getattr(moment, "dtype", np.dtype(float))).replace("torch.", "")
+    try:
+        machine_epsilon = float(np.finfo(np.dtype(dtype_name)).eps)
+    except (TypeError, ValueError):
+        machine_epsilon = float(np.finfo(float).eps)
+    if resultant_length <= 8.0 * machine_epsilon:
+        raise ValueError("circular mean is undefined for zero resultant length.")
     return float(mod(backend_angle(moment), 2.0 * pi))
 
 
