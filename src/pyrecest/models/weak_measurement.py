@@ -233,7 +233,11 @@ def _finite_real_numeric_array(value: Any, *, name: str) -> np.ndarray:
 
 
 def _standard_deviations_array(stds: Sequence[float] | np.ndarray) -> np.ndarray:
-    values = _real_numeric_array(stds, name="stds").reshape(-1)
+    values = _real_numeric_array(stds, name="stds")
+    if values.ndim == 0:
+        values = values.reshape((1,))
+    elif values.ndim != 1:
+        raise ValueError("stds must be one-dimensional")
     if values.size == 0:
         raise ValueError("stds must contain at least one standard deviation")
     if not np.isfinite(values).all() or np.any(values <= 0.0):
