@@ -1,6 +1,5 @@
-import pytest
-
 import pyrecest.backend
+import pytest
 from pyrecest.backend import array
 from pyrecest.distributions import HypertoroidalDiracDistribution
 

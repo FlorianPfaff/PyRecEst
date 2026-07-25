@@ -16,7 +16,9 @@ from pyrecest.backend import (
     exp,
     int32,
     int64,
-    isfinite as backend_isfinite,
+)
+from pyrecest.backend import isfinite as backend_isfinite
+from pyrecest.backend import (
     log,
     mod,
     ndim,

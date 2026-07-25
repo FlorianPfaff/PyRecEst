@@ -3,8 +3,8 @@ from typing import Union
 
 # pylint: disable=no-name-in-module,no-member
 import numpy as np
+from pyrecest.backend import all as backend_all
 from pyrecest.backend import (
-    all as backend_all,
     asarray,
     int32,
     int64,
@@ -21,7 +21,6 @@ from pyrecest.exceptions import ShapeError
 
 from ..abstract_uniform_distribution import AbstractUniformDistribution
 from .abstract_hypertoroidal_distribution import AbstractHypertoroidalDistribution
-
 
 _INVALID_REAL_SCALAR_TYPES = (
     bool,

@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest import backend
 from pyrecest.utils.history_recorder import HistoryRecorder
 
@@ -31,4 +30,6 @@ def test_padded_history_still_rejects_unicode_arrays():
     recorder = HistoryRecorder()
 
     with pytest.raises(TypeError, match="padded history values must be real numeric"):
-        recorder.register("bad", np.array(["1"], dtype=np.dtype("U1")), pad_with_nan=True)
+        recorder.register(
+            "bad", np.array(["1"], dtype=np.dtype("U1")), pad_with_nan=True
+        )

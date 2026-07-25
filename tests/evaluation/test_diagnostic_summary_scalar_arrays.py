@@ -1,7 +1,6 @@
 import json
 
 import numpy as np
-
 from pyrecest.evaluation.diagnostic_summaries import top_residuals
 
 

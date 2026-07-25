@@ -61,7 +61,9 @@ for broadcast_to, to_numpy in (
         else:
             raise AssertionError(f"broadcast_to accepted boolean shape {invalid_shape!r}")
 """
-    subprocess.run([sys.executable, "-c", code], check=True, env=_backend_test_env("pytorch"))
+    subprocess.run(
+        [sys.executable, "-c", code], check=True, env=_backend_test_env("pytorch")
+    )
 
 
 @pytest.mark.backend_portable
@@ -101,4 +103,6 @@ for invalid_shape in (True, (True,), np.array(True), np.array([True]), pytorch_b
     else:
         raise AssertionError(f"raw broadcast_to accepted boolean shape {invalid_shape!r}")
 """
-    subprocess.run([sys.executable, "-c", code], check=True, env=_backend_test_env("numpy"))
+    subprocess.run(
+        [sys.executable, "-c", code], check=True, env=_backend_test_env("numpy")
+    )

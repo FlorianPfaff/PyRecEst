@@ -1,5 +1,4 @@
 import numpy as np
-
 from pyrecest.distributions import GaussianDistribution
 from pyrecest.evaluation.generate_measurements import generate_measurements
 

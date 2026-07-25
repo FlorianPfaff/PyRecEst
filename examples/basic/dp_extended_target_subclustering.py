@@ -7,7 +7,6 @@ advance.
 """
 
 import numpy as np
-
 from pyrecest.experimental.dp_measurement_subclusters import (
     DPMeasurementSubclusterConfig,
     fit_dp_measurement_subclusters,

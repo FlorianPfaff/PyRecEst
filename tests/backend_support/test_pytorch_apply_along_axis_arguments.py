@@ -1,7 +1,6 @@
 """Regression tests for PyTorch apply_along_axis callback arguments."""
 
 import pytest
-
 from tests.support.backend_runner import run_backend_code
 
 

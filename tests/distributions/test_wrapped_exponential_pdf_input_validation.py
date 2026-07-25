@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.distributions.circle.wrapped_exponential_distribution import (
     WrappedExponentialDistribution,
 )

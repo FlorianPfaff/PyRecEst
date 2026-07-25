@@ -1,5 +1,4 @@
 import pytest
-
 from pyrecest._backend.numpy import random
 
 

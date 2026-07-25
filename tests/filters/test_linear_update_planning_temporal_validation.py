@@ -2,7 +2,6 @@ from dataclasses import dataclass
 
 import numpy as np
 import pytest
-
 from pyrecest.filters.linear_update_planning import (
     gate_threshold_for_measurement,
     huber_covariance_scale,

@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-
 from pyrecest.evaluation.model_comparison import (
     classify_evidence_margin,
     evidence_margin_table,

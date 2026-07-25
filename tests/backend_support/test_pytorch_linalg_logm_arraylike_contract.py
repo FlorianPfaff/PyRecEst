@@ -1,7 +1,6 @@
 """Regression tests for PyTorch linalg matrix logarithm input coercion."""
 
 import pytest
-
 from tests.support.backend_runner import run_backend_code
 
 

@@ -1,6 +1,5 @@
 import numpy as np
 import numpy.testing as npt
-
 from pyrecest.backend import array
 from pyrecest.evaluation import perform_predict_update_cycles
 from pyrecest.evaluation.configure_for_filter import register_filter_factory
@@ -63,9 +62,7 @@ def test_extracting_history_does_not_change_returned_final_estimate():
 
     npt.assert_allclose(estimate_without_history, array([1.0]))
     npt.assert_allclose(estimate_with_history, estimate_without_history)
-    npt.assert_allclose(
-        estimate_with_history, state_with_history.get_point_estimate()
-    )
+    npt.assert_allclose(estimate_with_history, state_with_history.get_point_estimate())
     npt.assert_allclose(
         estimate_without_history, state_without_history.get_point_estimate()
     )

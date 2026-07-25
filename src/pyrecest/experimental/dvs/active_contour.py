@@ -81,8 +81,12 @@ def rectangle_contour_samples(
     half_height = 0.5 * float(height)
     xs_forward = np.linspace(-half_width, half_width, samples_per_edge, endpoint=False)
     xs_backward = np.linspace(half_width, -half_width, samples_per_edge, endpoint=False)
-    ys_forward = np.linspace(-half_height, half_height, samples_per_edge, endpoint=False)
-    ys_backward = np.linspace(half_height, -half_height, samples_per_edge, endpoint=False)
+    ys_forward = np.linspace(
+        -half_height, half_height, samples_per_edge, endpoint=False
+    )
+    ys_backward = np.linspace(
+        half_height, -half_height, samples_per_edge, endpoint=False
+    )
 
     top = np.column_stack([xs_forward, np.full(samples_per_edge, half_height)])
     right = np.column_stack([np.full(samples_per_edge, half_width), ys_backward])

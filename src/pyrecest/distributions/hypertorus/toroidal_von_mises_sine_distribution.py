@@ -106,8 +106,8 @@ class ToroidalVonMisesSineDistribution(AbstractToroidalBivarVMDistribution):
             )
 
         scale_floor = 0.0 if scaled else 1.0
-        return 4.0 * math.pi**2 * _adaptive_positive_series_sum(
-            s, scale_floor=scale_floor
+        return (
+            4.0 * math.pi**2 * _adaptive_positive_series_sum(s, scale_floor=scale_floor)
         )
 
     @property

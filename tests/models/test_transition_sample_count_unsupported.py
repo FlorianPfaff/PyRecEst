@@ -12,7 +12,9 @@ from pyrecest.models import (
 
 
 class UnsupportedTransitionSampleCountTest(unittest.TestCase):
-    def test_sampleable_transition_rejects_count_when_sampler_has_no_count_argument(self):
+    def test_sampleable_transition_rejects_count_when_sampler_has_no_count_argument(
+        self,
+    ):
         calls = []
 
         def sample_next(state):

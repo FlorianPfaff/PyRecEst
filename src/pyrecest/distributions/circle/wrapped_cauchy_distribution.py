@@ -18,7 +18,6 @@ from pyrecest.backend import (
 
 from .abstract_circular_distribution import AbstractCircularDistribution
 
-
 _INVALID_REAL_SCALAR_TYPES = (
     bool,
     np.bool_,
@@ -135,9 +134,7 @@ class WrappedCauchyDistribution(AbstractCircularDistribution):
         # this cancellation and is also stable in the large-gamma limit.
         half_angle = xs_centered / 2.0
         half_gamma_tanh = tanh(self.gamma / 2.0)
-        denominator = sin(half_angle) ** 2 + half_gamma_tanh**2 * cos(
-            half_angle
-        ) ** 2
+        denominator = sin(half_angle) ** 2 + half_gamma_tanh**2 * cos(half_angle) ** 2
         return half_gamma_tanh / (2.0 * pi * denominator)
 
     def cdf(self, xs, starting_point=0.0):
