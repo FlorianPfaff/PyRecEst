@@ -3,7 +3,7 @@
 import numpy as np
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import array
+from pyrecest.backend import all, array, isfinite
 
 _BOOLEAN_DTYPE_NAMES = {"bool", "bool_", "torch.bool"}
 _BOOLEAN_SCALAR_TYPES = (bool, np.bool_)
@@ -43,6 +43,16 @@ def _reject_complex_array(value, name: str) -> None:
         raise ValueError(f"{name} must contain real angles, not complex values.")
 
 
+def _reject_nonfinite_array(value, name: str) -> None:
+    """Reject NaN and infinite angles before they reach circular operations."""
+    try:
+        finite = bool(all(isfinite(value)))
+    except (OverflowError, TypeError, ValueError, RuntimeError) as exc:
+        raise ValueError(f"{name} must contain only finite real angles.") from exc
+    if not finite:
+        raise ValueError(f"{name} must contain only finite real angles.")
+
+
 def as_shift_vector(shift_by, dim: int, *, name: str = "shift_by"):
     """Return ``shift_by`` as a one-dimensional backend vector of length ``dim``.
 
@@ -55,6 +65,7 @@ def as_shift_vector(shift_by, dim: int, *, name: str = "shift_by"):
     shift_by = array(shift_by)
     _reject_boolean_array(shift_by, name)
     _reject_complex_array(shift_by, name)
+    _reject_nonfinite_array(shift_by, name)
     if shift_by.ndim == 0:
         if dim != 1:
             raise ValueError(f"{name} must have shape ({dim},), got scalar.")
@@ -77,6 +88,7 @@ def as_hypertoroidal_points(xs, dim: int, *, name: str = "xs"):
     xs = array(xs)
     _reject_boolean_array(xs, name)
     _reject_complex_array(xs, name)
+    _reject_nonfinite_array(xs, name)
     if xs.ndim == 0:
         if dim != 1:
             raise ValueError(f"{name} must have trailing dimension {dim}, got scalar.")
