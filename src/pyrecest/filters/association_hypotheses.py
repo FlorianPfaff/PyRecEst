@@ -539,6 +539,31 @@ def linear_gaussian_association_hypotheses(
     return hypotheses
 
 
+def _update_best_matrix_value(
+    matrix: np.ndarray,
+    populated: np.ndarray,
+    row: int,
+    col: int,
+    value: float,
+    *,
+    maximize: bool,
+) -> None:
+    """Store the best duplicate-pair value without depending on input order."""
+    if not populated[row, col]:
+        matrix[row, col] = value
+        populated[row, col] = True
+        return
+
+    current = float(matrix[row, col])
+    current_is_nan = np.isnan(current)
+    value_is_nan = np.isnan(value)
+    if current_is_nan and not value_is_nan:
+        matrix[row, col] = value
+    elif not current_is_nan and not value_is_nan:
+        if (maximize and value > current) or (not maximize and value < current):
+            matrix[row, col] = value
+
+
 def hypotheses_to_cost_matrix(
     hypotheses: Sequence[AssociationHypothesis],
     num_tracks: int | None = None,
@@ -548,13 +573,17 @@ def hypotheses_to_cost_matrix(
     rejected_cost: float | None = None,
     include_rejected: bool = False,
 ) -> np.ndarray:
-    """Convert hypotheses to a dense assignment cost matrix."""
+    """Convert hypotheses to a dense assignment cost matrix.
+
+    Duplicate track-measurement pairs retain the lowest represented cost.
+    """
     num_tracks, num_measurements = infer_hypothesis_shape(
         hypotheses,
         num_tracks=num_tracks,
         num_measurements=num_measurements,
     )
     matrix = np.full((num_tracks, num_measurements), float(missing_cost))
+    populated = np.zeros((num_tracks, num_measurements), dtype=bool)
     if rejected_cost is None:
         rejected_cost = missing_cost
     for hypothesis in hypotheses:
@@ -565,7 +594,14 @@ def hypotheses_to_cost_matrix(
         cost = hypothesis_cost(hypothesis, missing_cost=missing_cost)
         if not hypothesis.accepted:
             cost = float(rejected_cost)
-        matrix[_track_index(hypothesis), _measurement_index(hypothesis)] = cost
+        _update_best_matrix_value(
+            matrix,
+            populated,
+            _track_index(hypothesis),
+            _measurement_index(hypothesis),
+            cost,
+            maximize=False,
+        )
     return matrix
 
 
@@ -577,13 +613,17 @@ def hypotheses_to_log_likelihood_matrix(
     missing_value: float = -np.inf,
     include_rejected: bool = False,
 ) -> np.ndarray:
-    """Convert hypotheses to a dense log-likelihood matrix."""
+    """Convert hypotheses to a dense log-likelihood matrix.
+
+    Duplicate track-measurement pairs retain the highest log-likelihood.
+    """
     num_tracks, num_measurements = infer_hypothesis_shape(
         hypotheses,
         num_tracks=num_tracks,
         num_measurements=num_measurements,
     )
     matrix = np.full((num_tracks, num_measurements), float(missing_value))
+    populated = np.zeros((num_tracks, num_measurements), dtype=bool)
     for hypothesis in hypotheses:
         if hypothesis.is_missed_detection:
             continue
@@ -595,7 +635,14 @@ def hypotheses_to_log_likelihood_matrix(
             value = log(float(hypothesis.probability))
         else:
             value = -hypothesis_cost(hypothesis)
-        matrix[_track_index(hypothesis), _measurement_index(hypothesis)] = value
+        _update_best_matrix_value(
+            matrix,
+            populated,
+            _track_index(hypothesis),
+            _measurement_index(hypothesis),
+            value,
+            maximize=True,
+        )
     return matrix
 
 
@@ -607,13 +654,17 @@ def hypotheses_to_probability_matrix(
     missing_value: float = 0.0,
     include_rejected: bool = False,
 ) -> np.ndarray:
-    """Convert hypotheses to a dense probability-like matrix."""
+    """Convert hypotheses to a dense probability-like matrix.
+
+    Duplicate track-measurement pairs retain the highest probability-like value.
+    """
     num_tracks, num_measurements = infer_hypothesis_shape(
         hypotheses,
         num_tracks=num_tracks,
         num_measurements=num_measurements,
     )
     matrix = np.full((num_tracks, num_measurements), float(missing_value))
+    populated = np.zeros((num_tracks, num_measurements), dtype=bool)
     for hypothesis in hypotheses:
         if hypothesis.is_missed_detection:
             continue
@@ -625,7 +676,14 @@ def hypotheses_to_probability_matrix(
             value = float(np.exp(hypothesis.log_likelihood))
         else:
             value = float(np.exp(-hypothesis_cost(hypothesis)))
-        matrix[_track_index(hypothesis), _measurement_index(hypothesis)] = value
+        _update_best_matrix_value(
+            matrix,
+            populated,
+            _track_index(hypothesis),
+            _measurement_index(hypothesis),
+            value,
+            maximize=True,
+        )
     return matrix
 
 
