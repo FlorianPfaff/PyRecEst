@@ -81,7 +81,10 @@ def moment_match_gaussian_hypotheses(
 
 def normalize_log_weights(log_weights: list[float] | np.ndarray) -> np.ndarray:
     """Normalize log weights to probabilities in a numerically stable way."""
-    values = _as_float_array(log_weights, "log_weights").reshape(-1)
+    values = _as_float_array(log_weights, "log_weights")
+    if values.ndim > 1:
+        raise ValueError("log_weights must be scalar or one-dimensional")
+    values = values.reshape(-1)
     if values.size == 0:
         raise ValueError("log_weights must not be empty")
     if np.any(np.isnan(values)):
