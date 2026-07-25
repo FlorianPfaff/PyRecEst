@@ -32,7 +32,7 @@ def test_murty_rejects_matrix_shaped_non_assignment_costs(argument_name, costs):
 
 def test_murty_preserves_scalar_and_vector_non_assignment_costs():
     solutions = murty_k_best_assignments(
-        np.eye(2),
+        np.array([[1.0, 9.0], [9.0, 1.0]]),
         row_non_assignment_costs=3.0,
         col_non_assignment_costs=np.array([4.0, 5.0]),
     )
