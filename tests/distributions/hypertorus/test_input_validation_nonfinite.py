@@ -8,15 +8,25 @@ from pyrecest.distributions.hypertorus._input_validation import (
 
 
 @pytest.mark.parametrize("invalid", [np.nan, np.inf, -np.inf])
-def test_shift_vector_rejects_nonfinite_angles(invalid) -> None:
+@pytest.mark.parametrize(
+    "validate",
+    [
+        pytest.param(
+            lambda value: as_shift_vector([0.0, value], dim=2),
+            id="shift-vector",
+        ),
+        pytest.param(
+            lambda value: as_hypertoroidal_points(
+                [[0.0, 1.0], [value, 2.0]],
+                dim=2,
+            ),
+            id="evaluation-points",
+        ),
+    ],
+)
+def test_angle_inputs_reject_nonfinite_values(invalid, validate) -> None:
     with pytest.raises(ValueError, match="finite real angles"):
-        as_shift_vector([0.0, invalid], dim=2)
-
-
-@pytest.mark.parametrize("invalid", [np.nan, np.inf, -np.inf])
-def test_hypertoroidal_points_reject_nonfinite_angles(invalid) -> None:
-    with pytest.raises(ValueError, match="finite real angles"):
-        as_hypertoroidal_points([[0.0, 1.0], [invalid, 2.0]], dim=2)
+        validate(invalid)
 
 
 def test_finite_inputs_keep_existing_shapes() -> None:
