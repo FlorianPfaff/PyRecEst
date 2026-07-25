@@ -14,6 +14,7 @@ from pyrecest.backend import (
     linspace,
     mod,
     pi,
+    real,
     sin,
     sum,
     vstack,
@@ -59,6 +60,12 @@ class AbstractSE2Distribution(AbstractHypercylindricalDistribution):
         angle_color = self._matplotlib_color(angle_color)
 
         linear_covmat = self.linear_covariance()
+        # A covariance contour maps unit directions through a matrix square root.
+        # Using the covariance itself scales its semiaxes by variances instead of
+        # standard deviations.
+        linear_covmat_sqrt = real(
+            linalg.sqrtm(0.5 * (linear_covmat + linear_covmat.T))
+        )
         hybrid_moment = self.hybrid_moment()
         linear_mean = hybrid_moment[2:4]
         periodic_mean = arctan2(hybrid_moment[1], hybrid_moment[0])
@@ -70,7 +77,7 @@ class AbstractSE2Distribution(AbstractHypercylindricalDistribution):
             ax.set_label("hold")
 
         xs = hstack((linspace(0, 2 * pi, 100), array([0.0])))
-        ps = scaling_factor * linear_covmat @ vstack((cos(xs), sin(xs)))
+        ps = scaling_factor * linear_covmat_sqrt @ vstack((cos(xs), sin(xs)))
         (h1,) = ax.plot(
             ps[0, :] + linear_mean[0], ps[1, :] + linear_mean[1], color=circle_color
         )
@@ -79,10 +86,10 @@ class AbstractSE2Distribution(AbstractHypercylindricalDistribution):
         xs = linspace(
             periodic_mean - plot_ang_range, periodic_mean + plot_ang_range, 100
         )
-        ps = scaling_factor * linear_covmat @ vstack((cos(xs), sin(xs)))
+        ps = scaling_factor * linear_covmat_sqrt @ vstack((cos(xs), sin(xs)))
         scaled_mean_vec = (
             scaling_factor
-            * linear_covmat
+            * linear_covmat_sqrt
             @ array([cos(periodic_mean), sin(periodic_mean)])
         )
         h2 = ax.quiver(
