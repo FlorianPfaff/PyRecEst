@@ -5,7 +5,6 @@ import sys
 
 import pytest
 
-
 SCRIPT = """
 import pyrecest  # noqa: F401  # triggers raw-backend compatibility patches
 import torch

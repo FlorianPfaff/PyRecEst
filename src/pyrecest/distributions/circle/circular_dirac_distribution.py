@@ -1,11 +1,13 @@
 from pyrecest.backend import all as backend_all
 from pyrecest.backend import (
     isfinite,
-    max as backend_max,
+)
+from pyrecest.backend import max as backend_max
+from pyrecest.backend import (
     ones,
     reshape,
-    sum as backend_sum,
 )
+from pyrecest.backend import sum as backend_sum
 
 from ..hypertorus.hypertoroidal_dirac_distribution import HypertoroidalDiracDistribution
 from .abstract_circular_distribution import AbstractCircularDistribution

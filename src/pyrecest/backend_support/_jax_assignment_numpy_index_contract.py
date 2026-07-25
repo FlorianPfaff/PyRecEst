@@ -26,8 +26,10 @@ def _is_array_like_index(index, np, jnp):
 def _is_per_axis_tuple_index(indices, np, jnp):
     """Return whether ``indices`` is a NumPy-style tuple of per-axis arrays."""
 
-    return isinstance(indices, tuple) and bool(indices) and _is_array_like_index(
-        indices[0], np, jnp
+    return (
+        isinstance(indices, tuple)
+        and bool(indices)
+        and _is_array_like_index(indices[0], np, jnp)
     )
 
 
@@ -71,7 +73,9 @@ def _rectangular_triangular_to_vec(helper_name, original_helper, index_helper, j
     def triangular_to_vec(x, k=0):
         x = jnp.asarray(x)
         if x.ndim < 2:
-            raise ValueError("triangular vector helpers require at least two matrix dimensions")
+            raise ValueError(
+                "triangular vector helpers require at least two matrix dimensions"
+            )
         rows, cols = index_helper(x.shape[-2], k=k, m=x.shape[-1])
         return x[..., rows, cols]
 
@@ -82,7 +86,9 @@ def _rectangular_triangular_to_vec(helper_name, original_helper, index_helper, j
     return triangular_to_vec
 
 
-def _patch_jax_triangular_vector_helpers_rectangular_contract(jax_backend, backend, jnp) -> None:
+def _patch_jax_triangular_vector_helpers_rectangular_contract(
+    jax_backend, backend, jnp
+) -> None:
     """Make JAX triangular-vector helpers work for rectangular matrices."""
 
     active_jax_backend = getattr(backend, "__backend_name__", None) == "jax"

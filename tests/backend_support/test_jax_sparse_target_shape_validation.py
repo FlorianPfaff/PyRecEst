@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-
 from pyrecest.backend_support._jax_array_from_sparse_contract import (
     _normalize_sparse_target_shape,
 )

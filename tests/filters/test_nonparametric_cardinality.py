@@ -2,7 +2,6 @@ import math
 import unittest
 
 import numpy.testing as npt
-
 from pyrecest.filters.nonparametric_cardinality import (
     DirichletProcessCardinalityPrior,
     PitmanYorBirthProbability,
@@ -15,8 +14,12 @@ class NonparametricCardinalityPriorTest(unittest.TestCase):
         pitman_yor_prior = PitmanYorProcessCardinalityPrior(discount=0.5, strength=2.0)
         dirichlet_prior = DirichletProcessCardinalityPrior(concentration=2.0)
 
-        pitman_yor_probabilities = pitman_yor_prior.predictive_assignment_probabilities([3, 2])
-        dirichlet_probabilities = dirichlet_prior.predictive_assignment_probabilities([3, 2])
+        pitman_yor_probabilities = pitman_yor_prior.predictive_assignment_probabilities(
+            [3, 2]
+        )
+        dirichlet_probabilities = dirichlet_prior.predictive_assignment_probabilities(
+            [3, 2]
+        )
 
         npt.assert_allclose(
             pitman_yor_probabilities,

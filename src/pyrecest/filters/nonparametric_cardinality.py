@@ -115,7 +115,9 @@ class PitmanYorProcessCardinalityPrior:
         try:
             raw_sizes = tuple(cluster_sizes)
         except TypeError as exc:
-            raise TypeError("cluster_sizes must be an iterable of positive integers.") from exc
+            raise TypeError(
+                "cluster_sizes must be an iterable of positive integers."
+            ) from exc
 
         sizes = tuple(
             _validate_positive_integer(size, "cluster_sizes") for size in raw_sizes
@@ -124,11 +126,15 @@ class PitmanYorProcessCardinalityPrior:
 
     @staticmethod
     def _validate_count_state(num_observations, num_clusters):
-        num_observations = _validate_nonnegative_integer(num_observations, "num_observations")
+        num_observations = _validate_nonnegative_integer(
+            num_observations, "num_observations"
+        )
         num_clusters = _validate_nonnegative_integer(num_clusters, "num_clusters")
         if num_observations == 0:
             if num_clusters != 0:
-                raise ValueError("num_clusters must be zero when num_observations is zero.")
+                raise ValueError(
+                    "num_clusters must be zero when num_observations is zero."
+                )
         elif not 1 <= num_clusters <= num_observations:
             raise ValueError("num_clusters must be between one and num_observations.")
         return num_observations, num_clusters
@@ -158,9 +164,13 @@ class PitmanYorProcessCardinalityPrior:
     def predictive_new_cluster_probability(self, cluster_sizes):
         """Return the predictive probability that the next observation starts a new cluster."""
         sizes = self._coerce_cluster_sizes(cluster_sizes)
-        return self.predictive_new_cluster_probability_from_counts(sum(sizes), len(sizes))
+        return self.predictive_new_cluster_probability_from_counts(
+            sum(sizes), len(sizes)
+        )
 
-    def predictive_new_cluster_probability_from_counts(self, num_observations, num_clusters):
+    def predictive_new_cluster_probability_from_counts(
+        self, num_observations, num_clusters
+    ):
         """Return the next-observation new-cluster probability from count summaries.
 
         Parameters
@@ -170,29 +180,45 @@ class PitmanYorProcessCardinalityPrior:
         num_clusters : int
             Number of occupied clusters represented by those observations.
         """
-        num_observations, num_clusters = self._validate_count_state(num_observations, num_clusters)
+        num_observations, num_clusters = self._validate_count_state(
+            num_observations, num_clusters
+        )
         if num_observations == 0:
             return 1.0
-        return (self.strength + self.discount * num_clusters) / (self.strength + num_observations)
+        return (self.strength + self.discount * num_clusters) / (
+            self.strength + num_observations
+        )
 
     def predictive_assignment_probabilities(self, cluster_sizes):
         """Return existing-cluster probabilities followed by the new-cluster probability."""
-        existing_probabilities = self.predictive_existing_cluster_probabilities(cluster_sizes)
-        return existing_probabilities + (self.predictive_new_cluster_probability(cluster_sizes),)
+        existing_probabilities = self.predictive_existing_cluster_probabilities(
+            cluster_sizes
+        )
+        return existing_probabilities + (
+            self.predictive_new_cluster_probability(cluster_sizes),
+        )
 
     def expected_number_of_clusters(self, num_observations):
         """Return ``E[K_n]`` after ``num_observations`` exchangeable observations."""
-        num_observations = _validate_nonnegative_integer(num_observations, "num_observations")
+        num_observations = _validate_nonnegative_integer(
+            num_observations, "num_observations"
+        )
         return self.expected_additional_clusters(num_observations)
 
-    def expected_additional_clusters(self, additional_observations, initial_observations=0, initial_clusters=0):
+    def expected_additional_clusters(
+        self, additional_observations, initial_observations=0, initial_clusters=0
+    ):
         """Return the expected number of new clusters in a future batch.
 
         The recurrence is exact for the Pitman--Yor predictive rule because the
         new-cluster probability is linear in the current number of clusters.
         """
-        additional_observations = _validate_nonnegative_integer(additional_observations, "additional_observations")
-        initial_observations, initial_clusters = self._validate_count_state(initial_observations, initial_clusters)
+        additional_observations = _validate_nonnegative_integer(
+            additional_observations, "additional_observations"
+        )
+        initial_observations, initial_clusters = self._validate_count_state(
+            initial_observations, initial_clusters
+        )
 
         observations = initial_observations
         expected_total_clusters = float(initial_clusters)
@@ -200,7 +226,9 @@ class PitmanYorProcessCardinalityPrior:
             if observations == 0:
                 new_cluster_probability = 1.0
             else:
-                new_cluster_probability = (self.strength + self.discount * expected_total_clusters) / (self.strength + observations)
+                new_cluster_probability = (
+                    self.strength + self.discount * expected_total_clusters
+                ) / (self.strength + observations)
             expected_total_clusters += new_cluster_probability
             observations += 1
         return expected_total_clusters - initial_clusters
@@ -220,7 +248,9 @@ class PitmanYorProcessCardinalityPrior:
         log_probability = 0.0
         for cluster_index in range(1, num_clusters):
             log_probability += log(self.strength + cluster_index * self.discount)
-        log_probability -= _log_rising_factorial(self.strength + 1.0, num_observations - 1)
+        log_probability -= _log_rising_factorial(
+            self.strength + 1.0, num_observations - 1
+        )
         for size in sizes:
             log_probability += _log_rising_factorial(1.0 - self.discount, size - 1)
         return float(log_probability)
@@ -286,16 +316,30 @@ class PitmanYorBirthProbability:
     cardinality_prior: PitmanYorProcessCardinalityPrior = field(init=False)
 
     def __post_init__(self):
-        cardinality_prior = PitmanYorProcessCardinalityPrior(self.discount, self.strength)
-        base_birth_existence_probability = _validate_probability(self.base_birth_existence_probability, "base_birth_existence_probability")
-        prior_observation_count, prior_cluster_count = cardinality_prior._validate_count_state(self.prior_observation_count, self.prior_cluster_count)
-        minimum_probability = _validate_probability(self.minimum_probability, "minimum_probability")
-        maximum_probability = _validate_probability(self.maximum_probability, "maximum_probability")
+        cardinality_prior = PitmanYorProcessCardinalityPrior(
+            self.discount, self.strength
+        )
+        base_birth_existence_probability = _validate_probability(
+            self.base_birth_existence_probability, "base_birth_existence_probability"
+        )
+        prior_observation_count, prior_cluster_count = (
+            cardinality_prior._validate_count_state(
+                self.prior_observation_count, self.prior_cluster_count
+            )
+        )
+        minimum_probability = _validate_probability(
+            self.minimum_probability, "minimum_probability"
+        )
+        maximum_probability = _validate_probability(
+            self.maximum_probability, "maximum_probability"
+        )
         if minimum_probability > maximum_probability:
             raise ValueError("minimum_probability must not exceed maximum_probability.")
 
         object.__setattr__(self, "cardinality_prior", cardinality_prior)
-        object.__setattr__(self, "base_birth_existence_probability", base_birth_existence_probability)
+        object.__setattr__(
+            self, "base_birth_existence_probability", base_birth_existence_probability
+        )
         object.__setattr__(self, "prior_observation_count", prior_observation_count)
         object.__setattr__(self, "prior_cluster_count", prior_cluster_count)
         object.__setattr__(self, "minimum_probability", minimum_probability)
@@ -319,10 +363,24 @@ class PitmanYorBirthProbability:
         """
         del measurement, measurement_index, num_measurements
 
-        num_existing_components = _validate_nonnegative_integer(num_existing_components, "num_existing_components")
+        num_existing_components = _validate_nonnegative_integer(
+            num_existing_components, "num_existing_components"
+        )
         num_new_births = _validate_nonnegative_integer(num_new_births, "num_new_births")
-        num_observations = self.prior_observation_count + num_existing_components + num_new_births
-        num_clusters = self.prior_cluster_count + num_existing_components + num_new_births
-        new_cluster_probability = self.cardinality_prior.predictive_new_cluster_probability_from_counts(num_observations, num_clusters)
-        birth_probability = self.base_birth_existence_probability * new_cluster_probability
-        return _clip_probability(birth_probability, self.minimum_probability, self.maximum_probability)
+        num_observations = (
+            self.prior_observation_count + num_existing_components + num_new_births
+        )
+        num_clusters = (
+            self.prior_cluster_count + num_existing_components + num_new_births
+        )
+        new_cluster_probability = (
+            self.cardinality_prior.predictive_new_cluster_probability_from_counts(
+                num_observations, num_clusters
+            )
+        )
+        birth_probability = (
+            self.base_birth_existence_probability * new_cluster_probability
+        )
+        return _clip_probability(
+            birth_probability, self.minimum_probability, self.maximum_probability
+        )

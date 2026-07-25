@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 _placeholder_regression = Path(__file__).with_name(
     "test_pytorch_dot_outer_device_contract.py"
 )

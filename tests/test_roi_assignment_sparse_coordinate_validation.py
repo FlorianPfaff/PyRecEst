@@ -1,5 +1,4 @@
 import pytest
-
 from pyrecest.utils.roi_assignment import roi_iou
 
 

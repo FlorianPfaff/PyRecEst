@@ -10,7 +10,9 @@ import numpy as _np
 
 _LEGACY_MODULE_NAME = __name__.rsplit(".", 1)[0] + "._random_legacy"
 _LEGACY_PATH = _Path(__file__).resolve().parent.parent / "random.py"
-_LEGACY_SPEC = _importlib_util.spec_from_file_location(_LEGACY_MODULE_NAME, _LEGACY_PATH)
+_LEGACY_SPEC = _importlib_util.spec_from_file_location(
+    _LEGACY_MODULE_NAME, _LEGACY_PATH
+)
 if _LEGACY_SPEC is None or _LEGACY_SPEC.loader is None:  # pragma: no cover
     raise ImportError(f"Cannot load legacy PyTorch random backend from {_LEGACY_PATH}")
 _LEGACY = _importlib_util.module_from_spec(_LEGACY_SPEC)
@@ -31,7 +33,9 @@ def _probability_accumulation_dtype(probabilities):
 
 def _normalize_nonnegative_probabilities(probabilities):
     torch = _LEGACY._torch
-    probabilities = probabilities.to(dtype=_probability_accumulation_dtype(probabilities))
+    probabilities = probabilities.to(
+        dtype=_probability_accumulation_dtype(probabilities)
+    )
     if bool(torch.any(probabilities < 0)):
         raise ValueError(_PROBABILITY_SUM_ERROR)
     scale = probabilities.max()
@@ -129,11 +133,7 @@ def _normalize_scalar_integer_randint_bound(value):
 def _first_randint_bound_device(*values):
     """Return the first tensor-bound device so scalar normalization preserves it."""
     return next(
-        (
-            value.device
-            for value in values
-            if _LEGACY._torch.is_tensor(value)
-        ),
+        (value.device for value in values if _LEGACY._torch.is_tensor(value)),
         None,
     )
 

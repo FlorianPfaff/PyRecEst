@@ -4,7 +4,6 @@ import warnings
 
 import numpy as np
 import numpy.testing as npt
-
 from pyrecest.backend import array
 from pyrecest.distributions import LinearDiracDistribution
 

@@ -57,4 +57,6 @@ for fft_namespace, as_numpy in (
     else:
         raise AssertionError("conflicting FFT axis aliases were accepted")
 """
-    subprocess.run([sys.executable, "-c", code], check=True, env=_backend_test_env("pytorch"))
+    subprocess.run(
+        [sys.executable, "-c", code], check=True, env=_backend_test_env("pytorch")
+    )

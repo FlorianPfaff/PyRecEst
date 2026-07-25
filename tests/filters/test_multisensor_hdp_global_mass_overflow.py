@@ -1,7 +1,6 @@
 import unittest
 
 import numpy as np
-
 from pyrecest.filters.multisensor_hdp_association import multisensor_hdp_association
 
 

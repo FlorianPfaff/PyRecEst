@@ -6,7 +6,6 @@ from pyrecest.backend import array, eye
 from pyrecest.distributions import GaussianDistribution
 from pyrecest.filters.gaussian_mixture_phd_filter import GaussianMixturePHDFilter
 
-
 pytestmark = pytest.mark.skipif(
     pyrecest.backend.__backend_name__ != "numpy",
     reason="Currently only supported for the numpy backend",

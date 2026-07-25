@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import numpy as np
-
 from pyrecest.filters import (
     AssociationHypothesis,
     hypotheses_to_cost_matrix,

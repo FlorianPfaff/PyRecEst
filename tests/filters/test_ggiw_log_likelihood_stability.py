@@ -30,9 +30,7 @@ class TestGGIWLogLikelihoodStability(unittest.TestCase):
 
         self.assertEqual(float(np.linalg.det(np.asarray(covariance))), 0.0)
 
-        log_likelihood = self.tracker._gaussian_log_likelihood(
-            innovation, covariance
-        )
+        log_likelihood = self.tracker._gaussian_log_likelihood(innovation, covariance)
         expected = 200.0 * np.log(10.0) - np.log(2.0 * np.pi)
 
         self.assertTrue(bool(isfinite(log_likelihood)))
@@ -44,9 +42,7 @@ class TestGGIWLogLikelihoodStability(unittest.TestCase):
 
         self.assertEqual(float(np.linalg.det(np.asarray(covariance))), 1.0)
 
-        log_likelihood = self.tracker._gaussian_log_likelihood(
-            innovation, covariance
-        )
+        log_likelihood = self.tracker._gaussian_log_likelihood(innovation, covariance)
 
         self.assertTrue(np.isneginf(float(log_likelihood)))
 

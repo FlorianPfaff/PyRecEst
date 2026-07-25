@@ -1,8 +1,6 @@
 import numpy as np
 import pytest
-
 from pyrecest.filters import FixedLagBuffer, MeasurementTimeBuffer
-
 
 _BUFFER_TYPES = (FixedLagBuffer, MeasurementTimeBuffer)
 

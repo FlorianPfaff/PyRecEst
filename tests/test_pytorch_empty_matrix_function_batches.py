@@ -31,9 +31,7 @@ def test_square_matrix_functions_preserve_empty_batches(function_name, args, dty
     ("function_name", "args"),
     (("sqrtm", ()), ("fractional_matrix_power", (0.5,))),
 )
-def test_square_matrix_functions_reject_empty_rectangular_batches(
-    function_name, args
-):
+def test_square_matrix_functions_reject_empty_rectangular_batches(function_name, args):
     values = pytorch_backend.empty((0, 3, 2), dtype=pytorch_backend.float32)
 
     with pytest.raises(ValueError, match="square matrices"):
@@ -45,9 +43,7 @@ def test_square_matrix_functions_reject_empty_rectangular_batches(
     (("right", (2, 0, 2, 2)), ("left", (2, 0, 3, 3))),
 )
 def test_polar_preserves_empty_rectangular_batches(side, factor_shape):
-    values = pytorch_backend.empty(
-        (2, 0, 3, 2), dtype=pytorch_backend.complex64
-    )
+    values = pytorch_backend.empty((2, 0, 3, 2), dtype=pytorch_backend.complex64)
 
     unitary, factor = pytorch_backend.linalg.polar(values, side=side)
 

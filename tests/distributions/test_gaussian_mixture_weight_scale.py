@@ -1,5 +1,4 @@
 import numpy.testing as npt
-
 from pyrecest.backend import array, stack, to_numpy
 from pyrecest.distributions import GaussianMixture
 

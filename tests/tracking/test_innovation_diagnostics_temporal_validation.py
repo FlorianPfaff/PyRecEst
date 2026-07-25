@@ -44,13 +44,9 @@ def test_diagnostic_from_record_treats_temporal_float_fields_as_missing() -> Non
     diagnostic = diagnostic_from_record(
         {
             "nis": np.timedelta64(2, "ns"),
-            "residual_norm_m": np.datetime64(
-                "1970-01-01T00:00:00.000000003"
-            ),
+            "residual_norm_m": np.datetime64("1970-01-01T00:00:00.000000003"),
             "gate_threshold": np.array(np.timedelta64(4, "ns"), dtype=object),
-            "time_s": np.asarray(
-                np.datetime64("1970-01-01T00:00:00.000000005")
-            ),
+            "time_s": np.asarray(np.datetime64("1970-01-01T00:00:00.000000005")),
         }
     )
 

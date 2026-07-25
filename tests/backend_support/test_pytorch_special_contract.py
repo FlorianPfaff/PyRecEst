@@ -29,8 +29,7 @@ def test_raw_pytorch_special_helpers_are_patched_under_default_backend():
     if importlib.util.find_spec("torch") is None:
         pytest.skip("torch is not installed")
 
-    _run_python(
-        r'''
+    _run_python(r"""
 import math
 
 import pyrecest  # noqa: F401
@@ -70,8 +69,7 @@ pole_values = as_list(raw_backend.gamma([-1.0, 0.0, -0.0]))
 assert math.isnan(pole_values[0])
 assert math.isinf(pole_values[1]) and pole_values[1] > 0
 assert math.isinf(pole_values[2]) and pole_values[2] < 0
-'''
-    )
+""")
 
 
 @pytest.mark.backend_portable
@@ -80,7 +78,7 @@ def test_public_pytorch_special_helpers_accept_arraylike_and_out():
         pytest.skip("torch is not installed")
 
     _run_python(
-        r'''
+        r"""
 import math
 
 import pyrecest.backend as backend
@@ -116,6 +114,6 @@ for special_backend in (backend, raw_backend):
         special_backend.polygamma(1, [1.0, 2.0]),
         [math.pi**2 / 6.0, math.pi**2 / 6.0 - 1.0],
     )
-''',
+""",
         backend_name="pytorch",
     )
