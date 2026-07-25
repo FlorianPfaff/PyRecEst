@@ -10,6 +10,7 @@ order.
 import copy
 from dataclasses import dataclass
 from math import isfinite
+from operator import index as operator_index
 
 from pyrecest.backend import asarray, atleast_1d, atleast_2d, float64, linalg, transpose
 from pyrecest.distributions import GaussianDistribution
@@ -45,6 +46,32 @@ def _coerce_optional_max_lag(max_lag):
     if not isfinite(max_lag) or max_lag < 0.0:
         raise ValueError("max_lag must be finite and nonnegative or None")
     return max_lag
+
+
+def _coerce_optional_maxlen(maxlen):
+    if maxlen is None:
+        return None
+
+    message = "maxlen must be a positive integer or None"
+    scalar = maxlen
+    shape = getattr(maxlen, "shape", None)
+    if shape is not None:
+        try:
+            if tuple(shape) != ():
+                raise ValueError(message)
+            scalar = maxlen.item()
+        except (AttributeError, TypeError, ValueError, RuntimeError) as exc:
+            raise ValueError(message) from exc
+
+    if isinstance(scalar, bool):
+        raise ValueError(message)
+    try:
+        parsed = operator_index(scalar)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(message) from exc
+    if parsed <= 0:
+        raise ValueError(message)
+    return parsed
 
 
 def _coerce_bool_flag(value, name):
@@ -128,9 +155,7 @@ class FixedLagBuffer:
 
     def __init__(self, max_lag=None, maxlen=None, *, copy_values=True):
         self.max_lag = _coerce_optional_max_lag(max_lag)
-        self.maxlen = None if maxlen is None else int(maxlen)
-        if self.maxlen is not None and self.maxlen <= 0:
-            raise ValueError("maxlen must be positive or None")
+        self.maxlen = _coerce_optional_maxlen(maxlen)
         self.copy_values = _coerce_bool_flag(copy_values, "copy_values")
         self._items = []
         self._next_sequence = 0
