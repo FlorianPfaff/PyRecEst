@@ -15,18 +15,24 @@ def group_results_by_filter(data):
     )
 
     output_dict = {}
+    group_sizes = {}
     for entry in sorted_data:
         name = entry["name"]
         # Remove the 'name' key-value pair from the entry
         entry_values = {k: v for k, v in entry.items() if k != "name"}
 
-        # Check if the name already exists in the output_dict
-        if name in output_dict:
-            for key, value in entry_values.items():
-                # Append values to the existing lists
-                output_dict[name][key].append(value)
-        else:
-            # Initialize the entry in the output_dict with lists for each value
+        if name not in output_dict:
             output_dict[name] = {k: [v] for k, v in entry_values.items()}
+            group_sizes[name] = 1
+            continue
+
+        grouped_values = output_dict[name]
+        n_existing = group_sizes[name]
+        for key in tuple(grouped_values):
+            grouped_values[key].append(entry_values.get(key))
+        for key, value in entry_values.items():
+            if key not in grouped_values:
+                grouped_values[key] = [None] * n_existing + [value]
+        group_sizes[name] += 1
 
     return output_dict
