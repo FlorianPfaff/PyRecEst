@@ -380,6 +380,8 @@ class GaussianMixturePHDFilter(
             clutter_intensity = self.clutter_intensity
 
         measurements = array(measurements)
+        measurement_matrix = array(measurement_matrix)
+        cov_mat_meas = array(cov_mat_meas)
         if measurements.ndim == 1:
             measurements = measurements.reshape((-1, 1))
 
