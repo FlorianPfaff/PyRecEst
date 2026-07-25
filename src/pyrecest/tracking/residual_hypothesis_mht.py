@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import operator
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from itertools import combinations
@@ -59,7 +60,6 @@ class ResidualHypothesis:
     @property
     def n_edits(self) -> int:
         """Return the number of edits in this hypothesis."""
-
         return len(self.candidate_ids)
 
 
@@ -121,12 +121,12 @@ def residual_mht_config_for_preset(
     else:
         raise ValueError(f"Unknown residual-MHT preset: {preset!r}")
     if max_edits is not None:
-        config = replace(config, max_edits=int(max_edits))
+        config = replace(config, max_edits=max_edits)
     if max_hypotheses is not None:
-        config = replace(config, max_hypotheses=int(max_hypotheses))
+        config = replace(config, max_hypotheses=max_hypotheses)
     if score_threshold is not None:
         config = replace(config, score_threshold=float(score_threshold))
-    return config
+    return _validated_config(config)
 
 
 def enumerate_residual_hypotheses(
@@ -136,10 +136,10 @@ def enumerate_residual_hypotheses(
 ) -> tuple[ResidualHypothesis, ...]:
     """Enumerate compatible bounded residual hypotheses."""
 
-    cfg = config or ResidualMHTConfig()
+    cfg = _validated_config(config or ResidualMHTConfig())
     ordered = _candidate_frontier(candidates, cfg)
-    max_edits = max(0, int(cfg.max_edits))
-    max_hypotheses = max(1, int(cfg.max_hypotheses))
+    max_edits = cfg.max_edits
+    max_hypotheses = cfg.max_hypotheses
     hypotheses: list[ResidualHypothesis] = []
     if cfg.include_empty:
         hypotheses.append(ResidualHypothesis((), 0.0, (), (), ()))
@@ -247,7 +247,7 @@ def _candidate_frontier(
         seen_candidate_ids.add(candidate_id)
         unique_candidates.append(candidate)
     if config.candidate_top_k is not None:
-        return tuple(unique_candidates[: max(0, int(config.candidate_top_k))])
+        return tuple(unique_candidates[: config.candidate_top_k])
     return tuple(unique_candidates)
 
 
@@ -269,12 +269,70 @@ def _compatible(
             family = str(candidate.family)
             family_counts[family] = family_counts.get(family, 0) + 1
             family_cap = max_edits_per_family.get(family)
-            if family_cap is not None and family_counts[family] > int(family_cap):
+            if family_cap is not None and family_counts[family] > family_cap:
                 return False
         if max_edits_per_group_key is not None:
             for group_key in candidate.group_keys:
                 group = str(group_key)
                 group_counts[group] = group_counts.get(group, 0) + 1
-                if group_counts[group] > int(max_edits_per_group_key):
+                if group_counts[group] > max_edits_per_group_key:
                     return False
     return True
+
+
+def _validated_config(config: ResidualMHTConfig) -> ResidualMHTConfig:
+    max_edits_per_family = {
+        family: _as_integer_limit(
+            cap,
+            f"max_edits_per_family[{family!r}]",
+            minimum=0,
+        )
+        for family, cap in config.max_edits_per_family.items()
+    }
+    return replace(
+        config,
+        max_edits=_as_integer_limit(config.max_edits, "max_edits", minimum=0),
+        max_hypotheses=_as_integer_limit(
+            config.max_hypotheses,
+            "max_hypotheses",
+            minimum=1,
+        ),
+        max_edits_per_family=max_edits_per_family,
+        max_edits_per_group_key=(
+            None
+            if config.max_edits_per_group_key is None
+            else _as_integer_limit(
+                config.max_edits_per_group_key,
+                "max_edits_per_group_key",
+                minimum=0,
+            )
+        ),
+        candidate_top_k=(
+            None
+            if config.candidate_top_k is None
+            else _as_integer_limit(
+                config.candidate_top_k,
+                "candidate_top_k",
+                minimum=0,
+            )
+        ),
+    )
+
+
+def _as_integer_limit(value: Any, name: str, *, minimum: int) -> int:
+    requirement = "a positive integer" if minimum == 1 else "a non-negative integer"
+    message = f"{name} must be {requirement}"
+    dtype = getattr(value, "dtype", None)
+    if isinstance(value, bool) or getattr(dtype, "kind", None) == "b" or str(dtype).lower() in {
+        "bool",
+        "bool_",
+        "torch.bool",
+    }:
+        raise ValueError(message)
+    try:
+        normalized = operator.index(value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(message) from exc
+    if normalized < minimum:
+        raise ValueError(message)
+    return int(normalized)
