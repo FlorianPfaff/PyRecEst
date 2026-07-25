@@ -35,6 +35,18 @@ __all__ = [
 ]
 
 
+def _as_vector(value, description):
+    """Return scalar or vector input without silently flattening matrices."""
+    value = asarray(value, dtype=float64)
+    if len(value.shape) == 0:
+        return reshape(value, (1,))
+    if len(value.shape) != 1:
+        raise ValueError(
+            f"{description} must be scalar or one-dimensional; got shape {value.shape}"
+        )
+    return value
+
+
 # ---------------------------------------------------------------------------
 # Unscented Kalman Filter
 # ---------------------------------------------------------------------------
@@ -85,7 +97,10 @@ class UnscentedKalmanFilter:
         n_sigmas = sigmas.shape[0]
 
         sigma_rows = [
-            reshape(asarray(fx(sigmas[i], dt, **fx_args), dtype=float64), (-1,))
+            _as_vector(
+                fx(sigmas[i], dt, **fx_args),
+                "transition function output",
+            )
             for i in range(n_sigmas)
         ]
         for sigma_f in sigma_rows:
@@ -144,7 +159,7 @@ class UnscentedKalmanFilter:
         """
         if hx is None:
             hx = self._model.hx
-        z = reshape(asarray(z, dtype=float64), (-1,))
+        z = _as_vector(z, "measurement z")
 
         if self._sigmas_f is None:
             self._sigmas_f = self._model.points.sigma_points(self.x, self.P)
@@ -154,7 +169,10 @@ class UnscentedKalmanFilter:
         Wc = self._model.points.Wc
 
         sigma_rows = [
-            reshape(asarray(hx(sigmas_f[i], **hx_args), dtype=float64), (-1,))
+            _as_vector(
+                hx(sigmas_f[i], **hx_args),
+                "measurement function output",
+            )
             for i in range(sigmas_f.shape[0])
         ]
         dim_z = sigma_rows[0].shape[0]
