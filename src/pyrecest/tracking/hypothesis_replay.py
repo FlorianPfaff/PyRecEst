@@ -215,11 +215,12 @@ def score_hypothesis_replay(
     """Score one replayed hypothesis without using truth information."""
 
     cfg = InnovationConsistencyScoreConfig() if config is None else config
-    nis_values = _finite_record_values(replay.records, ("nis",))
+    nis_values = _finite_record_values(replay.records, ("nis",), nonnegative=True)
     residual_values = _finite_record_values(
         replay.records,
         ("residual_norm_m", "residual_norm", "innovation_norm", "innovation_norm_m"),
         fallback_norm_keys=("innovation", "residual"),
+        nonnegative=True,
     )
     robust_sum_nis = (
         float(np.sum(np.minimum(nis_values, float(cfg.nis_clip))))
@@ -312,6 +313,7 @@ def _finite_record_values(
     keys: tuple[str, ...],
     *,
     fallback_norm_keys: tuple[str, ...] = (),
+    nonnegative: bool = False,
 ) -> np.ndarray:
     values: list[float] = []
     for record in records:
@@ -331,7 +333,7 @@ def _finite_record_values(
             parsed = float(np.asarray(value, dtype=float))
         except (TypeError, ValueError, OverflowError):
             continue
-        if np.isfinite(parsed):
+        if np.isfinite(parsed) and (not nonnegative or parsed >= 0.0):
             values.append(parsed)
     return np.asarray(values, dtype=float)
 
