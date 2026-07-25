@@ -245,7 +245,9 @@ def _coerce_non_assignment_costs(costs, size: int, name: str):
             raise ValueError(f"{name} must be finite")
         return _full((size,), cost, dtype=float)
 
-    costs = costs_array.reshape(-1)
+    if costs_array.ndim != 1:
+        raise ValueError(f"{name} must be scalar or one-dimensional")
+    costs = costs_array
     if costs.shape[0] != size:
         raise ValueError(f"{name} must be scalar or have length {size}")
     if _any(~_isfinite(costs)):
