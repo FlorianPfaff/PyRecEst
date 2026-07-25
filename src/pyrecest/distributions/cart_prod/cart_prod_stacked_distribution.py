@@ -85,15 +85,16 @@ class CartProdStackedDistribution(AbstractCartProdDistribution):
         return prod(stack(ps), axis=0)
 
     def shift(self, shift_by):
-        if len(shift_by) != self.dim:
+        shift_by = asarray(shift_by)
+        if shift_by.ndim != 1 or shift_by.shape[0] != self.input_dim:
             raise ValueError("Incorrect number of offsets.")
+
         shifted_dists = []
-        curr_dim = 0
+        curr_input_dim = 0
         for dist in self.dists:
-            shifted_dists.append(
-                dist.shift(shift_by[curr_dim : curr_dim + dist.dim])  # noqa: E203
-            )
-            curr_dim += dist.dim
+            next_input_dim = curr_input_dim + dist.input_dim
+            shifted_dists.append(dist.shift(shift_by[curr_input_dim:next_input_dim]))
+            curr_input_dim = next_input_dim
         return self.__class__(shifted_dists)
 
     def set_mode(self, new_mode):
