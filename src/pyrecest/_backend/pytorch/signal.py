@@ -143,6 +143,8 @@ def fftconvolve(in1, in2, mode="full", axes=None):
     x, y = _as_tensor_pair(in1, in2)
     if x.ndim != y.ndim:
         raise ValueError("in1 and in2 should have the same dimensionality")
+    if x.numel() == 0 or y.numel() == 0:
+        return x.reshape(-1)[:0] + y.reshape(-1)[:0]
     if x.ndim == 0:
         return x * y
 
