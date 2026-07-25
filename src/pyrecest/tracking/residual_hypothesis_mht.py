@@ -60,6 +60,7 @@ class ResidualHypothesis:
     @property
     def n_edits(self) -> int:
         """Return the number of edits in this hypothesis."""
+
         return len(self.candidate_ids)
 
 
