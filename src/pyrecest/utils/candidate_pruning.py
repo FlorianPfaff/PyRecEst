@@ -137,12 +137,15 @@ def _normalize_positive_integer(value: Any, name: str) -> int:
         parsed = int(scalar)
     else:
         try:
-            scalar_float = float(scalar)
+            parsed = int(scalar)
         except (TypeError, ValueError, OverflowError) as exc:
             raise ValueError(message) from exc
-        if not np.isfinite(scalar_float) or not scalar_float.is_integer():
+        try:
+            is_exact_integer = bool(scalar == parsed)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError(message) from exc
+        if not is_exact_integer:
             raise ValueError(message)
-        parsed = int(scalar_float)
 
     if parsed <= 0:
         raise ValueError(message)
