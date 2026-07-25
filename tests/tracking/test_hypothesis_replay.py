@@ -108,7 +108,9 @@ def test_hypothesis_replay_rejects_text_count_fields() -> None:
 
     for field_name, value, message in invalid_cases:
         with pytest.raises(ValueError, match=message):
-            HypothesisReplay(hypothesis_id="bad-count", records=[], **{field_name: value})
+            HypothesisReplay(
+                hypothesis_id="bad-count", records=[], **{field_name: value}
+            )
 
 
 def test_rank_replayed_hypotheses_calls_replay_function() -> None:

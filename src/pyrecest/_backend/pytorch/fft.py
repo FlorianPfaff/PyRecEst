@@ -6,7 +6,6 @@ import torch as _torch
 
 from ._common import array as _array
 
-
 _BOOLEAN_FFT_LENGTH_ERROR = "n must be an integer length, not boolean"
 
 

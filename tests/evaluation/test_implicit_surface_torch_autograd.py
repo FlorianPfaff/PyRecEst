@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 import pytest
-
 from pyrecest.evaluation import surface_band_probability_from_signed_distance
-
 
 torch = pytest.importorskip("torch")
 

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-
 from pyrecest.tracking.measurement_reliability import (
     ReliabilityWeightedMeasurement,
     apply_measurement_reliability,

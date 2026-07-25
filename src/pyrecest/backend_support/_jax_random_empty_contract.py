@@ -34,11 +34,17 @@ def patch_jax_randint_empty_size_contract() -> None:
                 return None
             return legacy_minval, legacy_maxval, size, kwargs
         if (
-            raw_jax_random._looks_like_shape_sequence(low)  # pylint: disable=protected-access
+            raw_jax_random._looks_like_shape_sequence(
+                low
+            )  # pylint: disable=protected-access
             and high is not None
             and size is not None
-            and raw_jax_random._looks_like_scalar_randint_bound(high)  # pylint: disable=protected-access
-            and raw_jax_random._looks_like_scalar_randint_bound(size)  # pylint: disable=protected-access
+            and raw_jax_random._looks_like_scalar_randint_bound(
+                high
+            )  # pylint: disable=protected-access
+            and raw_jax_random._looks_like_scalar_randint_bound(
+                size
+            )  # pylint: disable=protected-access
         ):
             return high, size, low, kwargs
         if high is None:
@@ -55,17 +61,27 @@ def patch_jax_randint_empty_size_contract() -> None:
             return None
         low, high, size, kwargs = parsed
 
-        low = raw_jax_random._validate_randint_bound(low, "low")  # pylint: disable=protected-access
-        high = raw_jax_random._validate_randint_bound(high, "high")  # pylint: disable=protected-access
+        low = raw_jax_random._validate_randint_bound(
+            low, "low"
+        )  # pylint: disable=protected-access
+        high = raw_jax_random._validate_randint_bound(
+            high, "high"
+        )  # pylint: disable=protected-access
         try:
             low, high = jnp.broadcast_arrays(low, high)
         except ValueError as exc:
             raise ValueError("low and high could not be broadcast together") from exc
 
-        shape = raw_jax_random._bounded_sampler_shape(size, low, high)  # pylint: disable=protected-access
-        if not raw_jax_random._shape_has_no_samples(shape):  # pylint: disable=protected-access
+        shape = raw_jax_random._bounded_sampler_shape(
+            size, low, high
+        )  # pylint: disable=protected-access
+        if not raw_jax_random._shape_has_no_samples(
+            shape
+        ):  # pylint: disable=protected-access
             return None
-        state, has_state, remaining_kwargs = raw_jax_random._get_state(**kwargs)  # pylint: disable=protected-access
+        state, has_state, remaining_kwargs = raw_jax_random._get_state(
+            **kwargs
+        )  # pylint: disable=protected-access
         state, result = raw_jax_random._randint(  # pylint: disable=protected-access
             state,
             shape,

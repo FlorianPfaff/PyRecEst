@@ -51,7 +51,9 @@ def test_evaluate_for_file_counts_empty_1d_measurements_as_zero(tmp_path, monkey
     )
 
 
-def test_evaluate_for_file_counts_flat_object_measurement_timesteps(tmp_path, monkeypatch):
+def test_evaluate_for_file_counts_flat_object_measurement_timesteps(
+    tmp_path, monkeypatch
+):
     module = importlib.import_module("pyrecest.evaluation.evaluate_for_file")
     input_file = tmp_path / "flat_scenario.npy"
     measurements = np.empty(3, dtype=object)

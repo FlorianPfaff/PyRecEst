@@ -1,7 +1,6 @@
 import unittest
 
 import numpy as np
-
 from pyrecest.distributions.hypertorus._tensor_train import TensorTrain
 
 

@@ -574,6 +574,7 @@ def _patch_jax_triangular_vector_helpers_arraylike_contract() -> None:
         if getattr(backend, "__backend_name__", None) == "jax":
             setattr(backend, helper_name, helper)
 
+
 _patch_jax_assignment_numpy_index_contract()
 _patch_pytorch_allclose_device_contract()
 _patch_pytorch_diag_numpy_contract()

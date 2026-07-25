@@ -91,9 +91,7 @@ class WrappedCauchyDistributionTest(unittest.TestCase):
         positive_moment = dist.trigonometric_moment(2)
         negative_moment = dist.trigonometric_moment(-2)
 
-        self.assertTrue(
-            allclose(negative_moment, conj(positive_moment), rtol=1e-12)
-        )
+        self.assertTrue(allclose(negative_moment, conj(positive_moment), rtol=1e-12))
 
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ in ("pytorch", "jax"),

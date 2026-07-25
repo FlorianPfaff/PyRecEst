@@ -20,7 +20,6 @@ from pyrecest.backend import (
 
 from .abstract_circular_distribution import AbstractCircularDistribution
 
-
 _INVALID_SAMPLE_COUNT_TYPES = (
     bool,
     np.bool_,

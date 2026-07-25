@@ -6,7 +6,6 @@ import importlib.util
 from pathlib import Path
 
 import pytest
-
 from pyrecest.exceptions import BackendNotSupportedError
 
 

@@ -43,7 +43,9 @@ def test_public_pytorch_isclose_accepts_equal_nan_keyword_when_selected():
     right = [np.nan, 1.0 + 1e-9, 2.0]
 
     result = backend.isclose(left, right, equal_nan=True)
-    expected = np.isclose(left, right, rtol=backend.rtol, atol=backend.atol, equal_nan=True)
+    expected = np.isclose(
+        left, right, rtol=backend.rtol, atol=backend.atol, equal_nan=True
+    )
     npt.assert_array_equal(backend.to_numpy(result), expected)
 
     result_without_nan_match = backend.isclose(left, right, equal_nan=False)
@@ -54,4 +56,6 @@ def test_public_pytorch_isclose_accepts_equal_nan_keyword_when_selected():
         atol=backend.atol,
         equal_nan=False,
     )
-    npt.assert_array_equal(backend.to_numpy(result_without_nan_match), expected_without_nan_match)
+    npt.assert_array_equal(
+        backend.to_numpy(result_without_nan_match), expected_without_nan_match
+    )

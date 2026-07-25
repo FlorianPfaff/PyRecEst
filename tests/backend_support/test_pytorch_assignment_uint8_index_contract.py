@@ -10,7 +10,9 @@ from tests.support.backend_runner import run_backend_code
 
 @pytest.mark.backend_portable
 @pytest.mark.parametrize("backend_name", ["numpy", "pytorch"])
-def test_raw_pytorch_assignment_treats_uint8_tensor_indices_as_integer_indices(backend_name):
+def test_raw_pytorch_assignment_treats_uint8_tensor_indices_as_integer_indices(
+    backend_name,
+):
     if importlib.util.find_spec("torch") is None:
         pytest.skip("PyTorch is not installed")
 

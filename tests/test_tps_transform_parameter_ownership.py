@@ -3,7 +3,6 @@ import unittest
 import numpy as np
 import numpy.testing as npt
 import pyrecest.backend
-
 from pyrecest.backend import array
 from pyrecest.utils.nonrigid_point_set_registration import ThinPlateSplineTransform
 
@@ -16,9 +15,7 @@ class TestThinPlateSplineTransformOwnership(unittest.TestCase):
     def test_constructor_copies_parameter_arrays(self):
         control_points = array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
         weights = array([[0.1, 0.0], [-0.05, 0.02], [-0.05, -0.02]])
-        affine_coefficients = array(
-            [[1.0, -1.0], [1.0, 0.0], [0.0, 1.0]]
-        )
+        affine_coefficients = array([[1.0, -1.0], [1.0, 0.0], [0.0, 1.0]])
         query = array([[0.25, 0.5], [0.75, 0.1]])
 
         transform = ThinPlateSplineTransform(
@@ -37,9 +34,7 @@ class TestThinPlateSplineTransformOwnership(unittest.TestCase):
 
         npt.assert_allclose(transform.control_points, expected_control_points)
         npt.assert_allclose(transform.weights, expected_weights)
-        npt.assert_allclose(
-            transform.affine_coefficients, expected_affine_coefficients
-        )
+        npt.assert_allclose(transform.affine_coefficients, expected_affine_coefficients)
         npt.assert_allclose(transform.apply(query), expected_output)
 
 
