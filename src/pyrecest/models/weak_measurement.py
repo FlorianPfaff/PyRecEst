@@ -72,7 +72,11 @@ def block_diag_measurement_covariance(
             order = provided_order
         else:
             order = list(dimension_order)
-            if len(set(order)) != len(order):
+            try:
+                has_duplicates = len(set(order)) != len(order)
+            except TypeError as exc:
+                raise ValueError("dimension_order entries must be hashable") from exc
+            if has_duplicates:
                 raise ValueError("dimension_order must not contain duplicate entries")
             omitted = [key for key in provided_order if key not in order]
             if omitted:
