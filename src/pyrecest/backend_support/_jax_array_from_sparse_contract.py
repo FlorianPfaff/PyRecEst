@@ -2,15 +2,41 @@
 
 from __future__ import annotations
 
+import operator
 
-def _normalize_sparse_target_shape(target_shape) -> tuple[int, ...]:
+import numpy as np
+
+_BOOLEAN_TYPES = (bool, np.bool_)
+_TEXT_TYPES = (str, bytes, bytearray, np.str_, np.bytes_)
+
+
+def _normalize_sparse_dimension(size) -> int:
+    if isinstance(size, _BOOLEAN_TYPES):
+        raise TypeError("target_shape dimensions must be integers")
+    dtype = getattr(size, "dtype", None)
+    if dtype is not None and str(dtype).lower() in {
+        "bool",
+        "bool_",
+        "torch.bool",
+    }:
+        raise TypeError("target_shape dimensions must be integers")
     try:
-        normalized = tuple(int(size) for size in target_shape)
-    except TypeError:
-        normalized = (int(target_shape),)
-    if any(size < 0 for size in normalized):
+        normalized = operator.index(size)
+    except TypeError as exc:
+        raise TypeError("target_shape dimensions must be integers") from exc
+    if normalized < 0:
         raise ValueError("negative dimensions are not allowed")
     return normalized
+
+
+def _normalize_sparse_target_shape(target_shape) -> tuple[int, ...]:
+    if isinstance(target_shape, _TEXT_TYPES):
+        raise TypeError("target_shape must be an integer or a sequence of integers")
+    try:
+        dimensions = tuple(target_shape)
+    except TypeError:
+        dimensions = (target_shape,)
+    return tuple(_normalize_sparse_dimension(size) for size in dimensions)
 
 
 def patch_jax_array_from_sparse_flat_index_contract() -> None:
