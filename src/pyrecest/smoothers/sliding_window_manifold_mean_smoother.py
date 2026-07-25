@@ -99,7 +99,11 @@ class SlidingWindowManifoldMeanSmoother(AbstractSmoother):
         if window_weights is None:
             self.window_weights = None
         else:
-            self.window_weights = asarray(window_weights).reshape(-1)
+            self.window_weights = asarray(window_weights)
+            if ndim(self.window_weights) == 0:
+                self.window_weights = self.window_weights.reshape((1,))
+            elif ndim(self.window_weights) != 1:
+                raise ValueError("window_weights must be one-dimensional.")
             if self.window_weights.shape[0] != self.window_size:
                 raise ValueError("window_weights must have length window_size.")
             if not backend_all(isfinite(self.window_weights)):
