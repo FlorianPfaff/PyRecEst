@@ -43,13 +43,15 @@ class VonMisesDistribution(AbstractCircularDistribution):
         kappa,
         norm_const: float | None = None,
     ):
-        self._as_float_scalar(mu, "mu")
-        kappa_scalar = self._as_float_scalar(kappa, "kappa")
+        mu, _ = self._as_scalar_and_float(mu, "mu")
+        kappa, kappa_scalar = self._as_scalar_and_float(kappa, "kappa")
         if kappa_scalar < 0.0:
             raise ValueError("kappa must be nonnegative.")
         if norm_const is not None:
-            norm_const = self._as_float_scalar(norm_const, "norm_const")
-            if norm_const <= 0.0:
+            norm_const, norm_const_scalar = self._as_scalar_and_float(
+                norm_const, "norm_const"
+            )
+            if norm_const_scalar <= 0.0:
                 raise ValueError("norm_const must be positive.")
         super().__init__()
         self.mu = mu
@@ -94,7 +96,7 @@ class VonMisesDistribution(AbstractCircularDistribution):
         mu : scalar
             New mean direction.
         """
-        self._as_float_scalar(mu, "mu")
+        mu, _ = self._as_scalar_and_float(mu, "mu")
         new_dist = copy.deepcopy(self)
         new_dist.mu = mu
         return new_dist
@@ -159,24 +161,30 @@ class VonMisesDistribution(AbstractCircularDistribution):
         return r
 
     @staticmethod
-    def _as_float_scalar(value, name: str) -> float:
+    def _as_scalar_and_float(value, name: str):
         try:
             value_array = array(value)
         except (TypeError, ValueError, RuntimeError) as exc:
             raise ValueError(f"{name} must be a scalar.") from exc
 
+        normalized_value = value
         if value_array.ndim > 0:
             if value_array.shape != (1,):
                 raise ValueError(f"{name} must be a scalar.")
-            value = value_array[0]
+            normalized_value = value_array[0]
 
         try:
-            scalar = float(value)
+            scalar = float(normalized_value)
         except (OverflowError, TypeError, ValueError) as exc:
             raise ValueError(f"{name} must be a scalar.") from exc
 
         if not math.isfinite(scalar):
             raise ValueError(f"{name} must be finite.")
+        return normalized_value, scalar
+
+    @staticmethod
+    def _as_float_scalar(value, name: str) -> float:
+        _, scalar = VonMisesDistribution._as_scalar_and_float(value, name)
         return scalar
 
     @staticmethod
