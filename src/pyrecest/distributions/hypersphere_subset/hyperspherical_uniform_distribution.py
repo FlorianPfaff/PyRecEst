@@ -29,6 +29,8 @@ def _validate_positive_sample_count(n) -> int:
     count_array = np.asarray(n)
     if count_array.ndim != 0:
         raise ValueError("n must be a scalar integer")
+    if count_array.dtype.kind in ("m", "M"):
+        raise ValueError("n must be an integer")
 
     count = count_array.item()
     if isinstance(count, (bool, np.bool_)):
