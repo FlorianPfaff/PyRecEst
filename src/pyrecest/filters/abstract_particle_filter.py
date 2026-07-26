@@ -193,33 +193,44 @@ class AbstractParticleFilter(AbstractFilter):
                 f"Noise distribution dimension {noise_distribution.dim} does not match filter-state dimension {self.filter_state.dim}."
             )
 
-        if function_is_vectorized:
-            d_f_applied = f(self.filter_state.d)
-        else:
-            self.filter_state = self.filter_state.apply_function(f)
-            d_f_applied = self.filter_state.d
-
-        n_particles = self.filter_state.w.shape[0]
-        if noise_distribution is None:
-            updated_particles = d_f_applied
-        else:
-            updated_particles = []
-            for i in range(n_particles):
-                if not shift_instead_of_add:
-                    noise = noise_distribution.sample(1)
-                    updated_particles.append(d_f_applied[i] + noise)
-                else:
-                    noise_curr = copy.deepcopy(noise_distribution)
-                    shifted_noise = noise_curr.set_mean(d_f_applied[i])
-                    if shifted_noise is not None:
-                        noise_curr = shifted_noise
-                    updated_particles.append(noise_curr.sample(1))
-
-            updated_particles = _stack_particle_updates(
-                updated_particles, self.filter_state.d
+        original_shape = self.filter_state.d.shape
+        predicted_state = self.filter_state.apply_function(
+            f, function_is_vectorized=function_is_vectorized
+        )
+        d_f_applied = predicted_state.d
+        if d_f_applied.shape != original_shape:
+            raise ValueError(
+                "Prediction function returned particles with shape "
+                f"{d_f_applied.shape}, expected {original_shape}."
             )
 
-        self._filter_state.d = updated_particles
+        n_particles = predicted_state.w.shape[0]
+        if noise_distribution is None:
+            self._filter_state = predicted_state
+            return
+
+        updated_particles = []
+        for i in range(n_particles):
+            if not shift_instead_of_add:
+                noise = noise_distribution.sample(1)
+                updated_particles.append(d_f_applied[i] + noise)
+            else:
+                noise_curr = copy.deepcopy(noise_distribution)
+                shifted_noise = noise_curr.set_mean(d_f_applied[i])
+                if shifted_noise is not None:
+                    noise_curr = shifted_noise
+                updated_particles.append(noise_curr.sample(1))
+        updated_particles = _stack_particle_updates(
+            updated_particles, self.filter_state.d
+        )
+        if updated_particles.shape != original_shape:
+            raise ValueError(
+                "Noise sampling returned particles with shape "
+                f"{updated_particles.shape}, expected {original_shape}."
+            )
+
+        predicted_state.d = updated_particles
+        self._filter_state = predicted_state
 
     def predict_nonlinear_nonadditive(self, f, samples, weights):
         weights = array(weights, dtype=float)
