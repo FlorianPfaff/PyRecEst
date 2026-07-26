@@ -47,9 +47,7 @@ def test_array_randint_accepts_exclusive_endpoint_above_dtype_max(
         (torch.int32, -(2**31), 2**31 - 1),
     ],
 )
-def test_array_randint_avoids_narrow_bound_span_overflow(
-    bound_dtype, low, high
-):
+def test_array_randint_avoids_narrow_bound_span_overflow(bound_dtype, low, high):
     torch.manual_seed(0)
     samples = random.randint(
         torch.tensor([low], dtype=bound_dtype),
@@ -60,4 +58,5 @@ def test_array_randint_avoids_narrow_bound_span_overflow(
 
     assert bool(torch.all(samples >= low))
     assert bool(torch.all(samples < high))
-    assert torch.unique(samples).numel() > 1
+    assert bool(torch.any(samples < 0))
+    assert bool(torch.any(samples > 0))
