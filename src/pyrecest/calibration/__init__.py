@@ -19,6 +19,14 @@ _REJECTED_REAL_SCALAR_TYPES = (
     np.datetime64,
     np.timedelta64,
 )
+_TIME_VECTOR_NAMES = frozenset(
+    {
+        "measurement_times_s",
+        "query_times_s",
+        "reference_times_s",
+        "times_s",
+    }
+)
 
 
 def _is_rejected_real_scalar(value: Any) -> bool:
@@ -66,9 +74,15 @@ def _as_real_numeric_array(value: Any, name: str) -> np.ndarray:
             if _is_rejected_real_scalar(item):
                 raise ValueError(f"{name} must contain real numeric values")
     try:
-        return np.asarray(value, dtype=float)
+        result = np.asarray(value, dtype=float)
     except (TypeError, ValueError, OverflowError) as exc:
         raise ValueError(f"{name} must contain real numeric values") from exc
+    if name in _TIME_VECTOR_NAMES:
+        if result.ndim == 0:
+            return result.reshape(1)
+        if result.ndim != 1:
+            raise ValueError(f"{name} must be one-dimensional")
+    return result
 
 
 def _as_summary_scalar(value: Any, name: str, *, allow_nan: bool = False) -> float:
@@ -120,6 +134,20 @@ _time_offset_module._as_real_numeric_array = _as_real_numeric_array
 _time_offset_module._as_summary_scalar = _as_summary_scalar
 _time_offset_module._as_nonnegative_summary_count = _as_nonnegative_summary_count
 _time_offset_module._aggregate_summary_metric = _aggregate_summary_metric
+
+from . import bias as _bias_module  # noqa: E402
+
+
+def _as_numeric_vector(value: Any, name: str) -> np.ndarray:
+    result = _bias_module._as_numeric_array(value, name)
+    if result.ndim == 0:
+        return result.reshape(1)
+    if result.ndim != 1:
+        raise ValueError(f"{name} must be one-dimensional")
+    return result
+
+
+_bias_module._as_numeric_vector = _as_numeric_vector
 
 from .bias import (  # noqa: E402
     BiasTrainingExamples,
