@@ -1,5 +1,4 @@
 import numpy as np
-
 import pyrecest.evaluation.point_set_metrics as point_set_metrics
 
 
@@ -36,9 +35,7 @@ def test_dense_fallback_preserves_large_coordinate_differences(monkeypatch):
         query[:, None, :] - reference[None, :, :], axis=2
     )
     expected_indices = np.argmin(pairwise_distances, axis=1)
-    expected_distances = pairwise_distances[
-        np.arange(query.shape[0]), expected_indices
-    ]
+    expected_distances = pairwise_distances[np.arange(query.shape[0]), expected_indices]
 
     np.testing.assert_allclose(distances, expected_distances)
     np.testing.assert_array_equal(indices, expected_indices)

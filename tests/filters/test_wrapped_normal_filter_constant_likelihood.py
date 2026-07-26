@@ -1,5 +1,4 @@
 import numpy.testing as npt
-
 from pyrecest.backend import array
 from pyrecest.distributions import WrappedNormalDistribution
 from pyrecest.filters.wrapped_normal_filter import WrappedNormalFilter

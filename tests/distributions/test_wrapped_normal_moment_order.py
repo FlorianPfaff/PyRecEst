@@ -1,7 +1,6 @@
 """Regression coverage for wrapped-normal trigonometric-moment orders."""
 
 import pytest
-
 from pyrecest.backend import allclose, array, conj
 from pyrecest.distributions import WrappedNormalDistribution
 

@@ -1,14 +1,18 @@
 import numpy as np
 import numpy.testing as npt
-
-from pyrecest.distributions.hypertorus.fejer import fejer_reduce_coefficients, fejer_weights
+from pyrecest.distributions.hypertorus.fejer import (
+    fejer_reduce_coefficients,
+    fejer_weights,
+)
 
 
 def _evaluate_centered_1d(coefficients, xs):
     coefficients = np.asarray(coefficients)
     order = (coefficients.size - 1) // 2
     ks = np.arange(-order, order + 1)
-    return np.sum(coefficients[:, None] * np.exp(1j * ks[:, None] * xs[None, :]), axis=0).real
+    return np.sum(
+        coefficients[:, None] * np.exp(1j * ks[:, None] * xs[None, :]), axis=0
+    ).real
 
 
 def test_fejer_reduction_preserves_zero_frequency_coefficient():

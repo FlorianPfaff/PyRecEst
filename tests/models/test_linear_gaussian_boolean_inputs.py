@@ -1,5 +1,4 @@
 import pytest
-
 from pyrecest.models import (
     LinearGaussianMeasurementModel,
     LinearGaussianTransitionModel,

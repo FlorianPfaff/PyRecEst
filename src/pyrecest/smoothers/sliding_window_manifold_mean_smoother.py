@@ -12,7 +12,9 @@ from pyrecest.backend import (
     asarray,
     concatenate,
     isfinite,
-    max as backend_max,
+)
+from pyrecest.backend import max as backend_max
+from pyrecest.backend import (
     ndim,
     sqrt,
     stack,

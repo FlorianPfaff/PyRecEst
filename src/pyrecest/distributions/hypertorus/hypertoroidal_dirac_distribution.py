@@ -8,7 +8,9 @@ import matplotlib.pyplot as plt
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import abs
+from pyrecest.backend import (
+    abs,
+)
 from pyrecest.backend import any as backend_any
 from pyrecest.backend import (
     arctan2,

@@ -54,9 +54,7 @@ def test_shift_rejects_non_real_or_non_finite_values(shift_by):
         (np.datetime64("2026-07-23"), 1.0, "left"),
     ],
 )
-def test_integrate_rejects_non_real_or_non_finite_boundaries(
-    left, right, invalid_name
-):
+def test_integrate_rejects_non_real_or_non_finite_boundaries(left, right, invalid_name):
     distribution = HypertoroidalUniformDistribution(1)
 
     with pytest.raises(

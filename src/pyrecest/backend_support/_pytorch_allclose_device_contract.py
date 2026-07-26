@@ -63,7 +63,9 @@ def _patch_pytorch_linalg_logm_arraylike_contract() -> None:
         return
 
     def logm(x):
-        return original_logm(pytorch_linalg._as_linalg_tensor(x))  # pylint: disable=protected-access
+        return original_logm(
+            pytorch_linalg._as_linalg_tensor(x)
+        )  # pylint: disable=protected-access
 
     logm.__name__ = getattr(original_logm, "__name__", "logm")
     logm.__doc__ = getattr(original_logm, "__doc__", None)

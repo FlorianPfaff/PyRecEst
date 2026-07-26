@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.models.weak_measurement import (
     WeakDimensionMeasurementModel,
     block_diag_measurement_covariance,

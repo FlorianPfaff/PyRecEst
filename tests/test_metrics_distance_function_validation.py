@@ -1,8 +1,6 @@
 import numpy as np
 import pytest
-
 from pyrecest.utils.metrics import gospa_distance, mospa_distance, ospa_distance
-
 
 _POINTS = np.array([[0.0]])
 

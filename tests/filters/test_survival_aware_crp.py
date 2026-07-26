@@ -1,7 +1,6 @@
 import unittest
 
 import numpy.testing as npt
-
 from pyrecest.filters.survival_aware_crp import (
     SurvivalAwareCRPAssociationPrior,
     SurvivalAwareTrackEvidence,
@@ -32,15 +31,7 @@ class SurvivalAwareCRPAssociationPriorTest(unittest.TestCase):
             clutter_weight=0.25,
         )
 
-        existing_weight = (
-            (4.0 * 0.5 - 0.25)
-            * 0.8
-            * 0.9
-            * 0.7
-            * 0.5
-            * 0.25
-            * 0.5
-        )
+        existing_weight = (4.0 * 0.5 - 0.25) * 0.8 * 0.9 * 0.7 * 0.5 * 0.25 * 0.5
         birth_weight = 0.3 * (2.0 + 0.25 * 1.0)
         clutter_weight = 0.25
         total_weight = existing_weight + birth_weight + clutter_weight

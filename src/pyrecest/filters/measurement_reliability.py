@@ -208,9 +208,7 @@ def normalize_measurement_weights(measurement_weights, n_measurements: int):
         weights = ones(n_measurements) * scalar_weight
     else:
         if weights.ndim != 1:
-            raise ValueError(
-                "measurement_weights must be scalar or one-dimensional"
-            )
+            raise ValueError("measurement_weights must be scalar or one-dimensional")
         if weights.shape[0] != n_measurements:
             raise ValueError(
                 "measurement_weights must be scalar or have one entry per measurement"
@@ -247,9 +245,7 @@ def normalize_active_measurement_mask(
     if mask.ndim == 0:
         return [bool(mask)] * n_measurements
     if mask.ndim != 1:
-        raise ValueError(
-            "active_measurement_mask must be scalar or one-dimensional"
-        )
+        raise ValueError("active_measurement_mask must be scalar or one-dimensional")
     if mask.shape[0] != n_measurements:
         raise ValueError(
             "active_measurement_mask must be scalar or have one entry per measurement"

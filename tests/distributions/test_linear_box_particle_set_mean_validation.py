@@ -11,9 +11,7 @@ from pyrecest.distributions.nonperiodic.linear_box_particle_distribution import 
 
 class LinearBoxParticleSetMeanValidationTest(unittest.TestCase):
     def test_set_mean_rejects_broadcastable_wrong_shapes(self):
-        dist = LinearBoxParticleDistribution(
-            array([[0.0, 0.0]]), array([[2.0, 4.0]])
-        )
+        dist = LinearBoxParticleDistribution(array([[0.0, 0.0]]), array([[2.0, 4.0]]))
 
         for new_mean in (array(10.0), array([10.0]), array([[10.0, 11.0]])):
             with self.subTest(shape=new_mean.shape):

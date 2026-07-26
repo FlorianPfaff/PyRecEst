@@ -1,5 +1,4 @@
 import pytest
-
 from pyrecest.diagnostics import EvidenceSupport
 
 

@@ -17,9 +17,7 @@ class TestTrackMetricsMaskedInputs(unittest.TestCase):
         self.predicted = [[None, 0, None]]
 
     def test_masked_session_time_is_rejected(self):
-        session_times = np.ma.array(
-            [0.0, 100.0, 200.0], mask=[False, True, False]
-        )
+        session_times = np.ma.array([0.0, 100.0, 200.0], mask=[False, True, False])
 
         with self.assertRaisesRegex(
             ValueError, "session_times must contain only finite numeric values"

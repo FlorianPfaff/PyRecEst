@@ -1,7 +1,6 @@
 import unittest
 
 import numpy as np
-
 from pyrecest.backend import asarray
 from pyrecest.sampling import JulierSigmaPoints, MerweScaledSigmaPoints
 

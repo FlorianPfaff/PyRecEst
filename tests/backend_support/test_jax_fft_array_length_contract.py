@@ -23,9 +23,7 @@ def test_jax_real_fft_accepts_singleton_array_lengths():
     )
 
     for length in lengths:
-        actual_spectrum = _as_numpy(
-            backend.fft.rfft(backend_samples, n=length, axis=1)
-        )
+        actual_spectrum = _as_numpy(backend.fft.rfft(backend_samples, n=length, axis=1))
         assert np.allclose(actual_spectrum, expected_spectrum)
 
         actual_roundtrip = _as_numpy(
