@@ -28,6 +28,11 @@ class TestCircularUniformSampler(unittest.TestCase):
         self.assertTrue(all(samples >= 0.0))
         self.assertTrue(all(samples < 2.0 * pi))
 
+    def test_sample_stochastic_zero_samples_returns_empty_matrix(self):
+        samples = self.sampler.sample_stochastic(0)
+
+        self.assertEqual(samples.shape, (0, 1))
+
     def test_sample_stochastic_accepts_integer_like_scalars(self):
         samples = self.sampler.sample_stochastic(np.array(3.0), dim=np.array(1.0))
 
