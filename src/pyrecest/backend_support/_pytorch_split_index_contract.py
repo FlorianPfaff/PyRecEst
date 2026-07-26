@@ -24,8 +24,13 @@ def _normalize_split_section_count(indices_or_sections, torch_module):
     if torch_module.is_tensor(indices_or_sections):
         scalar = indices_or_sections.item()
     else:
-        scalar = np.asarray(indices_or_sections).item()
+        value_array = np.asarray(indices_or_sections)
+        if value_array.dtype.kind in "Mm":
+            raise TypeError(_SPLIT_INDEX_TYPE_MESSAGE)
+        scalar = value_array.item()
 
+    if isinstance(scalar, (np.datetime64, np.timedelta64)):
+        raise TypeError(_SPLIT_INDEX_TYPE_MESSAGE)
     if isinstance(scalar, (bool, np.bool_)):
         return int(scalar)
 
