@@ -40,9 +40,9 @@ class LinearDiracDistribution(AbstractDiracDistribution, AbstractLinearDistribut
 
         mean_offset = new_mean - self.mean()
         if self.d.ndim == 1:
-            self.d += mean_offset
+            self.d = self.d + mean_offset
         else:
-            self.d += reshape(mean_offset, (1, -1))
+            self.d = self.d + reshape(mean_offset, (1, -1))
 
     def covariance(self):
         _, C = LinearDiracDistribution.weighted_samples_to_mean_and_cov(self.d, self.w)
