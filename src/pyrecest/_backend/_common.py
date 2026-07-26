@@ -245,7 +245,9 @@ def _torch_cross(a, b, torch, *, axisa=-1, axisb=-1, axisc=-1, axis=None):
     a_dim = a.shape[-1]
     b_dim = b.shape[-1]
     if a_dim not in (2, 3) or b_dim not in (2, 3):
-        raise ValueError("incompatible dimensions for cross product (dimension must be 2 or 3)")
+        raise ValueError(
+            "incompatible dimensions for cross product (dimension must be 2 or 3)"
+        )
 
     a0 = a[..., 0]
     a1 = a[..., 1]
@@ -345,9 +347,13 @@ def cross(a, b, axisa=-1, axisb=-1, axisc=-1, axis=None):
     if torch_pair is not None:
         a, b = torch_pair
         torch = _torch_module_for_values(a, b)
-        return _torch_cross(a, b, torch, axisa=axisa, axisb=axisb, axisc=axisc, axis=axis)
+        return _torch_cross(
+            a, b, torch, axisa=axisa, axisb=axisb, axisc=axisc, axis=axis
+        )
 
-    return _np.cross(_np.asarray(a), _np.asarray(b), axisa=axisa, axisb=axisb, axisc=axisc, axis=axis)
+    return _np.cross(
+        _np.asarray(a), _np.asarray(b), axisa=axisa, axisb=axisb, axisc=axisc, axis=axis
+    )
 
 
 def matvec(matrix, vector):

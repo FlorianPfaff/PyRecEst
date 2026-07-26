@@ -11,7 +11,6 @@ from pyrecest.backend import array, eye, to_numpy
 from pyrecest.distributions import GaussianDistribution
 from pyrecest.filters.se2_ukf import SE2UKF
 
-
 _IDENTITY = array([1.0, 0.0, 0.0, 0.0])
 
 

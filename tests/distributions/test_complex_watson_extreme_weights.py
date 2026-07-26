@@ -26,10 +26,8 @@ class TestComplexWatsonExtremeWeights(unittest.TestCase):
         reference_weights = array([8.0, 4.0, 2.0, 1.0], dtype=float64)
         extreme_weights = reference_weights * (np.finfo(np.float64).max / 8.0)
 
-        reference_mu, reference_kappa = (
-            ComplexWatsonDistribution.estimate_parameters(
-                samples, weights=reference_weights
-            )
+        reference_mu, reference_kappa = ComplexWatsonDistribution.estimate_parameters(
+            samples, weights=reference_weights
         )
         extreme_mu, extreme_kappa = ComplexWatsonDistribution.estimate_parameters(
             samples, weights=extreme_weights

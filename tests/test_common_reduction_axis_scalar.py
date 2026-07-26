@@ -1,5 +1,4 @@
 import numpy as np
-
 from pyrecest._backend import _common
 
 

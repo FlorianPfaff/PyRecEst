@@ -324,11 +324,16 @@ def _as_integer_limit(value: Any, name: str, *, minimum: int) -> int:
     requirement = "a positive integer" if minimum == 1 else "a non-negative integer"
     message = f"{name} must be {requirement}"
     dtype = getattr(value, "dtype", None)
-    if isinstance(value, bool) or getattr(dtype, "kind", None) == "b" or str(dtype).lower() in {
-        "bool",
-        "bool_",
-        "torch.bool",
-    }:
+    if (
+        isinstance(value, bool)
+        or getattr(dtype, "kind", None) == "b"
+        or str(dtype).lower()
+        in {
+            "bool",
+            "bool_",
+            "torch.bool",
+        }
+    ):
         raise ValueError(message)
     try:
         normalized = operator.index(value)

@@ -1,5 +1,4 @@
 import numpy as np
-
 from pyrecest.filters.track_manager import solve_global_nearest_neighbor
 
 

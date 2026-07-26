@@ -63,9 +63,7 @@ class AbstractSE2Distribution(AbstractHypercylindricalDistribution):
         # A covariance contour maps unit directions through a matrix square root.
         # Using the covariance itself scales its semiaxes by variances instead of
         # standard deviations.
-        linear_covmat_sqrt = real(
-            linalg.sqrtm(0.5 * (linear_covmat + linear_covmat.T))
-        )
+        linear_covmat_sqrt = real(linalg.sqrtm(0.5 * (linear_covmat + linear_covmat.T)))
         hybrid_moment = self.hybrid_moment()
         linear_mean = hybrid_moment[2:4]
         periodic_mean = arctan2(hybrid_moment[1], hybrid_moment[0])

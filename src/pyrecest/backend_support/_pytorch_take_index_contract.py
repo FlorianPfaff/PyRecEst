@@ -30,8 +30,8 @@ def patch_pytorch_take_index_contract() -> None:
     """Make public and raw PyTorch ``take`` reject invalid index arrays."""
 
     try:
-        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import torch  # pylint: disable=import-outside-toplevel
     except ModuleNotFoundError:  # pragma: no cover - PyTorch may be unavailable
         return

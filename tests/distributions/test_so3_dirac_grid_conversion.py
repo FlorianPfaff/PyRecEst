@@ -1,5 +1,4 @@
 import numpy.testing as npt
-
 from pyrecest.backend import array, to_numpy
 from pyrecest.distributions import (
     HyperhemisphericalGridDistribution,

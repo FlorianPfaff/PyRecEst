@@ -2,7 +2,6 @@ import unittest
 
 import numpy as np
 import numpy.testing as npt
-
 from pyrecest.distributions.hypertorus._tensor_train import TensorTrain
 
 
@@ -22,7 +21,9 @@ class TestHypertoroidalTensorTrain(unittest.TestCase):
     def test_hadamard_product_matches_dense(self):
         left = np.arange(9, dtype=float).reshape(3, 3)
         right = np.arange(9, dtype=float).reshape(3, 3) + 1.0
-        product = TensorTrain.from_dense(left).hadamard_product(TensorTrain.from_dense(right))
+        product = TensorTrain.from_dense(left).hadamard_product(
+            TensorTrain.from_dense(right)
+        )
         npt.assert_allclose(product.to_dense(), left * right, atol=1e-12)
 
     def test_centered_coefficient_convolution_matches_dense_1d(self):

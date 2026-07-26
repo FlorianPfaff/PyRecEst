@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.backend import array, diag
 from pyrecest.distributions import GaussianDistribution
 

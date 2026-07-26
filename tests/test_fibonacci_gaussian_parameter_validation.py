@@ -2,7 +2,6 @@ import unittest
 
 import numpy as np
 import numpy.testing as npt
-
 from pyrecest.sampling.euclidean_sampler import FibonacciGridSampler
 
 

@@ -3,7 +3,6 @@
 from fractions import Fraction
 
 import pytest
-
 from pyrecest.distributions.cart_prod.partially_wrapped_normal_distribution import (
     _validate_nonnegative_wrap_count,
     _validate_positive_sample_count,
