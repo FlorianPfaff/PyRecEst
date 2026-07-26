@@ -117,6 +117,39 @@ class TestOrientationVectorEOTTracker(unittest.TestCase):
         npt.assert_allclose(alpha_post, 0.95 * alpha_prior)
         npt.assert_allclose(beta_post, 0.95 * beta_prior)
 
+    def test_rejected_prediction_does_not_mutate_state(self):
+        state_prior = self.tracker.kinematic_state.copy()
+        covariance_prior = self.tracker.covariance.copy()
+        orientation_prior, orientation_covariance_prior = (
+            self.tracker.get_orientation_vector_state()
+        )
+        alpha_prior, beta_prior = self.tracker.get_inverse_gamma_parameters()
+
+        for invalid_forgetting_factor in (0.0, 0.1, np.nan):
+            with (
+                self.subTest(forgetting_factor=invalid_forgetting_factor),
+                self.assertRaises(ValueError),
+            ):
+                self.tracker.predict_constant_velocity(
+                    time_delta=0.5,
+                    sys_noise=0.01 * eye(4),
+                    orientation_sys_noise=0.01,
+                    forgetting_factor=invalid_forgetting_factor,
+                )
+
+            npt.assert_allclose(self.tracker.kinematic_state, state_prior)
+            npt.assert_allclose(self.tracker.covariance, covariance_prior)
+            orientation_post, orientation_covariance_post = (
+                self.tracker.get_orientation_vector_state()
+            )
+            npt.assert_allclose(orientation_post, orientation_prior)
+            npt.assert_allclose(
+                orientation_covariance_post, orientation_covariance_prior
+            )
+            alpha_post, beta_post = self.tracker.get_inverse_gamma_parameters()
+            npt.assert_allclose(alpha_post, alpha_prior)
+            npt.assert_allclose(beta_post, beta_prior)
+
     def test_update_moves_centroid_and_keeps_positive_extent(self):
         tracker = OrientationVectorEOTTracker(
             array([0.0, 0.0, 1.0, 0.0]),
