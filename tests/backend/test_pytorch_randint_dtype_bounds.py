@@ -13,7 +13,7 @@ from pyrecest._backend.pytorch import random  # noqa: E402
         ([-1], [1], torch.uint8, "low is out of bounds for uint8"),
         ([0], [257], torch.uint8, "high is out of bounds for uint8"),
         ([-129], [-128], torch.int8, "low is out of bounds for int8"),
-        ([0], [128], np.int8, "high is out of bounds for int8"),
+        ([0], [129], np.int8, "high is out of bounds for int8"),
     ],
 )
 def test_array_randint_rejects_bounds_outside_output_dtype(
