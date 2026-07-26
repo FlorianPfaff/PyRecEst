@@ -3,7 +3,7 @@ import warnings
 import pyrecest.backend
 from beartype import beartype
 from beartype.typing import Callable
-from pyrecest.backend import any, empty, is_array, isinf, sum
+from pyrecest.backend import any, empty, is_array, isfinite, sum
 
 
 def _shape_size(container):
@@ -72,8 +72,9 @@ def determine_all_deviations(
                 warnings.warn("No estimate for this filter, setting error to inf.")
                 all_deviations_last_mat[config_no][run] = float("inf")
 
-        failed_mask = isinf(all_deviations_last_mat[config_no])
+        failed_mask = ~isfinite(all_deviations_last_mat[config_no])
         if any(failed_mask):
+            all_deviations_last_mat[config_no][failed_mask] = float("inf")
             warnings.warn(
                 f"Filter result {config_no} apparently failed "
                 f"{int(sum(failed_mask))} times. Check if this is plausible."
