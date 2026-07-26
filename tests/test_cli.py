@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from pyrecest.cli import main
 
 
@@ -86,3 +88,33 @@ def test_cli_run_scenario_rejects_nonobject_expected_json(tmp_path, capsys):
         == 2
     )
     assert "expected results must be a JSON object" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("section_name", ["metrics", "diagnostics"])
+def test_cli_run_scenario_rejects_nonobject_expected_sections(
+    tmp_path, capsys, section_name
+):
+    expected = json.loads(
+        Path("scenarios/linear_gaussian_cv_1d/expected.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    expected[section_name] = []
+    expected_path = tmp_path / f"expected_invalid_{section_name}.json"
+    expected_path.write_text(json.dumps(expected), encoding="utf-8")
+
+    assert (
+        main(
+            [
+                "run-scenario",
+                "scenarios/linear_gaussian_cv_1d/config.toml",
+                "--expected",
+                str(expected_path),
+            ]
+        )
+        == 2
+    )
+    assert (
+        f"expected results {section_name} must be a JSON object"
+        in capsys.readouterr().err
+    )

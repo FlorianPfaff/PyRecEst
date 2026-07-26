@@ -205,6 +205,14 @@ def _cmd_run_scenario(args: argparse.Namespace) -> int:
         if not isinstance(expected, dict):
             print("expected results must be a JSON object", file=sys.stderr)
             return 2
+        for section_name in ("metrics", "diagnostics"):
+            section = expected.get(section_name)
+            if section is not None and not isinstance(section, dict):
+                print(
+                    f"expected results {section_name} must be a JSON object",
+                    file=sys.stderr,
+                )
+                return 2
         raw_tolerance = (
             args.tolerance
             if args.tolerance is not None
