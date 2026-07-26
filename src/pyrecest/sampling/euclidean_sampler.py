@@ -22,6 +22,8 @@ class GaussianSampler(AbstractEuclideanSampler):
             raise ValueError("n_samples must be nonnegative")
         if dim < 1:
             raise ValueError("dim must be positive")
+        if n_samples == 0:
+            return zeros((0, dim))
         return GaussianDistribution(zeros(dim), eye(dim)).sample(n_samples)
 
 
