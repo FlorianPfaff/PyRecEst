@@ -197,7 +197,9 @@ def _evidence_margin_table(
             evidence_col=evidence_col,
             model_col=model_col,
         )
-    distinct = comparable.drop_duplicates([*group_cols, model_col], keep="last")
+    distinct = comparable.dropna(subset=[evidence_col]).drop_duplicates(
+        [*group_cols, model_col], keep="last"
+    )
     return _original_evidence_margin_table(
         distinct,
         group_cols=group_cols,
