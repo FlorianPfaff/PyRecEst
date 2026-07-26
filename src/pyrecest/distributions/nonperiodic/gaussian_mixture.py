@@ -70,7 +70,11 @@ class GaussianMixture(LinearMixture, AbstractLinearDistribution):
         if weights is None:
             weights = ones(means.shape[0]) / means.shape[0]
         else:
-            weights = reshape(array(weights), (-1,))
+            weights = array(weights)
+            if weights.ndim == 0:
+                weights = reshape(weights, (1,))
+            elif weights.ndim != 1:
+                raise ValueError("weights must be scalar or one-dimensional")
 
         weights = LinearDiracDistribution._normalized_weights(weights)
         mu, C_from_means = LinearDiracDistribution.weighted_samples_to_mean_and_cov(
