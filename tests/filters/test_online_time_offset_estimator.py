@@ -20,6 +20,25 @@ class OnlineTimeOffsetEstimatorTest(unittest.TestCase):
         self.assertLess(estimator.offset, 2.0)
         self.assertLess(estimator.variance, 1.0)
 
+    def test_large_finite_vectors_do_not_overflow_projection(self):
+        estimator = OnlineTimeOffsetEstimator(
+            offset=0.0,
+            variance=1.0,
+            min_speed=0.0,
+        )
+
+        with np.errstate(over="raise", invalid="raise"):
+            nis = estimator.update_from_position_residual(
+                residual=np.array([1.0e308, 1.0e308]),
+                velocity=np.array([1.0e308, 1.0e308]),
+                measurement_variance=1.0,
+            )
+
+        self.assertTrue(math.isfinite(nis))
+        self.assertTrue(math.isfinite(estimator.offset))
+        self.assertTrue(math.isfinite(estimator.variance))
+        self.assertAlmostEqual(estimator.offset, 1.0, places=10)
+
     def test_low_speed_returns_nan_without_update(self):
         estimator = OnlineTimeOffsetEstimator(offset=1.0, variance=2.0, min_speed=10.0)
 
