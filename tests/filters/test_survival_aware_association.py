@@ -60,6 +60,22 @@ class SurvivalAwareAssociationTest(unittest.TestCase):
             expected_weight,
         )
 
+    def test_callable_factor_internal_type_error_is_not_retried_or_masked(self):
+        track = _track(0.0)
+        call_count = 0
+
+        def broken_factor(*_args, **_kwargs):
+            nonlocal call_count
+            call_count += 1
+            raise TypeError("factor implementation failed")
+
+        config = SurvivalAwareAssociationConfig(survival_probability=broken_factor)
+
+        with self.assertRaisesRegex(TypeError, "factor implementation failed"):
+            survival_aware_track_log_prior(track, config=config)
+
+        self.assertEqual(call_count, 1)
+
     def test_prior_discounts_stale_tracks(self):
         config = SurvivalAwareAssociationConfig(
             survival_probability=0.8,
