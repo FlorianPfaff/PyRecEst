@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 import pytest
-from pyrecest.cli import main
+from pyrecest.cli import _values_equal, main
 
 
 def test_cli_backends_outputs_json(capsys):
@@ -117,3 +117,11 @@ def test_cli_run_scenario_rejects_nonobject_expected_sections(
         f"expected results {section_name} must be a JSON object"
         in capsys.readouterr().err
     )
+
+
+def test_values_equal_preserves_nested_mapping_key_types():
+    assert not _values_equal({1: "value"}, {"1": "value"})
+
+
+def test_values_equal_does_not_collapse_distinct_nested_keys():
+    assert not _values_equal({1: "numeric", "1": "text"}, {"1": "text"})
