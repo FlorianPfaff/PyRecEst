@@ -51,6 +51,20 @@ class TestCircularUniformSampler(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     self.sampler.sample_stochastic(2, dim=dim)
 
+    def test_sample_stochastic_rejects_temporal_controls(self):
+        temporal_values = (
+            np.timedelta64(3, "ns"),
+            np.timedelta64(3, "us"),
+            np.datetime64("2026-07-27"),
+        )
+        for value in temporal_values:
+            with self.subTest(n_samples=value):
+                with self.assertRaisesRegex(ValueError, "must be an integer"):
+                    self.sampler.sample_stochastic(value)
+            with self.subTest(dim=value):
+                with self.assertRaisesRegex(ValueError, "must be an integer"):
+                    self.sampler.sample_stochastic(2, dim=value)
+
     def test_integral_controls_reject_fractional_values_rounded_by_binary64(self):
         rounded_half_integer = Fraction(2**54 + 1, 2)
 
@@ -94,6 +108,16 @@ class TestCircularUniformSampler(unittest.TestCase):
         for density in (2.5, True, "3", b"3", [3]):
             with self.subTest(density=density):
                 with self.assertRaises(ValueError):
+                    self.sampler.get_grid(density)
+
+    def test_get_grid_rejects_temporal_density(self):
+        for density in (
+            np.timedelta64(4, "ns"),
+            np.timedelta64(4, "us"),
+            np.datetime64("2026-07-27"),
+        ):
+            with self.subTest(density=density):
+                with self.assertRaisesRegex(ValueError, "must be an integer"):
                     self.sampler.get_grid(density)
 
 
