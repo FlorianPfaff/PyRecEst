@@ -1,7 +1,7 @@
 import numpy as np
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import atleast_2d, empty_like, squeeze
+from pyrecest.backend import atleast_2d, empty_like, reshape, squeeze
 
 
 def _validate_initial_state_shape(x0, simulation_param):
@@ -99,6 +99,6 @@ def generate_groundtruth(simulation_param, x0=None):
         raise RuntimeError("Generated groundtruth has the wrong state dimension.")
     for t in range(simulation_param["n_timesteps"]):
         if simulation_param["n_targets"] == 1:
-            groundtruth[t] = squeeze(groundtruth[t])
+            groundtruth[t] = reshape(groundtruth[t], (-1,))
 
     return groundtruth
