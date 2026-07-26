@@ -31,7 +31,7 @@ from pyrecest.distributions import GaussianDistribution
 from pyrecest.sampling.sigma_points import MerweScaledSigmaPoints
 
 from ._ukf import UnscentedKalmanFilter as BayesianFiltersUKF
-from ._ukf import _UKFModel
+from ._ukf import _UKFModel, _as_vector
 from .abstract_filter import AbstractFilter
 from .manifold_mixins import HypersphericalFilterMixin
 
@@ -156,7 +156,7 @@ class HypersphericalUKF(AbstractFilter, HypersphericalFilterMixin):
 
         def _fx(x, _dt):
             x_unit = self._normalize(x)
-            y = reshape(asarray(f(array(x_unit)), dtype=float64), (-1,))
+            y = _as_vector(f(array(x_unit)), "transition function output")
             return self._normalize(y)
 
         ukf = self._build_ukf(dim_x, dim_x, _fx, lambda x: x)
@@ -191,7 +191,7 @@ class HypersphericalUKF(AbstractFilter, HypersphericalFilterMixin):
         _assert_supported_backend("pytorch", "jax")
 
         noise_samples = asarray(noise_samples, dtype=float64)
-        noise_weights = reshape(asarray(noise_weights, dtype=float64), (-1,))
+        noise_weights = _as_vector(noise_weights, "noise_weights")
         if noise_samples.ndim != 2:
             raise ValueError(
                 "noise_samples must be a 2D array with shape (noise_dim, n_noise)."
@@ -225,12 +225,9 @@ class HypersphericalUKF(AbstractFilter, HypersphericalFilterMixin):
         k = 0
         for i in range(n_sigmas):
             for j in range(n_noise):
-                x_new = reshape(
-                    asarray(
-                        f(array(sigmas[i]), array(noise_samples[:, j])),
-                        dtype=float64,
-                    ),
-                    (-1,),
+                x_new = _as_vector(
+                    f(array(sigmas[i]), array(noise_samples[:, j])),
+                    "transition function output",
                 )
                 x_new = self._normalize(x_new)
                 new_samples[:, k] = x_new
@@ -292,14 +289,14 @@ class HypersphericalUKF(AbstractFilter, HypersphericalFilterMixin):
             gauss_meas = GaussianDistribution.from_distribution(gauss_meas)
         self._validate_zero_mean_noise(gauss_meas, "gauss_meas")
 
-        z_arr = reshape(asarray(z, dtype=float64), (-1,))
+        z_arr = _as_vector(z, "measurement z")
         dim_z = z_arr.shape[0]
         dim_x = self._filter_state.dim
         R = asarray(gauss_meas.C, dtype=float64)
 
         def _hx(x):
             x_unit = self._normalize(x)
-            return reshape(asarray(f(array(x_unit)), dtype=float64), (-1,))
+            return _as_vector(f(array(x_unit)), "measurement function output")
 
         ukf = self._build_ukf(dim_x, dim_z, lambda x, _dt: x, _hx)
         ukf.Q = zeros((dim_x, dim_x))
