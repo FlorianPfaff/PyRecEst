@@ -383,6 +383,13 @@ class _EventReplayMixin:
         if self.max_lag is not None and event_time < self._latest_time - self.max_lag:
             raise ValueError("out-of-sequence event lies outside the fixed-lag window")
 
+        previous_filter_state = self.filter_state
+        previous_initial_state = _safe_deepcopy(self._initial_state)
+        previous_initial_time = self._initial_time
+        previous_latest_time = self._latest_time
+        previous_events = list(self._events)
+        previous_next_sequence = self._next_sequence
+
         out_of_sequence = event_time < self._latest_time
         event = _ReplayEvent(
             event_time,
@@ -391,32 +398,42 @@ class _EventReplayMixin:
             tuple(_safe_deepcopy(arg) for arg in args),
             _safe_deepcopy(kwargs or {}),
         )
-        self._next_sequence += 1
-        self._events.append(event)
-        self._events.sort(key=lambda item: (item.time, item.sequence))
 
-        if out_of_sequence:
-            captured_result = self._replay(capture_event=event)
-            replayed_event_count = len(
-                [item for item in self._events if item.time >= event.time]
+        try:
+            self._next_sequence += 1
+            self._events.append(event)
+            self._events.sort(key=lambda item: (item.time, item.sequence))
+
+            if out_of_sequence:
+                captured_result = self._replay(capture_event=event)
+                replayed_event_count = len(
+                    [item for item in self._events if item.time >= event.time]
+                )
+            else:
+                captured_result = self._apply_event(event)
+                self._latest_time = max(self._latest_time, event_time)
+                replayed_event_count = 0
+
+            self._trim_to_lag()
+            diagnostics = captured_result if hasattr(captured_result, "get") else None
+            accepted = _diagnostics_accepted(diagnostics)
+            return OutOfSequenceResult(
+                time=event_time,
+                final_time=self._latest_time,
+                out_of_sequence=out_of_sequence,
+                replayed_event_count=replayed_event_count,
+                accepted=accepted,
+                diagnostics=diagnostics,
+                filter_state=self.filter_state,
             )
-        else:
-            captured_result = self._apply_event(event)
-            self._latest_time = max(self._latest_time, event_time)
-            replayed_event_count = 0
-
-        self._trim_to_lag()
-        diagnostics = captured_result if hasattr(captured_result, "get") else None
-        accepted = _diagnostics_accepted(diagnostics)
-        return OutOfSequenceResult(
-            time=event_time,
-            final_time=self._latest_time,
-            out_of_sequence=out_of_sequence,
-            replayed_event_count=replayed_event_count,
-            accepted=accepted,
-            diagnostics=diagnostics,
-            filter_state=self.filter_state,
-        )
+        except Exception:
+            self._initial_state = previous_initial_state
+            self._initial_time = previous_initial_time
+            self._latest_time = previous_latest_time
+            self._events = previous_events
+            self._next_sequence = previous_next_sequence
+            self._filter_object.filter_state = previous_filter_state
+            raise
 
     def _apply_event(self, event):
         method = getattr(self._filter_object, event.method_name)
