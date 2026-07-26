@@ -198,6 +198,12 @@ def patch_pytorch_creation_shape_contract() -> None:
         if has_fill_value:
 
             def like_creation_helper(a, fill_value, dtype=None, *args, **kwargs):
+                fill_value = _pytorch_creation_scalar(
+                    fill_value,
+                    np,
+                    torch,
+                    argument_name="full_like fill_value",
+                )
                 return torch_helper(
                     raw_pytorch.array(a),
                     fill_value,
