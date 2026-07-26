@@ -79,11 +79,27 @@ class OnlineTimeOffsetEstimator:
         if measurement_variance < 0.0:
             raise ValueError("measurement_variance must be nonnegative")
 
-        speed2 = float(velocity @ velocity)
-        if speed2 <= 0.0 or speed2 < float(self.min_speed) ** 2:
+        speed = float(np.hypot.reduce(np.abs(velocity)))
+        if speed <= 0.0 or speed < float(self.min_speed):
             return float("nan")
-        measured_offset = float((residual @ velocity) / speed2)
-        variance = max(float(measurement_variance) / speed2, 1.0e-12)
+
+        velocity_scale = float(np.max(np.abs(velocity)))
+        scaled_velocity = velocity / velocity_scale
+        scaled_speed2 = float(scaled_velocity @ scaled_velocity)
+        residual_scale = float(np.max(np.abs(residual)))
+        if residual_scale == 0.0:
+            measured_offset = 0.0
+        else:
+            scaled_residual = residual / residual_scale
+            measured_offset = float(
+                (residual_scale / velocity_scale)
+                * float(scaled_residual @ scaled_velocity)
+                / scaled_speed2
+            )
+        if not np.isfinite(measured_offset):
+            raise ValueError("position residual implies a non-finite time offset")
+
+        variance = max(float((measurement_variance / speed) / speed), 1.0e-12)
         innovation = measured_offset - float(self.offset)
         innovation_variance = float(self.variance + variance)
         gain = float(self.variance / innovation_variance)
