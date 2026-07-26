@@ -12,6 +12,8 @@ def _validate_integral_scalar(value, name: str, *, minimum: int) -> int:
     scalar = np.asarray(value)
     if scalar.ndim != 0:
         raise ValueError(f"{name} must be a scalar integer")
+    if scalar.dtype.kind in ("M", "m"):
+        raise ValueError(f"{name} must be an integer")
 
     scalar_value = scalar.item()
     if isinstance(scalar_value, (bool, np.bool_)):
