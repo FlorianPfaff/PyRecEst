@@ -96,7 +96,9 @@ class SO3ChordalMeanSmoother(AbstractSmoother):
         if weights is None:
             return None
 
-        weights_array = asarray(weights).reshape(-1)
+        weights_array = asarray(weights)
+        if ndim(weights_array) != 1:
+            raise ValueError(f"{name} must be one-dimensional.")
         if weights_array.shape[0] != length:
             raise ValueError(f"{name} must have length {length}.")
         if not bool(backend.all(isfinite(weights_array))):
