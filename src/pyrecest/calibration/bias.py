@@ -367,7 +367,12 @@ def _as_numeric_array(values: Any, name: str) -> np.ndarray:
 
 
 def _as_numeric_vector(values: Any, name: str) -> np.ndarray:
-    return _as_numeric_array(values, name).reshape(-1)
+    out = _as_numeric_array(values, name)
+    if out.ndim == 0:
+        return out.reshape(1)
+    if out.ndim != 1:
+        raise ValueError(f"{name} must be one-dimensional")
+    return out
 
 
 def _contains_invalid_numeric_values(values: np.ndarray) -> bool:
