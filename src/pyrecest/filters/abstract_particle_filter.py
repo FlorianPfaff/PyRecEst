@@ -222,7 +222,12 @@ class AbstractParticleFilter(AbstractFilter):
         self._filter_state.d = updated_particles
 
     def predict_nonlinear_nonadditive(self, f, samples, weights):
+        samples = array(samples)
         weights = array(weights, dtype=float)
+        if samples.ndim == 0:
+            raise ValueError("samples must contain a leading sample dimension")
+        if weights.ndim != 1:
+            raise ValueError("weights must be one-dimensional")
         if samples.shape[0] != weights.shape[0]:
             raise ValueError("samples and weights must match in size")
 
