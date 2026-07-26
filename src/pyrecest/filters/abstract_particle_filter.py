@@ -194,19 +194,26 @@ class AbstractParticleFilter(AbstractFilter):
             )
 
         original_shape = self.filter_state.d.shape
-        predicted_state = self.filter_state.apply_function(
-            f, function_is_vectorized=function_is_vectorized
-        )
-        d_f_applied = predicted_state.d
+        predicted_state = None
+        if function_is_vectorized:
+            d_f_applied = array(f(self.filter_state.d))
+        else:
+            predicted_state = self.filter_state.apply_function(
+                f, function_is_vectorized=False
+            )
+            d_f_applied = predicted_state.d
         if d_f_applied.shape != original_shape:
             raise ValueError(
                 "Prediction function returned particles with shape "
                 f"{d_f_applied.shape}, expected {original_shape}."
             )
 
-        n_particles = predicted_state.w.shape[0]
+        n_particles = self.filter_state.w.shape[0]
         if noise_distribution is None:
-            self._filter_state = predicted_state
+            if predicted_state is None:
+                self._filter_state.d = d_f_applied
+            else:
+                self._filter_state = predicted_state
             return
 
         updated_particles = []
@@ -229,8 +236,11 @@ class AbstractParticleFilter(AbstractFilter):
                 f"{updated_particles.shape}, expected {original_shape}."
             )
 
-        predicted_state.d = updated_particles
-        self._filter_state = predicted_state
+        if predicted_state is None:
+            self._filter_state.d = updated_particles
+        else:
+            predicted_state.d = updated_particles
+            self._filter_state = predicted_state
 
     def predict_nonlinear_nonadditive(self, f, samples, weights):
         weights = array(weights, dtype=float)
