@@ -76,7 +76,7 @@ jobs:
           ref: ${{ github.event_name == 'workflow_dispatch' && steps.manual_release.outputs.release_tag || github.event.workflow_run.head_sha }}
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.13"
 
@@ -241,7 +241,7 @@ jobs:
       id-token: write
     steps:
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.13"
 
