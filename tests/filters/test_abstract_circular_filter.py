@@ -58,3 +58,24 @@ def test_association_likelihood_rejects_vector_pdf_values(
 
     with pytest.raises(ValueError, match=message):
         filt.association_likelihood_numerical(likelihood)
+
+
+@pytest.mark.parametrize(
+    ("state_pdf", "likelihood_pdf", "message"),
+    [
+        (array([float("nan")]), array([1.0]), r"filter_state\.pdf"),
+        (array([float("inf")]), array([1.0]), r"filter_state\.pdf"),
+        (array([1.0]), array([float("nan")]), r"likelihood\.pdf"),
+        (array([1.0]), array([-float("inf")]), r"likelihood\.pdf"),
+    ],
+)
+def test_association_likelihood_rejects_nonfinite_pdf_values(
+    state_pdf,
+    likelihood_pdf,
+    message,
+):
+    filt = _TestCircularFilter(_PdfDistribution(state_pdf))
+    likelihood = _PdfDistribution(likelihood_pdf)
+
+    with pytest.raises(ValueError, match=message):
+        filt.association_likelihood_numerical(likelihood)
