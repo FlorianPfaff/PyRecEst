@@ -324,8 +324,10 @@ class LinearBoxParticleDistribution(AbstractLinearDistribution):
 
     @staticmethod
     def _validate_particle_count(value):
+        dtype = getattr(value, "dtype", None)
         if (
             isinstance(value, bool)
+            or getattr(dtype, "kind", None) in ("M", "m")
             or not isinstance(value, Integral)
             or int(value) <= 0
         ):
