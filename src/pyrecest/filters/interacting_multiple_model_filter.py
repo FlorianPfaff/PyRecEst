@@ -338,16 +338,21 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
                 curr_meas_noise,
             )
 
-        self.latest_log_model_likelihoods = log_likelihoods
-        self.latest_model_likelihoods = exp(log_likelihoods)
-        self.update_mode_probabilities(log_likelihoods=log_likelihoods)
+        update_snapshot = self._snapshot_update_state()
+        try:
+            self.latest_log_model_likelihoods = log_likelihoods
+            self.latest_model_likelihoods = exp(log_likelihoods)
+            self.update_mode_probabilities(log_likelihoods=log_likelihoods)
 
-        for curr_filter, curr_measurement_matrix, curr_meas_noise in zip(
-            self.filter_bank, measurement_matrices, meas_noises
-        ):
-            curr_filter.update_linear(
-                measurement, curr_measurement_matrix, curr_meas_noise
-            )
+            for curr_filter, curr_measurement_matrix, curr_meas_noise in zip(
+                self.filter_bank, measurement_matrices, meas_noises
+            ):
+                curr_filter.update_linear(
+                    measurement, curr_measurement_matrix, curr_meas_noise
+                )
+        except Exception:
+            self._restore_update_state(update_snapshot)
+            raise
 
     def update_nonlinear(
         self,
@@ -377,17 +382,40 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
         meas_noises = self._broadcast_model_argument(meas_noises, "meas_noises")
         hx_args = self._broadcast_keyword_argument(hx_args, "hx_args")
 
-        self.update_mode_probabilities(
-            likelihoods=likelihoods, log_likelihoods=log_likelihoods
+        update_snapshot = self._snapshot_update_state()
+        try:
+            self.update_mode_probabilities(
+                likelihoods=likelihoods, log_likelihoods=log_likelihoods
+            )
+
+            for curr_filter, curr_hx, curr_meas_noise, curr_hx_args in zip(
+                self.filter_bank, measurement_functions, meas_noises, hx_args
+            ):
+                curr_hx_args = {} if curr_hx_args is None else dict(curr_hx_args)
+                curr_filter.update_nonlinear(
+                    measurement, curr_hx, curr_meas_noise, **curr_hx_args
+                )
+        except Exception:
+            self._restore_update_state(update_snapshot)
+            raise
+
+    def _snapshot_update_state(self):
+        """Capture mutable IMM state before a multi-model measurement update."""
+        return (
+            copy.deepcopy(self.filter_bank),
+            copy.deepcopy(self.mode_probabilities),
+            copy.deepcopy(self.latest_model_likelihoods),
+            copy.deepcopy(self.latest_log_model_likelihoods),
         )
 
-        for curr_filter, curr_hx, curr_meas_noise, curr_hx_args in zip(
-            self.filter_bank, measurement_functions, meas_noises, hx_args
-        ):
-            curr_hx_args = {} if curr_hx_args is None else dict(curr_hx_args)
-            curr_filter.update_nonlinear(
-                measurement, curr_hx, curr_meas_noise, **curr_hx_args
-            )
+    def _restore_update_state(self, snapshot):
+        """Restore state after one subfilter rejects a measurement update."""
+        (
+            self.filter_bank,
+            self.mode_probabilities,
+            self.latest_model_likelihoods,
+            self.latest_log_model_likelihoods,
+        ) = snapshot
 
     def update_mode_probabilities(self, likelihoods=None, log_likelihoods=None):
         """Update model probabilities from external per-model likelihoods."""
@@ -437,7 +465,6 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
 
         log_normalizer = logsumexp(log_posterior_unnormalized)
         posterior_probabilities = exp(log_posterior_unnormalized - log_normalizer)
-
         self.mode_probabilities = self._prepare_mode_probabilities(
             posterior_probabilities, self.n_models
         )
