@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - agent/rollback-failed-oosm-events-20260726
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
