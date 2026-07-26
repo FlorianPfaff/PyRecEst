@@ -1,6 +1,8 @@
 """Abstract base class for circular filters."""
 
 # pylint: disable=no-name-in-module,no-member
+from math import isfinite
+
 from pyrecest.backend import array, asarray, pi
 from scipy.integrate import quad
 
@@ -9,13 +11,23 @@ from .manifold_mixins import CircularFilterMixin
 
 
 def _scalar_pdf_value(value, owner: str):
-    """Return one PDF value and reject ambiguous vector outputs."""
+    """Return one finite real PDF value and reject ambiguous outputs."""
     flattened = asarray(value).reshape(-1)
     if flattened.shape[0] != 1:
         raise ValueError(
             f"{owner}.pdf must return exactly one value for one integration angle."
         )
-    return flattened[0]
+    try:
+        scalar = float(flattened[0])
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(
+            f"{owner}.pdf must return a finite real value for one integration angle."
+        ) from exc
+    if not isfinite(scalar):
+        raise ValueError(
+            f"{owner}.pdf must return a finite real value for one integration angle."
+        )
+    return scalar
 
 
 class AbstractCircularFilter(AbstractFilter, CircularFilterMixin):
@@ -47,7 +59,7 @@ class AbstractCircularFilter(AbstractFilter, CircularFilterMixin):
                 likelihood.pdf(angle_array),
                 "likelihood",
             )
-            return float(estimate_pdf * likelihood_pdf)
+            return estimate_pdf * likelihood_pdf
 
         likelihood_val, _ = quad(integrand, 0.0, 2.0 * pi)
         return likelihood_val
