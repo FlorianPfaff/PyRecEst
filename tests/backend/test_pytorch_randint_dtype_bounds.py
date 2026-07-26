@@ -37,3 +37,26 @@ def test_array_randint_accepts_exclusive_endpoint_above_dtype_max(
 
     assert sample.dtype == dtype
     assert sample.item() == expected
+
+
+@pytest.mark.parametrize(
+    ("bound_dtype", "low", "high"),
+    [
+        (torch.int8, -128, 127),
+        (torch.int16, -32768, 32767),
+        (torch.int32, -(2**31), 2**31 - 1),
+    ],
+)
+def test_array_randint_avoids_narrow_bound_span_overflow(bound_dtype, low, high):
+    torch.manual_seed(0)
+    samples = random.randint(
+        torch.tensor([low], dtype=bound_dtype),
+        torch.tensor([high], dtype=bound_dtype),
+        size=(1024,),
+        dtype=bound_dtype,
+    )
+
+    assert bool(torch.all(samples >= low))
+    assert bool(torch.all(samples < high))
+    assert bool(torch.any(samples < 0))
+    assert bool(torch.any(samples > 0))
