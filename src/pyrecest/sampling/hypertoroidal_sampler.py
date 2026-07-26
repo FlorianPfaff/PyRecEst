@@ -1,6 +1,6 @@
 # pylint: disable=no-name-in-module,no-member
 import numpy as np
-from pyrecest.backend import linspace, pi
+from pyrecest.backend import linspace, pi, zeros
 from pyrecest.distributions import CircularUniformDistribution
 
 from .abstract_sampler import AbstractSampler
@@ -55,6 +55,8 @@ class CircularUniformSampler(AbstractCircularSampler):
                 "CircularUniformSampler is supposed to be used for the circle "
                 "(which is one-dimensional) only."
             )
+        if n_samples == 0:
+            return zeros((0, dim))
         return CircularUniformDistribution().sample(n_samples)
 
     def get_grid(self, grid_density_parameter: int):
