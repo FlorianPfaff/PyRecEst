@@ -40,6 +40,7 @@ _INVALID_SAMPLE_COUNT_TYPES = (
     np.timedelta64,
 )
 _TEMPORAL_DTYPE_KINDS = {"M", "m"}
+_TEMPORAL_SCALAR_TYPES = (np.datetime64, np.timedelta64)
 
 
 def _validate_positive_sample_count(n) -> int:
@@ -89,14 +90,25 @@ def _validate_explicit_weight_shape(weights, num_distributions: int):
 def _validate_mixture_weight_values(weights) -> None:
     """Reject invalid mixture weights before backend scalar comparisons."""
     try:
-        weight_values = np.asarray(pyrecest.backend.to_numpy(weights), dtype=object)
+        converted_weights = pyrecest.backend.to_numpy(weights)
+        native_weight_values = np.asarray(converted_weights)
     except Exception as exc:  # pragma: no cover - backend-specific conversion type
+        raise ValueError("Mixture weights must be real-valued numeric") from exc
+
+    if getattr(native_weight_values.dtype, "kind", None) in _TEMPORAL_DTYPE_KINDS:
+        raise ValueError("Mixture weights must be real-valued numeric")
+
+    try:
+        weight_values = np.asarray(converted_weights, dtype=object)
+    except Exception as exc:  # pragma: no cover - NumPy object-conversion failure
         raise ValueError("Mixture weights must be real-valued numeric") from exc
 
     for weight in weight_values.reshape(-1):
         if isinstance(weight, _BOOLEAN_TYPES):
             raise ValueError("Mixture weights must be real-valued numeric, not boolean")
         if isinstance(weight, _TEXT_TYPES):
+            raise ValueError("Mixture weights must be real-valued numeric")
+        if isinstance(weight, _TEMPORAL_SCALAR_TYPES):
             raise ValueError("Mixture weights must be real-valued numeric")
         if isinstance(weight, _COMPLEX_TYPES):
             raise ValueError("Mixture weights must be real-valued numeric")
