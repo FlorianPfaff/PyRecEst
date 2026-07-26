@@ -41,6 +41,14 @@ def _normalize_scenario_type(scenario_type: Any) -> str:
     return scenario_type.strip()
 
 
+def _scenario_section(config: dict[str, Any]) -> dict[str, Any]:
+    """Return the optional ``scenario`` table and reject non-table values."""
+    section = config.get("scenario", {})
+    if not isinstance(section, dict):
+        raise ValueError("scenario must be a TOML table")
+    return section
+
+
 def register_scenario_runner(
     scenario_type: str, runner: ScenarioRunner
 ) -> ScenarioRunner:
@@ -209,7 +217,8 @@ def run_linear_gaussian_scenario(path: str | Path) -> ScenarioResult:
     covariance ``Q``, and measurement covariance ``R``.
     """
     config = load_scenario_config(path)
-    if config.get("scenario", {}).get("type") != "linear_gaussian":
+    scenario = _scenario_section(config)
+    if scenario.get("type") != "linear_gaussian":
         raise ValueError(
             "Only scenario.type = 'linear_gaussian' is supported by this runner."
         )
@@ -283,7 +292,7 @@ def run_linear_gaussian_scenario(path: str | Path) -> ScenarioResult:
         metrics["max_nis"] = max(nis_values)
 
     return ScenarioResult(
-        name=config.get("scenario", {}).get("name", Path(path).stem),
+        name=scenario.get("name", Path(path).stem),
         backend=getattr(be, "__backend_name__", "unknown"),
         final_estimate=final_estimate,
         estimates=estimates,
@@ -301,7 +310,8 @@ def run_particle_resampling_scenario(path: str | Path) -> ScenarioResult:
     large tracker configuration.
     """
     config = load_scenario_config(path)
-    if config.get("scenario", {}).get("type") != "particle_resampling":
+    scenario = _scenario_section(config)
+    if scenario.get("type") != "particle_resampling":
         raise ValueError(
             "Only scenario.type = 'particle_resampling' is supported by this runner."
         )
@@ -360,7 +370,7 @@ def run_particle_resampling_scenario(path: str | Path) -> ScenarioResult:
     }
 
     return ScenarioResult(
-        name=config.get("scenario", {}).get("name", Path(path).stem),
+        name=scenario.get("name", Path(path).stem),
         backend=getattr(be, "__backend_name__", "unknown"),
         final_estimate=final_estimate,
         estimates=[_to_float_list(row) for row in sampled_particles],
@@ -372,7 +382,7 @@ def run_particle_resampling_scenario(path: str | Path) -> ScenarioResult:
 def run_scenario(path: str | Path) -> ScenarioResult:
     """Run the scenario described by ``path``."""
     config = load_scenario_config(path)
-    raw_scenario_type = config.get("scenario", {}).get("type")
+    raw_scenario_type = _scenario_section(config).get("type")
     available = ", ".join(available_scenario_types()) or "none"
     try:
         scenario_type = _normalize_scenario_type(raw_scenario_type)
