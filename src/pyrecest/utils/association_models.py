@@ -389,6 +389,32 @@ class LogisticPairwiseAssociationModel:  # pylint: disable=too-many-instance-att
         ):
             raise RuntimeError("The association model must be fitted before use")
 
+    def _snapshot_fitted_state(self) -> tuple[Any, ...]:
+        """Capture learned attributes before a potentially failing refit."""
+        return (
+            self.n_features_in_,
+            self.feature_mean_,
+            self.feature_scale_,
+            self.coefficients_,
+            self.intercept_,
+            self.n_iter_,
+            self.converged_,
+            self.class_weights_,
+        )
+
+    def _restore_fitted_state(self, snapshot: tuple[Any, ...]) -> None:
+        """Restore learned attributes after a refit failure."""
+        (
+            self.n_features_in_,
+            self.feature_mean_,
+            self.feature_scale_,
+            self.coefficients_,
+            self.intercept_,
+            self.n_iter_,
+            self.converged_,
+            self.class_weights_,
+        ) = snapshot
+
     def _prepare_fit_inputs(
         self,
         flattened_features: Any,
@@ -453,47 +479,54 @@ class LogisticPairwiseAssociationModel:  # pylint: disable=too-many-instance-att
         labels: Any,
         sample_weight: Any | None = None,
     ) -> "LogisticPairwiseAssociationModel":
-        """Fit the association model."""
-        flattened_features = self._prepare_training_features(features)
-        labels = self._ensure_binary_labels(labels)
-        if flattened_features.shape[0] != labels.shape[0]:
-            raise ValueError(
-                "The number of feature vectors must equal the number of labels after flattening"
+        """Fit the association model without corrupting an earlier fitted state."""
+        fitted_state = self._snapshot_fitted_state()
+        try:
+            flattened_features = self._prepare_training_features(features)
+            labels = self._ensure_binary_labels(labels)
+            if flattened_features.shape[0] != labels.shape[0]:
+                raise ValueError(
+                    "The number of feature vectors must equal the number of labels after flattening"
+                )
+
+            sample_weight = self._flatten_sample_weight(sample_weight, labels)
+            design_matrix, effective_weights = self._prepare_fit_inputs(
+                flattened_features, labels, sample_weight
             )
+            parameter_vector = zeros(design_matrix.shape[1], dtype=float64)
+            regularization_mask = self._regularization_mask(design_matrix.shape[1])
 
-        sample_weight = self._flatten_sample_weight(sample_weight, labels)
-        design_matrix, effective_weights = self._prepare_fit_inputs(
-            flattened_features, labels, sample_weight
-        )
-        parameter_vector = zeros(design_matrix.shape[1], dtype=float64)
-        regularization_mask = self._regularization_mask(design_matrix.shape[1])
+            self.converged_ = False
+            for iteration in range(1, self.max_iterations + 1):
+                logits = design_matrix @ parameter_vector
+                probabilities = self._sigmoid(logits)
+                residual = (probabilities - labels) * effective_weights
+                gradient = design_matrix.T @ residual
+                if self.l2_regularization > 0.0:
+                    regularization = self.l2_regularization * regularization_mask
+                    gradient = gradient + regularization * parameter_vector
 
-        self.converged_ = False
-        for iteration in range(1, self.max_iterations + 1):
-            logits = design_matrix @ parameter_vector
-            probabilities = self._sigmoid(logits)
-            residual = (probabilities - labels) * effective_weights
-            gradient = design_matrix.T @ residual
-            if self.l2_regularization > 0.0:
-                regularization = self.l2_regularization * regularization_mask
-                gradient = gradient + regularization * parameter_vector
+                curvature = effective_weights * probabilities * (1.0 - probabilities)
+                hessian = design_matrix.T @ (design_matrix * curvature[:, None])
+                if self.l2_regularization > 0.0:
+                    hessian = hessian + self.l2_regularization * diag(
+                        regularization_mask
+                    )
 
-            curvature = effective_weights * probabilities * (1.0 - probabilities)
-            hessian = design_matrix.T @ (design_matrix * curvature[:, None])
-            if self.l2_regularization > 0.0:
-                hessian = hessian + self.l2_regularization * diag(regularization_mask)
+                step = self._solve_newton_step(hessian, gradient)
 
-            step = self._solve_newton_step(hessian, gradient)
+                parameter_vector = parameter_vector - step
+                self.n_iter_ = iteration
+                if max(abs(step)) <= self._effective_tolerance(
+                    parameter_vector, self.tolerance
+                ):
+                    self.converged_ = True
+                    break
 
-            parameter_vector = parameter_vector - step
-            self.n_iter_ = iteration
-            if max(abs(step)) <= self._effective_tolerance(
-                parameter_vector, self.tolerance
-            ):
-                self.converged_ = True
-                break
-
-        self._store_fitted_parameters(parameter_vector)
+            self._store_fitted_parameters(parameter_vector)
+        except Exception:  # pylint: disable=broad-exception-caught
+            self._restore_fitted_state(fitted_state)
+            raise
         return self
 
     def decision_function(self, features: Any) -> Any:
