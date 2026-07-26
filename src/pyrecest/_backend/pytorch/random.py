@@ -251,6 +251,28 @@ def _normalize_randint_dtype(dtype):
     return dtype
 
 
+def _validate_randint_array_dtype_bounds(low, high, dtype):
+    """Reject array bounds that cannot be represented by the output dtype."""
+    dtype_info = _torch.iinfo(dtype)
+    dtype_name = str(dtype).removeprefix("torch.")
+    low_int64 = low.to(dtype=_torch.int64)
+    high_int64 = high.to(dtype=_torch.int64)
+
+    if bool(_torch.any(low_int64 < dtype_info.min)) or bool(
+        _torch.any(low_int64 > dtype_info.max)
+    ):
+        raise ValueError(f"low is out of bounds for {dtype_name}")
+
+    # The exclusive upper endpoint may be one greater than the largest value
+    # representable by the output dtype, as in randint(255, 256, dtype=uint8).
+    # For int64, input tensors cannot represent max + 1, so every accepted high
+    # value is already within the valid endpoint range.
+    if dtype != _torch.int64 and bool(
+        _torch.any(high_int64 > dtype_info.max + 1)
+    ):
+        raise ValueError(f"high is out of bounds for {dtype_name}")
+
+
 def _normalize_torch_dtype_kwargs(kwargs):
     if "dtype" not in kwargs:
         return kwargs
@@ -285,6 +307,7 @@ def _randint_array(low, high, size, *args, **kwargs):
         raise ValueError("size, low, and high could not be broadcast together") from exc
     if bool(_torch.any(high <= low)):
         raise ValueError("high must be greater than low")
+    _validate_randint_array_dtype_bounds(low, high, dtype)
 
     span = high - low
     unit_samples = _torch.rand(sample_shape, device=device, generator=generator)
