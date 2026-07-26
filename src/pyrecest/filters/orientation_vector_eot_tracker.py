@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from math import isfinite
 from numbers import Integral
 
 # pylint: disable=no-name-in-module,no-member
@@ -172,8 +173,8 @@ class OrientationVectorEOTTracker(AbstractExtendedObjectTracker):
         self.velocity_indices = self._normalize_velocity_indices(velocity_indices)
         self.num_iterations = _as_positive_integer(num_iterations, "num_iterations")
         self.forgetting_factor = float(forgetting_factor)
-        if self.forgetting_factor <= 0.0:
-            raise ValueError("forgetting_factor must be positive")
+        if not isfinite(self.forgetting_factor) or self.forgetting_factor <= 0.0:
+            raise ValueError("forgetting_factor must be positive and finite")
         self.extent_scale = float(extent_scale)
         if self.extent_scale <= 0.0:
             raise ValueError("extent_scale must be positive")
@@ -420,10 +421,25 @@ class OrientationVectorEOTTracker(AbstractExtendedObjectTracker):
                 "sys_noise",
                 require_positive_definite=False,
             )
-        self.kinematic_state = system_matrix @ self.kinematic_state
+        gamma = (
+            self.forgetting_factor
+            if forgetting_factor is None
+            else float(forgetting_factor)
+        )
+        if not isfinite(gamma) or gamma <= 0.0:
+            raise ValueError("forgetting_factor must be positive and finite")
+        predicted_alpha = gamma * self.alpha
+        if float(predicted_alpha[0]) <= 1.0 or float(predicted_alpha[1]) <= 1.0:
+            raise ValueError(
+                "The prediction made inverse-gamma alpha <= 1; increase "
+                "inverse_gamma_shape or use a larger forgetting_factor."
+            )
+        predicted_beta = gamma * self.beta
+
+        predicted_kinematic_state = system_matrix @ self.kinematic_state
         if inputs is not None:
-            self.kinematic_state = self.kinematic_state + array(inputs)
-        self.covariance = self._symmetrize(
+            predicted_kinematic_state = predicted_kinematic_state + array(inputs)
+        predicted_covariance = self._symmetrize(
             system_matrix @ self.covariance @ system_matrix.T + sys_noise
         )
 
@@ -433,31 +449,23 @@ class OrientationVectorEOTTracker(AbstractExtendedObjectTracker):
             orientation_sys_noise,
             "orientation_sys_noise",
         )
-        self.orientation_vector_covariance = self._symmetrize(
+        predicted_orientation_covariance = self._symmetrize(
             self.orientation_vector_covariance + orientation_sys_noise * eye(2)
         )
         (
-            self.orientation_vector,
-            self.orientation_vector_covariance,
+            predicted_orientation_vector,
+            predicted_orientation_covariance,
         ) = self._project_orientation_gaussian(
             self.orientation_vector,
-            self.orientation_vector_covariance,
+            predicted_orientation_covariance,
         )
 
-        gamma = (
-            self.forgetting_factor
-            if forgetting_factor is None
-            else float(forgetting_factor)
-        )
-        if gamma <= 0.0:
-            raise ValueError("forgetting_factor must be positive")
-        self.alpha = gamma * self.alpha
-        self.beta = gamma * self.beta
-        if float(self.alpha[0]) <= 1.0 or float(self.alpha[1]) <= 1.0:
-            raise ValueError(
-                "The prediction made inverse-gamma alpha <= 1; increase "
-                "inverse_gamma_shape or use a larger forgetting_factor."
-            )
+        self.kinematic_state = predicted_kinematic_state
+        self.covariance = predicted_covariance
+        self.orientation_vector = predicted_orientation_vector
+        self.orientation_vector_covariance = predicted_orientation_covariance
+        self.alpha = predicted_alpha
+        self.beta = predicted_beta
 
         if self.log_prior_estimates:
             self.store_prior_estimates()
