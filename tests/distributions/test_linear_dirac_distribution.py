@@ -110,6 +110,27 @@ class LinearDiracDistributionTest(TestAbstractDiracDistribution):
         npt.assert_allclose(hwd.mean(), hwn.mean(), atol=0.015)
         npt.assert_allclose(hwd.covariance(), hwn.covariance(), atol=0.1)
 
+    def test_from_distribution_rejects_temporal_particle_counts(self):
+        distribution = GaussianDistribution(array([0.0]), array([[1.0]]))
+        temporal_counts = (
+            np.timedelta64(3, "ns"),
+            np.timedelta64(3, "us"),
+            np.datetime64("1970-01-01T00:00:00.000000003"),
+        )
+
+        for alias in ("n_particles", "n_samples", "n"):
+            for count in temporal_counts:
+                with self.subTest(alias=alias, count=count):
+                    with self.assertRaisesRegex(ValueError, "positive integer"):
+                        LinearDiracDistribution.from_distribution(
+                            distribution, **{alias: count}
+                        )
+
+        valid = LinearDiracDistribution.from_distribution(
+            distribution, n_particles=np.int64(3)
+        )
+        self.assertEqual(valid.d.shape[0], 3)
+
     def test_mean_and_cov(self):
         random.seed(0)
         gd = GaussianDistribution(array([1.0, 2.0]), array([[2.0, -0.3], [-0.3, 1.0]]))
