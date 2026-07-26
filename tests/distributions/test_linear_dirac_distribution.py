@@ -56,7 +56,9 @@ class LinearDiracDistributionTest(TestAbstractDiracDistribution):
             ("column-vector", array([[1.0], [2.0]])),
         ):
             with self.subTest(name=name):
-                with self.assertRaisesRegex(ValueError, r"new_mean must have shape \(2,\)"):
+                with self.assertRaisesRegex(
+                    ValueError, r"new_mean must have shape \(2,\)"
+                ):
                     dist.set_mean(new_mean)
                 npt.assert_allclose(dist.d, expected_samples)
 

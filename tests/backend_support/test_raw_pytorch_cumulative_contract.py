@@ -1,8 +1,7 @@
 import importlib.util
 
-import pytest
-
 import pyrecest.backend as backend
+import pytest
 from pyrecest.backend_tools import get_backend_name
 
 

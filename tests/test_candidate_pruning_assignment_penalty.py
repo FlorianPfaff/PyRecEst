@@ -1,12 +1,11 @@
 import numpy as np
 import numpy.testing as npt
-from scipy.optimize import linear_sum_assignment
-
 from pyrecest.utils import (
     CandidatePruningConfig,
     candidate_mask_from_costs,
     prune_pairwise_cost_matrix,
 )
+from scipy.optimize import linear_sum_assignment
 
 
 def test_pruned_cost_cannot_undercut_complete_retained_assignment():

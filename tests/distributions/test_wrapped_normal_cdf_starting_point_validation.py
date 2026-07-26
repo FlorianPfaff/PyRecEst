@@ -1,5 +1,4 @@
 import pytest
-
 from pyrecest.backend import array
 from pyrecest.distributions import WrappedNormalDistribution
 
@@ -12,9 +11,7 @@ def test_wrapped_normal_cdf_rejects_non_scalar_starting_points(starting_point):
         distribution.cdf(array([0.5]), starting_point=starting_point)
 
 
-@pytest.mark.parametrize(
-    "starting_point", (float("nan"), float("inf"), float("-inf"))
-)
+@pytest.mark.parametrize("starting_point", (float("nan"), float("inf"), float("-inf")))
 def test_wrapped_normal_cdf_rejects_nonfinite_starting_points(starting_point):
     distribution = WrappedNormalDistribution(0.0, 0.5)
 

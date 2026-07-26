@@ -1,5 +1,4 @@
 import pytest
-
 from pyrecest.distributions.circle.sine_skewed_distributions import (
     GeneralizedKSineSkewedVonMisesDistribution,
     GSSVMDistribution,

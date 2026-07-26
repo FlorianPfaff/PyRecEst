@@ -34,7 +34,9 @@ class CalibrationTimeVectorShapeValidationTest(unittest.TestCase):
                 ):
                     nearest_time_indices(np.array([0.0, 1.0]), invalid_times)
 
-            with self.subTest(helper="interpolate_reference", shape=invalid_times.shape):
+            with self.subTest(
+                helper="interpolate_reference", shape=invalid_times.shape
+            ):
                 with self.assertRaisesRegex(
                     ValueError, "reference_times_s must be one-dimensional"
                 ):

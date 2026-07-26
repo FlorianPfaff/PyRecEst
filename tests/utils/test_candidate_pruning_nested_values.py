@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.utils import CandidatePruningConfig, candidate_mask_from_costs
 
 

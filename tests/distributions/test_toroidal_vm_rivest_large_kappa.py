@@ -2,15 +2,13 @@ import math
 
 import numpy as np
 import numpy.testing as npt
-import pytest
-from scipy.special import ive
-
 import pyrecest.backend
+import pytest
 from pyrecest.backend import array
 from pyrecest.distributions.hypertorus.toroidal_vm_rivest_distribution import (
     ToroidalVMRivestDistribution,
 )
-
+from scipy.special import ive
 
 pytestmark = pytest.mark.skipif(
     pyrecest.backend.__backend_name__ != "numpy",
@@ -26,9 +24,7 @@ def test_large_independent_concentrations_remain_finite():
     )
 
     density_at_mode = float(dist.pdf(mu))
-    expected_density = 1.0 / (
-        4.0 * math.pi**2 * float(ive(0, concentration)) ** 2
-    )
+    expected_density = 1.0 / (4.0 * math.pi**2 * float(ive(0, concentration)) ** 2)
     assert math.isfinite(density_at_mode)
     npt.assert_allclose(density_at_mode, expected_density, rtol=1e-12)
 

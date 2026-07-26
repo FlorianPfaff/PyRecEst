@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.numerics import (
     assert_covariance_matrix,
     is_positive_semidefinite,

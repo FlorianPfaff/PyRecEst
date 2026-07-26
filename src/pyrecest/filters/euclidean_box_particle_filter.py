@@ -293,9 +293,7 @@ class EuclideanBoxParticleFilter(AbstractParticleFilter, EuclideanFilterMixin):
         if likelihood is not None:
             centers = 0.5 * (safe_lower + safe_upper)
             likelihood_values = likelihood(centers)
-            likelihood_values = where(
-                ratios > 0, likelihood_values, zeros_like(ratios)
-            )
+            likelihood_values = where(ratios > 0, likelihood_values, zeros_like(ratios))
             ratios = ratios * likelihood_values
 
         new_weights = predicted.w * ratios

@@ -39,4 +39,6 @@ assert dist.w[0].item() == 0.25
 assert dist.d.data_ptr() != samples.data_ptr()
 assert dist.w.data_ptr() != weights.data_ptr()
 """
-    subprocess.run([sys.executable, "-c", code], check=True, env=_backend_test_env("pytorch"))
+    subprocess.run(
+        [sys.executable, "-c", code], check=True, env=_backend_test_env("pytorch")
+    )

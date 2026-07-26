@@ -12,7 +12,6 @@ from ._tensor_train import TensorTrain
 from .abstract_hypertoroidal_distribution import AbstractHypertoroidalDistribution
 from .hypertoroidal_fourier_distribution import HypertoroidalFourierDistribution
 
-
 _SHAPE_ERROR = "Fourier coefficient side lengths must be positive odd integers."
 
 
@@ -35,7 +34,9 @@ def _as_shape(shape, *, dim=None):
         try:
             normalized = tuple(_as_positive_odd_coefficient_count(n) for n in shape)
         except TypeError as exc:
-            raise TypeError("shape must be an integer or a sequence of integers.") from exc
+            raise TypeError(
+                "shape must be an integer or a sequence of integers."
+            ) from exc
     if not normalized:
         raise ValueError("shape must contain at least one dimension.")
     if dim is not None and len(normalized) != dim:
@@ -179,7 +180,9 @@ class LowRankHypertoroidalFourierDistribution(AbstractHypertoroidalDistribution)
         frequencies = [_freqs(axis_size) for axis_size in self.coeff_shape]
         for point_index, point in enumerate(points):
             accumulated = np.ones((1, 1), dtype=np.complex128)
-            for axis, (core, ks) in enumerate(zip(self.coefficients.cores, frequencies)):
+            for axis, (core, ks) in enumerate(
+                zip(self.coefficients.cores, frequencies)
+            ):
                 weights = np.exp(1j * ks * point[axis])
                 matrix = np.tensordot(weights, core, axes=([0], [1]))
                 accumulated = accumulated @ matrix
@@ -214,15 +217,21 @@ class LowRankHypertoroidalFourierDistribution(AbstractHypertoroidalDistribution)
         """Return max ``|C[k] - conj(C[-k])|`` for identity coefficients."""
 
         if self.transformation != "identity":
-            raise NotImplementedError("Hermitian coefficient checks apply to identity coefficients only.")
+            raise NotImplementedError(
+                "Hermitian coefficient checks apply to identity coefficients only."
+            )
         return self.coefficients.centered_hermitian_deviation(max_entries=max_entries)
 
     def is_centered_hermitian(self, *, atol=1e-10, max_entries=1_000_000):
         """Return whether identity coefficients define a real-valued Fourier series."""
 
         if self.transformation != "identity":
-            raise NotImplementedError("Hermitian coefficient checks apply to identity coefficients only.")
-        return self.coefficients.is_centered_hermitian(atol=atol, max_entries=max_entries)
+            raise NotImplementedError(
+                "Hermitian coefficient checks apply to identity coefficients only."
+            )
+        return self.coefficients.is_centered_hermitian(
+            atol=atol, max_entries=max_entries
+        )
 
     def centered_hermitianized(
         self,
@@ -235,7 +244,9 @@ class LowRankHypertoroidalFourierDistribution(AbstractHypertoroidalDistribution)
         """Return a centered-Hermitian identity-coefficient distribution."""
 
         if self.transformation != "identity":
-            raise NotImplementedError("Hermitian coefficient repair applies to identity coefficients only.")
+            raise NotImplementedError(
+                "Hermitian coefficient repair applies to identity coefficients only."
+            )
         coefficients = self.coefficients.centered_hermitianized(
             max_rank=max_rank,
             rtol=rtol,
@@ -248,7 +259,9 @@ class LowRankHypertoroidalFourierDistribution(AbstractHypertoroidalDistribution)
             normalize=True,
         )
 
-    def multiply(self, other, n_coefficients=None, *, max_rank=None, rtol=0.0, atol=0.0):
+    def multiply(
+        self, other, n_coefficients=None, *, max_rank=None, rtol=0.0, atol=0.0
+    ):
         other = self._ensure_low_rank(other)
         self._check_compatible(other)
         target_shape = (
@@ -262,11 +275,15 @@ class LowRankHypertoroidalFourierDistribution(AbstractHypertoroidalDistribution)
         coeffs = coeffs.round(max_rank=max_rank, rtol=rtol, atol=atol)
         return LowRankHypertoroidalFourierDistribution(coeffs, self.transformation)
 
-    def convolve(self, other, n_coefficients=None, *, max_rank=None, rtol=0.0, atol=0.0):
+    def convolve(
+        self, other, n_coefficients=None, *, max_rank=None, rtol=0.0, atol=0.0
+    ):
         other = self._ensure_low_rank(other)
         self._check_compatible(other)
         if self.transformation != "identity":
-            raise NotImplementedError("Low-rank SqFF prediction is not implemented yet.")
+            raise NotImplementedError(
+                "Low-rank SqFF prediction is not implemented yet."
+            )
         if n_coefficients is not None:
             target_shape = _as_shape(n_coefficients, dim=self.dim)
             if target_shape != self.coeff_shape:
@@ -280,7 +297,9 @@ class LowRankHypertoroidalFourierDistribution(AbstractHypertoroidalDistribution)
 
     def mean_direction(self):
         if self.transformation != "identity":
-            raise NotImplementedError("mean_direction is implemented for identity coefficients only.")
+            raise NotImplementedError(
+                "mean_direction is implemented for identity coefficients only."
+            )
         scale = (2.0 * np.pi) ** self.dim
         means = np.zeros(self.dim)
         for axis in range(self.dim):
@@ -292,7 +311,11 @@ class LowRankHypertoroidalFourierDistribution(AbstractHypertoroidalDistribution)
 
     def integrate(self):
         if self.transformation == "identity":
-            return float(np.real_if_close(((2.0 * np.pi) ** self.dim) * self.coefficient_at_zero()).real)
+            return float(
+                np.real_if_close(
+                    ((2.0 * np.pi) ** self.dim) * self.coefficient_at_zero()
+                ).real
+            )
         return float(((2.0 * np.pi) ** self.dim) * self.coefficients.norm_squared())
 
     def compression_ratio(self):
@@ -303,10 +326,14 @@ class LowRankHypertoroidalFourierDistribution(AbstractHypertoroidalDistribution)
             return other
         if isinstance(other, HypertoroidalFourierDistribution):
             return LowRankHypertoroidalFourierDistribution.from_dense(other)
-        raise TypeError("Expected a dense or low-rank hypertoroidal Fourier distribution.")
+        raise TypeError(
+            "Expected a dense or low-rank hypertoroidal Fourier distribution."
+        )
 
     def _check_compatible(self, other):
         if self.coeff_shape != other.coeff_shape:
-            raise ValueError("Fourier distributions must have identical coefficient shapes.")
+            raise ValueError(
+                "Fourier distributions must have identical coefficient shapes."
+            )
         if self.transformation != other.transformation:
             raise ValueError("Fourier distributions must use the same transformation.")
