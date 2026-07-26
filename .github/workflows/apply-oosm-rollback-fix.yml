@@ -1,0 +1,173 @@
+name: Apply OOSM rollback fix
+
+on:
+  push:
+    branches:
+      - agent/rollback-failed-oosm-events-20260726
+
+permissions:
+  contents: write
+
+jobs:
+  apply-fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/rollback-failed-oosm-events-20260726
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Apply transactional replay patch
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          source_path = Path("src/pyrecest/filters/out_of_sequence.py")
+          source = source_path.read_text(encoding="utf-8")
+          start = source.index("    def _insert_and_apply(")
+          end = source.index("\n    def _apply_event(", start)
+          replacement = '''    def _insert_and_apply(self, time, method_name, args=(), kwargs=None):
+              event_time = _coerce_time(time)
+              if self.max_lag is not None and event_time < self._latest_time - self.max_lag:
+                  raise ValueError("out-of-sequence event lies outside the fixed-lag window")
+
+              previous_filter_state = self.filter_state
+              previous_initial_state = _safe_deepcopy(self._initial_state)
+              previous_initial_time = self._initial_time
+              previous_latest_time = self._latest_time
+              previous_events = list(self._events)
+              previous_next_sequence = self._next_sequence
+
+              out_of_sequence = event_time < self._latest_time
+              event = _ReplayEvent(
+                  event_time,
+                  self._next_sequence,
+                  method_name,
+                  tuple(_safe_deepcopy(arg) for arg in args),
+                  _safe_deepcopy(kwargs or {}),
+              )
+
+              try:
+                  self._next_sequence += 1
+                  self._events.append(event)
+                  self._events.sort(key=lambda item: (item.time, item.sequence))
+
+                  if out_of_sequence:
+                      captured_result = self._replay(capture_event=event)
+                      replayed_event_count = len(
+                          [item for item in self._events if item.time >= event.time]
+                      )
+                  else:
+                      captured_result = self._apply_event(event)
+                      self._latest_time = max(self._latest_time, event_time)
+                      replayed_event_count = 0
+
+                  self._trim_to_lag()
+                  diagnostics = captured_result if hasattr(captured_result, "get") else None
+                  accepted = _diagnostics_accepted(diagnostics)
+                  return OutOfSequenceResult(
+                      time=event_time,
+                      final_time=self._latest_time,
+                      out_of_sequence=out_of_sequence,
+                      replayed_event_count=replayed_event_count,
+                      accepted=accepted,
+                      diagnostics=diagnostics,
+                      filter_state=self.filter_state,
+                  )
+              except Exception:
+                  self._initial_state = previous_initial_state
+                  self._initial_time = previous_initial_time
+                  self._latest_time = previous_latest_time
+                  self._events = previous_events
+                  self._next_sequence = previous_next_sequence
+                  self._filter_object.filter_state = previous_filter_state
+                  raise
+'''
+          source_path.write_text(source[:start] + replacement + source[end:], encoding="utf-8")
+
+          test_path = Path("tests/filters/test_out_of_sequence_transaction.py")
+          test_path.write_text(
+              '''import unittest
+
+from pyrecest.filters import OutOfSequenceParticleUpdater
+
+
+class _DiagnosticsOnlyParticleFilter:
+    def __init__(self):
+        self.filter_state = {"updates": 0}
+
+    def update_nonlinear_using_likelihood(self, likelihood, measurement=None):
+        self.filter_state = {"updates": self.filter_state["updates"] + 1}
+        return likelihood(measurement, None)
+
+
+class OutOfSequenceTransactionTest(unittest.TestCase):
+    @staticmethod
+    def _accepted(_measurement, _particles):
+        return {"accepted": True}
+
+    def test_failed_event_is_rolled_back_and_does_not_poison_replay(self):
+        updater = OutOfSequenceParticleUpdater(
+            _DiagnosticsOnlyParticleFilter(), initial_time=0.0
+        )
+
+        def fail(_measurement, _particles):
+            raise RuntimeError("failed update")
+
+        with self.assertRaisesRegex(RuntimeError, "failed update"):
+            updater.update_nonlinear_using_likelihood(1.0, fail)
+
+        self.assertEqual(updater.event_count, 0)
+        self.assertEqual(updater.current_time, 0.0)
+        self.assertEqual(updater.filter_state, {"updates": 0})
+
+        updater.update_nonlinear_using_likelihood(1.0, self._accepted)
+        result = updater.update_nonlinear_using_likelihood(0.5, self._accepted)
+
+        self.assertTrue(result.out_of_sequence)
+        self.assertEqual(updater.event_count, 2)
+        self.assertEqual(updater.filter_state, {"updates": 2})
+
+    def test_invalid_diagnostics_roll_back_successful_filter_mutation(self):
+        updater = OutOfSequenceParticleUpdater(
+            _DiagnosticsOnlyParticleFilter(), initial_time=0.0
+        )
+
+        with self.assertRaisesRegex(ValueError, "accepted diagnostic"):
+            updater.update_nonlinear_using_likelihood(
+                1.0,
+                lambda _measurement, _particles: {"accepted": "maybe"},
+            )
+
+        self.assertEqual(updater.event_count, 0)
+        self.assertEqual(updater.current_time, 0.0)
+        self.assertEqual(updater.filter_state, {"updates": 0})
+
+
+if __name__ == "__main__":
+    unittest.main()
+''',
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Install focused test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e . pytest
+
+      - name: Run focused regression tests
+        run: python -m pytest tests/filters/test_out_of_sequence_transaction.py tests/filters/test_out_of_sequence.py
+
+      - name: Commit fix and remove one-shot workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/apply-oosm-rollback-fix.yml
+          git add src/pyrecest/filters/out_of_sequence.py tests/filters/test_out_of_sequence_transaction.py
+          git commit -m "Roll back failed out-of-sequence events"
+          git push origin HEAD:agent/rollback-failed-oosm-events-20260726
