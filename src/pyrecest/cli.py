@@ -99,7 +99,9 @@ def _comparison_value(value: Any) -> Any:
             _comparison_value(key): _comparison_value(item)
             for key, item in value.items()
         }
-    if isinstance(value, (list, tuple)):
+    if isinstance(value, tuple):
+        return tuple(_comparison_value(item) for item in value)
+    if isinstance(value, list):
         return [_comparison_value(item) for item in value]
     return value
 
