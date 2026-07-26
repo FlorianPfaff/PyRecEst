@@ -1,6 +1,7 @@
 from numbers import Integral
 
 import matplotlib.pyplot as plt
+import numpy as np
 
 # pylint: disable=no-name-in-module,no-member
 import pyrecest.backend
@@ -121,7 +122,7 @@ class LinearDiracDistribution(AbstractDiracDistribution, AbstractLinearDistribut
         from ..conversion import ConversionError
 
         if (
-            isinstance(value, bool)
+            isinstance(value, (bool, np.datetime64, np.timedelta64))
             or not isinstance(value, Integral)
             or int(value) <= 0
         ):
