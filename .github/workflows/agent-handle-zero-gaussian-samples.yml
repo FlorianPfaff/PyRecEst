@@ -8,9 +8,6 @@ on:
       - opened
       - reopened
       - synchronize
-  push:
-    branches:
-      - agent/handle-zero-gaussian-samples
 
 permissions:
   contents: write
@@ -38,22 +35,16 @@ jobs:
 
           source_path = Path("src/pyrecest/sampling/euclidean_sampler.py")
           source = source_path.read_text(encoding="utf-8")
-          old = '''        if dim < 1:
-              raise ValueError("dim must be positive")
-          return GaussianDistribution(zeros(dim), eye(dim)).sample(n_samples)
-          '''
-          new = '''        if dim < 1:
-              raise ValueError("dim must be positive")
-          if n_samples == 0:
-              return zeros((0, dim))
-          return GaussianDistribution(zeros(dim), eye(dim)).sample(n_samples)
-          '''
-          if old in source:
-              if source.count(old) != 1:
-                  raise RuntimeError("GaussianSampler implementation has multiple unexpected matches")
-              source_path.write_text(source.replace(old, new), encoding="utf-8")
-          elif new not in source:
-              raise RuntimeError("GaussianSampler implementation no longer matches the expected source")
+          marker = "        return GaussianDistribution(zeros(dim), eye(dim)).sample(n_samples)\n"
+          replacement = (
+              "        if n_samples == 0:\n"
+              "            return zeros((0, dim))\n"
+              + marker
+          )
+          if replacement not in source:
+              if source.count(marker) != 1:
+                  raise RuntimeError("GaussianSampler return statement no longer has a unique match")
+              source_path.write_text(source.replace(marker, replacement), encoding="utf-8")
 
           test_path = Path("tests/test_gaussian_sampler_zero_samples.py")
           test_path.write_text(
