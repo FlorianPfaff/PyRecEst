@@ -83,6 +83,18 @@ class HypersphericalUniformDistributionTest(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     hud.sample(n)
 
+    def test_sample_rejects_temporal_count(self):
+        hud = HypersphericalUniformDistribution(2)
+
+        for n in (
+            np.timedelta64(4, "ns"),
+            np.timedelta64(4, "us"),
+            np.datetime64("2026-07-27"),
+        ):
+            with self.subTest(n=n):
+                with self.assertRaisesRegex(ValueError, "n must be an integer"):
+                    hud.sample(n)
+
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ == "jax",
         "Numerical mean direction not supported for this backend",
