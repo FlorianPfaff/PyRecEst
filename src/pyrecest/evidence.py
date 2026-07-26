@@ -90,6 +90,8 @@ class EvidenceComputationMode:
             raise ValueError("evidence_only mode cannot return smoothed posteriors")
         if self.mode == "full_smoothing" and not return_smoothed:
             raise ValueError("full_smoothing mode must return smoothed posteriors")
+        if self.mode == "full_smoothing" and not terminal_posterior:
+            raise ValueError("full_smoothing mode must return a terminal posterior")
         metadata = _coerce_metadata(self.metadata)
         conflicting_metadata_keys = _RESERVED_DIAGNOSTIC_METADATA_KEYS.intersection(
             metadata
