@@ -1,7 +1,6 @@
 """Regression coverage for SO(3) chordal smoother weight-vector shapes."""
 
 import pytest
-
 from pyrecest.backend import eye
 from pyrecest.smoothers import SO3ChordalMeanSmoother
 

@@ -13,7 +13,9 @@ class TestPointSetRegistrationVectorShapes(unittest.TestCase):
     def test_affine_transform_rejects_matrix_shaped_offsets(self):
         for offset in (array([[1.0, -2.0]]), array([[1.0], [-2.0]])):
             with self.subTest(offset_shape=offset.shape):
-                with self.assertRaisesRegex(ValueError, "offset must be one-dimensional"):
+                with self.assertRaisesRegex(
+                    ValueError, "offset must be one-dimensional"
+                ):
                     AffineTransform(eye(2), offset)
 
     @unittest.skipIf(
@@ -26,7 +28,9 @@ class TestPointSetRegistrationVectorShapes(unittest.TestCase):
 
         for weights in (array([[1.0, 1.0]]), array([[1.0], [1.0]])):
             with self.subTest(weights_shape=weights.shape):
-                with self.assertRaisesRegex(ValueError, "weights must be one-dimensional"):
+                with self.assertRaisesRegex(
+                    ValueError, "weights must be one-dimensional"
+                ):
                     estimate_transform(
                         source,
                         target,

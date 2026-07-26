@@ -1,13 +1,11 @@
 from fractions import Fraction
 
 import pytest
-
 from pyrecest.backend import array
 from pyrecest.distributions.hypertorus.hypertoroidal_uniform_distribution import (
     HypertoroidalUniformDistribution,
     _validate_positive_sample_count,
 )
-
 
 _INEXACT_INTEGER_AFTER_FLOAT_ROUNDING = Fraction(2**54 + 1, 2)
 

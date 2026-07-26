@@ -1,5 +1,4 @@
 import pytest
-
 from pyrecest.distributions.circle.circular_grid_distribution import (
     CircularGridDistribution,
 )

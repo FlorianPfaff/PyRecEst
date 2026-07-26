@@ -2,7 +2,6 @@ import datetime
 
 import numpy as np
 import pytest
-
 from pyrecest.distributions.circle.circular_uniform_distribution import (
     CircularUniformDistribution,
 )

@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.filters.gaussian_hypothesis_mixture import WeightedGaussianHypothesis
 
 

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-
 from pyrecest.evaluation.selection import (
     retained_count_from_fraction,
     tail_rescue_quota_count,

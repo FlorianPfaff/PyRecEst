@@ -1,5 +1,4 @@
 import pytest
-
 from pyrecest.evidence import resolve_evidence_computation_mode
 
 

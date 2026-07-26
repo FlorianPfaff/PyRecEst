@@ -2,7 +2,6 @@ import re
 import unittest
 
 import numpy as np
-
 from pyrecest.utils import CandidatePruningConfig, prune_pairwise_cost_matrix
 
 

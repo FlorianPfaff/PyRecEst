@@ -1,8 +1,7 @@
 import numpy as np
-import pytest
 import pyrecest.backend
+import pytest
 from pyrecest.utils import murty_k_best_assignments
-
 
 pytestmark = pytest.mark.skipif(
     pyrecest.backend.__backend_name__ == "jax",  # pylint: disable=no-member

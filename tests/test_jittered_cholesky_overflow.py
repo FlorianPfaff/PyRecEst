@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.exceptions import NumericalStabilityError
 from pyrecest.numerics import jittered_cholesky
 

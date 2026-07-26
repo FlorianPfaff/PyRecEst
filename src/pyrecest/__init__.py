@@ -465,7 +465,9 @@ def _patch_raw_pytorch_cumulative_facade() -> None:
 
     try:
         import pyrecest._backend.pytorch as pytorch_backend  # pylint: disable=import-outside-toplevel
-        from pyrecest._backend_submodules import _copy_result_to_out  # pylint: disable=import-outside-toplevel
+        from pyrecest._backend_submodules import (  # pylint: disable=import-outside-toplevel
+            _copy_result_to_out,
+        )
     except ModuleNotFoundError:  # pragma: no cover - only relevant without PyTorch
         return
 
@@ -486,7 +488,9 @@ def _patch_raw_pytorch_cumulative_facade() -> None:
 
     import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
 
-    selected_backend_is_pytorch = getattr(backend, "__backend_name__", None) == "pytorch"
+    selected_backend_is_pytorch = (
+        getattr(backend, "__backend_name__", None) == "pytorch"
+    )
     for helper_name in ("cumsum", "cumprod"):
         cumulative = getattr(pytorch_backend, helper_name, None)
         if cumulative is None:

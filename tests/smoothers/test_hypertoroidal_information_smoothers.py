@@ -19,7 +19,6 @@ from pyrecest.smoothers.hypertoroidal_fourier_smoother import (
 )
 from pyrecest.smoothers.hypertoroidal_grid_smoother import HypertoroidalGridSmoother
 
-
 N_COEFFICIENTS = 15
 
 
@@ -91,7 +90,9 @@ class TestHypertoroidalFourierSmoother(unittest.TestCase):
         self.assertEqual(len(smoothed), len(likelihoods))
         self.assertEqual(len(backward_messages), len(likelihoods))
         for smoothed_state in smoothed:
-            npt.assert_allclose(smoothed_state.coeff_mat, expected.coeff_mat, rtol=1e-10, atol=1e-12)
+            npt.assert_allclose(
+                smoothed_state.coeff_mat, expected.coeff_mat, rtol=1e-10, atol=1e-12
+            )
 
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ in ("jax", "pytorch"),
@@ -125,7 +126,9 @@ class TestHypertoroidalFourierSmoother(unittest.TestCase):
 
         self.assertEqual(len(smoothed), 1)
         self.assertEqual(len(backward_messages), 1)
-        npt.assert_allclose(smoothed[0].pdf(xs), filtered_state.pdf(xs), rtol=1e-10, atol=1e-12)
+        npt.assert_allclose(
+            smoothed[0].pdf(xs), filtered_state.pdf(xs), rtol=1e-10, atol=1e-12
+        )
 
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ in ("jax", "pytorch"),
@@ -135,7 +138,9 @@ class TestHypertoroidalFourierSmoother(unittest.TestCase):
         likelihoods = [_cosine_identity_hfd(0.2, 0.1), _cosine_identity_hfd(0.3, 0.2)]
         filtered = _filtered_from_likelihoods(likelihoods)
         with self.assertRaises(ValueError):
-            HypertoroidalFourierSmoother().smooth_identity(filtered, likelihoods[:1], _delta_identity_hfd())
+            HypertoroidalFourierSmoother().smooth_identity(
+                filtered, likelihoods[:1], _delta_identity_hfd()
+            )
 
 
 def _grid_likelihood(amplitude, phase, n_grid_points=21):
@@ -166,7 +171,9 @@ def _filtered_grid_from_likelihoods(likelihoods):
 def _identity_grid_transition(reference):
     n_points = reference.grid_values.shape[0]
     cell_volume = (2.0 * np.pi) / n_points
-    return TdCondTdGridDistribution(reference.get_grid(), np.eye(n_points) / cell_volume)
+    return TdCondTdGridDistribution(
+        reference.get_grid(), np.eye(n_points) / cell_volume
+    )
 
 
 class TestHypertoroidalGridSmoother(unittest.TestCase):
@@ -190,11 +197,15 @@ class TestHypertoroidalGridSmoother(unittest.TestCase):
         self.assertEqual(len(smoothed), len(likelihoods))
         self.assertEqual(len(backward_messages), len(likelihoods))
         for smoothed_state in smoothed:
-            npt.assert_allclose(smoothed_state.grid_values, expected.grid_values, rtol=1e-12, atol=1e-12)
+            npt.assert_allclose(
+                smoothed_state.grid_values, expected.grid_values, rtol=1e-12, atol=1e-12
+            )
 
     def test_transition_length_is_checked(self):
         likelihoods = [_grid_likelihood(0.2, 0.1), _grid_likelihood(0.3, 0.2)]
         filtered = _filtered_grid_from_likelihoods(likelihoods)
         transition = _identity_grid_transition(filtered[0])
         with self.assertRaises(ValueError):
-            HypertoroidalGridSmoother().smooth(filtered, likelihoods, [transition, transition])
+            HypertoroidalGridSmoother().smooth(
+                filtered, likelihoods, [transition, transition]
+            )

@@ -10,7 +10,9 @@ import pyrecest.backend
 from pyrecest.backend import all as backend_all
 from pyrecest.backend import (
     allclose,
-    copy as backend_copy,
+)
+from pyrecest.backend import copy as backend_copy
+from pyrecest.backend import (
     exp,
     eye,
     isfinite,

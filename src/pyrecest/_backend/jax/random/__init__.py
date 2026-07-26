@@ -10,7 +10,9 @@ import numpy as _np
 
 _LEGACY_MODULE_NAME = __name__ + "._legacy"
 _LEGACY_PATH = _Path(__file__).resolve().parent.parent / "random.py"
-_LEGACY_SPEC = _importlib_util.spec_from_file_location(_LEGACY_MODULE_NAME, _LEGACY_PATH)
+_LEGACY_SPEC = _importlib_util.spec_from_file_location(
+    _LEGACY_MODULE_NAME, _LEGACY_PATH
+)
 if _LEGACY_SPEC is None or _LEGACY_SPEC.loader is None:  # pragma: no cover
     raise ImportError(f"Cannot load legacy JAX random backend from {_LEGACY_PATH}")
 _LEGACY = _importlib_util.module_from_spec(_LEGACY_SPEC)
