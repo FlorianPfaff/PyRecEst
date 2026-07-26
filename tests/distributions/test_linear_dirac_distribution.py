@@ -70,6 +70,38 @@ class LinearDiracDistributionTest(TestAbstractDiracDistribution):
         npt.assert_allclose(dist.mean(), array([10.0]))
         npt.assert_allclose(dist.d, array([8.5, 10.5]))
 
+    @unittest.skipUnless(
+        pyrecest.backend.__backend_name__ == "numpy",
+        reason="Regression targets NumPy integer in-place casting",
+    )
+    def test_set_mean_promotes_integer_locations_for_fractional_shift(self):
+        cases = (
+            (
+                "one-dimensional",
+                [0, 2],
+                [0.25, 0.75],
+                2.25,
+                [0.75, 2.75],
+            ),
+            (
+                "multidimensional",
+                [[0, 0], [2, 4]],
+                [0.5, 0.5],
+                [1.5, 2.5],
+                [[0.5, 0.5], [2.5, 4.5]],
+            ),
+        )
+
+        for name, samples, weights, new_mean, expected_samples in cases:
+            with self.subTest(name=name):
+                dist = LinearDiracDistribution(samples, weights)
+
+                dist.set_mean(new_mean)
+
+                self.assertTrue(np.issubdtype(np.asarray(dist.d).dtype, np.floating))
+                npt.assert_allclose(dist.d, expected_samples)
+                npt.assert_allclose(dist.mean(), np.atleast_1d(new_mean))
+
     def test_from_distribution(self):
         random.seed(0)
         C = wishart.rvs(3, eye(3))
