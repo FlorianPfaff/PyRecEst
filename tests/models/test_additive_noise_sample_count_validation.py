@@ -37,7 +37,16 @@ class AdditiveNoiseSampleCountValidationTest(unittest.TestCase):
         )
 
     def test_invalid_counts_are_rejected_before_sampling(self):
-        invalid_counts = (True, -1, 1.5, np.array([1]), "1")
+        invalid_counts = (
+            True,
+            -1,
+            1.5,
+            np.array([1]),
+            "1",
+            np.timedelta64(4, "ns"),
+            np.timedelta64(4, "us"),
+            np.datetime64("2026-07-27"),
+        )
 
         for invalid_count in invalid_counts:
             for model_index in range(2):

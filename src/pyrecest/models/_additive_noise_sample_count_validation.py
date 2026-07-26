@@ -5,7 +5,24 @@ from __future__ import annotations
 from functools import wraps
 from typing import Any
 
+import numpy as np
+
 from .likelihood import _validate_sample_count
+
+
+def _validated_additive_noise_sample_count(value: Any) -> int:
+    """Reject temporal NumPy scalars before generic integer normalization."""
+
+    dtype = getattr(value, "dtype", None)
+    if dtype is not None:
+        try:
+            if np.issubdtype(dtype, np.datetime64) or np.issubdtype(
+                dtype, np.timedelta64
+            ):
+                raise ValueError("n must be a nonnegative integer.")
+        except TypeError:
+            pass
+    return _validate_sample_count(value)
 
 
 def _patch_sample_count(model_cls: type, method_name: str) -> None:
@@ -17,7 +34,13 @@ def _patch_sample_count(model_cls: type, method_name: str) -> None:
 
     @wraps(original)
     def checked_sample(self, state: Any, n: int = 1, *args: Any, **kwargs: Any):
-        return original(self, state, _validate_sample_count(n), *args, **kwargs)
+        return original(
+            self,
+            state,
+            _validated_additive_noise_sample_count(n),
+            *args,
+            **kwargs,
+        )
 
     setattr(checked_sample, "_pyrecest_sample_count_checked", True)
     setattr(model_cls, method_name, checked_sample)
