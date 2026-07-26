@@ -131,6 +131,28 @@ class TestGenerateGroundtruth(unittest.TestCase):
         npt.assert_allclose(groundtruth[0], x0)
         npt.assert_allclose(groundtruth[1], array([[1.0], [3.0]]))
 
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
+        reason="Not supported on this backend",
+    )
+    def test_preserves_vector_shape_for_one_dimensional_single_target(self):
+        x0 = array([2.0])
+        step = array([1.0])
+        simulation_param = {
+            "initial_prior": GaussianDistribution(zeros(1), eye(1)),
+            "n_targets": 1,
+            "n_timesteps": 3,
+            "gen_next_state_with_noise": lambda state: state + step,
+        }
+
+        groundtruth = generate_groundtruth(simulation_param, x0)
+
+        for state in groundtruth:
+            self.assertEqual(state.shape, (1,))
+        npt.assert_allclose(groundtruth[0], array([2.0]))
+        npt.assert_allclose(groundtruth[1], array([3.0]))
+        npt.assert_allclose(groundtruth[2], array([4.0]))
+
     def test_rejects_vector_initial_state_for_multiple_targets(self):
         x0 = array([0.0, 1.0])
         simulation_param = {
