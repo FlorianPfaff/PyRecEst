@@ -129,7 +129,13 @@ class EllipsoidalBallUniformDistribution(
         :param n: Number of samples to generate.
         :returns: Generated samples.
         """
-        if isinstance(n, bool) or not isinstance(n, Integral) or int(n) <= 0:
+        dtype = getattr(n, "dtype", None)
+        if (
+            isinstance(n, bool)
+            or getattr(dtype, "kind", None) in ("M", "m")
+            or not isinstance(n, Integral)
+            or int(n) <= 0
+        ):
             raise ValueError("n must be a positive integer.")
         n = int(n)
         if self.dim == 0:
