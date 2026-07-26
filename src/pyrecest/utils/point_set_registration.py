@@ -70,11 +70,15 @@ class AffineTransform:
 
     def __post_init__(self) -> None:
         matrix = asarray(self.matrix)
-        offset = asarray(self.offset).reshape(-1)
+        offset = asarray(self.offset)
         if matrix.ndim != 2:
             raise ValueError("matrix must be two-dimensional.")
         if matrix.shape[0] != matrix.shape[1]:
             raise ValueError("matrix must be square.")
+        if offset.ndim == 0:
+            offset = offset.reshape((1,))
+        elif offset.ndim != 1:
+            raise ValueError("offset must be one-dimensional.")
         if offset.shape[0] != matrix.shape[0]:
             raise ValueError("offset dimension must match matrix dimension.")
         if any(~isfinite(matrix)):
@@ -146,7 +150,11 @@ class RegistrationResult(
 def _normalize_weights(weights, n_points):
     if weights is None:
         return full((n_points,), 1.0 / n_points)
-    weights_array = asarray(weights).reshape(-1)
+    weights_array = asarray(weights)
+    if weights_array.ndim == 0:
+        weights_array = weights_array.reshape((1,))
+    elif weights_array.ndim != 1:
+        raise ValueError("weights must be one-dimensional.")
     if weights_array.shape[0] != n_points:
         raise ValueError("weights must have length n_points.")
     if any(~isfinite(weights_array)):
