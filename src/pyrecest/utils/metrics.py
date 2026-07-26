@@ -644,6 +644,8 @@ def _clipped_assignment_cost(
     if estimated.shape[0] == 0 or reference.shape[0] == 0:
         return 0.0, []
     distances = _pairwise_distances(estimated, reference, distance_fn)
+    if np.any(np.isnan(distances)) or np.any(distances < 0.0):
+        raise ValueError("pairwise distances must be non-negative and not NaN")
     clipped_costs = np.minimum(distances, cutoff) ** order
     row_ind, col_ind = linear_sum_assignment(clipped_costs)
     assignment_cost = float(clipped_costs[row_ind, col_ind].sum())
