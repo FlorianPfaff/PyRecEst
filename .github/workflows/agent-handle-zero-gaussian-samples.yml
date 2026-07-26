@@ -1,6 +1,13 @@
 name: Apply Gaussian sampler zero-count fix
 
 on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
   push:
     branches:
       - agent/handle-zero-gaussian-samples
@@ -27,6 +34,7 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          from textwrap import dedent
 
           source_path = Path("src/pyrecest/sampling/euclidean_sampler.py")
           source = source_path.read_text(encoding="utf-8")
@@ -49,17 +57,20 @@ jobs:
 
           test_path = Path("tests/test_gaussian_sampler_zero_samples.py")
           test_path.write_text(
-              '''import numpy as np
+              dedent(
+                  '''\
+                  import numpy as np
 
-          from pyrecest.sampling.euclidean_sampler import GaussianSampler
+                  from pyrecest.sampling.euclidean_sampler import GaussianSampler
 
 
-          def test_gaussian_sampler_zero_samples_returns_empty_matrix():
-              samples = GaussianSampler().sample_stochastic(0, 3)
+                  def test_gaussian_sampler_zero_samples_returns_empty_matrix():
+                      samples = GaussianSampler().sample_stochastic(0, 3)
 
-              assert samples.shape == (0, 3)
-              assert np.isfinite(np.asarray(samples)).all()
-          ''',
+                      assert samples.shape == (0, 3)
+                      assert np.isfinite(np.asarray(samples)).all()
+                  '''
+              ),
               encoding="utf-8",
           )
           PY
