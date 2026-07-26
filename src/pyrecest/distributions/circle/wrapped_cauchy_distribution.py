@@ -169,7 +169,7 @@ class WrappedCauchyDistribution(AbstractCircularDistribution):
         return mod(primitive(xs) - primitive(starting_point), 1.0)
 
     def trigonometric_moment(self, n):
-        if isinstance(n, bool) or not isinstance(n, Integral):
+        if isinstance(n, _INVALID_REAL_SCALAR_TYPES) or not isinstance(n, Integral):
             raise ValueError("n must be an integer.")
         n = int(n)
         return exp(1j * n * self.mu - abs(n) * self.gamma)
