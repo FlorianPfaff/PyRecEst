@@ -6,6 +6,7 @@ from collections.abc import Callable
 from pyrecest.backend import (
     all,
     array,
+    asarray,
     hstack,
     isfinite,
     ndim,
@@ -196,7 +197,7 @@ class AbstractParticleFilter(AbstractFilter):
         original_shape = self.filter_state.d.shape
         predicted_state = None
         if function_is_vectorized:
-            d_f_applied = array(f(self.filter_state.d))
+            d_f_applied = asarray(f(self.filter_state.d))
         else:
             predicted_state = self.filter_state.apply_function(
                 f, function_is_vectorized=False
