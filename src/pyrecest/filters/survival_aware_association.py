@@ -8,6 +8,7 @@ those prior weights into association-hypothesis costs.
 
 from __future__ import annotations
 
+import inspect
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, replace
 from math import log
@@ -465,21 +466,47 @@ def _resolve_value(
     if not callable(spec):
         return float(_as_numpy_array(spec).item())
 
-    call_attempts = (
-        lambda: spec(
-            track=track,
-            measurement=measurement,
-            measurement_index=measurement_index,
-            step=step,
+    call_candidates = (
+        (
+            (),
+            {
+                "track": track,
+                "measurement": measurement,
+                "measurement_index": measurement_index,
+                "step": step,
+            },
         ),
-        lambda: spec(track, measurement, measurement_index, step),
-        lambda: spec(track, measurement),
-        lambda: spec(track),
+        ((track, measurement, measurement_index, step), {}),
+        ((track, measurement), {}),
+        ((track,), {}),
     )
-    last_error: TypeError | None = None
-    for attempt in call_attempts:
+    try:
+        signature = inspect.signature(spec)
+    except (TypeError, ValueError):
+        return _resolve_uninspectable_callable(spec, call_candidates)
+
+    for args, kwargs in call_candidates:
         try:
-            return float(_as_numpy_array(attempt()).item())
+            signature.bind(*args, **kwargs)
+        except TypeError:
+            continue
+        return float(_as_numpy_array(spec(*args, **kwargs)).item())
+
+    raise TypeError(
+        "Callable factors must accept keyword arguments, "
+        "(track, measurement, measurement_index, step), "
+        "(track, measurement), or track"
+    )
+
+
+def _resolve_uninspectable_callable(
+    spec: Callable[..., float],
+    call_candidates: tuple[tuple[tuple[Any, ...], dict[str, Any]], ...],
+) -> float:
+    last_error: TypeError | None = None
+    for args, kwargs in call_candidates:
+        try:
+            return float(_as_numpy_array(spec(*args, **kwargs)).item())
         except TypeError as exc:
             last_error = exc
     raise TypeError(
