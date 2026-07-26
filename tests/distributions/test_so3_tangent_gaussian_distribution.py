@@ -124,6 +124,22 @@ class SO3TangentGaussianDistributionTest(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     dist.sample_tangent(n)
 
+    def test_sampling_rejects_temporal_count(self):
+        dist = SO3TangentGaussianDistribution.from_covariance_diagonal(
+            array([0.0, 0.0, 0.0, 1.0]), array([0.01, 0.01, 0.01])
+        )
+
+        for n in (
+            np.timedelta64(3, "ns"),
+            np.timedelta64(3, "us"),
+            np.datetime64("2026-01-01"),
+        ):
+            with self.subTest(n=n):
+                with self.assertRaisesRegex(ValueError, "integer"):
+                    dist.sample(n)
+                with self.assertRaisesRegex(ValueError, "integer"):
+                    dist.sample_tangent(n)
+
     def test_geodesic_distance_respects_antipodal_equivalence(self):
         identity = array([0.0, 0.0, 0.0, 1.0])
         identity_antipodal = array([0.0, 0.0, 0.0, -1.0])
