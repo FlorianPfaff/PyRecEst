@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from typing import Any
 
 import numpy as np
@@ -82,6 +82,8 @@ def _point_estimate_or_mean(filter_state):
 
 
 def _extract_track_collection_mean(tracks):
+    if isinstance(tracks, Mapping):
+        tracks = tracks.values()
     return [_point_estimate_or_mean(track) for track in tracks]
 
 
