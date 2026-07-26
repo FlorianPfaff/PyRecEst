@@ -3,9 +3,11 @@
 from numbers import Complex, Integral, Real
 
 from pyrecest.backend import (
+    all as backend_all,
     asarray,
     copy as backend_copy,
     eye,
+    isfinite,
     matmul,
     matvec,
     ndim,
@@ -51,6 +53,19 @@ def _contains_complex_values(value):
     return False
 
 
+def _ensure_finite(value, name):
+    try:
+        finite = backend_all(isfinite(value))
+    except Exception as exc:  # pragma: no cover - backend-specific exception type
+        raise ValueError(f"{name} must contain only finite values") from exc
+    try:
+        all_finite = bool(finite.item())
+    except AttributeError:
+        all_finite = bool(finite)
+    if not all_finite:
+        raise ValueError(f"{name} must contain only finite values")
+
+
 def _as_matrix(value, name):
     arr = asarray(value)
     if _has_boolean_dtype(arr):
@@ -59,6 +74,7 @@ def _as_matrix(value, name):
         raise ValueError(f"{name} must be real-valued")
     if ndim(arr) != 2:
         raise ValueError(f"{name} must be two-dimensional")
+    _ensure_finite(arr, name)
     return arr
 
 
@@ -72,6 +88,7 @@ def _as_vector(value, name):
         arr = reshape(arr, (1,))
     if ndim(arr) != 1:
         raise ValueError(f"{name} must be one-dimensional")
+    _ensure_finite(arr, name)
     return arr
 
 
