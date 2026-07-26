@@ -167,19 +167,20 @@ class VonMisesDistribution(AbstractCircularDistribution):
         except (TypeError, ValueError, RuntimeError) as exc:
             raise ValueError(f"{name} must be a scalar.") from exc
 
+        normalized_value = value
         if value_array.ndim > 0:
             if value_array.shape != (1,):
                 raise ValueError(f"{name} must be a scalar.")
-            value_array = value_array[0]
+            normalized_value = value_array[0]
 
         try:
-            scalar = float(value_array)
+            scalar = float(normalized_value)
         except (OverflowError, TypeError, ValueError) as exc:
             raise ValueError(f"{name} must be a scalar.") from exc
 
         if not math.isfinite(scalar):
             raise ValueError(f"{name} must be finite.")
-        return value_array, scalar
+        return normalized_value, scalar
 
     @staticmethod
     def _as_float_scalar(value, name: str) -> float:
