@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import runpy
 from functools import wraps
+from numbers import Integral
 from pathlib import Path
 from typing import Any
 
@@ -30,6 +31,9 @@ _original_discrete_forward_backward_time_varying = _module_globals[
 _original_imm_forward_backward = _module_globals["imm_forward_backward"]
 _original_sparse_gaussian_transition_matrix = _module_globals[
     "sparse_gaussian_transition_matrix"
+]
+_original_sticky_mode_transition_matrix = _module_globals[
+    "sticky_mode_transition_matrix"
 ]
 
 
@@ -207,6 +211,22 @@ def _validated_positive_scalar(
     return parsed
 
 
+def _validated_positive_integer(value: Any, name: str) -> int:
+    try:
+        raw_value = np.asarray(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{name} must be a positive integer") from exc
+    if raw_value.shape != () or raw_value.dtype.kind in _REJECTED_STATE_KINDS:
+        raise ValueError(f"{name} must be a positive integer")
+    scalar = raw_value.item()
+    if isinstance(scalar, _BOOLEAN_TYPES) or not isinstance(scalar, Integral):
+        raise ValueError(f"{name} must be a positive integer")
+    parsed = int(scalar)
+    if parsed <= 0:
+        raise ValueError(f"{name} must be a positive integer")
+    return parsed
+
+
 def _validated_probability_vector(
     probabilities: Any,
     n_entries: int,
@@ -247,6 +267,13 @@ def _validated_probability_vector(
     return values / total
 
 
+@wraps(_original_sticky_mode_transition_matrix)
+def sticky_mode_transition_matrix(n_modes, stickiness):
+    n_modes = _validated_positive_integer(n_modes, "n_modes")
+    return _original_sticky_mode_transition_matrix(n_modes, stickiness)
+
+
+@wraps(_original_sparse_gaussian_transition_matrix)
 def sparse_gaussian_transition_matrix(
     state_vectors,
     sigma,
@@ -278,6 +305,8 @@ _module_globals["discrete_forward_backward_time_varying"] = (
     discrete_forward_backward_time_varying
 )
 _module_globals["imm_forward_backward"] = imm_forward_backward
+_module_globals["sticky_mode_transition_matrix"] = sticky_mode_transition_matrix
+_module_globals["mode_transition_matrix"] = sticky_mode_transition_matrix
 _module_globals["sparse_gaussian_transition_matrix"] = sparse_gaussian_transition_matrix
 _module_globals["_normalize_probability_vector"] = _validated_probability_vector
 for name in _module_globals["__all__"]:
