@@ -138,6 +138,50 @@ def _first_randint_bound_device(*values):
     )
 
 
+_LEGACY_ARRAY_RANDINT = _LEGACY._randint_array
+
+
+def _randint_array_with_wide_arithmetic(low, high, size, *args, **kwargs):
+    """Widen array bounds and intermediate samples before integer arithmetic."""
+
+    if args:
+        return _LEGACY_ARRAY_RANDINT(low, high, size, *args, **kwargs)
+
+    torch = _LEGACY._torch
+    requested_dtype = _LEGACY._normalize_randint_dtype(kwargs.get("dtype"))
+    device = _LEGACY._randint_device(low, high, device=kwargs.get("device"))
+    low = torch.as_tensor(low, device=device)
+    high = torch.as_tensor(high, device=device)
+    _LEGACY._validate_randint_array_bound("low", low)
+    _LEGACY._validate_randint_array_bound("high", high)
+    sample_shape = _LEGACY._randint_array_size(size, low, high)
+    try:
+        low = torch.broadcast_to(low, sample_shape)
+        high = torch.broadcast_to(high, sample_shape)
+    except RuntimeError as exc:
+        raise ValueError("size, low, and high could not be broadcast together") from exc
+    if bool(torch.any(high <= low)):
+        raise ValueError("high must be greater than low")
+    _LEGACY._validate_randint_array_dtype_bounds(low, high, requested_dtype)
+
+    sampling_kwargs = dict(kwargs)
+    out = sampling_kwargs.pop("out", None)
+    sampling_kwargs["dtype"] = torch.int64
+    result = _LEGACY_ARRAY_RANDINT(
+        low.to(dtype=torch.int64),
+        high.to(dtype=torch.int64),
+        size,
+        **sampling_kwargs,
+    ).to(dtype=requested_dtype)
+    if out is not None:
+        out.copy_(result)
+        return out
+    return result
+
+
+_LEGACY._randint_array = _randint_array_with_wide_arithmetic
+
+
 def randint(low, high=None, size=None, *args, **kwargs):
     """Draw integer samples with exact scalar-bound handling."""
 
