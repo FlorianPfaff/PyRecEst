@@ -34,7 +34,12 @@ class WeightedGaussianHypothesis:
     metadata: dict[str, Any] | None = None
 
     def __post_init__(self) -> None:
-        mean = _as_float_array(self.mean, "mean").reshape(-1).copy()
+        mean = _as_float_array(self.mean, "mean")
+        if mean.ndim == 0:
+            mean = mean.reshape(1)
+        elif mean.ndim != 1:
+            raise ValueError("mean must be scalar or one-dimensional")
+        mean = mean.copy()
         covariance = _as_float_array(self.covariance, "covariance")
         if not np.all(np.isfinite(mean)):
             raise ValueError("mean must contain only finite values")
