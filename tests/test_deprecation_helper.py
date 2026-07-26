@@ -1,4 +1,5 @@
 import asyncio
+import functools
 import inspect
 import warnings
 
@@ -18,6 +19,24 @@ def test_deprecated_decorator_emits_standard_warning():
     assert len(caught) == 1
     assert issubclass(caught[0].category, DeprecationWarning)
     assert "new_function" in str(caught[0].message)
+
+
+def test_deprecated_decorator_supports_partial_callables():
+    def add(left, right):
+        return left + right
+
+    legacy_add_one = deprecated(
+        since="2.3.0", remove_in="3.0.0", replacement="add"
+    )(functools.partial(add, 1))
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        assert legacy_add_one(2) == 3
+
+    assert len(caught) == 1
+    assert issubclass(caught[0].category, DeprecationWarning)
+    assert "functools.partial" in str(caught[0].message)
+    assert legacy_add_one.__wrapped__.func is add
 
 
 def test_deprecated_decorator_preserves_async_function_contract():
