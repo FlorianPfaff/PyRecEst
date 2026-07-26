@@ -95,7 +95,10 @@ def _comparison_value(value: Any) -> Any:
     if isinstance(value, np.generic):
         return _comparison_value(value.item())
     if isinstance(value, dict):
-        return {str(key): _comparison_value(item) for key, item in value.items()}
+        return {
+            _comparison_value(key): _comparison_value(item)
+            for key, item in value.items()
+        }
     if isinstance(value, (list, tuple)):
         return [_comparison_value(item) for item in value]
     return value
