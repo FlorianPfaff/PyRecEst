@@ -40,6 +40,8 @@ from pyrecest.backend import (
     zeros,
     zeros_like,
 )
+from pyrecest.exceptions import NumericalStabilityError, ShapeError
+from pyrecest.numerics import assert_covariance_matrix
 
 from .state_space_subdivision_filter import StateSpaceSubdivisionFilter
 
@@ -200,15 +202,23 @@ def predict_circular_relaxed(
         displacements = stats.mean_displacements
         covariance_inflations = stats.covariance_inflations
 
-    q_base = (
-        zeros((2, 2), dtype=float)
-        if process_noise_cov is None
-        else asarray(process_noise_cov, dtype=float)
-    )
-    if q_base.shape != (2, 2):
-        raise ValueError("process_noise_cov must have shape (2, 2).")
-    if not bool(all(isfinite(q_base))):
-        raise ValueError("process_noise_cov must be finite.")
+    if process_noise_cov is None:
+        q_base = zeros((2, 2), dtype=float)
+    else:
+        try:
+            q_base = asarray(
+                assert_covariance_matrix(
+                    process_noise_cov,
+                    name="process_noise_cov",
+                    dim=2,
+                ),
+                dtype=float,
+            )
+        except (ValueError, ShapeError, NumericalStabilityError) as exc:
+            raise ValueError(
+                "process_noise_cov must be a finite symmetric positive-semidefinite "
+                "matrix with shape (2, 2)."
+            ) from exc
 
     covariance_matrices = stack(
         [q_base + covariance_inflations[idx] for idx in range(n_cells)],
