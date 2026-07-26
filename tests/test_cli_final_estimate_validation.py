@@ -4,7 +4,6 @@ import json
 from types import SimpleNamespace
 
 import pytest
-
 from pyrecest.cli import _cmd_run_scenario
 
 
@@ -46,7 +45,9 @@ def test_cmd_run_scenario_reports_malformed_expected_final_estimate(
     )
 
     result = _cmd_run_scenario(
-        SimpleNamespace(config=tmp_path / "config.toml", expected=expected_path, tolerance=None)
+        SimpleNamespace(
+            config=tmp_path / "config.toml", expected=expected_path, tolerance=None
+        )
     )
 
     captured = capsys.readouterr()

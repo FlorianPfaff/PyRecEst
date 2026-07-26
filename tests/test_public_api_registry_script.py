@@ -1,5 +1,4 @@
 import pytest
-
 from scripts import check_public_api_registry as registry_script
 
 

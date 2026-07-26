@@ -16,9 +16,7 @@ from pyrecest.filters.unscented_kalman_filter import UnscentedKalmanFilter
 class UnscentedKalmanFilterVectorShapeValidationTest(unittest.TestCase):
     @staticmethod
     def _make_two_dimensional_filter():
-        return UnscentedKalmanFilter(
-            GaussianDistribution(array([0.0, 1.0]), eye(2))
-        )
+        return UnscentedKalmanFilter(GaussianDistribution(array([0.0, 1.0]), eye(2)))
 
     def test_predict_rejects_matrix_transition_outputs(self):
         for output_shape in ((1, 2), (2, 1)):
@@ -66,9 +64,7 @@ class UnscentedKalmanFilterVectorShapeValidationTest(unittest.TestCase):
                     kf.update_nonlinear(measurement, lambda x: x, eye(2))
 
     def test_scalar_transition_measurement_and_output_remain_supported(self):
-        kf = UnscentedKalmanFilter(
-            GaussianDistribution(array([0.0]), array([[1.0]]))
-        )
+        kf = UnscentedKalmanFilter(GaussianDistribution(array([0.0]), array([[1.0]])))
 
         kf.predict_nonlinear(lambda x, _dt: x[0] + 1.0, array([[0.0]]))
         kf.update_nonlinear(1.0, lambda x: x[0], 1.0)

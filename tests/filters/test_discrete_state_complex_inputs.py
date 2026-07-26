@@ -41,9 +41,7 @@ class TestDiscreteStateComplexInputs(unittest.TestCase):
 
     def test_forward_backward_rejects_complex_transition_matrices(self):
         log_likelihood = np.zeros((2, 2), dtype=float)
-        complex_transition = np.array(
-            [[0.8 + 0.25j, 0.2], [0.2, 0.8]], dtype=complex
-        )
+        complex_transition = np.array([[0.8 + 0.25j, 0.2], [0.2, 0.8]], dtype=complex)
 
         for transition in (complex_transition, csr_matrix(complex_transition)):
             with self.subTest(transition_type=type(transition).__name__):
@@ -54,22 +52,16 @@ class TestDiscreteStateComplexInputs(unittest.TestCase):
 
     def test_time_varying_forward_backward_rejects_complex_transition(self):
         log_likelihood = np.zeros((2, 2), dtype=float)
-        complex_transition = np.array(
-            [[0.8 + 0.25j, 0.2], [0.2, 0.8]], dtype=complex
-        )
+        complex_transition = np.array([[0.8 + 0.25j, 0.2], [0.2, 0.8]], dtype=complex)
 
         with self.assertRaisesRegex(
             ValueError, r"transitions\[0\].*real transition probabilities"
         ):
-            discrete_forward_backward_time_varying(
-                log_likelihood, [complex_transition]
-            )
+            discrete_forward_backward_time_varying(log_likelihood, [complex_transition])
 
     def test_imm_rejects_complex_state_and_mode_transitions(self):
         log_likelihood = np.zeros((2, 2), dtype=float)
-        complex_transition = np.array(
-            [[0.8 + 0.25j, 0.2], [0.2, 0.8]], dtype=complex
-        )
+        complex_transition = np.array([[0.8 + 0.25j, 0.2], [0.2, 0.8]], dtype=complex)
 
         with self.assertRaisesRegex(
             ValueError, r"state_transitions\[0\].*real transition probabilities"

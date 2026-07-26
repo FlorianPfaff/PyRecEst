@@ -1,7 +1,6 @@
 import unittest
 
 import numpy as np
-
 from pyrecest.utils.metrics import gospa_distance, ospa_distance
 
 

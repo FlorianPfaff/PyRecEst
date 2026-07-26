@@ -238,6 +238,7 @@ def cov(
 def diagonal(a, offset=0, axis1=0, axis2=1):
     return _jnp.diagonal(_jnp.asarray(a), offset=offset, axis1=axis1, axis2=axis2)
 
+
 def squeeze(a, axis=None):
     return _jnp.squeeze(_jnp.asarray(a), axis=axis)
 

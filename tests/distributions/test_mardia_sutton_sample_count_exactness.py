@@ -1,7 +1,6 @@
 from fractions import Fraction
 
 import pytest
-
 from pyrecest.distributions.cart_prod.mardia_sutton_distribution import (
     _validate_positive_sample_count,
 )

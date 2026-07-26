@@ -9,8 +9,8 @@ def patch_pytorch_close_equal_nan_device_contract() -> None:
     """Preserve ``equal_nan`` while keeping PyTorch close operands on one device."""
 
     try:
-        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import torch  # pylint: disable=import-outside-toplevel
     except ModuleNotFoundError:  # pragma: no cover - PyTorch backend may be unavailable
         return
@@ -123,8 +123,8 @@ def patch_pytorch_searchsorted_contract() -> None:
     """Restore PyTorch ``searchsorted`` with NumPy-style array-like inputs."""
 
     try:
-        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import torch  # pylint: disable=import-outside-toplevel
     except ModuleNotFoundError:  # pragma: no cover - PyTorch backend may be unavailable
         return
@@ -200,8 +200,8 @@ def patch_pytorch_repeat_numpy_contract() -> None:
 
     try:
         import numpy as np  # pylint: disable=import-outside-toplevel
-        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import torch  # pylint: disable=import-outside-toplevel
         from pyrecest._backend_submodules import (  # pylint: disable=import-outside-toplevel
             _pytorch_repeat_with_arraylike_inputs,
@@ -237,8 +237,8 @@ def patch_pytorch_edge_pad_contract() -> None:
 
     try:
         import numpy as np  # pylint: disable=import-outside-toplevel
-        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import torch  # pylint: disable=import-outside-toplevel
     except ModuleNotFoundError:  # pragma: no cover - PyTorch backend may be unavailable
         return
@@ -259,7 +259,9 @@ def patch_pytorch_edge_pad_contract() -> None:
         try:
             pad_pairs = np.broadcast_to(pad_width_array, (ndim, 2))
         except ValueError as exc:
-            raise ValueError(f"pad_width must be broadcastable to shape ({ndim}, 2)") from exc
+            raise ValueError(
+                f"pad_width must be broadcastable to shape ({ndim}, 2)"
+            ) from exc
         if np.any(pad_pairs < 0):
             raise ValueError("index can't contain negative values")
         return tuple((int(before), int(after)) for before, after in pad_pairs.tolist())
@@ -363,8 +365,8 @@ def patch_pytorch_array_from_sparse_assignment_contract() -> None:
 
     try:
         import numpy as np  # pylint: disable=import-outside-toplevel
-        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import torch  # pylint: disable=import-outside-toplevel
     except ModuleNotFoundError:  # pragma: no cover - PyTorch backend may be unavailable
         return
@@ -417,8 +419,8 @@ def patch_raw_pytorch_reduction_alias_contract() -> None:
     """Expose PyTorch ``dim``/``keepdim`` aliases on raw reductions always."""
 
     try:
-        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         from pyrecest._backend_submodules import (  # pylint: disable=import-outside-toplevel
             _wrap_pytorch_axis_keepdim_reduction,
             _wrap_pytorch_count_nonzero_reduction,
@@ -468,8 +470,8 @@ def patch_pytorch_transpose_boolean_axes_contract() -> None:
     """Make PyTorch ``transpose`` reject boolean axes sequences like NumPy."""
 
     try:
-        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import torch  # pylint: disable=import-outside-toplevel
     except ModuleNotFoundError:  # pragma: no cover - PyTorch backend may be unavailable
         return
@@ -523,8 +525,8 @@ def patch_jax_take_arraylike_contract() -> None:
 
     try:
         import jax.numpy as jnp  # pylint: disable=import-outside-toplevel
-        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import pyrecest._backend.jax as raw_jax  # pylint: disable=import-outside-toplevel
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
     except ModuleNotFoundError:  # pragma: no cover - JAX backend may be unavailable
         return
 
@@ -573,21 +575,20 @@ def patch_pytorch_assignment_uint8_index_contract() -> None:
     """Treat uint8 PyTorch assignment indices as integer indices, not masks."""
 
     try:
-        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import torch  # pylint: disable=import-outside-toplevel
     except ModuleNotFoundError:  # pragma: no cover - PyTorch backend may be unavailable
         return
 
     current_is_boolean = getattr(raw_pytorch, "_is_boolean", None)
     current_as_assignment_index = getattr(raw_pytorch, "_as_assignment_index", None)
-    if (
-        getattr(current_is_boolean, "_pyrecest_uint8_assignment_index_contract", False)
-        and getattr(
-            current_as_assignment_index,
-            "_pyrecest_uint8_assignment_index_contract",
-            False,
-        )
+    if getattr(
+        current_is_boolean, "_pyrecest_uint8_assignment_index_contract", False
+    ) and getattr(
+        current_as_assignment_index,
+        "_pyrecest_uint8_assignment_index_contract",
+        False,
     ):
         return
 
@@ -617,12 +618,13 @@ def patch_pytorch_assignment_uint8_index_contract() -> None:
         backend.assignment = raw_pytorch.assignment
         backend.assignment_by_sum = raw_pytorch.assignment_by_sum
 
+
 def patch_pytorch_take_axis_contract() -> None:
     """Make PyTorch ``take`` reject non-integer axes like NumPy."""
 
     try:
-        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
         import torch  # pylint: disable=import-outside-toplevel
     except ModuleNotFoundError:  # pragma: no cover - PyTorch backend may be unavailable
         return

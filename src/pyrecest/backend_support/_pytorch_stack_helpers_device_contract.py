@@ -4,8 +4,14 @@ from __future__ import annotations
 
 import importlib
 
-
-_STACK_HELPER_NAMES = ("concatenate", "stack", "hstack", "vstack", "column_stack", "dstack")
+_STACK_HELPER_NAMES = (
+    "concatenate",
+    "stack",
+    "hstack",
+    "vstack",
+    "column_stack",
+    "dstack",
+)
 _EMPTY_CONCATENATE_MESSAGE = "need at least one array to concatenate"
 _EMPTY_STACK_MESSAGE = "need at least one array to stack"
 

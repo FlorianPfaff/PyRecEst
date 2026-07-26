@@ -31,7 +31,7 @@ from pyrecest.distributions import GaussianDistribution
 from pyrecest.sampling.sigma_points import MerweScaledSigmaPoints
 
 from ._ukf import UnscentedKalmanFilter as BayesianFiltersUKF
-from ._ukf import _UKFModel, _as_vector
+from ._ukf import _as_vector, _UKFModel
 from .abstract_filter import AbstractFilter
 from .manifold_mixins import HypersphericalFilterMixin
 
@@ -242,9 +242,7 @@ class HypersphericalUKF(AbstractFilter, HypersphericalFilterMixin):
         # not generally sum to one. Only the mean weights are normalized.
         predicted_mean = (new_samples * expand_dims(new_mean_weights, 0)).sum(axis=1)
         diff = new_samples - expand_dims(predicted_mean, -1)
-        predicted_cov = (
-            diff * expand_dims(new_covariance_weights, 0)
-        ) @ diff.T
+        predicted_cov = (diff * expand_dims(new_covariance_weights, 0)) @ diff.T
 
         predicted_mean = self._normalize(predicted_mean)
         self._filter_state = GaussianDistribution(

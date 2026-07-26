@@ -160,7 +160,9 @@ class MultisensorHDPAssociationResult:
                 HDPAssociationDecision(
                     measurement_index=measurement_index,
                     label=self.labels[label_index],
-                    probability=float(self.probabilities[measurement_index, label_index]),
+                    probability=float(
+                        self.probabilities[measurement_index, label_index]
+                    ),
                     log_weight=float(self.log_weights[measurement_index, label_index]),
                 )
             )
@@ -262,7 +264,9 @@ def multisensor_hdp_association(
     )
     global_scale = float(global_weights.max())
     if global_scale <= 0.0:
-        raise ValueError("global target and birth weights must contain positive total mass")
+        raise ValueError(
+            "global target and birth weights must contain positive total mass"
+        )
 
     scaled_global_weights = global_weights / global_scale
     base_weights = scaled_global_weights / scaled_global_weights.sum()

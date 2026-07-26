@@ -19,7 +19,9 @@ class TestVonMisesCdfStartingPoint(unittest.TestCase):
 
         for starting_point in ([0.0, 1.0], array([0.0, 1.0])):
             with self.subTest(starting_point=starting_point):
-                with self.assertRaisesRegex(ValueError, "starting_point must be a scalar"):
+                with self.assertRaisesRegex(
+                    ValueError, "starting_point must be a scalar"
+                ):
                     dist.cdf(array([0.5, 1.0]), starting_point=starting_point)
 
     def test_rejects_non_finite_starting_point(self):
@@ -27,7 +29,9 @@ class TestVonMisesCdfStartingPoint(unittest.TestCase):
 
         for starting_point in (float("nan"), float("inf"), float("-inf")):
             with self.subTest(starting_point=starting_point):
-                with self.assertRaisesRegex(ValueError, "starting_point must be finite"):
+                with self.assertRaisesRegex(
+                    ValueError, "starting_point must be finite"
+                ):
                     dist.cdf(array([0.5, 1.0]), starting_point=starting_point)
 
     def test_accepts_singleton_and_numpy_scalar_starting_points(self):

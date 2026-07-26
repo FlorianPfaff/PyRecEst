@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-import pytest
-
 import pyrecest.backend as backend
 import pyrecest.stability  # noqa: F401 ensure compatibility patches are installed
+import pytest
 
 pytorch_backend = pytest.importorskip("pyrecest._backend.pytorch")
 torch = pytest.importorskip("torch")

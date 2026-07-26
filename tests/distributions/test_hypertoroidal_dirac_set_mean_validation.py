@@ -3,7 +3,10 @@ import pytest
 
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import array, zeros_like
-from pyrecest.distributions import AbstractHypertoroidalDistribution, HypertoroidalDiracDistribution
+from pyrecest.distributions import (
+    AbstractHypertoroidalDistribution,
+    HypertoroidalDiracDistribution,
+)
 
 
 def _three_dimensional_distribution():

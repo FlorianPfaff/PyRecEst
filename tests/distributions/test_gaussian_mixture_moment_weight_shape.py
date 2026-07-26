@@ -23,12 +23,10 @@ class GaussianMixtureMomentWeightShapeTest(unittest.TestCase):
                     )
 
     def test_scalar_weight_remains_supported_for_single_component(self):
-        mean, covariance = (
-            GaussianMixture.mixture_parameters_to_gaussian_parameters(
-                array([[2.0]]),
-                array([[[3.0]]]),
-                array(4.0),
-            )
+        mean, covariance = GaussianMixture.mixture_parameters_to_gaussian_parameters(
+            array([[2.0]]),
+            array([[[3.0]]]),
+            array(4.0),
         )
 
         self.assertEqual(mean.shape, (1,))

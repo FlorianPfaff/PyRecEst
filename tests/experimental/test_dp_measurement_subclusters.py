@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.experimental.dp_measurement_subclusters import (
     DPMeasurementSubclusterConfig,
     active_subcluster_responsibilities,
@@ -66,8 +65,12 @@ def test_partition_score_prefers_separate_far_blobs():
         prior_variance=100.0,
     )
 
-    single_score = score_dp_measurement_partition(measurements, np.array([0, 0, 0, 0]), config)
-    split_score = score_dp_measurement_partition(measurements, np.array([0, 0, 1, 1]), config)
+    single_score = score_dp_measurement_partition(
+        measurements, np.array([0, 0, 0, 0]), config
+    )
+    split_score = score_dp_measurement_partition(
+        measurements, np.array([0, 0, 1, 1]), config
+    )
 
     assert split_score > single_score
 
@@ -106,7 +109,9 @@ def test_active_responsibilities_can_be_recomputed():
     responsibilities = active_subcluster_responsibilities(measurements, result.atoms)
 
     assert responsibilities.shape == result.responsibilities.shape
-    np.testing.assert_allclose(responsibilities.sum(axis=1), np.ones(measurements.shape[0]))
+    np.testing.assert_allclose(
+        responsibilities.sum(axis=1), np.ones(measurements.shape[0])
+    )
 
 
 @pytest.mark.parametrize(
