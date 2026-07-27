@@ -92,7 +92,10 @@ class AbstractHypertoroidalDistribution(AbstractPeriodicDistribution):
             raise ValueError("integration_boundaries must have shape (dim, 2).")
 
         def scalar_f(*args):
-            return f(*args).item()  # ensures 0-dim scalar
+            result = f(*args)
+            if hasattr(result, "item"):
+                result = result.item()
+            return float(result)
 
         return nquad(scalar_f, integration_boundaries)[0]
 
