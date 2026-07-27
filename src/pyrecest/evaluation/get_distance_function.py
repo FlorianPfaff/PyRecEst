@@ -166,31 +166,36 @@ def _symmetric_distance_function(
 
 def _target_matrix_candidates(
     value, name: str
-) -> list[tuple[numpy.ndarray, bool]]:
+) -> list[tuple[numpy.ndarray, int]]:
     value = _as_real_numeric_array(value, name)
     if value.ndim not in (1, 2):
         raise ValueError(f"{name} must be a one- or two-dimensional target set")
     if value.ndim == 1:
         if value.size == 0:
-            return [(value.reshape(0, 0), False)]
-        return [(value.reshape(1, -1), False)]
+            return [(value.reshape(0, 0), 0)]
+        return [(value.reshape(1, -1), 0)]
     if value.shape[0] == 0:
-        return [(value, False)]
+        return [(value, 0)]
     if value.shape[1] == 0:
-        return [(value.T, True)]
+        return [(value.T, 0)]
+    if value.shape[0] == value.shape[1]:
+        return [(value, 0)]
 
-    candidates = [(value, False)]
-    if value.shape[0] != value.shape[1]:
-        candidates.append((value.T, True))
-    return candidates
+    # Keep the legacy preference for common low-dimensional dim-first arrays,
+    # but consider both layouts so the pair can resolve incompatible guesses.
+    prefer_transpose = value.shape[0] <= 4 < value.shape[1]
+    return [
+        (value, int(prefer_transpose)),
+        (value.T, int(not prefer_transpose)),
+    ]
 
 
 def _compatible_target_matrices(x1, x2) -> tuple[numpy.ndarray, numpy.ndarray]:
     first_candidates = _target_matrix_candidates(x1, "x1")
     second_candidates = _target_matrix_candidates(x2, "x2")
     compatible = []
-    for first, first_transposed in first_candidates:
-        for second, second_transposed in second_candidates:
+    for first, first_penalty in first_candidates:
+        for second, second_penalty in second_candidates:
             if first.shape[1] == second.shape[1]:
                 resolved_first = first
                 resolved_second = second
@@ -204,7 +209,7 @@ def _compatible_target_matrices(x1, x2) -> tuple[numpy.ndarray, numpy.ndarray]:
                 continue
             compatible.append(
                 (
-                    int(first_transposed) + int(second_transposed),
+                    first_penalty + second_penalty,
                     resolved_first,
                     resolved_second,
                 )
