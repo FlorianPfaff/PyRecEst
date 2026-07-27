@@ -6,7 +6,7 @@ from typing import Union
 from pyrecest.backend import complex128, int32, int64, zeros
 
 from ..abstract_mixture import AbstractMixture
-from ._input_validation import as_shift_vector
+from ._input_validation import as_hypertoroidal_points, as_shift_vector
 from .abstract_hypertoroidal_distribution import AbstractHypertoroidalDistribution
 
 
@@ -35,6 +35,11 @@ class HypertoroidalMixture(AbstractMixture, AbstractHypertoroidalDistribution):
         self.dists: collections.abc.Sequence[AbstractHypertoroidalDistribution] = (
             self.dists
         )
+
+    def pdf(self, xs):
+        """Evaluate the mixture density at normalized hypertoroidal query points."""
+        xs = as_hypertoroidal_points(xs, self.dim)
+        return AbstractMixture.pdf(self, xs)
 
     def trigonometric_moment(self, n: Union[int, int32, int64]):
         """
