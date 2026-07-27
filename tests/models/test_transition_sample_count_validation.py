@@ -10,6 +10,12 @@ from pyrecest.models import (
     sample_next_state,
 )
 
+_TEMPORAL_COUNTS = (
+    np.timedelta64(2, "ns"),
+    np.datetime64("1970-01-01T00:00:00.000000002", "ns"),
+    np.array(np.timedelta64(2, "ns"), dtype=object),
+)
+
 
 class TransitionSampleCountValidationTest(unittest.TestCase):
     def test_sampleable_transition_model_rejects_invalid_sample_counts(self):
@@ -31,7 +37,7 @@ class TransitionSampleCountValidationTest(unittest.TestCase):
             np.array(True, dtype=object),
             np.array("2"),
             np.ma.array(2, mask=True),
-        )
+        ) + _TEMPORAL_COUNTS
 
         for n in invalid_counts:
             with self.subTest(n=n):
@@ -67,7 +73,14 @@ class TransitionSampleCountValidationTest(unittest.TestCase):
 
         model = DensityTransitionModel(transition_density, sample_next=sample_next)
 
-        for n in (True, -1, "2", np.array([2]), np.ma.array(2, mask=True)):
+        invalid_counts = (
+            True,
+            -1,
+            "2",
+            np.array([2]),
+            np.ma.array(2, mask=True),
+        ) + _TEMPORAL_COUNTS
+        for n in invalid_counts:
             with self.subTest(n=n):
                 with self.assertRaisesRegex(ValueError, "n must be"):
                     model.sample_next(array([0.0]), n=n)
