@@ -1,7 +1,13 @@
 import numpy as np
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import atleast_2d, empty_like, reshape, squeeze
+from pyrecest.backend import (
+    atleast_2d,
+    empty_like,
+    get_default_dtype,
+    reshape,
+    squeeze,
+)
 
 
 def _validate_initial_state_shape(x0, simulation_param):
@@ -49,9 +55,19 @@ def generate_groundtruth(simulation_param, x0=None):
             raise ValueError("Mismatch in number of timesteps.")
 
     groundtruth[0] = atleast_2d(x0)
+    state_dtype = groundtruth[0].dtype
+    dtype_kind = getattr(state_dtype, "kind", None)
+    integer_or_bool_dtype = dtype_kind in ("b", "i", "u")
+    if dtype_kind is None:
+        integer_or_bool_dtype = (
+            getattr(state_dtype, "is_floating_point", None) is False
+            and getattr(state_dtype, "is_complex", None) is False
+        )
+    if integer_or_bool_dtype:
+        state_dtype = get_default_dtype()
 
     for t in range(1, simulation_param["n_timesteps"]):
-        groundtruth[t] = empty_like(groundtruth[0])
+        groundtruth[t] = empty_like(groundtruth[0], dtype=state_dtype)
         for target_no in range(simulation_param["n_targets"]):
             previous_state = groundtruth[t - 1][target_no, :]
             if "gen_next_state_with_noise" in simulation_param:
@@ -89,7 +105,6 @@ def generate_groundtruth(simulation_param, x0=None):
 
                 sys_noise_sample = squeeze(simulation_param["sys_noise"].sample(1))
                 groundtruth[t][target_no, :] = state_to_add_noise_to + sys_noise_sample
-
             else:
                 raise ValueError("Cannot generate groundtruth.")
 

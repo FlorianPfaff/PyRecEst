@@ -47,6 +47,26 @@ class TestGenerateGroundtruth(unittest.TestCase):
         pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
         reason="Not supported on this backend",
     )
+    def test_integer_initial_state_preserves_fractional_transition_values(self):
+        x0 = array([[0, 1], [2, 3]])
+        step = array([0.5, 0.25])
+        simulation_param = {
+            "initial_prior": GaussianDistribution(zeros(2), eye(2)),
+            "n_targets": 2,
+            "n_timesteps": 3,
+            "gen_next_state_with_noise": lambda state: state + step,
+        }
+
+        groundtruth = generate_groundtruth(simulation_param, x0)
+
+        npt.assert_allclose(groundtruth[0], x0)
+        npt.assert_allclose(groundtruth[1], array([[0.5, 1.25], [2.5, 3.25]]))
+        npt.assert_allclose(groundtruth[2], array([[1.0, 1.5], [3.0, 3.5]]))
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
+        reason="Not supported on this backend",
+    )
     def test_custom_noiseless_transition_reads_previous_object_entry(self):
         x0 = array([[0.0, 1.0], [2.0, 3.0]])
         step = array([0.5, 1.0])
