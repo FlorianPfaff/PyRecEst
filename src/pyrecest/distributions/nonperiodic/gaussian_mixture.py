@@ -40,7 +40,7 @@ class GaussianMixture(LinearMixture, AbstractLinearDistribution):
         new_mixture = copy.deepcopy(self)
         mean_offset = new_mean - self.mean()
         for dist in new_mixture.dists:
-            dist.mu += mean_offset  # type: ignore
+            dist.mu = dist.mu + mean_offset  # type: ignore
         return new_mixture
 
     def to_gaussian(self, check_validity=True):
