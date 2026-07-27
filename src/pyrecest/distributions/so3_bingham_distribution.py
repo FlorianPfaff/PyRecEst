@@ -162,7 +162,13 @@ class SO3BinghamDistribution(HyperhemisphericalBinghamDistribution):
 
     def ln_pdf(self, xs):
         """Evaluate the natural logarithm of the SO(3) density."""
-        return log(self.pdf(xs))
+        xs = self._normalize_quaternions(xs)
+        exponent_matrix = self.concentration_matrix()
+        return (
+            log(array(2.0))
+            - log(self.distFullSphere.F)
+            + sum(xs * (xs @ exponent_matrix), axis=-1)
+        )
 
     def mode(self):
         """Return the modal rotation as a canonical scalar-last quaternion."""
