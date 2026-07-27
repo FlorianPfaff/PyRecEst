@@ -351,13 +351,23 @@ def _validate_integer(value: object, name: str) -> int:
         raise ValueError(message) from exc
     if value_array.ndim != 0 or value_array.dtype == np.bool_:
         raise ValueError(message)
-    if value_array.dtype.kind in {"S", "U", "c"}:
+    if value_array.dtype.kind in {"M", "S", "U", "c", "m"}:
         raise ValueError(message)
 
     scalar = value_array.item()
     if isinstance(
         scalar,
-        (bool, np.bool_, str, bytes, bytearray, complex, np.complexfloating),
+        (
+            bool,
+            np.bool_,
+            str,
+            bytes,
+            bytearray,
+            complex,
+            np.complexfloating,
+            np.datetime64,
+            np.timedelta64,
+        ),
     ):
         raise ValueError(message)
     if isinstance(scalar, (int, np.integer)):
@@ -378,13 +388,30 @@ def _validate_cost(value: object, name: str) -> float:
     except (TypeError, ValueError) as exc:
         raise ValueError(numeric_message) from exc
 
-    if value_array.ndim != 0 or value_array.dtype.kind in {"b", "S", "U", "c"}:
+    if value_array.ndim != 0 or value_array.dtype.kind in {
+        "M",
+        "S",
+        "U",
+        "b",
+        "c",
+        "m",
+    }:
         raise ValueError(numeric_message)
 
     scalar = value_array.item()
     if isinstance(
         scalar,
-        (bool, np.bool_, str, bytes, bytearray, complex, np.complexfloating),
+        (
+            bool,
+            np.bool_,
+            str,
+            bytes,
+            bytearray,
+            complex,
+            np.complexfloating,
+            np.datetime64,
+            np.timedelta64,
+        ),
     ):
         raise ValueError(numeric_message)
 
@@ -403,11 +430,18 @@ def _validate_positive_integer(value: object, name: str) -> int:
         value_array = np.asarray(value)
     except (TypeError, ValueError) as exc:
         raise ValueError(message) from exc
-    if value_array.ndim != 0 or value_array.dtype == np.bool_:
+    if (
+        value_array.ndim != 0
+        or value_array.dtype == np.bool_
+        or value_array.dtype.kind in {"M", "m"}
+    ):
         raise ValueError(message)
 
     scalar = value_array.item()
-    if isinstance(scalar, (bool, np.bool_)):
+    if isinstance(
+        scalar,
+        (bool, np.bool_, np.datetime64, np.timedelta64),
+    ):
         raise ValueError(message)
     if isinstance(scalar, (int, np.integer)):
         result = int(scalar)
