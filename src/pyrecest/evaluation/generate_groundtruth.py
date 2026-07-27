@@ -50,9 +50,7 @@ def generate_groundtruth(simulation_param, x0=None):
 
     groundtruth[0] = atleast_2d(x0)
     state_dtype = groundtruth[0].dtype
-    if np.issubdtype(state_dtype, np.integer) or np.issubdtype(
-        state_dtype, np.bool_
-    ):
+    if getattr(state_dtype, "kind", None) in ("b", "i", "u"):
         state_dtype = float
 
     for t in range(1, simulation_param["n_timesteps"]):
