@@ -19,6 +19,26 @@ def test_diagnostics_are_dict_serializable_containers():
     assert association_diag.to_dict()["selected_assignments"] == [(0, 1)]
 
 
+def test_diagnostics_mapping_exposes_metadata_entries():
+    diagnostics = FilterDiagnostics.from_mapping({"nis": 1.5, "custom_score": 7.0})
+
+    assert diagnostics["custom_score"] == 7.0
+    assert diagnostics.get("custom_score") == 7.0
+    assert "custom_score" in diagnostics
+    assert dict(diagnostics.items())["custom_score"] == 7.0
+    assert diagnostics.to_dict()["metadata"] == {"custom_score": 7.0}
+
+
+def test_diagnostics_mapping_stores_method_name_keys_in_metadata():
+    diagnostics = FilterDiagnostics()
+
+    diagnostics["items"] = "custom-value"
+
+    assert diagnostics["items"] == "custom-value"
+    assert diagnostics.metadata == {"items": "custom-value"}
+    assert callable(diagnostics.items)
+
+
 def test_particle_diagnostics_clips_negative_weights_before_normalizing():
     diagnostics = ParticleDiagnostics.from_weights([2.0, -1.0, 2.0])
 
