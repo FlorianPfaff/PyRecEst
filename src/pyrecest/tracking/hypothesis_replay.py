@@ -21,6 +21,8 @@ except Exception:  # pragma: no cover - defensive for partial downstream copies
     TrackingRecord = object  # type: ignore[misc,assignment]
 
 _TEXT_TYPES = (str, bytes, bytearray, np.str_, np.bytes_)
+_TEMPORAL_SCALAR_TYPES = (np.datetime64, np.timedelta64)
+_TEMPORAL_DTYPE_KINDS = {"M", "m"}
 
 
 @dataclass(frozen=True)
@@ -308,6 +310,20 @@ def scores_to_dicts(scores: Iterable[HypothesisReplayScore]) -> list[dict[str, A
     return [score.to_dict() for score in scores]
 
 
+def _contains_temporal_values(value: Any) -> bool:
+    """Return whether an array-like value contains NumPy temporal scalars."""
+
+    try:
+        value_array = np.asarray(value)
+    except (TypeError, ValueError):
+        return False
+    if value_array.dtype.kind in _TEMPORAL_DTYPE_KINDS:
+        return True
+    if value_array.dtype != object:
+        return False
+    return any(isinstance(item, _TEMPORAL_SCALAR_TYPES) for item in value_array.flat)
+
+
 def _finite_record_values(
     records: Sequence[Any],
     keys: tuple[str, ...],
@@ -320,14 +336,14 @@ def _finite_record_values(
         value = _record_value(record, keys)
         if value is None and fallback_norm_keys:
             vector = _record_value(record, fallback_norm_keys)
-            if vector is not None:
+            if vector is not None and not _contains_temporal_values(vector):
                 try:
                     value = float(
                         np.linalg.norm(np.asarray(vector, dtype=float).reshape(-1))
                     )
                 except (TypeError, ValueError):
                     value = None
-        if value is None:
+        if value is None or _contains_temporal_values(value):
             continue
         try:
             parsed = float(np.asarray(value, dtype=float))
@@ -361,10 +377,18 @@ def _record_value(record: Any, keys: tuple[str, ...]) -> Any | None:
 
 def _finite_float(value: Any, name: str) -> float:
     value_array = np.asarray(value)
-    if value_array.shape != () or value_array.dtype == np.bool_:
+    if (
+        value_array.shape != ()
+        or value_array.dtype == np.bool_
+        or _contains_temporal_values(value_array)
+    ):
         raise ValueError(f"{name} must be finite")
     scalar = value_array.item()
-    if isinstance(scalar, (bool, np.bool_)) or isinstance(scalar, _TEXT_TYPES):
+    if (
+        isinstance(scalar, (bool, np.bool_))
+        or isinstance(scalar, _TEXT_TYPES)
+        or isinstance(scalar, _TEMPORAL_SCALAR_TYPES)
+    ):
         raise ValueError(f"{name} must be finite")
     try:
         parsed = float(scalar)
@@ -391,10 +415,18 @@ def _positive_float(value: Any, name: str) -> float:
 
 def _nonnegative_int(value: Any, name: str) -> int:
     value_array = np.asarray(value)
-    if value_array.shape != () or value_array.dtype == np.bool_:
+    if (
+        value_array.shape != ()
+        or value_array.dtype == np.bool_
+        or _contains_temporal_values(value_array)
+    ):
         raise ValueError(f"{name} must be a nonnegative integer")
     scalar = value_array.item()
-    if isinstance(scalar, (bool, np.bool_)) or isinstance(scalar, _TEXT_TYPES):
+    if (
+        isinstance(scalar, (bool, np.bool_))
+        or isinstance(scalar, _TEXT_TYPES)
+        or isinstance(scalar, _TEMPORAL_SCALAR_TYPES)
+    ):
         raise ValueError(f"{name} must be a nonnegative integer")
     if isinstance(scalar, (int, np.integer)):
         parsed = int(scalar)
