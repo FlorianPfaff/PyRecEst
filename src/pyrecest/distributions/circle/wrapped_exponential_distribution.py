@@ -96,6 +96,22 @@ def _validate_positive_scalar(value, name):
     return value
 
 
+def _validate_integer(value, name, *, positive=False) -> int:
+    qualifier = "positive integer" if positive else "integer"
+    message = f"{name} must be a {qualifier}."
+    if isinstance(value, (bool, np.bool_, np.datetime64, np.timedelta64)) or not isinstance(
+        value, Integral
+    ):
+        raise ValueError(message)
+    try:
+        value = int(value)
+    except (OverflowError, TypeError, ValueError) as exc:
+        raise ValueError(message) from exc
+    if positive and value <= 0:
+        raise ValueError(message)
+    return value
+
+
 def _validate_pdf_points(value):
     message = "xs must contain only finite real values."
     if _contains_invalid_real_value(value):
@@ -147,15 +163,11 @@ class WrappedExponentialDistribution(AbstractCircularDistribution):
         return self._density_scale * exp(-self.lambda_ * xs)
 
     def trigonometric_moment(self, n):
-        if isinstance(n, (bool, np.bool_)) or not isinstance(n, Integral):
-            raise ValueError("n must be an integer.")
-        n = int(n)
+        n = _validate_integer(n, "n")
         return 1.0 / (1.0 - 1j * n / self.lambda_)
 
     def sample(self, n: Union[int, int32, int64]):
-        if isinstance(n, bool) or not isinstance(n, Integral) or int(n) <= 0:
-            raise ValueError("n must be a positive integer.")
-        n = int(n)
+        n = _validate_integer(n, "n", positive=True)
         # Use inverse CDF method: X = -ln(U)/lambda ~ Exp(lambda), then wrap
         u = random.uniform(size=(n,))
         u = u + (u == 0.0) * 1.0e-12
