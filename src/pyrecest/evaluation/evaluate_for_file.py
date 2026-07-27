@@ -47,7 +47,9 @@ def evaluate_for_file(
 
     for idx, inner_array in enumerate(measurement_time_steps):
         inner_array = np.asarray(inner_array)
-        if inner_array.ndim == 2:
+        if inner_array.ndim == 0:
+            n_meas_at_individual_time_step[idx] = 1
+        elif inner_array.ndim == 2:
             n_meas_at_individual_time_step[idx] = inner_array.shape[0]
         elif inner_array.ndim == 1:
             n_meas_at_individual_time_step[idx] = 0 if inner_array.size == 0 else 1
