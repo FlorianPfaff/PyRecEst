@@ -22,6 +22,20 @@ class GaussianMixtureSetMeanValidationTest(unittest.TestCase):
         npt.assert_allclose(shifted.w, gmix.w)
         npt.assert_allclose(shifted.covariance(), gmix.covariance())
 
+    def test_set_mean_promotes_integer_component_means(self):
+        gm1 = GaussianDistribution(array([0]), array([[1.0]]))
+        gm2 = GaussianDistribution(array([2]), array([[3.0]]))
+        gmix = GaussianMixture([gm1, gm2], array([0.25, 0.75]))
+
+        shifted = gmix.set_mean([4.25])
+
+        npt.assert_allclose(shifted.mean(), array([4.25]))
+        npt.assert_allclose(shifted.dists[0].mu, array([2.75]))
+        npt.assert_allclose(shifted.dists[1].mu, array([4.75]))
+        npt.assert_allclose(gmix.dists[0].mu, array([0]))
+        npt.assert_allclose(gmix.dists[1].mu, array([2]))
+        npt.assert_allclose(shifted.covariance(), gmix.covariance())
+
     def test_set_mean_rejects_wrong_shape(self):
         gm1 = GaussianDistribution(array([0.0, 1.0]), diag(array([1.0, 2.0])))
         gm2 = GaussianDistribution(array([2.0, 3.0]), diag(array([3.0, 4.0])))
