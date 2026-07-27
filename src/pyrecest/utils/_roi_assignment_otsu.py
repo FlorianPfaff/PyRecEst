@@ -2,6 +2,28 @@
 
 from __future__ import annotations
 
+import numpy as np
+
+
+def _as_positive_nbins(roi_assignment_module, nbins) -> int:
+    """Reject temporal scalars before backend integer coercion loses their dtype."""
+
+    message = "nbins must be a positive integer."
+    try:
+        value_array = np.asarray(nbins)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(message) from exc
+
+    if value_array.shape == ():
+        scalar = value_array.item()
+        if value_array.dtype.kind in {"M", "m"} or isinstance(
+            scalar,
+            (np.datetime64, np.timedelta64),
+        ):
+            raise ValueError(message)
+
+    return roi_assignment_module._as_positive_integer(nbins, "nbins")
+
 
 def _patch_minimum_similarity_threshold(roi_assignment_module) -> None:
     """Validate histogram bin counts before minimum-threshold early returns."""
@@ -13,7 +35,7 @@ def _patch_minimum_similarity_threshold(roi_assignment_module) -> None:
     def minimum_similarity_threshold(similarities, *, nbins: int = 256) -> float:
         """Estimate a threshold by locating a valley between the two strongest modes."""
 
-        nbins = roi_assignment_module._as_positive_integer(nbins, "nbins")
+        nbins = _as_positive_nbins(roi_assignment_module, nbins)
         return original_minimum(similarities, nbins=nbins)
 
     minimum_similarity_threshold.__name__ = getattr(
@@ -39,7 +61,7 @@ def patch_otsu_similarity_threshold(roi_assignment_module) -> None:
     def otsu_similarity_threshold(similarities, *, nbins: int = 256) -> float:
         """Estimate a threshold using Otsu's method on one-dimensional similarities."""
 
-        nbins = roi_assignment_module._as_positive_integer(nbins, "nbins")
+        nbins = _as_positive_nbins(roi_assignment_module, nbins)
         values = roi_assignment_module.asarray(
             similarities,
             dtype=roi_assignment_module.float64,

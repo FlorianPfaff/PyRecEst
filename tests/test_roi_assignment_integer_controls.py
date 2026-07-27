@@ -1,5 +1,7 @@
 import unittest
 
+import numpy as np
+
 # pylint: disable=no-name-in-module,no-member
 from pyrecest import backend
 from pyrecest.backend import array
@@ -13,9 +15,19 @@ from pyrecest.utils.roi_assignment import (
 class TestRoiAssignmentIntegerControls(unittest.TestCase):
     def test_thresholds_reject_invalid_nbins(self):
         scores = array([0.05, 0.08, 0.1, 0.81, 0.84, 0.9])
+        invalid_nbins = (
+            0,
+            -1,
+            1.5,
+            True,
+            [2],
+            np.timedelta64(2, "ns"),
+            np.timedelta64(2, "us"),
+            np.datetime64("1970-01-01T00:00:00.000000002", "ns"),
+        )
 
         for threshold_fn in (otsu_similarity_threshold, minimum_similarity_threshold):
-            for nbins in (0, -1, 1.5, True, [2]):
+            for nbins in invalid_nbins:
                 with self.subTest(threshold_fn=threshold_fn.__name__, nbins=nbins):
                     with self.assertRaisesRegex(ValueError, "nbins"):
                         threshold_fn(scores, nbins=nbins)
