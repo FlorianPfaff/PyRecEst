@@ -89,6 +89,30 @@ _LEGACY._validate_choice_probabilities = _validate_choice_probabilities
 _LEGACY._validate_multinomial_pvals = _validate_multinomial_pvals
 
 
+def _promoted_multivariate_normal_dtype(*values):
+    """Promote precision across all tensor-valued distribution parameters."""
+
+    torch = _LEGACY._torch
+    promoted_dtype = None
+    for value in values:
+        if not torch.is_tensor(value):
+            continue
+        value_dtype = value.dtype
+        if value_dtype.is_complex:
+            value_dtype = _LEGACY._COMPLEX_TO_FLOAT_DTYPE[value_dtype]
+        elif not value_dtype.is_floating_point:
+            continue
+        promoted_dtype = (
+            value_dtype
+            if promoted_dtype is None
+            else torch.promote_types(promoted_dtype, value_dtype)
+        )
+    return promoted_dtype or torch.get_default_dtype()
+
+
+_LEGACY._floating_distribution_dtype = _promoted_multivariate_normal_dtype
+
+
 def _validate_multivariate_normal_check_valid(check_valid):
     if not isinstance(check_valid, str) or check_valid not in {
         "warn",
