@@ -34,7 +34,7 @@ class GaussianMixtureSetMeanValidationTest(unittest.TestCase):
         npt.assert_allclose(shifted.dists[1].mu, array([4.75]))
         npt.assert_allclose(gmix.dists[0].mu, array([0]))
         npt.assert_allclose(gmix.dists[1].mu, array([2]))
-        npt.assert_allclose(shifted.covariance(), gmix.covariance())
+        npt.assert_allclose(shifted.covariance(), array([[3.25]]))
 
     def test_set_mean_rejects_wrong_shape(self):
         gm1 = GaussianDistribution(array([0.0, 1.0]), diag(array([1.0, 2.0])))
