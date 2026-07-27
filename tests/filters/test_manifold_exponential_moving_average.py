@@ -123,6 +123,37 @@ class TestManifoldExponentialMovingAverage(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "real scalar"):
             ema.alpha = "0.25"
 
+    def test_alpha_rejects_temporal_values(self):
+        temporal_values = (
+            np.timedelta64(0, "ns"),
+            np.timedelta64(1, "ns"),
+            np.datetime64(0, "ns"),
+            np.datetime64(1, "ns"),
+            np.array(np.timedelta64(1, "ns"), dtype=object),
+            np.array(np.datetime64(0, "ns"), dtype=object),
+        )
+        for alpha in temporal_values:
+            with self.subTest(alpha=alpha):
+                with self.assertRaisesRegex(TypeError, "real scalar"):
+                    ManifoldExponentialMovingAverage(
+                        initial_state=0.0,
+                        alpha=alpha,
+                        phi=_phi_so2,
+                        phi_inv=_phi_inv_so2,
+                    )
+
+        ema = ManifoldExponentialMovingAverage(
+            initial_state=0.0,
+            alpha=0.5,
+            phi=_phi_so2,
+            phi_inv=_phi_inv_so2,
+        )
+        for alpha in temporal_values:
+            with self.subTest(alpha=alpha):
+                with self.assertRaisesRegex(TypeError, "real scalar"):
+                    ema.alpha = alpha
+                self.assertEqual(ema.alpha, 0.5)
+
 
 if __name__ == "__main__":
     unittest.main()
