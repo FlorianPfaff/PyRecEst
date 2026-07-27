@@ -1,4 +1,4 @@
-from numbers import Integral
+from numbers import Integral, Real
 
 import numpy as np
 
@@ -9,6 +9,17 @@ def _is_integer_count(value):
     if isinstance(value, (bool, np.bool_, np.datetime64, np.timedelta64)):
         return False
     return isinstance(value, Integral)
+
+
+def _validate_probability(value, name):
+    if isinstance(value, (bool, np.bool_, np.datetime64, np.timedelta64)) or not isinstance(
+        value, Real
+    ):
+        raise TypeError(f"{name} must be a real scalar")
+    value = float(value)
+    if not np.isfinite(value) or not 0.0 <= value <= 1.0:
+        raise ValueError(f"{name} must be finite and between 0 and 1")
+    return value
 
 
 def _expand_meas_per_step(simulation_param):
@@ -118,6 +129,10 @@ def check_and_fix_config(simulation_param):
                 "detectionProbability"
             ]
         simulation_param.setdefault("detection_probability", 1)
+        simulation_param["detection_probability"] = _validate_probability(
+            simulation_param["detection_probability"],
+            "detection_probability",
+        )
         simulation_param.setdefault("clutter_rate", 0)
 
         if (
