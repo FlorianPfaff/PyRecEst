@@ -797,7 +797,7 @@ def test_matvec_accepts_high_rank_vector_batches_for_shared_matrix():
     ]
 
 
-def test_batched_dot_uses_last_axis_inner_product():
+def test_pytorch_matrix_dot_matches_numpy_contract():
     if backend.__backend_name__ != "pytorch":
         pytest.skip("PyTorch-specific dot helper contract")
 
@@ -806,8 +806,8 @@ def test_batched_dot_uses_last_axis_inner_product():
 
     result = backend.dot(first, second)
 
-    assert result.shape == (2,)
-    assert _to_python(result) == [17.0, 53.0]
+    assert result.shape == (2, 2)
+    assert _to_python(result) == [[19.0, 22.0], [43.0, 50.0]]
 
 
 def test_dot_accepts_scalar_operands():
@@ -828,15 +828,15 @@ def test_batched_dot_accepts_high_rank_right_operand():
     first = array([1.0, 2.0])
     second = array(
         [
-            [[0.0, 1.0], [2.0, 3.0], [4.0, 5.0]],
-            [[6.0, 7.0], [8.0, 9.0], [10.0, 11.0]],
+            [[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]],
+            [[6.0, 7.0, 8.0], [9.0, 10.0, 11.0]],
         ]
     )
 
     result = backend.dot(first, second)
 
     assert result.shape == (2, 3)
-    assert _to_python(result) == [[2.0, 8.0, 14.0], [20.0, 26.0, 32.0]]
+    assert _to_python(result) == [[6.0, 9.0, 12.0], [24.0, 27.0, 30.0]]
 
 
 def test_batched_outer_pairs_leading_dimensions():
