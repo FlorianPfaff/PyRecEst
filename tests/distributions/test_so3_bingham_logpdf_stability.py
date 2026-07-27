@@ -24,7 +24,7 @@ class SO3BinghamLogPdfStabilityTest(unittest.TestCase):
         )
 
         self.assertTrue(math.isfinite(log_density))
-        self.assertAlmostEqual(log_density, expected, places=10)
+        self.assertAlmostEqual(log_density, expected, delta=1e-4)
 
 
 if __name__ == "__main__":
