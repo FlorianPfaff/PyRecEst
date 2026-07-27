@@ -1,8 +1,14 @@
+from numbers import Integral
+
+import numpy as np
+
 from pyrecest.distributions import AbstractManifoldSpecificDistribution
 
 
 def _is_integer_count(value):
-    return isinstance(value, int) and not isinstance(value, bool)
+    if isinstance(value, (bool, np.bool_, np.datetime64, np.timedelta64)):
+        return False
+    return isinstance(value, Integral)
 
 
 def _expand_meas_per_step(simulation_param):
@@ -46,7 +52,7 @@ def check_and_fix_config(simulation_param):
     # Check for 'timesteps'
     timesteps = simulation_param["n_timesteps"]
     if timesteps is not None:
-        if not isinstance(timesteps, int):
+        if not _is_integer_count(timesteps):
             raise TypeError("n_timesteps must be an integer")
         if timesteps <= 0:
             raise ValueError("n_timesteps must be positive")
