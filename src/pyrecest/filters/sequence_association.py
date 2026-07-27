@@ -16,6 +16,15 @@ from typing import Any
 
 import numpy as np
 
+_TEMPORAL_SCALAR_TYPES = (np.datetime64, np.timedelta64)
+
+
+def _is_temporal_scalar_array(value_array: np.ndarray) -> bool:
+    return value_array.dtype.kind in {"M", "m"} or (
+        value_array.dtype == object
+        and isinstance(value_array.item(), _TEMPORAL_SCALAR_TYPES)
+    )
+
 
 @dataclass(frozen=True)
 class SequenceAssociationNode:
@@ -351,23 +360,16 @@ def _validate_integer(value: object, name: str) -> int:
         raise ValueError(message) from exc
     if value_array.ndim != 0 or value_array.dtype == np.bool_:
         raise ValueError(message)
-    if value_array.dtype.kind in {"M", "S", "U", "c", "m"}:
+    if (
+        value_array.dtype.kind in {"S", "U", "c"}
+        or _is_temporal_scalar_array(value_array)
+    ):
         raise ValueError(message)
 
     scalar = value_array.item()
     if isinstance(
         scalar,
-        (
-            bool,
-            np.bool_,
-            str,
-            bytes,
-            bytearray,
-            complex,
-            np.complexfloating,
-            np.datetime64,
-            np.timedelta64,
-        ),
+        (bool, np.bool_, str, bytes, bytearray, complex, np.complexfloating),
     ):
         raise ValueError(message)
     if isinstance(scalar, (int, np.integer)):
@@ -388,30 +390,17 @@ def _validate_cost(value: object, name: str) -> float:
     except (TypeError, ValueError) as exc:
         raise ValueError(numeric_message) from exc
 
-    if value_array.ndim != 0 or value_array.dtype.kind in {
-        "M",
-        "S",
-        "U",
-        "b",
-        "c",
-        "m",
-    }:
+    if (
+        value_array.ndim != 0
+        or value_array.dtype.kind in {"b", "S", "U", "c"}
+        or _is_temporal_scalar_array(value_array)
+    ):
         raise ValueError(numeric_message)
 
     scalar = value_array.item()
     if isinstance(
         scalar,
-        (
-            bool,
-            np.bool_,
-            str,
-            bytes,
-            bytearray,
-            complex,
-            np.complexfloating,
-            np.datetime64,
-            np.timedelta64,
-        ),
+        (bool, np.bool_, str, bytes, bytearray, complex, np.complexfloating),
     ):
         raise ValueError(numeric_message)
 
@@ -433,15 +422,12 @@ def _validate_positive_integer(value: object, name: str) -> int:
     if (
         value_array.ndim != 0
         or value_array.dtype == np.bool_
-        or value_array.dtype.kind in {"M", "m"}
+        or _is_temporal_scalar_array(value_array)
     ):
         raise ValueError(message)
 
     scalar = value_array.item()
-    if isinstance(
-        scalar,
-        (bool, np.bool_, np.datetime64, np.timedelta64),
-    ):
+    if isinstance(scalar, (bool, np.bool_)):
         raise ValueError(message)
     if isinstance(scalar, (int, np.integer)):
         result = int(scalar)
