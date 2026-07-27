@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+import numpy as np
+
 from ._additive_noise_sample_count_validation import (
     install_additive_noise_sample_count_validation,
 )
@@ -29,7 +31,23 @@ def _set_function_is_vectorized(
     )
 
 
+def _is_temporal_sample_count(value: Any) -> bool:
+    """Return whether a scalar count contains a NumPy temporal value."""
+
+    try:
+        value_array = np.asarray(value)
+    except (TypeError, ValueError, OverflowError):
+        return False
+    if value_array.shape != ():
+        return False
+    if value_array.dtype.kind in {"M", "m"}:
+        return True
+    return isinstance(value_array.item(), (np.datetime64, np.timedelta64))
+
+
 def _requested_sample_count(value: Any) -> int:
+    if _is_temporal_sample_count(value):
+        raise ValueError("n must be a nonnegative integer.")
     return _validate_sample_count(value)
 
 
@@ -39,13 +57,14 @@ def _patch_sampler_count_check(model_cls) -> None:
         return
 
     def checked_sample_next(self, state, n=1):
+        normalized_n = _requested_sample_count(n)
         has_sampler = getattr(self, "_sample_next", None) is not None
         has_count_argument = (
             getattr(self, "_sample_next_count_call_mode", None) is not None
         )
-        if has_sampler and not has_count_argument and _requested_sample_count(n) != 1:
+        if has_sampler and not has_count_argument and normalized_n != 1:
             raise TypeError("sample count is not supported by this sampler.")
-        return original(self, state, n=n)
+        return original(self, state, n=normalized_n)
 
     checked_sample_next._pyrecest_sampler_count_checked = True
     model_cls.sample_next = checked_sample_next
