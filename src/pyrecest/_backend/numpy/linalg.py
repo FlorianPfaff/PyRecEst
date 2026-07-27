@@ -22,23 +22,19 @@ from scipy.linalg import (
 
 from .._shared_numpy.linalg import (
     fractional_matrix_power as _fractional_matrix_power,
-)
-from .._shared_numpy.linalg import (
     is_single_matrix_pd,
-)
-from .._shared_numpy.linalg import logm as _logm
-from .._shared_numpy.linalg import (
+    logm as _logm,
     polar,
     qr,
     quadratic_assignment,
     solve,
     solve_sylvester,
+    sqrtm as _sqrtm,
 )
-from .._shared_numpy.linalg import sqrtm as _sqrtm
 
 
 def _empty_zero_by_zero_matrix_result(value):
-    """Return a SciPy-compatible result for matrices with trailing shape ``(0, 0)``."""
+    """Return a SciPy-compatible result for trailing zero-by-zero matrices."""
     matrix = _np.asarray(value)
     if matrix.ndim < 2 or matrix.shape[-2:] != (0, 0):
         return None
