@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from numbers import Integral
+
 import numpy as np
 
 
@@ -15,17 +17,26 @@ def patch_gaussian_marginal_temporal_indices() -> None:
         return
 
     def marginalize_out(self, dimensions):
-        candidates = [dimensions] if np.ndim(dimensions) == 0 else dimensions
-        try:
-            temporal = any(np.asarray(dim).dtype.kind in {"M", "m"} for dim in candidates)
-        except (TypeError, ValueError):
-            temporal = False
-        if temporal:
+        if isinstance(dimensions, (np.datetime64, np.timedelta64)):
+            candidates = [dimensions]
+            normalized_dimensions = dimensions
+        elif isinstance(dimensions, Integral):
+            candidates = [dimensions]
+            normalized_dimensions = dimensions
+        else:
+            normalized_dimensions = list(dimensions)
+            candidates = normalized_dimensions
+
+        if any(
+            isinstance(dim, (np.datetime64, np.timedelta64))
+            or getattr(getattr(dim, "dtype", None), "kind", None) in {"M", "m"}
+            for dim in candidates
+        ):
             raise ValueError(
                 "dimensions must contain valid zero-based integer indices; "
                 f"got {dimensions}."
             )
-        return original(self, dimensions)
+        return original(self, normalized_dimensions)
 
     marginalize_out._rejects_temporal_indices = True
     GaussianDistribution.marginalize_out = marginalize_out
