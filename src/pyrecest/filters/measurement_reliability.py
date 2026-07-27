@@ -34,11 +34,15 @@ def _normalize_integer_count(
         value_array = np.asarray(value)
     except (TypeError, ValueError) as exc:
         raise ValueError(message) from exc
-    if value_array.shape != () or value_array.dtype == np.bool_:
+    if (
+        value_array.shape != ()
+        or value_array.dtype == np.bool_
+        or value_array.dtype.kind in "Mm"
+    ):
         raise ValueError(message)
 
     scalar = value_array.item()
-    if isinstance(scalar, (bool, np.bool_)):
+    if isinstance(scalar, (bool, np.bool_, np.datetime64, np.timedelta64)):
         raise ValueError(message)
     if isinstance(scalar, (int, np.integer)):
         parsed = int(scalar)
