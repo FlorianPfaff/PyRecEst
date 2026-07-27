@@ -6,6 +6,8 @@ from collections.abc import Callable, Iterable
 from numbers import Integral
 from typing import Any, TypeVar, cast
 
+import numpy as np
+
 from .common import SupportsDim, SupportsInputDim
 
 T = TypeVar("T")
@@ -41,7 +43,13 @@ def _shape_of(value: object, value_name: str) -> tuple[int, ...]:
 
 
 def _nonnegative_integer(value: object, value_name: str) -> int:
-    if isinstance(value, bool) or not isinstance(value, Integral):
+    dtype = getattr(value, "dtype", None)
+    if (
+        isinstance(value, bool)
+        or getattr(dtype, "kind", None) in {"M", "m"}
+        or isinstance(value, (np.datetime64, np.timedelta64))
+        or not isinstance(value, Integral)
+    ):
         raise ProtocolAssertionError(f"{value_name} must be an integer.")
     int_value = int(value)
     if int_value < 0:
