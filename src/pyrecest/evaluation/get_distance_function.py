@@ -164,30 +164,44 @@ def _symmetric_distance_function(
     return distance_function
 
 
-def _as_target_matrix(
-    value, name: str, *, expected_target_dim: int | None = None
-) -> numpy.ndarray:
+def _target_matrix_candidates(
+    value, name: str
+) -> list[tuple[numpy.ndarray, bool]]:
     value = _as_real_numeric_array(value, name)
     if value.ndim not in (1, 2):
         raise ValueError(f"{name} must be a one- or two-dimensional target set")
-    if value.size == 0:
-        if value.ndim == 2:
-            return value
-        return value.reshape(0, 0)
     if value.ndim == 1:
-        return value.reshape(1, -1)
-    if expected_target_dim is not None:
-        if value.shape[1] == expected_target_dim:
-            return value
-        if value.shape[0] == expected_target_dim:
-            return value.T
-    # Common MTT layouts are either (num_targets, dim) or (dim, num_targets).
-    # Prefer rows as targets when the orientation is ambiguous; only transpose
-    # dim-first layouts when the trailing axis is too large to be a common
-    # Euclidean target dimension.
-    if value.shape[0] <= 4 < value.shape[1]:
-        return value.T
-    return value
+        if value.size == 0:
+            return [(value.reshape(0, 0), False)]
+        return [(value.reshape(1, -1), False)]
+    if value.shape[0] == 0:
+        return [(value, False)]
+    if value.shape[1] == 0:
+        return [(value.T, True)]
+
+    candidates = [(value, False)]
+    if value.shape[0] != value.shape[1]:
+        candidates.append((value.T, True))
+    return candidates
+
+
+def _compatible_target_matrices(x1, x2) -> tuple[numpy.ndarray, numpy.ndarray]:
+    first_candidates = _target_matrix_candidates(x1, "x1")
+    second_candidates = _target_matrix_candidates(x2, "x2")
+    compatible = [
+        (
+            int(first_transposed) + int(second_transposed),
+            first,
+            second,
+        )
+        for first, first_transposed in first_candidates
+        for second, second_transposed in second_candidates
+        if first.shape[1] == second.shape[1]
+    ]
+    if not compatible:
+        raise ValueError("MTT state sets must use the same target dimension")
+    _, first, second = min(compatible, key=lambda candidate: candidate[0])
+    return first, second
 
 
 def _validate_mtt_cutoff_distance(value: Any) -> float:
@@ -220,22 +234,9 @@ def _coerce_additional_params(additional_params: Any) -> Mapping[str, Any]:
 
 
 def _euclidean_mtt_distance(x1, x2, *, cutoff_distance: float) -> float:
-    first = _as_target_matrix(x1, "x1")
-    second = _as_target_matrix(x2, "x2")
-    if first.shape[0] == 0 and first.shape[1] != 0:
-        second = _as_target_matrix(x2, "x2", expected_target_dim=first.shape[1])
-    elif second.shape[0] == 0 and second.shape[1] != 0:
-        first = _as_target_matrix(x1, "x1", expected_target_dim=second.shape[1])
+    first, second = _compatible_target_matrices(x1, x2)
     if first.shape[0] == 0 or second.shape[0] == 0:
-        if (
-            first.shape[1] != 0
-            and second.shape[1] != 0
-            and first.shape[1] != second.shape[1]
-        ):
-            raise ValueError("MTT state sets must use the same target dimension")
         return float(cutoff_distance * abs(first.shape[0] - second.shape[0]))
-    if first.shape[1] != second.shape[1]:
-        raise ValueError("MTT state sets must use the same target dimension")
 
     deltas = first[:, None, :] - second[None, :, :]
     costs = numpy.linalg.norm(deltas, axis=2)
