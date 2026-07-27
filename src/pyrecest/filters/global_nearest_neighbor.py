@@ -1,4 +1,5 @@
 # pylint: disable=redefined-builtin,no-name-in-module,no-member,duplicate-code
+import builtins
 import warnings
 
 import numpy as np
@@ -20,6 +21,23 @@ from scipy.spatial.distance import cdist
 from scipy.stats import chi2
 
 from .abstract_nearest_neighbor_tracker import AbstractNearestNeighborTracker
+
+
+_INVALID_PAIRWISE_COST_SCALAR_TYPES = (
+    type(None),
+    bool,
+    np.bool_,
+    str,
+    bytes,
+    bytearray,
+    np.str_,
+    np.bytes_,
+    complex,
+    np.complexfloating,
+    np.datetime64,
+    np.timedelta64,
+)
+_REJECTED_PAIRWISE_COST_DTYPE_KINDS = frozenset({"b", "c", "S", "U", "M", "m"})
 
 
 class GlobalNearestNeighbor(AbstractNearestNeighborTracker):
@@ -75,13 +93,38 @@ class GlobalNearestNeighbor(AbstractNearestNeighborTracker):
             return None
         try:
             raw_pairwise_cost_matrix = np.asarray(pairwise_cost_matrix)
-        except (TypeError, ValueError) as exc:
+        except (TypeError, ValueError, OverflowError) as exc:
             raise ValueError(
                 "pairwise_cost_matrix must contain real numeric costs."
             ) from exc
-        if raw_pairwise_cost_matrix.dtype.kind in {"b", "c", "S", "U"}:
+        if raw_pairwise_cost_matrix.dtype.kind in _REJECTED_PAIRWISE_COST_DTYPE_KINDS:
             raise ValueError("pairwise_cost_matrix must contain real numeric costs.")
-        pairwise_cost_matrix = asarray(pairwise_cost_matrix, dtype=float)
+
+        inspect_scalar_types = raw_pairwise_cost_matrix.dtype.kind == "O" or isinstance(
+            pairwise_cost_matrix, (list, tuple)
+        )
+        if inspect_scalar_types:
+            try:
+                object_pairwise_cost_matrix = np.asarray(
+                    pairwise_cost_matrix, dtype=object
+                )
+            except (TypeError, ValueError, OverflowError) as exc:
+                raise ValueError(
+                    "pairwise_cost_matrix must contain real numeric costs."
+                ) from exc
+            if builtins.any(
+                isinstance(value, _INVALID_PAIRWISE_COST_SCALAR_TYPES)
+                for value in object_pairwise_cost_matrix.reshape(-1)
+            ):
+                raise ValueError(
+                    "pairwise_cost_matrix must contain real numeric costs."
+                )
+        try:
+            pairwise_cost_matrix = asarray(raw_pairwise_cost_matrix, dtype=float)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError(
+                "pairwise_cost_matrix must contain real numeric costs."
+            ) from exc
         if pairwise_cost_matrix.shape != (n_targets, n_meas):
             raise ValueError(
                 "pairwise_cost_matrix must have shape "
