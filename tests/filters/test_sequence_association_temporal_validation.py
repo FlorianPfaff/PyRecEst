@@ -61,7 +61,10 @@ def test_sequence_solver_rejects_temporal_counts_and_costs(temporal_value):
             top_k_terminal_paths=temporal_value,
         )
 
-    with pytest.raises(ValueError, match="transition_cost must be a scalar numeric cost"):
+    with pytest.raises(
+        ValueError,
+        match="transition_cost must be a scalar numeric cost",
+    ):
         solve_viterbi_sequence_association(
             frames,
             lambda _previous, _current, _context: temporal_value,
