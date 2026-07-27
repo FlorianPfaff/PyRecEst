@@ -262,7 +262,8 @@ def _get_large_cost(cost_matrix, row_non_assignment_costs, col_non_assignment_co
             col_non_assignment_costs.reshape(-1),
         )
     )
-    return 2.0 * (float(_sum(_abs(finite_entries))) + 1.0)
+    with _np.errstate(over="ignore"):
+        return 2.0 * (float(_sum(_abs(finite_entries))) + 1.0)
 
 
 def _build_augmented_cost_matrix(
@@ -327,7 +328,12 @@ def _solve_subproblem(  # pylint: disable=too-many-locals
             row_index, col_index
         ]
 
-    row_ind, col_ind = linear_sum_assignment(_to_numpy(modified_cost_matrix))
+    try:
+        row_ind, col_ind = linear_sum_assignment(_to_numpy(modified_cost_matrix))
+    except ValueError as exc:
+        if "infeasible" in str(exc).lower():
+            return None
+        raise
     chosen_costs = modified_cost_matrix[row_ind, col_ind]
     if _any(chosen_costs >= large_cost / 2.0):
         return None
@@ -431,6 +437,8 @@ def murty_k_best_assignments(  # pylint: disable=too-many-locals
                 "cost": solution["cost"],
             }
         )
+        if len(ranked_solutions) >= k:
+            break
 
         forced_prefix = list(subproblem.forced_pairs)
         for row_index in range(subproblem.branching_row_start, n_rows):
