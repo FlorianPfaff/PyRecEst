@@ -46,6 +46,11 @@ class AdditiveNoiseSampleCountValidationTest(unittest.TestCase):
             np.timedelta64(4, "ns"),
             np.timedelta64(4, "us"),
             np.datetime64("2026-07-27"),
+            np.array(np.timedelta64(4, "ns"), dtype=object),
+            np.array(
+                np.datetime64("1970-01-01T00:00:00.000000004", "ns"),
+                dtype=object,
+            ),
         )
 
         for invalid_count in invalid_counts:
