@@ -11,6 +11,10 @@ def _empty_estimates_like(groundtruth):
     """Create an estimate container matching dense or object groundtruth arrays."""
     if isinstance(groundtruth, _np.ndarray) and groundtruth.dtype == object:
         return _np.empty_like(groundtruth)
+
+    groundtruth_dtype = getattr(groundtruth, "dtype", None)
+    if getattr(groundtruth_dtype, "kind", None) in ("b", "i", "u"):
+        return empty_like(groundtruth, dtype=float)
     return empty_like(groundtruth)
 
 
