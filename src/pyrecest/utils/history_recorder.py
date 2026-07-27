@@ -233,10 +233,17 @@ class HistoryRecorder:
 
     @staticmethod
     def append_padded(curr_ests, estimates_over_time):
-        """Append a column to a possibly growing 2-D history array."""
-        curr_ests = HistoryRecorder._ensure_2d(curr_ests)
+        """Append a column to a possibly growing 2-D history array.
 
+        Empty estimates still represent a time step and therefore append an
+        all-NaN column instead of silently leaving the history unchanged.
+        """
+        curr_ests = _as_padded_numeric_array(curr_ests)
         m, t = estimates_over_time.shape
+        if backend.size(curr_ests) == 0:
+            return hstack((estimates_over_time, full((m, 1), nan)))
+
+        curr_ests = HistoryRecorder._ensure_2d(curr_ests)
         n = curr_ests.shape[0]
 
         if n <= m:
