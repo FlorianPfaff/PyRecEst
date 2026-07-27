@@ -71,3 +71,22 @@ def test_evaluate_for_file_counts_flat_object_measurement_timesteps(
         captured["scenario_config"]["n_meas_at_individual_time_step"],
         np.array([0, 1, 2], dtype=int),
     )
+
+
+def test_evaluate_for_file_counts_scalar_measurements_as_one(tmp_path, monkeypatch):
+    module = importlib.import_module("pyrecest.evaluation.evaluate_for_file")
+    input_file = tmp_path / "scalar_scenario.npy"
+    measurements = np.empty(2, dtype=object)
+    measurements[0] = 4.0
+    measurements[1] = np.array(5.0)
+    groundtruths = np.zeros((1, 2, 1), dtype=float)
+    np.save(input_file, {"groundtruths": groundtruths, "measurements": measurements})
+
+    captured = _capture_evaluate_for_variables(monkeypatch, module)
+
+    module.evaluate_for_file(str(input_file), [], {}, save_folder=str(tmp_path))
+
+    np.testing.assert_array_equal(
+        captured["scenario_config"]["n_meas_at_individual_time_step"],
+        np.array([1, 1], dtype=int),
+    )
