@@ -194,10 +194,19 @@ class DirichletProcessCardinalityPrior(PitmanYorCardinalityPrior):
         super().__init__(strength=strength, discount=0.0)
 
 
+def _is_temporal_scalar(value: object) -> bool:
+    dtype = getattr(value, "dtype", None)
+    return getattr(dtype, "kind", None) in {"M", "m"}
+
+
 def _validate_cluster_sizes(cluster_sizes: Sequence[int]) -> tuple[int, ...]:
     sizes = tuple(cluster_sizes)
     for size in sizes:
-        if isinstance(size, bool) or not isinstance(size, Integral):
+        if (
+            isinstance(size, bool)
+            or _is_temporal_scalar(size)
+            or not isinstance(size, Integral)
+        ):
             raise TypeError("cluster sizes must be positive integers.")
         if int(size) <= 0:
             raise ValueError("cluster sizes must be positive integers.")
@@ -205,7 +214,11 @@ def _validate_cluster_sizes(cluster_sizes: Sequence[int]) -> tuple[int, ...]:
 
 
 def _validate_nonnegative_int(value: int, name: str) -> int:
-    if isinstance(value, bool) or not isinstance(value, Integral):
+    if (
+        isinstance(value, bool)
+        or _is_temporal_scalar(value)
+        or not isinstance(value, Integral)
+    ):
         raise TypeError(f"{name} must be a nonnegative integer.")
     value = int(value)
     if value < 0:

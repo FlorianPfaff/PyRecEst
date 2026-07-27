@@ -1,5 +1,6 @@
 import math
 
+import numpy as np
 import pytest
 from pyrecest.tracking.nonparametric_cardinality import (
     DirichletProcessCardinalityPrior,
@@ -89,3 +90,27 @@ def test_cluster_size_validation():
         prior.predictive_probabilities((0, 1))
     with pytest.raises(TypeError):
         prior.predictive_probabilities((True, 1))
+
+
+@pytest.mark.parametrize(
+    "temporal_size",
+    [np.timedelta64(3, "ns"), np.timedelta64(3, "us")],
+)
+def test_cluster_sizes_reject_temporal_scalars(temporal_size):
+    prior = PitmanYorCardinalityPrior()
+
+    with pytest.raises(TypeError, match="cluster sizes"):
+        prior.predictive_probabilities((temporal_size,))
+
+
+@pytest.mark.parametrize(
+    "temporal_count",
+    [np.timedelta64(3, "ns"), np.timedelta64(3, "us")],
+)
+def test_cardinality_controls_reject_temporal_scalars(temporal_count):
+    prior = PitmanYorCardinalityPrior()
+
+    with pytest.raises(TypeError, match="num_observations"):
+        prior.cluster_count_pmf(temporal_count)
+    with pytest.raises(TypeError, match="min_clusters"):
+        prior.cluster_count_tail_probability(3, temporal_count)
