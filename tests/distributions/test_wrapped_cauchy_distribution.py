@@ -1,5 +1,6 @@
 import unittest
 
+import numpy as np
 import numpy.testing as npt
 
 # pylint: disable=no-name-in-module,no-member
@@ -81,7 +82,13 @@ class WrappedCauchyDistributionTest(unittest.TestCase):
     def test_trigonometric_moment_rejects_non_integer_orders(self):
         dist = WrappedCauchyDistribution(self.mu, self.gamma)
 
-        for order in (0.5, True, "1"):
+        for order in (
+            0.5,
+            True,
+            "1",
+            np.timedelta64(3, "ns"),
+            np.timedelta64(3, "us"),
+        ):
             with self.subTest(order=order):
                 with self.assertRaisesRegex(ValueError, "n must be an integer"):
                     dist.trigonometric_moment(order)
