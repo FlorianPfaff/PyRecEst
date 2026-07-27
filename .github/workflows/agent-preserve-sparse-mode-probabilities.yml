@@ -1,0 +1,147 @@
+name: Agent preserve sparse mode probabilities
+
+on:
+  push:
+    branches:
+      - agent/preserve-sparse-mode-probabilities
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/preserve-sparse-mode-probabilities
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Apply focused fix and regressions
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          source_path = Path("src/pyrecest/filters/mode_rbpf_manifold_ukf_tracker.py")
+          source = source_path.read_text()
+          old = '''    @staticmethod
+    def _normalize_rows(matrix):
+        matrix = np.maximum(matrix, ModeRBPFManifoldUKFTracker._jitter)
+        return matrix / np.sum(matrix, axis=1, keepdims=True)
+
+    @staticmethod
+    def _normalize_probs(probs):
+        probs = np.maximum(
+            np.asarray(probs, dtype=float), ModeRBPFManifoldUKFTracker._jitter
+        )
+        return probs / np.sum(probs)
+'''
+          new = '''    @staticmethod
+    def _normalize_rows(matrix):
+        matrix = np.asarray(matrix, dtype=float)
+        if matrix.ndim != 2:
+            raise ValueError("transition_matrix must be two-dimensional")
+        if np.any(~np.isfinite(matrix)) or np.any(matrix < 0.0):
+            raise ValueError(
+                "transition_matrix must contain finite non-negative probabilities"
+            )
+        row_sums = np.sum(matrix, axis=1, keepdims=True)
+        if np.any(row_sums <= 0.0):
+            raise ValueError(
+                "each transition_matrix row must have positive total probability"
+            )
+        return matrix / row_sums
+
+    @staticmethod
+    def _normalize_probs(probs):
+        probs = np.asarray(probs, dtype=float)
+        if probs.shape != (len(ModeRBPFManifoldUKFTracker.mode_names),):
+            raise ValueError("initial_mode_probs must have one entry per mode")
+        if np.any(~np.isfinite(probs)) or np.any(probs < 0.0):
+            raise ValueError(
+                "initial_mode_probs must contain finite non-negative probabilities"
+            )
+        total = float(np.sum(probs))
+        if total <= 0.0:
+            raise ValueError("initial_mode_probs must have positive total probability")
+        return probs / total
+'''
+          if old not in source:
+              raise SystemExit("source normalization block not found")
+          source_path.write_text(source.replace(old, new, 1))
+
+          test_path = Path("tests/filters/test_mode_rbpf_manifold_ukf_tracker.py")
+          tests = test_path.read_text()
+          marker = '''
+
+if __name__ == "__main__":
+    unittest.main()
+'''
+          additions = '''
+
+    def test_preserves_impossible_mode_probabilities(self):
+        transition_matrix = np.eye(3)
+        tracker = self.make_tracker(
+            transition_matrix=transition_matrix,
+            initial_mode_probs=[1.0, 0.0, 0.0],
+            n_particles=8,
+        )
+
+        npt.assert_array_equal(tracker.transition_matrix, transition_matrix)
+        npt.assert_array_equal(
+            tracker._normalize_probs([1.0, 0.0, 0.0]),
+            np.array([1.0, 0.0, 0.0]),
+        )
+        tracker.modes[:] = 0
+        tracker._propagate_modes()
+        npt.assert_array_equal(tracker.modes, np.zeros(8, dtype=int))
+
+    def test_rejects_invalid_transition_probabilities(self):
+        invalid_matrices = (
+            np.array([[1.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 1.0]]),
+            np.array([[1.0, -0.1, 0.1], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]),
+            np.array([[1.0, np.nan, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]),
+            np.array([[1.0, np.inf, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]),
+        )
+        for transition_matrix in invalid_matrices:
+            with self.subTest(transition_matrix=transition_matrix):
+                with self.assertRaisesRegex(ValueError, "transition_matrix"):
+                    self.make_tracker(transition_matrix=transition_matrix)
+
+    def test_rejects_invalid_initial_mode_probabilities(self):
+        invalid_probabilities = (
+            [0.0, 0.0, 0.0],
+            [1.0, -0.1, 0.1],
+            [1.0, np.nan, 0.0],
+            [1.0, np.inf, 0.0],
+            [1.0, 0.0],
+        )
+        for initial_mode_probs in invalid_probabilities:
+            with self.subTest(initial_mode_probs=initial_mode_probs):
+                with self.assertRaisesRegex(ValueError, "initial_mode_probs"):
+                    self.make_tracker(initial_mode_probs=initial_mode_probs)
+'''
+          if marker not in tests:
+              raise SystemExit("test insertion marker not found")
+          test_path.write_text(tests.replace(marker, additions + marker, 1))
+          PY
+      - name: Validate focused changes
+        run: |
+          python -m py_compile \
+            src/pyrecest/filters/mode_rbpf_manifold_ukf_tracker.py \
+            tests/filters/test_mode_rbpf_manifold_ukf_tracker.py
+          python -m pip install --upgrade pip
+          python -m pip install -e . pytest
+          python -m pytest -q tests/filters/test_mode_rbpf_manifold_ukf_tracker.py
+      - name: Commit patch
+        run: |
+          rm .github/workflows/agent-preserve-sparse-mode-probabilities.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/pyrecest/filters/mode_rbpf_manifold_ukf_tracker.py \
+                  tests/filters/test_mode_rbpf_manifold_ukf_tracker.py \
+                  .github/workflows/agent-preserve-sparse-mode-probabilities.yml
+          git commit -m "Preserve sparse mode probabilities"
+          git push origin HEAD:agent/preserve-sparse-mode-probabilities
