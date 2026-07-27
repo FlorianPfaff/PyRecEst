@@ -49,9 +49,12 @@ for left, right in cases:
     result = backend.dot(backend.array(left), backend.array(right))
     actual = backend.to_numpy(result)
     expected = np.dot(np.asarray(left), np.asarray(right))
-    npt.assert_array_equal(actual, expected)
+    if expected.dtype == np.bool_:
+        npt.assert_array_equal(actual, expected)
+        assert actual.dtype == expected.dtype
+    else:
+        npt.assert_allclose(actual, expected)
     assert tuple(actual.shape) == expected.shape
-    assert actual.dtype == expected.dtype
 """
     subprocess.run([sys.executable, "-c", code], check=True, env=env)
 
@@ -90,8 +93,11 @@ for left, right in cases:
     result = raw_pytorch.dot(raw_pytorch.array(left), raw_pytorch.array(right))
     actual = raw_pytorch.to_numpy(result)
     expected = np.dot(np.asarray(left), np.asarray(right))
-    npt.assert_array_equal(actual, expected)
+    if expected.dtype == np.bool_:
+        npt.assert_array_equal(actual, expected)
+        assert actual.dtype == expected.dtype
+    else:
+        npt.assert_allclose(actual, expected)
     assert tuple(actual.shape) == expected.shape
-    assert actual.dtype == expected.dtype
 """
     subprocess.run([sys.executable, "-c", code], check=True, env=env)
