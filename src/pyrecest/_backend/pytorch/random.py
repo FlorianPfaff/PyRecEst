@@ -267,9 +267,7 @@ def _validate_randint_array_dtype_bounds(low, high, dtype):
     # representable by the output dtype, as in randint(255, 256, dtype=uint8).
     # For int64, input tensors cannot represent max + 1, so every accepted high
     # value is already within the valid endpoint range.
-    if dtype != _torch.int64 and bool(
-        _torch.any(high_int64 > dtype_info.max + 1)
-    ):
+    if dtype != _torch.int64 and bool(_torch.any(high_int64 > dtype_info.max + 1)):
         raise ValueError(f"high is out of bounds for {dtype_name}")
 
 
