@@ -10,18 +10,25 @@ import numpy as np
 from .likelihood import _validate_sample_count
 
 
+def _is_temporal_sample_count(value: Any) -> bool:
+    """Return whether a scalar count contains a NumPy temporal value."""
+
+    try:
+        value_array = np.asarray(value)
+    except (TypeError, ValueError, OverflowError):
+        return False
+    if value_array.shape != ():
+        return False
+    if value_array.dtype.kind in {"M", "m"}:
+        return True
+    return isinstance(value_array.item(), (np.datetime64, np.timedelta64))
+
+
 def _validated_additive_noise_sample_count(value: Any) -> int:
     """Reject temporal NumPy scalars before generic integer normalization."""
 
-    dtype = getattr(value, "dtype", None)
-    if dtype is not None:
-        try:
-            if np.issubdtype(dtype, np.datetime64) or np.issubdtype(
-                dtype, np.timedelta64
-            ):
-                raise ValueError("n must be a nonnegative integer.")
-        except TypeError:
-            pass
+    if _is_temporal_sample_count(value):
+        raise ValueError("n must be a nonnegative integer.")
     return _validate_sample_count(value)
 
 
