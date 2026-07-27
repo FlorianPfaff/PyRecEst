@@ -128,3 +128,49 @@ class UnscentedRauchTungStriebelSmootherTest(unittest.TestCase):
             smoothed_states_recomputed[-1].C,
             filtered_states[-1].C,
         )
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
+        reason="Not supported on this backend",
+    )
+    def test_filter_rejects_measurement_function_dimension_mismatch(self):
+        smoother = UnscentedRauchTungStriebelSmoother()
+        initial_state = GaussianDistribution(
+            array([0.0, 0.0]),
+            array([[1.0, 0.0], [0.0, 1.0]]),
+        )
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "measurement has dimension 1, but measurement function returns dimension 2",
+        ):
+            smoother.filter(
+                initial_state=initial_state,
+                measurements=array([1.0]),
+                measurement_functions=lambda x: x,
+                meas_noise_covariances=array([[0.5]]),
+            )
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
+        reason="Not supported on this backend",
+    )
+    def test_filter_rejects_transition_function_dimension_mismatch(self):
+        smoother = UnscentedRauchTungStriebelSmoother()
+        initial_state = GaussianDistribution(
+            array([0.0, 0.0]),
+            array([[1.0, 0.0], [0.0, 1.0]]),
+        )
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "transition function must return vectors with state dimension 2; got 1",
+        ):
+            smoother.filter(
+                initial_state=initial_state,
+                measurements=array([[0.0, 0.0], [0.0, 0.0]]),
+                measurement_functions=lambda x: x,
+                meas_noise_covariances=array([[1.0, 0.0], [0.0, 1.0]]),
+                transition_functions=lambda x, _dt: array([x[0]]),
+                sys_noise_covariances=array([[0.1, 0.0], [0.0, 0.1]]),
+            )
