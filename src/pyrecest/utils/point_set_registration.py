@@ -18,7 +18,6 @@ from dataclasses import dataclass
 from typing import Any, Callable, Literal
 
 import numpy as np
-
 import pyrecest.backend
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member,duplicate-code
