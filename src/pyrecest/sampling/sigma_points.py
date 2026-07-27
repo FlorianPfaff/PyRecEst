@@ -23,6 +23,7 @@ from pyrecest.backend import (
 
 _TEXT_SCALAR_TYPES = (str, bytes, np.str_, np.bytes_)
 _COMPLEX_SCALAR_TYPES = (complex, np.complexfloating)
+_TEMPORAL_SCALAR_TYPES = (np.datetime64, np.timedelta64)
 
 
 def _has_complex_dtype(value) -> bool:
@@ -60,11 +61,21 @@ def _scalar_item(value, name: str):
     shape = getattr(value, "shape", ())
     if tuple(shape) != ():
         raise ValueError(f"{name} must be a scalar")
+
+    dtype = getattr(value, "dtype", None)
+    if dtype is not None:
+        try:
+            dtype_kind = np.dtype(dtype).kind
+        except (TypeError, ValueError):
+            dtype_kind = None
+        if dtype_kind in {"M", "m"}:
+            raise ValueError(f"{name} must be a scalar")
+
     try:
         scalar = value.item() if hasattr(value, "item") else value
     except (TypeError, ValueError, AttributeError) as exc:
         raise ValueError(f"{name} must be a scalar") from exc
-    if isinstance(scalar, (bool, np.bool_)):
+    if isinstance(scalar, (bool, np.bool_) + _TEMPORAL_SCALAR_TYPES):
         raise ValueError(f"{name} must be a scalar")
     return scalar
 
