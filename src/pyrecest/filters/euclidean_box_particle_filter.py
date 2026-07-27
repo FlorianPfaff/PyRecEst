@@ -274,7 +274,7 @@ class EuclideanBoxParticleFilter(AbstractParticleFilter, EuclideanFilterMixin):
             contracted = contractor(predicted.lower, predicted.upper, measurement)
         contracted_lower, contracted_upper = self._coerce_box_result(contracted)
 
-        valid = all(contracted_upper >= contracted_lower, axis=1)
+        valid = all(contracted_upper > contracted_lower, axis=1)
         contracted_widths = maximum(contracted_upper - contracted_lower, 0.0)
         contracted_volumes = prod(contracted_widths, axis=1)
         safe_previous_volumes = where(
