@@ -26,6 +26,22 @@ from scipy.optimize import linear_sum_assignment
 from scipy.spatial.distance import cdist
 
 
+_INVALID_REAL_SCALAR_TYPES = (
+    type(None),
+    bool,
+    np.bool_,
+    str,
+    bytes,
+    bytearray,
+    np.str_,
+    np.bytes_,
+    complex,
+    np.complexfloating,
+    np.datetime64,
+    np.timedelta64,
+)
+
+
 @dataclass(frozen=True)
 class RegistrationResultBase:  # pylint: disable=too-many-instance-attributes
     """Shared fields for registration result containers."""
@@ -82,6 +98,27 @@ class RegistrationLoopCallbacks:
     assignment_solver: Callable[..., Any]
 
 
+def _contains_invalid_real_values(value) -> bool:
+    """Detect invalid scalar values before array coercion can hide their types."""
+    if isinstance(value, _INVALID_REAL_SCALAR_TYPES):
+        return True
+
+    if isinstance(value, np.ndarray):
+        if value.dtype.kind != "O":
+            return False
+    elif not isinstance(value, (list, tuple)):
+        return False
+
+    try:
+        object_values = np.asarray(value, dtype=object)
+    except (OverflowError, TypeError, ValueError, RuntimeError):
+        return False
+    return any(
+        isinstance(item, _INVALID_REAL_SCALAR_TYPES)
+        for item in object_values.reshape(-1)
+    )
+
+
 def as_point_array(
     points,
     *,
@@ -89,6 +126,8 @@ def as_point_array(
     expected_dim_error: str | None = None,
 ):
     """Validate a point array and optionally enforce its ambient dimension."""
+    if _contains_invalid_real_values(points):
+        raise ValueError("points must contain real numeric values.")
     point_array = asarray(points)
     if point_array.ndim != 2:
         raise ValueError("points must have shape (n_points, dim).")
@@ -188,6 +227,8 @@ def _is_numpy_temporal_scalar(value) -> bool:
 
 
 def _coerce_cost_matrix(cost_matrix):
+    if _contains_invalid_real_values(cost_matrix):
+        raise ValueError("cost_matrix must contain real numeric values.")
     try:
         costs = asarray(cost_matrix)
     except (TypeError, ValueError, OverflowError, RuntimeError) as exc:
