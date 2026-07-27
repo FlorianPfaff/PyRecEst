@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.backend import array
 from pyrecest.distributions.nonperiodic.linear_box_particle_distribution import (
     LinearBoxParticleDistribution,

@@ -1,7 +1,6 @@
 from numbers import Integral
 
 import numpy as np
-
 from pyrecest.distributions import AbstractManifoldSpecificDistribution
 
 
