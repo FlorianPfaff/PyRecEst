@@ -33,6 +33,9 @@ class EuclideanMttDistanceLayoutTest(unittest.TestCase):
     def test_supports_dimension_first_empty_target_sets(self):
         self.assertEqual(self.distance(np.empty((5, 0)), self.second.T), 30.0)
 
+    def test_preserves_dimensionless_empty_target_sets(self):
+        self.assertEqual(self.distance(np.array([]), self.second), 30.0)
+
 
 if __name__ == "__main__":
     unittest.main()
