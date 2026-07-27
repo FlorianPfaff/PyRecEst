@@ -142,6 +142,10 @@ class TrackletGraphConfig:
                 "max_gap must be nonnegative when supplied",
             )
         )
+        allow_overlap = _boolean(
+            self.allow_overlap,
+            "allow_overlap must be a boolean",
+        )
         diversity_weight = _nonnegative_finite_float(
             self.diversity_weight,
             "diversity_weight",
@@ -154,6 +158,7 @@ class TrackletGraphConfig:
         )
         object.__setattr__(self, "top_k", top_k)
         object.__setattr__(self, "beam_width", beam_width)
+        object.__setattr__(self, "allow_overlap", allow_overlap)
         object.__setattr__(self, "max_gap", max_gap)
         object.__setattr__(self, "diversity_weight", diversity_weight)
         object.__setattr__(self, "candidate_multiplier", candidate_multiplier)
@@ -228,6 +233,10 @@ def build_tracklet_adjacency(
 ) -> dict[Hashable, list[tuple[Hashable, float]]]:
     """Build adjacency lists for a time-ordered tracklet DAG."""
 
+    allow_overlap = _boolean(
+        allow_overlap,
+        "allow_overlap must be a boolean",
+    )
     ordered = sort_tracklets(tracklets)
     _require_unique_tracklet_ids(ordered)
     max_gap_value = (
@@ -527,6 +536,18 @@ def _state_vector(value: Any, name: str) -> np.ndarray:
     if not np.isfinite(vector).all():
         raise ValueError(f"{name} must contain only finite values")
     return vector.copy()
+
+
+def _boolean(value: Any, message: str) -> bool:
+    if isinstance(value, (bool, np.bool_)):
+        return bool(value)
+    try:
+        value_array = np.asarray(value)
+    except (TypeError, ValueError, RuntimeError) as exc:
+        raise ValueError(message) from exc
+    if value_array.shape == () and value_array.dtype == np.bool_:
+        return bool(value_array.item())
+    raise ValueError(message)
 
 
 def _positive_integer(value: Any, name: str, message: str) -> int:
