@@ -266,7 +266,13 @@ class WrappedNormalDistribution(
         )
 
     def sample(self, n: Union[int, int32, int64]):
-        if isinstance(n, bool) or not isinstance(n, Integral) or int(n) <= 0:
+        dtype_kind = getattr(getattr(n, "dtype", None), "kind", None)
+        if (
+            isinstance(n, bool)
+            or dtype_kind in {"M", "m"}
+            or not isinstance(n, Integral)
+            or int(n) <= 0
+        ):
             raise ValueError("n must be a positive integer.")
         n = int(n)
         return mod(self.scalar_mu + self.sigma * random.normal(size=(n,)), 2.0 * pi)
