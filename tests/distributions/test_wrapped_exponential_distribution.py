@@ -92,7 +92,7 @@ class WrappedExponentialDistributionTest(unittest.TestCase):
             )
 
     def test_trigonometric_moment_validates_order(self):
-        for order in (0.5, True, np.bool_(True), "1"):
+        for order in (0.5, True, np.bool_(True), "1", np.timedelta64(1, "s")):
             with self.subTest(order=order), self.assertRaisesRegex(
                 ValueError, "integer"
             ):
@@ -161,7 +161,7 @@ class WrappedExponentialDistributionTest(unittest.TestCase):
         self.assertEqual(samples.shape, (4,))
 
     def test_sample_rejects_invalid_count(self):
-        for n in (0, -1, 1.5, True):
+        for n in (0, -1, 1.5, True, np.timedelta64(1, "s")):
             with self.subTest(n=n):
                 with self.assertRaisesRegex(ValueError, "positive integer"):
                     self.we.sample(n)
