@@ -188,16 +188,27 @@ def _target_matrix_candidates(
 def _compatible_target_matrices(x1, x2) -> tuple[numpy.ndarray, numpy.ndarray]:
     first_candidates = _target_matrix_candidates(x1, "x1")
     second_candidates = _target_matrix_candidates(x2, "x2")
-    compatible = [
-        (
-            int(first_transposed) + int(second_transposed),
-            first,
-            second,
-        )
-        for first, first_transposed in first_candidates
-        for second, second_transposed in second_candidates
-        if first.shape[1] == second.shape[1]
-    ]
+    compatible = []
+    for first, first_transposed in first_candidates:
+        for second, second_transposed in second_candidates:
+            if first.shape[1] == second.shape[1]:
+                resolved_first = first
+                resolved_second = second
+            elif first.shape == (0, 0):
+                resolved_first = first.reshape(0, second.shape[1])
+                resolved_second = second
+            elif second.shape == (0, 0):
+                resolved_first = first
+                resolved_second = second.reshape(0, first.shape[1])
+            else:
+                continue
+            compatible.append(
+                (
+                    int(first_transposed) + int(second_transposed),
+                    resolved_first,
+                    resolved_second,
+                )
+            )
     if not compatible:
         raise ValueError("MTT state sets must use the same target dimension")
     _, first, second = min(compatible, key=lambda candidate: candidate[0])
