@@ -179,6 +179,11 @@ class UnscentedRauchTungStriebelSmoother(AbstractSmoother):
             ],
             axis=0,
         )
+        if propagated_sigma_points.shape[1] != filtered_state.dim:
+            raise ValueError(
+                "transition function must return vectors with state dimension "
+                f"{filtered_state.dim}; got {propagated_sigma_points.shape[1]}."
+            )
 
         predicted_mean = self._weighted_sum(
             propagated_sigma_points,
@@ -231,6 +236,13 @@ class UnscentedRauchTungStriebelSmoother(AbstractSmoother):
             ],
             axis=0,
         )
+        measurement_output_dim = measurement_sigma_points.shape[1]
+        if measurement_output_dim != measurement.shape[0]:
+            raise ValueError(
+                "measurement dimension mismatch: measurement has dimension "
+                f"{measurement.shape[0]}, but measurement function returns dimension "
+                f"{measurement_output_dim}."
+            )
 
         predicted_measurement = self._weighted_sum(
             measurement_sigma_points,
