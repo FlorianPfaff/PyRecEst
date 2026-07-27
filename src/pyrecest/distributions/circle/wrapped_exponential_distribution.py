@@ -97,11 +97,10 @@ def _validate_positive_scalar(value, name):
 
 
 def _validate_integer(value, name, *, positive=False) -> int:
-    qualifier = "positive integer" if positive else "integer"
-    message = f"{name} must be a {qualifier}."
-    if isinstance(value, (bool, np.bool_, np.datetime64, np.timedelta64)) or not isinstance(
-        value, Integral
-    ):
+    message = f"{name} must be {'a positive integer' if positive else 'an integer'}."
+    if isinstance(
+        value, (bool, np.bool_, np.datetime64, np.timedelta64)
+    ) or not isinstance(value, Integral):
         raise ValueError(message)
     try:
         value = int(value)
