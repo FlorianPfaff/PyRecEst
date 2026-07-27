@@ -116,15 +116,22 @@ def patch_pytorch_dot_outer_device_contract() -> None:
 
     def dot(a, b):
         a, b = _promoted_pair(raw_pytorch, torch, a, b)
+        boolean_result = a.dtype == torch.bool
+        if boolean_result:
+            a = a.to(dtype=torch.int64)
+            b = b.to(dtype=torch.int64)
+
         if a.ndim == 0 or b.ndim == 0:
-            return torch.multiply(a, b)
-        if a.ndim == 1 and b.ndim == 1:
-            return torch.dot(a, b)
-        if b.ndim == 1:
-            return torch.einsum("...i,i->...", a, b)
-        if a.ndim == 1:
-            return torch.einsum("i,...i->...", a, b)
-        return torch.einsum("...i,...i->...", a, b)
+            result = torch.multiply(a, b)
+        elif a.ndim == 1 and b.ndim == 1:
+            result = torch.dot(a, b)
+        elif b.ndim == 1:
+            result = torch.tensordot(a, b, dims=([-1], [0]))
+        elif a.ndim == 1:
+            result = torch.tensordot(a, b, dims=([0], [-2]))
+        else:
+            result = torch.tensordot(a, b, dims=([-1], [-2]))
+        return result != 0 if boolean_result else result
 
     def outer(a, b):
         a, b = _promoted_pair(raw_pytorch, torch, a, b)
