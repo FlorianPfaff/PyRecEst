@@ -27,7 +27,6 @@ from pyrecest.backend import (
     repeat,
     reshape,
     sin,
-    stack,
     sum,
     tile,
     where,
@@ -244,10 +243,10 @@ class PartiallyWrappedNormalDistribution(AbstractHypercylindricalDistribution):
         return self.set_mean(new_mode)
 
     def hybrid_moment(self):
-        """
-        Calculates mean of [x1, x2, .., x_lin_dim, cos(x_(linD+1), sin(x_(linD+1)), ..., cos(x_(lin_dim+boundD), sin(x_(lin_dim+bound_dim))]
-        Returns:
-            mu (linD+2): expectation value of [x1, x2, .., x_lin_dim, cos(x_(lin_dim+1), sin(x_(lin_dim+1)), ..., cos(x_(lin_dim+bound_dim), sin(x_(lin_dim+bound_dim))]
+        """Return periodic trigonometric moments followed by linear means.
+
+        The periodic entries follow the package-wide hypercylindrical convention:
+        all cosine moments, then all sine moments, followed by the linear means.
         """
         mu_lin = self.mu[self.bound_dim :]  # noqa: E203
 
@@ -258,7 +257,7 @@ class PartiallyWrappedNormalDistribution(AbstractHypercylindricalDistribution):
             -diag(self.C)[: self.bound_dim] / 2
         )
 
-        mu_bound = stack([mu_bound_even, mu_bound_odd], axis=1).reshape(-1)
+        mu_bound = hstack((mu_bound_even, mu_bound_odd))
 
         return hstack((mu_bound, mu_lin))
 
