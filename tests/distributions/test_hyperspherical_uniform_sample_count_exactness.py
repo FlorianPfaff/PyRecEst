@@ -1,5 +1,6 @@
 from fractions import Fraction
 
+import numpy as np
 import pytest
 from pyrecest.distributions.hypersphere_subset.hyperspherical_uniform_distribution import (
     _validate_positive_sample_count,
@@ -18,3 +19,13 @@ def test_hyperspherical_uniform_sample_count_preserves_large_exact_integer():
     count = Fraction(2**54 + 2, 2)
 
     assert _validate_positive_sample_count(count) == 2**53 + 1
+
+
+def test_hyperspherical_uniform_sample_count_rejects_temporal_scalars():
+    for count in (
+        np.timedelta64(3, "ns"),
+        np.timedelta64(3, "us"),
+        np.datetime64("2026-07-27"),
+    ):
+        with pytest.raises(ValueError, match="integer"):
+            _validate_positive_sample_count(count)
