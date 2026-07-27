@@ -49,9 +49,14 @@ def generate_groundtruth(simulation_param, x0=None):
             raise ValueError("Mismatch in number of timesteps.")
 
     groundtruth[0] = atleast_2d(x0)
+    state_dtype = groundtruth[0].dtype
+    if np.issubdtype(state_dtype, np.integer) or np.issubdtype(
+        state_dtype, np.bool_
+    ):
+        state_dtype = float
 
     for t in range(1, simulation_param["n_timesteps"]):
-        groundtruth[t] = empty_like(groundtruth[0])
+        groundtruth[t] = empty_like(groundtruth[0], dtype=state_dtype)
         for target_no in range(simulation_param["n_targets"]):
             previous_state = groundtruth[t - 1][target_no, :]
             if "gen_next_state_with_noise" in simulation_param:
