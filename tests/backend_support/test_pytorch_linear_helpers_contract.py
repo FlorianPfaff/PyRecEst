@@ -18,7 +18,8 @@ def test_pytorch_backend_exposes_dot_and_matvec():
     first = backend.asarray([[1.0, 2.0], [3.0, 4.0]])
     second = backend.asarray([[5.0, 6.0], [7.0, 8.0]])
 
-    assert _to_python(backend.dot(first, second)) == [17.0, 53.0]
+    expected_matrix_dot = [[19.0, 22.0], [43.0, 50.0]]
+    assert _to_python(backend.dot(first, second)) == expected_matrix_dot
     assert _to_python(backend.dot(first, [5.0, 6.0])) == [17.0, 39.0]
     assert _to_python(backend.outer([1.0, 2.0], [3.0, 4.0])) == [
         [3.0, 4.0],
