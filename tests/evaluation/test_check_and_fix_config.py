@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 from pyrecest.backend import eye, zeros
 from pyrecest.distributions import GaussianDistribution
@@ -35,6 +36,14 @@ def test_expand_meas_per_step_accepts_zero_count():
     assert "meas_per_step" not in simulation_param
 
 
+def test_expand_meas_per_step_accepts_numpy_integer_count():
+    simulation_param = {"n_timesteps": 4, "meas_per_step": np.int64(2)}
+
+    _expand_meas_per_step(simulation_param)
+
+    assert simulation_param["n_meas_at_individual_time_step"] == [2, 2, 2, 2]
+
+
 def test_expand_meas_per_step_rejects_negative_count():
     simulation_param = {"n_timesteps": 4, "meas_per_step": -1}
 
@@ -69,6 +78,16 @@ def test_validate_measurement_counts_rejects_noninteger_entries():
         _validate_measurement_counts(simulation_param)
 
 
+def test_validate_measurement_counts_rejects_temporal_entries():
+    simulation_param = {
+        "n_timesteps": 2,
+        "n_meas_at_individual_time_step": [1, np.timedelta64(2, "ns")],
+    }
+
+    with pytest.raises(TypeError, match="integer"):
+        _validate_measurement_counts(simulation_param)
+
+
 def test_validate_measurement_counts_rejects_negative_entries():
     simulation_param = {
         "n_timesteps": 2,
@@ -83,6 +102,15 @@ def test_validate_measurement_counts_accepts_zero_entries():
     simulation_param = {
         "n_timesteps": 3,
         "n_meas_at_individual_time_step": [1, 0, 2],
+    }
+
+    _validate_measurement_counts(simulation_param)
+
+
+def test_validate_measurement_counts_accepts_numpy_integer_entries():
+    simulation_param = {
+        "n_timesteps": 3,
+        "n_meas_at_individual_time_step": np.array([1, 0, 2], dtype=np.int64),
     }
 
     _validate_measurement_counts(simulation_param)
@@ -105,9 +133,21 @@ def test_check_and_fix_config_accepts_zero_measurement_counts():
     assert fixed_config["n_meas_at_individual_time_step"] == [1, 0, 2]
 
 
+def test_check_and_fix_config_accepts_numpy_integer_timesteps():
+    fixed_config = check_and_fix_config(_base_config(n_timesteps=np.int64(3)))
+
+    assert fixed_config["n_timesteps"] == 3
+    assert fixed_config["n_meas_at_individual_time_step"] == [1, 1, 1]
+
+
 def test_check_and_fix_config_rejects_nonpositive_timesteps():
     with pytest.raises(ValueError, match="n_timesteps must be positive"):
         check_and_fix_config(_base_config(n_timesteps=0))
+
+
+def test_check_and_fix_config_rejects_temporal_timesteps():
+    with pytest.raises(TypeError, match="n_timesteps must be an integer"):
+        check_and_fix_config(_base_config(n_timesteps=np.timedelta64(3, "ns")))
 
 
 def test_check_and_fix_config_rejects_intensity_without_eot_or_mtt():
