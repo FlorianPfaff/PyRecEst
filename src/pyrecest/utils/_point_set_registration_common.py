@@ -25,7 +25,6 @@ from pyrecest.backend import (
 from scipy.optimize import linear_sum_assignment
 from scipy.spatial.distance import cdist
 
-
 _INVALID_REAL_SCALAR_TYPES = (
     type(None),
     bool,
