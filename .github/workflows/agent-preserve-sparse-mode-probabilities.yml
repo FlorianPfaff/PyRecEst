@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - agent/preserve-sparse-mode-probabilities
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
