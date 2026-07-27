@@ -17,6 +17,7 @@ import math
 from dataclasses import dataclass
 from typing import Any, Callable, Literal
 
+import numpy as np
 import pyrecest.backend
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member,duplicate-code
@@ -197,13 +198,37 @@ def _validate_effective_weight_support(
 
 
 def _validate_positive_integer(value, name: str, *, minimum: int = 1) -> int:
-    value_array = asarray(value)
+    error_message = f"{name} must be a scalar integer."
+    temporal_types = (np.datetime64, np.timedelta64)
+
+    if isinstance(value, temporal_types):
+        raise ValueError(error_message)
+
+    value_dtype = getattr(value, "dtype", None)
+    if value_dtype is not None:
+        try:
+            if np.issubdtype(value_dtype, np.datetime64) or np.issubdtype(
+                value_dtype, np.timedelta64
+            ):
+                raise ValueError(error_message)
+        except TypeError:
+            pass
+
+    if isinstance(value, np.ndarray) and value.shape == () and isinstance(
+        value.item(), temporal_types
+    ):
+        raise ValueError(error_message)
+
+    try:
+        value_array = asarray(value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(error_message) from exc
     if value_array.shape != ():
-        raise ValueError(f"{name} must be a scalar integer.")
+        raise ValueError(error_message)
 
     value_scalar = value_array.item()
-    if isinstance(value_scalar, bool):
-        raise ValueError(f"{name} must be a scalar integer.")
+    if isinstance(value_scalar, bool) or isinstance(value_scalar, temporal_types):
+        raise ValueError(error_message)
 
     try:
         value_float = float(value_scalar)
