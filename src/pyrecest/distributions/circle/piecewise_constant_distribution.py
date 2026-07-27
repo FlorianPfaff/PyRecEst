@@ -62,7 +62,9 @@ def _validate_positive_sample_count(n) -> int:
 
 
 def _validate_interval_index(m, n) -> tuple[int, int]:
-    if isinstance(m, bool) or isinstance(n, bool):
+    if isinstance(m, _INVALID_SAMPLE_COUNT_TYPES) or isinstance(
+        n, _INVALID_SAMPLE_COUNT_TYPES
+    ):
         raise ValueError("m and n must be integers")
     if not isinstance(m, Integral) or not isinstance(n, Integral):
         raise ValueError("m and n must be integers")
