@@ -23,6 +23,7 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          from textwrap import dedent
 
           linear_path = Path("tests/backend_support/test_pytorch_linear_helpers_contract.py")
           linear_text = linear_path.read_text()
@@ -38,7 +39,8 @@ jobs:
           contracts_path = Path("tests/test_backend_contracts.py")
           contracts_text = contracts_path.read_text()
 
-          old_matrix = '''def test_batched_dot_uses_last_axis_inner_product():
+          old_matrix = dedent('''\
+          def test_batched_dot_uses_last_axis_inner_product():
               if backend.__backend_name__ != "pytorch":
                   pytest.skip("PyTorch-specific dot helper contract")
 
@@ -49,8 +51,9 @@ jobs:
 
               assert result.shape == (2,)
               assert _to_python(result) == [17.0, 53.0]
-          '''.replace("          ", "")
-          new_matrix = '''def test_pytorch_matrix_dot_matches_numpy_contract():
+          ''')
+          new_matrix = dedent('''\
+          def test_pytorch_matrix_dot_matches_numpy_contract():
               if backend.__backend_name__ != "pytorch":
                   pytest.skip("PyTorch-specific dot helper contract")
 
@@ -61,12 +64,13 @@ jobs:
 
               assert result.shape == (2, 2)
               assert _to_python(result) == [[19.0, 22.0], [43.0, 50.0]]
-          '''.replace("          ", "")
+          ''')
           if contracts_text.count(old_matrix) != 1:
               raise RuntimeError("unexpected stale matrix-dot test count")
           contracts_text = contracts_text.replace(old_matrix, new_matrix)
 
-          old_high_rank = '''def test_batched_dot_accepts_high_rank_right_operand():
+          old_high_rank = dedent('''\
+          def test_batched_dot_accepts_high_rank_right_operand():
               if backend.__backend_name__ != "pytorch":
                   pytest.skip("PyTorch-specific dot helper contract")
 
@@ -82,8 +86,9 @@ jobs:
 
               assert result.shape == (2, 3)
               assert _to_python(result) == [[2.0, 8.0, 14.0], [20.0, 26.0, 32.0]]
-          '''.replace("          ", "")
-          new_high_rank = '''def test_batched_dot_accepts_high_rank_right_operand():
+          ''')
+          new_high_rank = dedent('''\
+          def test_batched_dot_accepts_high_rank_right_operand():
               if backend.__backend_name__ != "pytorch":
                   pytest.skip("PyTorch-specific dot helper contract")
 
@@ -99,7 +104,7 @@ jobs:
 
               assert result.shape == (2, 3)
               assert _to_python(result) == [[6.0, 9.0, 12.0], [24.0, 27.0, 30.0]]
-          '''.replace("          ", "")
+          ''')
           if contracts_text.count(old_high_rank) != 1:
               raise RuntimeError("unexpected stale high-rank dot test count")
           contracts_path.write_text(contracts_text.replace(old_high_rank, new_high_rank))
