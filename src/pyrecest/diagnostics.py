@@ -190,27 +190,39 @@ class _DiagnosticsMappingMixin:
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)  # type: ignore[arg-type]
 
+    def _mapping_values(self) -> dict[str, Any]:
+        values = self.to_dict()
+        metadata = values.get("metadata")
+        if isinstance(metadata, Mapping):
+            for key, value in metadata.items():
+                values.setdefault(key, value)
+        return values
+
     def __contains__(self, key: str) -> bool:
-        return key in self.to_dict()
+        return key in self._mapping_values()
 
     def __getitem__(self, key: str) -> Any:
         try:
-            return self.to_dict()[key]
+            return self._mapping_values()[key]
         except KeyError as exc:
             raise KeyError(key) from exc
 
     def __setitem__(self, key: str, value: Any) -> None:
-        if hasattr(self, key):
+        field_names = {
+            dataclass_field.name
+            for dataclass_field in fields(self)  # type: ignore[arg-type]
+        }
+        if key in field_names:
             setattr(self, key, value)
             return
         metadata = getattr(self, "metadata")
         metadata[key] = value
 
     def get(self, key: str, default: Any = None) -> Any:
-        return self.to_dict().get(key, default)
+        return self._mapping_values().get(key, default)
 
     def items(self) -> Any:
-        return self.to_dict().items()
+        return self._mapping_values().items()
 
 
 @dataclass(frozen=True, slots=True)
