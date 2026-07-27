@@ -105,7 +105,11 @@ def _validate_multivariate_normal_tol(tol):
         tol_array = _np.asarray(tol)
     except (TypeError, ValueError) as exc:
         raise ValueError(message) from exc
-    if tol_array.shape != () or _np.issubdtype(tol_array.dtype, _np.bool_):
+    if (
+        tol_array.shape != ()
+        or tol_array.dtype.kind in "Mm"
+        or _np.issubdtype(tol_array.dtype, _np.bool_)
+    ):
         raise ValueError(message)
     scalar = tol_array.item()
     if isinstance(scalar, (bool, _np.bool_, str, bytes, _np.str_, _np.bytes_)):
