@@ -161,10 +161,15 @@ class AbstractSmoother(ABC):
         expected_shape = (vector_dim,)
         shape_error = f"{name} must contain vectors with shape {expected_shape}."
 
-        try:
-            values_arr = asarray(values)
-        except (TypeError, ValueError, RuntimeError):
+        if isinstance(values, (list, tuple)) and any(
+            value is None for value in values
+        ):
             values_arr = None
+        else:
+            try:
+                values_arr = asarray(values)
+            except (TypeError, ValueError, RuntimeError):
+                values_arr = None
         if values_arr is not None:
             if ndim(values_arr) == 0:
                 if vector_dim != 1:

@@ -3,6 +3,7 @@ import unittest
 from pyrecest.backend import array, eye, zeros
 from pyrecest.distributions import GaussianDistribution
 from pyrecest.smoothers import RauchTungStriebelSmoother
+from pyrecest.smoothers.abstract_smoother import AbstractSmoother
 
 
 class RauchTungStriebelControlInputValidationTest(unittest.TestCase):
@@ -21,6 +22,16 @@ class RauchTungStriebelControlInputValidationTest(unittest.TestCase):
                 sys_noise_covariances=zeros((2, 2)),
                 sys_inputs=array([1.0]),
             )
+
+    def test_accepts_all_omitted_per_step_control_inputs(self):
+        normalized = AbstractSmoother._normalize_vector_sequence(
+            [None, None],
+            length=2,
+            name="sys_inputs",
+            vector_dim=2,
+        )
+
+        self.assertEqual(normalized, [None, None])
 
 
 if __name__ == "__main__":
