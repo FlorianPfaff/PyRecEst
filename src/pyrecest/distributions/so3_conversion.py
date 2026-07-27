@@ -18,6 +18,7 @@ from .so3_tangent_gaussian_distribution import SO3TangentGaussianDistribution
 _COVARIANCE_REGULARIZATION_ERROR = (
     "covariance_regularization must be a nonnegative finite scalar"
 )
+_TEMPORAL_SCALAR_TYPES = (np.datetime64, np.timedelta64)
 
 
 def _sample_so3_product_dirac(distribution, n_particles):
@@ -28,7 +29,7 @@ def _sample_so3_product_dirac(distribution, n_particles):
 
 def _validate_particle_count(n_particles):
     if (
-        isinstance(n_particles, bool)
+        isinstance(n_particles, (bool, np.bool_, *_TEMPORAL_SCALAR_TYPES))
         or not isinstance(n_particles, Integral)
         or int(n_particles) <= 0
     ):
@@ -42,13 +43,22 @@ def _validate_covariance_regularization(covariance_regularization):
     except (TypeError, ValueError) as exc:
         raise ValueError(_COVARIANCE_REGULARIZATION_ERROR) from exc
 
-    if regularization_array.shape != () or regularization_array.dtype.kind in "bSU":
+    if regularization_array.shape != () or regularization_array.dtype.kind in "bSUMm":
         raise ValueError(_COVARIANCE_REGULARIZATION_ERROR)
 
     regularization_scalar = regularization_array.item()
     if isinstance(
         regularization_scalar,
-        (bool, np.bool_, str, bytes, bytearray, np.str_, np.bytes_),
+        (
+            bool,
+            np.bool_,
+            str,
+            bytes,
+            bytearray,
+            np.str_,
+            np.bytes_,
+            *_TEMPORAL_SCALAR_TYPES,
+        ),
     ):
         raise ValueError(_COVARIANCE_REGULARIZATION_ERROR)
 
