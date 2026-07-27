@@ -219,6 +219,11 @@ class EuclideanBoxedParticleFilter(EuclideanParticleFilter):
             likelihood_values = array(likelihood(self.filter_state.d))
             if likelihood_values.shape != self.filter_state.w.shape:
                 raise ValueError("likelihood must return one value per particle")
+            likelihood_values = where(
+                weight_update > 0,
+                likelihood_values,
+                zeros_like(likelihood_values),
+            )
             weight_update = weight_update * likelihood_values
 
         new_state = copy.deepcopy(self.filter_state)
