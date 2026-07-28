@@ -32,9 +32,24 @@ class TestReproducibilitySeedValidation(unittest.TestCase):
                 ):
                     _normalize_seed(invalid_value)
 
+    def test_masked_seed_scalars_are_rejected_before_item_unwrap(self) -> None:
+        invalid_values = (
+            np.ma.masked,
+            np.ma.array(7, mask=True),
+        )
+
+        for invalid_value in invalid_values:
+            with self.subTest(invalid_value=repr(invalid_value)):
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "seed must be a non-negative integer or None",
+                ):
+                    _normalize_seed(invalid_value)
+
     def test_numeric_scalar_arrays_are_still_valid_seeds(self) -> None:
         self.assertEqual(_normalize_seed(np.array(0, dtype=np.int64)), 0)
         self.assertEqual(_normalize_seed(np.array(1.0, dtype=np.float64)), 1)
+        self.assertEqual(_normalize_seed(np.ma.array(7, mask=False)), 7)
         self.assertIsNone(_normalize_seed(None))
 
 
