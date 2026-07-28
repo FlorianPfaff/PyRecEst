@@ -214,8 +214,10 @@ def _validate_positive_integer(value, name: str, *, minimum: int = 1) -> int:
         except TypeError:
             pass
 
-    if isinstance(value, np.ndarray) and value.shape == () and isinstance(
-        value.item(), temporal_types
+    if (
+        isinstance(value, np.ndarray)
+        and value.shape == ()
+        and isinstance(value.item(), temporal_types)
     ):
         raise ValueError(error_message)
 

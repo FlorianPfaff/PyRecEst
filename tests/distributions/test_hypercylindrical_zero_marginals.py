@@ -2,7 +2,6 @@ import unittest
 from math import pi
 
 import numpy as np
-
 from pyrecest.backend import __backend_name__ as backend_name
 from pyrecest.backend import array
 from pyrecest.distributions.cart_prod.hypercylindrical_state_space_subdivision_distribution import (
