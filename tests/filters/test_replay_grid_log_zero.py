@@ -35,6 +35,26 @@ class TestReplayGridLogZero(unittest.TestCase):
 
         np.testing.assert_allclose(result, [-123.0])
 
+    def test_linear_fallback_preserves_log_zero_near_nonfinite_grid_bin(self):
+        bin_centers = np.asarray(
+            [
+                [0.0, 0.0],
+                [0.0, 1.0],
+                [1.0, 0.0],
+                [1.0, 1.0],
+            ]
+        )
+        log_likelihood = np.asarray([-np.inf, 1.0, 2.0, 3.0])
+
+        result = replay_grid_log_likelihood_values(
+            np.asarray([[0.1, 0.1]]),
+            log_likelihood,
+            bin_centers,
+            interpolation="linear",
+        )
+
+        self.assertTrue(np.isneginf(result[0]))
+
 
 if __name__ == "__main__":
     unittest.main()
