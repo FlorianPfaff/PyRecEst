@@ -850,15 +850,36 @@ class ModeRBPFManifoldUKFTracker(AbstractExtendedObjectTracker):
 
     @staticmethod
     def _normalize_rows(matrix):
-        matrix = np.maximum(matrix, ModeRBPFManifoldUKFTracker._jitter)
-        return matrix / np.sum(matrix, axis=1, keepdims=True)
+        matrix = np.asarray(matrix, dtype=float)
+        if matrix.ndim != 2:
+            raise ValueError("transition_matrix must be two-dimensional")
+        if np.any(~np.isfinite(matrix)) or np.any(matrix < 0.0):
+            raise ValueError(
+                "transition_matrix must contain finite non-negative probabilities"
+            )
+        row_sums = np.sum(matrix, axis=1, keepdims=True)
+        if np.any(row_sums <= 0.0):
+            raise ValueError(
+                "each transition_matrix row must have positive total probability"
+            )
+        return matrix / row_sums
 
     @staticmethod
     def _normalize_probs(probs):
-        probs = np.maximum(
-            np.asarray(probs, dtype=float), ModeRBPFManifoldUKFTracker._jitter
-        )
-        return probs / np.sum(probs)
+        probs = np.asarray(probs, dtype=float)
+        expected_shape = (len(ModeRBPFManifoldUKFTracker.mode_names),)
+        if probs.shape != expected_shape:
+            raise ValueError("initial_mode_probs must have one entry per mode")
+        if np.any(~np.isfinite(probs)) or np.any(probs < 0.0):
+            raise ValueError(
+                "initial_mode_probs must contain finite non-negative probabilities"
+            )
+        total = float(np.sum(probs))
+        if total <= 0.0:
+            raise ValueError(
+                "initial_mode_probs must have positive total probability"
+            )
+        return probs / total
 
     @staticmethod
     def _normalize_log_weights(log_weights):
