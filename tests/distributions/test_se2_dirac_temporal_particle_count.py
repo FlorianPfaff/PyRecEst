@@ -17,6 +17,12 @@ class _NoSamplingSE2Distribution(AbstractHypercylindricalDistribution):
     def sample(self, n):
         raise AssertionError("invalid temporal counts must not reach sampling")
 
+    def marginalize_linear(self):
+        raise AssertionError("marginalization must not be evaluated for count validation")
+
+    def marginalize_periodic(self):
+        raise AssertionError("marginalization must not be evaluated for count validation")
+
 
 @pytest.mark.parametrize(
     "n_particles",
