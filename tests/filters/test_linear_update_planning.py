@@ -183,20 +183,13 @@ def test_robust_scale_rejects_nonfinite_parameters():
             robust_update_covariance_scale(**kwargs)
 
 
-def test_student_t_covariance_scale_uses_sanitized_degrees_of_freedom():
-    expected = student_t_covariance_scale(
-        10.0,
-        measurement_dim=2,
-        degrees_of_freedom=4.0,
-    )
-
-    actual = student_t_covariance_scale(
-        10.0,
-        measurement_dim=2,
-        degrees_of_freedom="4.0",
-    )
-
-    assert np.isclose(actual, expected)
+def test_student_t_covariance_scale_rejects_text_degrees_of_freedom():
+    with pytest.raises(ValueError, match="degrees_of_freedom"):
+        student_t_covariance_scale(
+            10.0,
+            measurement_dim=2,
+            degrees_of_freedom="4.0",
+        )
 
 
 def test_student_t_covariance_scale_rejects_nonfinite_dof():
