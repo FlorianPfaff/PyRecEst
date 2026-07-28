@@ -109,8 +109,10 @@ class SE2DiracDistribution(HypercylindricalDiracDistribution, AbstractSE2Distrib
 
     @staticmethod
     def _validate_particle_count(n_particles):
+        dtype_kind = getattr(getattr(n_particles, "dtype", None), "kind", None)
         if (
             isinstance(n_particles, bool)
+            or dtype_kind in {"M", "m"}
             or not isinstance(n_particles, Integral)
             or int(n_particles) <= 0
         ):
