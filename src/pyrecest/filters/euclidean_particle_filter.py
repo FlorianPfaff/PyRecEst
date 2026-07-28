@@ -72,11 +72,15 @@ class EuclideanParticleFilter(AbstractParticleFilter, EuclideanFilterMixin):
     def _validate_positive_int(value, name: str):
         message = f"{name} must be a positive integer"
         value_array = np.asarray(value)
-        if value_array.shape != () or value_array.dtype == np.bool_:
+        if (
+            value_array.shape != ()
+            or value_array.dtype == np.bool_
+            or value_array.dtype.kind in {"M", "m"}
+        ):
             raise ValueError(message)
 
         scalar = value_array.item()
-        if isinstance(scalar, (bool, np.bool_)):
+        if isinstance(scalar, (bool, np.bool_, np.datetime64, np.timedelta64)):
             raise ValueError(message)
         if isinstance(scalar, (str, bytes, bytearray, np.str_, np.bytes_)):
             raise ValueError(message)
