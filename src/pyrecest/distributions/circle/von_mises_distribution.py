@@ -3,6 +3,7 @@ import copy
 import math
 from numbers import Integral
 
+import numpy as np
 from pyrecest.backend import (
     abs,
     arctan2,
@@ -80,7 +81,13 @@ class VonMisesDistribution(AbstractCircularDistribution):
 
     def sample(self, n):
         """Draw samples from the von Mises distribution."""
-        if isinstance(n, bool) or not isinstance(n, Integral) or int(n) <= 0:
+        dtype_kind = getattr(getattr(n, "dtype", None), "kind", None)
+        if (
+            isinstance(n, (bool, np.bool_, np.datetime64, np.timedelta64))
+            or dtype_kind in {"b", "M", "m"}
+            or not isinstance(n, Integral)
+            or int(n) <= 0
+        ):
             raise ValueError("n must be a positive integer.")
         n = int(n)
         return mod(
