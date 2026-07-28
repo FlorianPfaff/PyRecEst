@@ -73,14 +73,13 @@ class CartProdStackedDistribution(AbstractCartProdDistribution):
                 f"xs must have trailing dimension {self.input_dim}, got shape {xs.shape}."
             )
 
+        batch_shape = xs.shape[:-1]
         ps = []
         next_dim = 0
         for dist in self.dists:
             next_input_dim = next_dim + dist.input_dim
             xs_curr = xs[..., next_dim:next_input_dim]
-            pdf_value = asarray(dist.pdf(xs_curr))
-            if xs.ndim == 1:
-                pdf_value = reshape(pdf_value, ())
+            pdf_value = reshape(asarray(dist.pdf(xs_curr)), batch_shape)
             ps.append(pdf_value)
             next_dim = next_input_dim
         return prod(stack(ps), axis=0)
