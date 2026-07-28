@@ -139,10 +139,39 @@ class GlobalNearestNeighbor(AbstractNearestNeighborTracker):
             )
         return pairwise_cost_matrix
 
+    @staticmethod
+    def _validate_pairwise_cost_weight(pairwise_cost_weight):
+        error_message = (
+            "pairwise_cost_weight must be a finite non-negative real scalar."
+        )
+        if np.ma.is_masked(pairwise_cost_weight):
+            raise ValueError(error_message)
+        try:
+            raw_weight = np.asarray(pairwise_cost_weight)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError(error_message) from exc
+        if (
+            raw_weight.shape != ()
+            or raw_weight.dtype.kind in _REJECTED_PAIRWISE_COST_DTYPE_KINDS
+        ):
+            raise ValueError(error_message)
+        scalar = raw_weight.item()
+        if isinstance(scalar, _INVALID_PAIRWISE_COST_SCALAR_TYPES):
+            raise ValueError(error_message)
+        try:
+            weight = float(scalar)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError(error_message) from exc
+        if not np.isfinite(weight) or weight < 0.0:
+            raise ValueError(error_message)
+        return weight
+
     def _apply_pairwise_cost_matrix(self, dists, pairwise_cost_matrix):
         if pairwise_cost_matrix is None:
             return dists
-        pairwise_cost_weight = self.association_param.get("pairwise_cost_weight", 1.0)
+        pairwise_cost_weight = self._validate_pairwise_cost_weight(
+            self.association_param.get("pairwise_cost_weight", 1.0)
+        )
         if pairwise_cost_weight == 0.0:
             return dists
         return dists + pairwise_cost_weight * pairwise_cost_matrix
