@@ -38,6 +38,7 @@ from pyrecest.distributions.hypertorus.hypertoroidal_grid_distribution import (
 from pyrecest.distributions.nonperiodic.custom_linear_distribution import (
     CustomLinearDistribution,
 )
+from pyrecest.distributions.nonperiodic.gaussian_distribution import GaussianDistribution
 from pyrecest.distributions.nonperiodic.linear_mixture import LinearMixture
 
 
@@ -303,7 +304,6 @@ class HypercylindricalStateSpaceSubdivisionDistribution(
 
             # Unnormalized conditional to compute the marginal weight
             cd_unnorm = CustomLinearDistribution(lambda x, fc=fun_curr: fc(x), dim_lin)
-
             integral_val = float(
                 cd_unnorm.integrate(
                     left=array([float(int_range[0])]),
@@ -312,14 +312,24 @@ class HypercylindricalStateSpaceSubdivisionDistribution(
             )
             grid_values.append(integral_val)
 
-            # Normalized conditional: p(lin | bound = grid_i)
-            cds.append(
-                CustomLinearDistribution(
-                    lambda x, fc=fun_curr: fc(x),
-                    dim_lin,
-                    scale_by=1.0 / integral_val,
+            if integral_val == 0.0:
+                # The conditional distribution is undefined at a zero-mass grid
+                # point. Any normalized fallback is valid because the periodic
+                # marginal gives this component zero weight in PDFs, modes,
+                # mixtures, and sampling.
+                cds.append(GaussianDistribution(array([0.0]), array([[1.0]])))
+            else:
+                # Normalized conditional: p(lin | bound = grid_i)
+                cds.append(
+                    CustomLinearDistribution(
+                        lambda x, fc=fun_curr: fc(x),
+                        dim_lin,
+                        scale_by=1.0 / integral_val,
+                    )
                 )
-            )
+
+        if not any(value > 0.0 for value in grid_values):
+            raise ValueError("fun must have positive total mass on the generated grid")
 
         gd = HypertoroidalGridDistribution(
             array(grid_values),
