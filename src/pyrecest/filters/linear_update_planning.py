@@ -34,7 +34,18 @@ ROBUST_UPDATE_MODES = ("nis-inflate", "student-t", "huber")
 DEFAULT_STUDENT_T_DOF = 4.0
 DEFAULT_HUBER_THRESHOLD = 2.0
 _TEMPORAL_TYPES = (np.datetime64, np.timedelta64)
-_INVALID_REAL_NUMERIC_TYPES = (bool, np.bool_, *_TEMPORAL_TYPES)
+_INVALID_REAL_NUMERIC_TYPES = (
+    bool,
+    np.bool_,
+    str,
+    bytes,
+    bytearray,
+    np.str_,
+    np.bytes_,
+    complex,
+    np.complexfloating,
+    *_TEMPORAL_TYPES,
+)
 
 
 class MeasurementLike(Protocol):
