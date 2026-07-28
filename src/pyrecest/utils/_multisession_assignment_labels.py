@@ -20,6 +20,7 @@ from .multisession_assignment import (  # pylint: disable=protected-access
 
 _TEXT_TYPES = (str, bytes, np.str_, np.bytes_)
 _TEMPORAL_TYPES = (np.datetime64, np.timedelta64)
+_INT64_INFO = np.iinfo(np.int64)
 
 
 def _normalize_fill_value(fill_value: Any, track_count: int) -> int:
@@ -55,6 +56,8 @@ def _normalize_fill_value(fill_value: Any, track_count: int) -> int:
         if not bool(is_exact_integer):
             raise ValueError("fill_value must be an integer.")
 
+    if not _INT64_INFO.min <= integer_fill_value <= _INT64_INFO.max:
+        raise ValueError("fill_value must fit in int64.")
     if 0 <= integer_fill_value < int(track_count):
         raise ValueError("fill_value must not collide with track labels.")
     return integer_fill_value
