@@ -6,7 +6,7 @@ from pyrecest.backend import all as backend_all
 from pyrecest.backend import array, isfinite, ones, reshape, stack, sum
 
 from .abstract_linear_distribution import AbstractLinearDistribution
-from .gaussian_distribution import GaussianDistribution
+from .gaussian_distribution import GaussianDistribution, _validate_real_values
 from .linear_dirac_distribution import LinearDiracDistribution
 from .linear_mixture import LinearMixture
 
@@ -34,6 +34,7 @@ class GaussianMixture(LinearMixture, AbstractLinearDistribution):
             raise ValueError(
                 f"new_mean must have shape ({self.dim},), got {new_mean.shape}."
             )
+        _validate_real_values(new_mean, "new_mean")
         if not bool(backend_all(isfinite(new_mean))):
             raise ValueError("new_mean must contain only finite values.")
 
