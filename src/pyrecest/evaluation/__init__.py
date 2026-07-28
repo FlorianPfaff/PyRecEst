@@ -1,6 +1,8 @@
 from math import isfinite as _isfinite
 from math import isinf as _isinf
 
+import numpy as _np
+
 from . import get_distance_function as _get_distance_function_module
 from . import model_comparison as _model_comparison
 from .check_and_fix_config import check_and_fix_config
@@ -104,6 +106,36 @@ _original_paired_model_margin_decisions = getattr(
 _original_evidence_margin_table = getattr(
     _model_comparison, _ORIGINAL_EVIDENCE_TABLE_ATTR
 )
+
+
+def _is_explicitly_comparable(value):
+    """Return whether a serialized comparability flag explicitly denotes true."""
+
+    if isinstance(value, (bool, _np.bool_)):
+        return bool(value)
+    if isinstance(value, str):
+        return value.strip().lower() in {"true", "1", "yes"}
+    if isinstance(value, (int, float, _np.integer, _np.floating)):
+        try:
+            return bool(_np.isfinite(value) and float(value) == 1.0)
+        except (TypeError, ValueError, OverflowError):
+            return False
+    return False
+
+
+def _comparable_rows(scores):
+    """Filter evidence rows while parsing serialized comparability flags safely."""
+
+    ok = _model_comparison._successful_rows(scores)
+    if ok.empty:
+        return ok
+    if "evidence_comparable" in ok.columns:
+        comparable_mask = ok["evidence_comparable"].map(_is_explicitly_comparable)
+        ok = ok[comparable_mask].copy()
+    return ok
+
+
+_model_comparison._comparable_rows = _comparable_rows
 
 
 def _validate_symmetry_count(n_symm):
