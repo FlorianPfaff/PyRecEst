@@ -264,6 +264,8 @@ def _array_contains_non_real_numeric_values(array: np.ndarray) -> bool:
 
 
 def _contains_non_real_numeric_values(value: Any) -> bool:
+    if _value_contains_non_real_numeric_values(value):
+        return True
     return _array_contains_non_real_numeric_values(np.asarray(value))
 
 
