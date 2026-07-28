@@ -239,9 +239,9 @@ def _normalize_fractional_matrix_power_exponent(t):
         raise TypeError("t must be a real scalar")
 
     exponent = exponent_array.item()
-    if isinstance(exponent, (bool, _onp.bool_)) or not isinstance(
-        exponent, _numbers.Real
-    ):
+    if isinstance(
+        exponent, (bool, _onp.bool_, _onp.datetime64, _onp.timedelta64)
+    ) or not isinstance(exponent, _numbers.Real):
         raise TypeError("t must be a real scalar")
 
     exponent = float(exponent)
