@@ -27,8 +27,13 @@ def test_triangular_vector_helpers_accept_array_like_inputs():
     assert _to_python(backend.triu_to_vec(matrix)) == [1, 2, 3, 5, 6, 9]
 
 
-def test_squeeze_non_singleton_axis_is_noop():
+def test_squeeze_non_singleton_axis_matches_backend_contract():
     values = array([[[1], [2]]])
+
+    if backend.__backend_name__ in {"numpy", "autograd"}:
+        with pytest.raises(ValueError, match="size not equal to one"):
+            backend.squeeze(values, axis=1)
+        return
 
     result = backend.squeeze(values, axis=1)
 
