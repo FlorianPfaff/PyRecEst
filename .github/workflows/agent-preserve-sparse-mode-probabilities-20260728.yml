@@ -78,8 +78,6 @@ jobs:
                       )
                   return probs / total
           '''
-          old = old.replace("          ", "")
-          new = new.replace("          ", "")
           if old not in source:
               raise SystemExit("source normalization block not found")
           source_path.write_text(source.replace(old, new, 1))
@@ -92,7 +90,7 @@ jobs:
 
           if __name__ == "__main__":
               unittest.main()
-          '''.replace("          ", "")
+          '''
           additions = '''
 
               def test_preserves_impossible_mode_probabilities(self):
@@ -162,7 +160,7 @@ jobs:
                       with self.subTest(initial_mode_probs=initial_mode_probs):
                           with self.assertRaisesRegex(ValueError, "initial_mode_probs"):
                               self.make_tracker(initial_mode_probs=initial_mode_probs)
-          '''.replace("          ", "")
+          '''
           if marker not in tests:
               raise SystemExit("test insertion marker not found")
           test_path.write_text(tests.replace(marker, additions + marker, 1))
