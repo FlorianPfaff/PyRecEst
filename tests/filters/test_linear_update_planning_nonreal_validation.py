@@ -98,7 +98,8 @@ def test_linear_update_matrices_reject_text_and_complex_values(invalid) -> None:
 
 
 def test_real_numeric_linear_update_inputs_remain_supported() -> None:
-    assert np.isfinite(chi_square_gate_threshold(np.float64(0.95), np.int64(2)))
+    threshold = chi_square_gate_threshold(np.float64(0.95), np.int64(2))
+    assert threshold is not None and np.isfinite(threshold)
 
     plan = plan_linear_measurement_update(
         mean=[0, 0.0],
@@ -108,5 +109,6 @@ def test_real_numeric_linear_update_inputs_remain_supported() -> None:
         observation_matrix=[[1, 0.0], [0, 1.0]],
         gate_threshold=np.float64(10.0),
     )
-    assert plan.vector.dtype.kind == "f"
-    assert plan.measurement_dim if hasattr(plan, "measurement_dim") else True
+    assert np.allclose(plan.vector, [1.0, 2.5])
+    assert np.allclose(plan.covariance, [[1.0, 0.0], [0.0, 2.0]])
+    assert np.allclose(plan.observation, np.eye(2))
