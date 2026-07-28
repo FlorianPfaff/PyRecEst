@@ -3,7 +3,6 @@ import pyrecest.backend
 import pytest
 from pyrecest.sampling.leopardi_sampler import get_partition_points_cartesian
 
-
 pytestmark = pytest.mark.skipif(
     pyrecest.backend.__backend_name__ == "jax",
     reason="Leopardi sampling uses SciPy root finding.",
