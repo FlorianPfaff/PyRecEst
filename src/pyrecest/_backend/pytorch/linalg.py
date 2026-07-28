@@ -1,5 +1,6 @@
 """Pytorch based linear algebra backend."""
 
+import numbers as _numbers
 from operator import index as _operator_index
 
 import numpy as _np
@@ -534,14 +535,29 @@ def is_single_matrix_pd(mat):
         return False
 
 
+def _normalize_fractional_matrix_power_exponent(t):
+    """Return a finite, non-boolean real scalar exponent."""
+    exponent_array = _as_numpy_no_grad(t)
+    if exponent_array.ndim != 0 or exponent_array.dtype.kind in "mM":
+        raise TypeError("t must be a real scalar")
+
+    exponent = exponent_array.item()
+    if isinstance(
+        exponent, (bool, _np.bool_, _np.datetime64, _np.timedelta64)
+    ) or not isinstance(exponent, _numbers.Real):
+        raise TypeError("t must be a real scalar")
+
+    exponent = float(exponent)
+    if not _np.isfinite(exponent):
+        raise ValueError("t must be finite")
+    return exponent
+
+
 def fractional_matrix_power(A, t):
     """Compute the fractional power of a matrix."""
     A = _as_linalg_tensor(A)
+    exponent = _normalize_fractional_matrix_power_exponent(t)
     A_np = _as_numpy_no_grad(A)
-    exponent = _as_numpy_no_grad(t)
-    if exponent.ndim != 0:
-        raise TypeError("t must be a scalar")
-    exponent = exponent.item()
 
     empty_result = _empty_square_matrix_batch_result(A, "fractional_matrix_power")
     if empty_result is not None:
