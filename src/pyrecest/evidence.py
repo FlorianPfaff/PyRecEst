@@ -254,9 +254,13 @@ try:
     from pyrecest.backend_support._pytorch_reduction_axis_contract import (
         patch_pytorch_reduction_axis_contract as _patch_pytorch_reduction_axis_contract,  # pylint: disable=import-outside-toplevel
     )
+    from pyrecest.backend_support._shared_numpy_squeeze_contract import (
+        patch_shared_numpy_squeeze_numpy_contract as _patch_shared_numpy_squeeze_numpy_contract,  # pylint: disable=import-outside-toplevel
+    )
 except ModuleNotFoundError:  # pragma: no cover - source tree corruption only
     pass
 else:
+    _patch_shared_numpy_squeeze_numpy_contract()
     _patch_pytorch_close_equal_nan_device_contract()
     _patch_pytorch_repeat_numpy_contract()
     _patch_pytorch_edge_pad_contract()
