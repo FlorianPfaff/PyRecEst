@@ -162,5 +162,74 @@ class TestModeRBPFManifoldUKFTracker(unittest.TestCase):
         npt.assert_allclose(posterior, prior)
 
 
+    def test_preserves_impossible_mode_probabilities(self):
+        transition_matrix = np.eye(3)
+        tracker = self.make_tracker(
+            transition_matrix=transition_matrix,
+            initial_mode_probs=[1.0, 0.0, 0.0],
+            n_particles=8,
+        )
+
+        npt.assert_array_equal(tracker.transition_matrix, transition_matrix)
+        npt.assert_array_equal(tracker.modes, np.zeros(8, dtype=int))
+        npt.assert_array_equal(
+            tracker._normalize_probs([1.0, 0.0, 0.0]),
+            np.array([1.0, 0.0, 0.0]),
+        )
+        tracker._propagate_modes()
+        npt.assert_array_equal(tracker.modes, np.zeros(8, dtype=int))
+
+    def test_rejects_invalid_transition_probabilities(self):
+        invalid_matrices = (
+            np.array(
+                [
+                    [1.0, 0.0, 0.0],
+                    [0.0, 0.0, 0.0],
+                    [0.0, 0.0, 1.0],
+                ]
+            ),
+            np.array(
+                [
+                    [1.0, -0.1, 0.1],
+                    [0.0, 1.0, 0.0],
+                    [0.0, 0.0, 1.0],
+                ]
+            ),
+            np.array(
+                [
+                    [1.0, np.nan, 0.0],
+                    [0.0, 1.0, 0.0],
+                    [0.0, 0.0, 1.0],
+                ]
+            ),
+            np.array(
+                [
+                    [1.0, np.inf, 0.0],
+                    [0.0, 1.0, 0.0],
+                    [0.0, 0.0, 1.0],
+                ]
+            ),
+            np.eye(2),
+            np.array([1.0, 0.0, 0.0]),
+        )
+        for transition_matrix in invalid_matrices:
+            with self.subTest(transition_matrix=transition_matrix):
+                with self.assertRaisesRegex(ValueError, "transition_matrix"):
+                    self.make_tracker(transition_matrix=transition_matrix)
+
+    def test_rejects_invalid_initial_mode_probabilities(self):
+        invalid_probabilities = (
+            [0.0, 0.0, 0.0],
+            [1.0, -0.1, 0.1],
+            [1.0, np.nan, 0.0],
+            [1.0, np.inf, 0.0],
+            [1.0, 0.0],
+        )
+        for initial_mode_probs in invalid_probabilities:
+            with self.subTest(initial_mode_probs=initial_mode_probs):
+                with self.assertRaisesRegex(ValueError, "initial_mode_probs"):
+                    self.make_tracker(initial_mode_probs=initial_mode_probs)
+
+
 if __name__ == "__main__":
     unittest.main()
