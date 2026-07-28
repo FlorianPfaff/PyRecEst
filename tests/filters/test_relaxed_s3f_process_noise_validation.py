@@ -28,7 +28,9 @@ class RelaxedS3FProcessNoiseValidationTest(unittest.TestCase):
 
         self.assertTrue(
             bool(
-                (filter_.filter_state.linear_distributions[0].C == covariance_before).all()
+                (
+                    filter_.filter_state.linear_distributions[0].C == covariance_before
+                ).all()
             )
         )
 
@@ -45,7 +47,9 @@ class RelaxedS3FProcessNoiseValidationTest(unittest.TestCase):
 
         self.assertTrue(
             bool(
-                (filter_.filter_state.linear_distributions[0].C == covariance_before).all()
+                (
+                    filter_.filter_state.linear_distributions[0].C == covariance_before
+                ).all()
             )
         )
 
