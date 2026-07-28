@@ -3,6 +3,7 @@ import math
 from typing import Union
 
 # pylint: disable=no-name-in-module,no-member
+import numpy as np
 import pyrecest.backend
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
@@ -33,6 +34,21 @@ from scipy.special import ive
 from .abstract_hyperspherical_distribution import AbstractHypersphericalDistribution
 
 
+_INVALID_REAL_SCALAR_TYPES = (
+    bool,
+    np.bool_,
+    str,
+    bytes,
+    bytearray,
+    np.str_,
+    np.bytes_,
+    complex,
+    np.complexfloating,
+    np.datetime64,
+    np.timedelta64,
+)
+
+
 def _as_python_bool(value) -> bool:
     if isinstance(value, bool):
         return value
@@ -42,10 +58,29 @@ def _as_python_bool(value) -> bool:
 
 
 def _as_finite_scalar(value, name: str) -> float:
+    message = f"{name} must be a finite real scalar."
+    dtype_kind = getattr(getattr(value, "dtype", None), "kind", None)
+    if isinstance(value, _INVALID_REAL_SCALAR_TYPES) or dtype_kind in {
+        "b",
+        "c",
+        "S",
+        "U",
+        "M",
+        "m",
+    }:
+        raise ValueError(message)
+
+    shape = getattr(value, "shape", None)
+    if shape is not None and tuple(shape) != ():
+        raise ValueError(message)
+
+    scalar = value.item() if hasattr(value, "item") else value
+    if isinstance(scalar, _INVALID_REAL_SCALAR_TYPES):
+        raise ValueError(message)
     try:
-        scalar = float(value)
-    except (TypeError, ValueError) as exc:
-        raise ValueError(f"{name} must be a finite scalar.") from exc
+        scalar = float(scalar)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(message) from exc
 
     if not math.isfinite(scalar):
         raise ValueError(f"{name} must be finite.")
@@ -117,7 +152,7 @@ class VonMisesFisherDistribution(AbstractHypersphericalDistribution):
         AbstractHypersphericalDistribution.__init__(self, dim=mu.shape[0] - 1)
 
         self.mu = mu
-        self.kappa = kappa
+        self.kappa = kappa_scalar
 
         if kappa_scalar <= self._KAPPA_EPS:
             self.C = 1.0 / self.compute_unit_hypersphere_surface(self.dim)
