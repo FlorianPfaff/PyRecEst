@@ -10,13 +10,17 @@ def patch_shared_numpy_squeeze_numpy_contract() -> None:
     """Make shared NumPy ``squeeze`` reject non-singleton requested axes."""
 
     try:
-        import pyrecest._backend._shared_numpy as shared_numpy  # pylint: disable=import-outside-toplevel
         import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
     except ModuleNotFoundError:  # pragma: no cover - import fails before this module
         return
 
     backend_name = getattr(backend, "__backend_name__", None)
     if backend_name not in {"numpy", "autograd"}:
+        return
+
+    try:
+        import pyrecest._backend._shared_numpy as shared_numpy  # pylint: disable=import-outside-toplevel
+    except ModuleNotFoundError:  # pragma: no cover - selected backend import failed
         return
 
     original_squeeze = shared_numpy.squeeze
