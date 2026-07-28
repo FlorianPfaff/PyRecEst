@@ -7,10 +7,37 @@ import numpy as np
 import pyrecest.backend
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import asarray, cov, ones, reshape, to_numpy, zeros
+from pyrecest.backend import all as backend_all
+from pyrecest.backend import (
+    asarray,
+    cov,
+    isfinite,
+    ones,
+    reshape,
+    to_numpy,
+    zeros,
+)
 
 from ..abstract_dirac_distribution import AbstractDiracDistribution
 from .abstract_linear_distribution import AbstractLinearDistribution
+
+
+def _validate_real_finite_values(value, name):
+    """Reject complex and non-finite Euclidean support values."""
+    dtype = getattr(value, "dtype", None)
+    try:
+        is_complex = bool(np.issubdtype(dtype, np.complexfloating))
+    except TypeError:
+        is_complex = "complex" in str(dtype).lower()
+    if is_complex:
+        raise ValueError(f"{name} must contain only real values.")
+
+    try:
+        finite = bool(backend_all(isfinite(value)))
+    except (OverflowError, TypeError, ValueError, RuntimeError) as exc:
+        raise ValueError(f"{name} must contain only finite real values.") from exc
+    if not finite:
+        raise ValueError(f"{name} must contain only finite values.")
 
 
 class LinearDiracDistribution(AbstractDiracDistribution, AbstractLinearDistribution):
@@ -18,6 +45,9 @@ class LinearDiracDistribution(AbstractDiracDistribution, AbstractLinearDistribut
         d = asarray(d)
         if d.ndim == 0:
             d = reshape(d, (1,))
+        elif d.ndim > 2:
+            raise ValueError("d must be a scalar, 1D array, or 2D array")
+        _validate_real_finite_values(d, "d")
         dim = d.shape[1] if d.ndim > 1 else 1
         AbstractLinearDistribution.__init__(self, dim)
         AbstractDiracDistribution.__init__(self, d, w)
@@ -38,6 +68,7 @@ class LinearDiracDistribution(AbstractDiracDistribution, AbstractLinearDistribut
             raise ValueError(
                 f"new_mean must have shape ({self.dim},), got {new_mean.shape}."
             )
+        _validate_real_finite_values(new_mean, "new_mean")
 
         mean_offset = new_mean - self.mean()
         if self.d.ndim == 1:
@@ -137,6 +168,7 @@ class LinearDiracDistribution(AbstractDiracDistribution, AbstractLinearDistribut
             raise ValueError("samples must be a scalar, 1D array, or 2D array")
         if sample_matrix.shape[0] == 0:
             raise ValueError("samples must contain at least one sample")
+        _validate_real_finite_values(sample_matrix, "samples")
 
         if weights is None:
             weights = ones(sample_matrix.shape[0]) / sample_matrix.shape[0]
