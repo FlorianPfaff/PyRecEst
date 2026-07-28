@@ -38,6 +38,15 @@ class TestCartProdStackedPdfBatchShape(unittest.TestCase):
         self.assertEqual(actual.shape, (2, 2))
         self.assertTrue(allclose(actual, expected))
 
+    def test_pdf_preserves_singleton_batch_dimension(self):
+        xs = array([[1.0, 2.0, 3.0, 4.0, 5.0]])
+
+        actual = self.dist.pdf(xs)
+        expected = self.dist.pdf(xs[0])
+
+        self.assertEqual(actual.shape, (1,))
+        self.assertTrue(allclose(actual[0], expected))
+
     def test_pdf_rejects_surplus_event_coordinates(self):
         invalid_points = (
             array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0]),
