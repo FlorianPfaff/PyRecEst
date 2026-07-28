@@ -10,6 +10,8 @@ from . import motion_models as _motion_models
 
 _nearly_coordinated_turn_model_impl = _motion_models.nearly_coordinated_turn_model
 _continuous_to_discrete_lti_impl = _motion_models.continuous_to_discrete_lti
+_coordinated_turn_transition_impl = _motion_models.coordinated_turn_transition
+_se2_unicycle_transition_impl = _motion_models.se2_unicycle_transition
 
 
 def _contains_complex_values(value: Any, seen: set[int] | None = None) -> bool:
@@ -76,6 +78,40 @@ def continuous_to_discrete_lti(
     )
 
 
+def coordinated_turn_transition(
+    state: Any, dt: float = 1.0, turn_threshold: float = 1e-8
+) -> Any:
+    """Propagate a coordinated-turn state with a valid branch threshold."""
+    turn_threshold = (
+        _motion_models._as_positive_float(  # pylint: disable=protected-access
+            turn_threshold,
+            "turn_threshold",
+        )
+    )
+    return _coordinated_turn_transition_impl(
+        state,
+        dt=dt,
+        turn_threshold=turn_threshold,
+    )
+
+
+def se2_unicycle_transition(
+    state: Any, dt: float = 1.0, turn_threshold: float = 1e-8
+) -> Any:
+    """Propagate an SE(2) unicycle state with a valid branch threshold."""
+    turn_threshold = (
+        _motion_models._as_positive_float(  # pylint: disable=protected-access
+            turn_threshold,
+            "turn_threshold",
+        )
+    )
+    return _se2_unicycle_transition_impl(
+        state,
+        dt=dt,
+        turn_threshold=turn_threshold,
+    )
+
+
 def nearly_coordinated_turn_model(
     dt: float = 1.0,
     position_spectral_density: float = 1.0,
@@ -100,7 +136,14 @@ def nearly_coordinated_turn_model(
 
 
 _motion_models.continuous_to_discrete_lti = continuous_to_discrete_lti
+_motion_models.coordinated_turn_transition = coordinated_turn_transition
 _motion_models.nearly_coordinated_turn_model = nearly_coordinated_turn_model
+_motion_models.se2_unicycle_transition = se2_unicycle_transition
 
 
-__all__ = ["continuous_to_discrete_lti", "nearly_coordinated_turn_model"]
+__all__ = [
+    "continuous_to_discrete_lti",
+    "coordinated_turn_transition",
+    "nearly_coordinated_turn_model",
+    "se2_unicycle_transition",
+]
