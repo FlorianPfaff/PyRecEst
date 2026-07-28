@@ -1,3 +1,7 @@
+import numbers as _numbers
+
+import numpy as _onp
+
 from ._dispatch import _common
 from ._dispatch import numpy as _np
 from ._dispatch import scipy as _scipy
@@ -227,8 +231,28 @@ def is_single_matrix_pd(mat):
         raise e
 
 
+def _normalize_fractional_matrix_power_exponent(t):
+    """Return a finite, non-boolean real scalar exponent."""
+
+    exponent_array = _onp.asarray(t)
+    if exponent_array.ndim != 0 or exponent_array.dtype.kind in "mM":
+        raise TypeError("t must be a real scalar")
+
+    exponent = exponent_array.item()
+    if isinstance(
+        exponent, (bool, _onp.bool_, _onp.datetime64, _onp.timedelta64)
+    ) or not isinstance(exponent, _numbers.Real):
+        raise TypeError("t must be a real scalar")
+
+    exponent = float(exponent)
+    if not _onp.isfinite(exponent):
+        raise ValueError("t must be finite")
+    return exponent
+
+
 def fractional_matrix_power(A, t):
     A = _as_scipy_linalg_array(A)
+    t = _normalize_fractional_matrix_power_exponent(t)
     empty_result = _empty_batched_square_matrix_result(A)
     if empty_result is not None:
         return empty_result
