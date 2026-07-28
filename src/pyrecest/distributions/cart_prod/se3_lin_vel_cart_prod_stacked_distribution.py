@@ -1,5 +1,3 @@
-from pyrecest.backend import asarray, prod, stack
-
 from ..hypersphere_subset.abstract_hyperhemispherical_distribution import (
     AbstractHyperhemisphericalDistribution,
 )
@@ -44,20 +42,6 @@ class SE3LinVelCartProdStackedDistribution(CartProdStackedDistribution):
     def marginalize_periodic(self):
         """Marginalize out orientation, retaining the linear velocity component."""
         return self.dists[1]
-
-    def pdf(self, xs):
-        xs = asarray(xs)
-        ps = []
-        next_dim = 0
-        for dist in self.dists:
-            next_input_dim = next_dim + dist.input_dim
-            if xs.ndim == 1:
-                xs_curr = xs[next_dim:next_input_dim]
-            else:
-                xs_curr = xs[:, next_dim:next_input_dim]
-            ps.append(dist.pdf(xs_curr))
-            next_dim = next_input_dim
-        return prod(stack(ps), axis=0)
 
     def get_manifold_size(self):
         return float("inf")

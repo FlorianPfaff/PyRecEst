@@ -94,6 +94,22 @@ class TestSE3LinVelCartProdStackedDistribution(unittest.TestCase):
         pdf_values = cpd.pdf(ones((100, 10)))
         self.assertTrue(allclose(diff(pdf_values), zeros(99)))
 
+    def test_pdf_preserves_arbitrary_leading_batch_shape(self):
+        cpd = SE3LinVelCartProdStackedDistribution(
+            [
+                HyperhemisphericalUniformDistribution(3),
+                GaussianDistribution(
+                    array([1.0, 2.0, 0.0, -2.0, -1.0, 3.0]),
+                    diag(array([3.0, 2.0, 3.0, 3.0, 4.0, 5.0])),
+                ),
+            ]
+        )
+
+        pdf_values = cpd.pdf(ones((2, 3, 10)))
+
+        self.assertEqual(pdf_values.shape, (2, 3))
+        self.assertTrue(allclose(pdf_values, pdf_values[0, 0] * ones((2, 3))))
+
     def test_pdf_accepts_list_inputs(self):
         cpd = SE3LinVelCartProdStackedDistribution(
             [
