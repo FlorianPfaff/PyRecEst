@@ -79,6 +79,8 @@ def moment_match_gaussian_hypotheses(
     mean = weights @ means
     covariance = np.zeros((mean.size, mean.size), dtype=float)
     for weight, hypothesis in zip(weights, hypotheses):
+        if weight == 0.0:
+            continue
         diff = hypothesis.mean - mean
         covariance += float(weight) * (hypothesis.covariance + np.outer(diff, diff))
     return mean, _symmetrized(covariance), weights
