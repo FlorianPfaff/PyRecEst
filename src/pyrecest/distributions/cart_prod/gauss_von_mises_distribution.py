@@ -38,14 +38,47 @@ from ..nonperiodic.gaussian_distribution import GaussianDistribution
 from .abstract_hypercylindrical_distribution import AbstractHypercylindricalDistribution
 
 
-def _validate_positive_sample_count(n) -> int:
-    count_array = np.asarray(n)
-    if count_array.ndim != 0:
-        raise ValueError("n must be a scalar integer")
+_INVALID_SCALAR_TYPES = (
+    str,
+    bytes,
+    bytearray,
+    np.str_,
+    np.bytes_,
+    complex,
+    np.complexfloating,
+    np.datetime64,
+    np.timedelta64,
+)
+_INVALID_SCALAR_DTYPE_KINDS = frozenset({"c", "S", "U", "M", "m"})
 
+
+def _as_scalar_array(value, shape_message: str, value_message: str) -> np.ndarray:
+    if np.ma.is_masked(value):
+        raise ValueError(value_message)
+
+    try:
+        scalar_array = np.asarray(value)
+    except (OverflowError, TypeError, ValueError) as exc:
+        raise ValueError(value_message) from exc
+
+    if scalar_array.shape != ():
+        raise ValueError(shape_message)
+    if scalar_array.dtype.kind in _INVALID_SCALAR_DTYPE_KINDS:
+        raise ValueError(value_message)
+    return scalar_array
+
+
+def _validate_positive_sample_count(n) -> int:
+    count_array = _as_scalar_array(
+        n,
+        "n must be a scalar integer",
+        "n must be a finite integer",
+    )
     count = count_array.item()
     if isinstance(count, (bool, np.bool_)):
         raise ValueError("n must be an integer, not a boolean")
+    if isinstance(count, _INVALID_SCALAR_TYPES):
+        raise ValueError("n must be a finite integer")
 
     try:
         count_int = int(count)
@@ -64,40 +97,36 @@ def _validate_positive_sample_count(n) -> int:
 
 
 def _validate_finite_scalar(value, name: str) -> float:
-    scalar_array = np.asarray(value)
-    if scalar_array.shape != ():
-        raise ValueError(f"{name} must be a scalar")
-
+    message = f"{name} must be a finite scalar"
+    scalar_array = _as_scalar_array(value, f"{name} must be a scalar", message)
     scalar = scalar_array.item()
-    if isinstance(scalar, (bool, np.bool_)):
-        raise ValueError(f"{name} must be a finite scalar")
+    if isinstance(scalar, (bool, np.bool_, *_INVALID_SCALAR_TYPES)):
+        raise ValueError(message)
 
     try:
         scalar_float = float(scalar)
     except (OverflowError, TypeError, ValueError) as exc:
-        raise ValueError(f"{name} must be a finite scalar") from exc
+        raise ValueError(message) from exc
 
     if not np.isfinite(scalar_float):
-        raise ValueError(f"{name} must be a finite scalar")
+        raise ValueError(message)
     return scalar_float
 
 
 def _validate_nonnegative_finite_scalar(value, name: str) -> float:
-    scalar_array = np.asarray(value)
-    if scalar_array.shape != ():
-        raise ValueError(f"{name} must be a scalar")
-
+    message = f"{name} must be a nonnegative finite scalar"
+    scalar_array = _as_scalar_array(value, f"{name} must be a scalar", message)
     scalar = scalar_array.item()
-    if isinstance(scalar, (bool, np.bool_)):
-        raise ValueError(f"{name} must be a nonnegative finite scalar")
+    if isinstance(scalar, (bool, np.bool_, *_INVALID_SCALAR_TYPES)):
+        raise ValueError(message)
 
     try:
         scalar_float = float(scalar)
     except (OverflowError, TypeError, ValueError) as exc:
-        raise ValueError(f"{name} must be a nonnegative finite scalar") from exc
+        raise ValueError(message) from exc
 
     if not np.isfinite(scalar_float) or scalar_float < 0.0:
-        raise ValueError(f"{name} must be a nonnegative finite scalar")
+        raise ValueError(message)
     return scalar_float
 
 
