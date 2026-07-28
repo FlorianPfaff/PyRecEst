@@ -23,7 +23,7 @@ def _reject_boolean_array(value, name: str) -> None:
     dtype = getattr(value, "dtype", None)
     if dtype is not None and str(dtype) in _BOOLEAN_DTYPE_NAMES:
         raise ValueError(f"{name} must contain real angles, not boolean values.")
-    if dtype is not None and str(dtype) == "object":
+    if dtype is None or str(dtype) == "object":
         try:
             object_values = np.asarray(value, dtype=object).reshape(-1)
         except (TypeError, ValueError, RuntimeError):
