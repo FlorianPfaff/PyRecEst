@@ -1,5 +1,4 @@
 import numpy as np
-
 from pyrecest.sampling.euclidean_sampler import GaussianSampler
 
 

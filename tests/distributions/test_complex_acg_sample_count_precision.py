@@ -2,7 +2,6 @@ import unittest
 from fractions import Fraction
 
 import numpy as np
-
 from pyrecest.distributions.hypersphere_subset.complex_angular_central_gaussian_distribution import (
     _validate_positive_sample_count,
 )

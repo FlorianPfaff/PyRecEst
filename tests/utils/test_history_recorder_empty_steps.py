@@ -14,9 +14,7 @@ def test_empty_padded_record_preserves_time_axis():
 
     recorder.record("estimate", backend.array([1.0, 2.0]), pad_with_nan=True)
     recorder.record("estimate", backend.array([]), pad_with_nan=True)
-    history = recorder.record(
-        "estimate", backend.array([3.0]), pad_with_nan=True
-    )
+    history = recorder.record("estimate", backend.array([3.0]), pad_with_nan=True)
 
     npt.assert_allclose(
         _to_numpy(history),
