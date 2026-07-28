@@ -58,6 +58,9 @@ def _normalize_seed(seed: int | None) -> int | None:
 
     message = "seed must be a non-negative integer or None"
 
+    if np.ma.is_masked(seed):
+        raise ValueError(message)
+
     if _is_temporal_seed_scalar(seed):
         raise ValueError(message)
 
