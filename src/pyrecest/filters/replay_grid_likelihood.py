@@ -426,14 +426,11 @@ def _nearest_grid_values(
 
     indices = _nearest_bin_indices(positions[finite_positions], bin_tree)
     nearest_values = values[indices]
-    if not np.all(np.isfinite(nearest_values)):
-        finite_values = values[np.isfinite(values)]
-        replacement = (
-            float(np.min(finite_values)) if finite_values.size else float(log_zero)
-        )
-        nearest_values = np.where(
-            np.isfinite(nearest_values), nearest_values, replacement
-        )
+    # A non-finite grid value represents zero or undefined likelihood. Borrowing
+    # the minimum finite value from another bin would create spurious mass.
+    nearest_values = np.where(
+        np.isfinite(nearest_values), nearest_values, float(log_zero)
+    )
     output[finite_positions] = nearest_values
     return output
 
