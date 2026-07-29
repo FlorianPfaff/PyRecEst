@@ -107,14 +107,16 @@ def _as_tensor_pair(in1, in2):
 
     x_is_inexact = _is_inexact_dtype(x.dtype)
     y_is_inexact = _is_inexact_dtype(y.dtype)
-    if x_is_inexact and y_is_inexact:
-        dtype = _torch.promote_types(x.dtype, y.dtype)
-    elif x_is_inexact:
-        dtype = x.dtype
-    elif y_is_inexact:
-        dtype = y.dtype
+    if not x_is_inexact or not y_is_inexact:
+        dtype = (
+            _torch.complex128
+            if x.dtype.is_complex or y.dtype.is_complex
+            else _torch.float64
+        )
     else:
-        dtype = _torch.get_default_dtype()
+        dtype = _torch.promote_types(x.dtype, y.dtype)
+        if dtype in {_torch.float16, _torch.bfloat16}:
+            dtype = _torch.float32
     return x.to(dtype=dtype), y.to(dtype=dtype)
 
 
