@@ -205,7 +205,9 @@ class HypersphericalUKF(AbstractFilter, HypersphericalFilterMixin):
             raise ValueError("noise_weights must be finite.")
         if not all(noise_weights > 0):
             raise ValueError("noise_weights must be strictly positive.")
-        noise_weights = noise_weights / noise_weights.sum()
+        weight_scale = noise_weights.max()
+        scaled_noise_weights = noise_weights / weight_scale
+        noise_weights = scaled_noise_weights / scaled_noise_weights.sum()
 
         mu = reshape(asarray(self._filter_state.mu, dtype=float64), (-1,))
         C = asarray(self._filter_state.C, dtype=float64)
