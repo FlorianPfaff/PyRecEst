@@ -444,7 +444,11 @@ def _probability_vector(value: Any, length: int, name: str) -> np.ndarray:
         probabilities = np.full(length, scalar, dtype=float)
     elif probabilities.shape != (length,):
         raise ValueError(f"{name} must be scalar or have shape ({length},)")
-    if np.any((probabilities < 0.0) | (probabilities > 1.0)):
+    if (
+        np.any(~np.isfinite(probabilities))
+        or np.any(probabilities < 0.0)
+        or np.any(probabilities > 1.0)
+    ):
         raise ValueError(f"{name} must contain probabilities in [0, 1]")
     return probabilities
 
