@@ -33,6 +33,25 @@ class TestExtremeSimilarityAssignment(unittest.TestCase):
             array([limit, limit], dtype=float64),
         )
 
+    def test_assignment_preserves_small_scores_beside_extreme_values(self):
+        limit = np.finfo(np.float64).max
+        minimum = -1.0e300
+        similarities = array(
+            [
+                [limit, minimum, minimum],
+                [minimum, 0.0, 3.0e-100],
+                [minimum, 2.0e-100, 0.0],
+            ],
+            dtype=float64,
+        )
+
+        assignment = assign_by_similarity_matrix(
+            similarities,
+            min_similarity=minimum,
+        )
+
+        npt.assert_array_equal(assignment, array([0, 2, 1]))
+
     def test_assignment_handles_dummy_cost_at_float64_limit(self):
         limit = np.finfo(np.float64).max
 
