@@ -6,7 +6,6 @@ import pytest
 from pyrecest import backend
 from pyrecest.smoothers import MEMRBPFFFBSiSmoother, MEMRBPFForwardRecord
 
-
 pytestmark = pytest.mark.skipif(
     backend.__backend_name__ != "numpy",
     reason="MEM-RBPF FFBSi tests use NumPy sampling paths",
