@@ -1,10 +1,16 @@
+import math
+
+
 def _parameter_sort_key(parameter):
     if parameter is None:
         return (0, "")
     try:
-        return (1, float(parameter))
+        numeric_parameter = float(parameter)
     except (TypeError, ValueError, OverflowError):
-        return (2, str(parameter))
+        return (3, str(parameter))
+    if math.isnan(numeric_parameter):
+        return (2, "")
+    return (1, numeric_parameter)
 
 
 def group_results_by_filter(data):
