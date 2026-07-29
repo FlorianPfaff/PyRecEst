@@ -29,6 +29,20 @@ class _HistoryEntry:
     pad_with_nan: bool
 
 
+def _contains_masked_value(value: Any) -> bool:
+    """Return whether *value* contains genuinely masked NumPy entries."""
+
+    if np.ma.is_masked(value):
+        return True
+    if isinstance(value, np.ndarray):
+        if value.dtype != object:
+            return False
+        return any(_contains_masked_value(item) for item in value.reshape(-1))
+    if isinstance(value, (list, tuple)):
+        return any(_contains_masked_value(item) for item in value)
+    return False
+
+
 def _validate_bool_flag(value: Any, name: str) -> bool:
     if isinstance(value, bool):
         return value
@@ -88,6 +102,8 @@ def _padded_history_input_dtype(value: Any):
 
 def _as_padded_numeric_array(curr_ests):
     message = "padded history values must be real numeric"
+    if _contains_masked_value(curr_ests):
+        raise ValueError("padded history values must not contain masked values")
     if _is_invalid_padded_history_dtype(_padded_history_input_dtype(curr_ests)):
         raise TypeError(message)
 
