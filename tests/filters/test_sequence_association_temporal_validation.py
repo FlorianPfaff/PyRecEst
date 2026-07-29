@@ -6,7 +6,6 @@ from pyrecest.filters import (
     solve_viterbi_sequence_association,
 )
 
-
 _TEMPORAL_VALUES = (
     pytest.param(np.timedelta64(1, "ns"), id="timedelta-ns"),
     pytest.param(np.timedelta64(1, "us"), id="timedelta-us"),
