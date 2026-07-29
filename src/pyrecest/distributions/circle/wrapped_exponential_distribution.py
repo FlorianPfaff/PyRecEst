@@ -26,6 +26,7 @@ from pyrecest.backend import (
 from .abstract_circular_distribution import AbstractCircularDistribution
 
 _SMALL_RATE_SERIES_THRESHOLD = 1e-4
+_LARGE_RATE_ASYMPTOTIC_THRESHOLD = 100.0
 _INVALID_REAL_SCALAR_TYPES = (
     bool,
     np.bool_,
@@ -130,14 +131,20 @@ def _validate_pdf_points(value):
     return value
 
 
-def _density_scale_from_log_beta(log_beta):
-    """Return ``lambda / (1 - exp(-2*pi*lambda))`` without overflow."""
+def _density_scale_from_rate(rate):
+    """Return ``rate / (1 - exp(-2*pi*rate))`` without overflow."""
+    if bool(all(rate >= _LARGE_RATE_ASYMPTOTIC_THRESHOLD)):
+        # At this rate exp(-2*pi*rate) is below binary64 precision. Returning
+        # rate also avoids overflowing the intermediate product 2*pi*rate.
+        return rate
+
+    log_beta = 2.0 * pi * rate
     if bool(all(log_beta < _SMALL_RATE_SERIES_THRESHOLD)):
         # x / (1 - exp(-x)) = 1 + x/2 + x**2/12 - x**4/720 + O(x**6).
         return (1.0 + log_beta / 2.0 + log_beta**2 / 12.0 - log_beta**4 / 720.0) / (
             2.0 * pi
         )
-    return (log_beta / (2.0 * pi)) / (1.0 - exp(-log_beta))
+    return rate / (1.0 - exp(-log_beta))
 
 
 class WrappedExponentialDistribution(AbstractCircularDistribution):
@@ -153,8 +160,7 @@ class WrappedExponentialDistribution(AbstractCircularDistribution):
         AbstractCircularDistribution.__init__(self)
         lambda_ = backend_copy(_validate_positive_scalar(lambda_, "lambda_"))
         self.lambda_ = lambda_
-        self._log_beta = 2.0 * pi * lambda_
-        self._density_scale = _density_scale_from_log_beta(self._log_beta)
+        self._density_scale = _density_scale_from_rate(lambda_)
 
     def pdf(self, xs):
         xs = _validate_pdf_points(xs)
@@ -173,7 +179,12 @@ class WrappedExponentialDistribution(AbstractCircularDistribution):
         return mod(-log(u) / self.lambda_, 2.0 * pi)
 
     def entropy(self):
-        log_beta = self._log_beta
+        if bool(all(self.lambda_ >= _LARGE_RATE_ASYMPTOTIC_THRESHOLD)):
+            # The wrapping correction is below binary64 precision, and this path
+            # avoids the indeterminate product inf * 0 for extreme finite rates.
+            return 1.0 - log(self.lambda_)
+
+        log_beta = 2.0 * pi * self.lambda_
         if bool(all(log_beta < _SMALL_RATE_SERIES_THRESHOLD)):
             # As lambda approaches zero, the distribution approaches the uniform
             # distribution on [0, 2*pi).  The direct expression evaluates
