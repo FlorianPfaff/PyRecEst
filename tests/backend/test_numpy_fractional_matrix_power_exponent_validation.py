@@ -45,3 +45,31 @@ def test_fractional_matrix_power_validates_exponent_for_empty_batches():
 
     with pytest.raises(TypeError, match="t must be a real scalar"):
         linalg.fractional_matrix_power(matrices, np.timedelta64(2, "ns"))
+
+
+@pytest.mark.parametrize("shape", [(0, 0), (3, 0, 0), (2, 1, 0, 0)])
+@pytest.mark.parametrize(
+    ("exponent", "error_type", "message"),
+    [
+        pytest.param(
+            np.timedelta64(2, "ns"),
+            TypeError,
+            "t must be a real scalar",
+            id="temporal",
+        ),
+        pytest.param(
+            np.array([0.5]),
+            TypeError,
+            "t must be a real scalar",
+            id="non-scalar",
+        ),
+        pytest.param(np.nan, ValueError, "t must be finite", id="nonfinite"),
+    ],
+)
+def test_fractional_matrix_power_validates_exponent_for_zero_by_zero_matrices(
+    shape, exponent, error_type, message
+):
+    matrices = np.empty(shape)
+
+    with pytest.raises(error_type, match=message):
+        linalg.fractional_matrix_power(matrices, exponent)

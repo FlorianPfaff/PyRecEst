@@ -21,6 +21,7 @@ from scipy.linalg import (
 )
 
 from .._shared_numpy.linalg import (
+    _normalize_fractional_matrix_power_exponent,
     fractional_matrix_power as _fractional_matrix_power,
     is_single_matrix_pd,
     logm as _logm,
@@ -63,5 +64,6 @@ def fractional_matrix_power(a, t):
     """Compute a fractional matrix power, including zero-by-zero matrices."""
     empty_result = _empty_zero_by_zero_matrix_result(a)
     if empty_result is not None:
+        _normalize_fractional_matrix_power_exponent(t)
         return empty_result
     return _fractional_matrix_power(a, t)
