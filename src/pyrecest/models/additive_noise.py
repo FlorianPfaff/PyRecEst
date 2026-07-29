@@ -4,10 +4,10 @@ import inspect
 from collections.abc import Callable
 from typing import Any
 
-import numpy as np
-
 # pylint: disable=no-name-in-module,no-member,too-many-instance-attributes,too-many-positional-arguments
 from pyrecest.backend import asarray, is_array
+
+from .validation import _validate_bool_flag
 
 
 def _as_optional_array(value):
@@ -79,16 +79,6 @@ def _reject_unexpected_kwargs(kwargs: dict[str, Any]) -> None:
     if kwargs:
         unexpected = ", ".join(sorted(kwargs))
         raise TypeError(f"Unexpected keyword argument(s): {unexpected}")
-
-
-def _validate_bool_flag(value: Any, name: str) -> bool:
-    try:
-        value_array = np.asarray(value)
-    except (TypeError, ValueError, RuntimeError) as exc:
-        raise TypeError(f"{name} must be a boolean") from exc
-    if value_array.shape != () or not np.issubdtype(value_array.dtype, np.bool_):
-        raise TypeError(f"{name} must be a boolean")
-    return bool(value_array.item())
 
 
 def _dt_call_mode(function: Callable[..., Any]) -> str | None:
