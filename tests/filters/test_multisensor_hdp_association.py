@@ -88,6 +88,26 @@ class MultisensorHDPAssociationTest(unittest.TestCase):
                 detection_probabilities={"radar": np.array([1.1, 0.9])},
             )
 
+    def test_nonfinite_probability_vectors_are_rejected(self):
+        invalid_probability_vectors = (
+            np.array([np.nan, 0.9]),
+            np.array([0.9, np.nan]),
+        )
+
+        for probabilities in invalid_probability_vectors:
+            with self.subTest(probabilities=probabilities):
+                with self.assertRaisesRegex(ValueError, "probabilities"):
+                    multisensor_hdp_association(
+                        {"radar": np.zeros((1, 2))},
+                        global_target_weights=np.ones(2),
+                        detection_probabilities={"radar": probabilities},
+                    )
+                with self.assertRaisesRegex(ValueError, "probabilities"):
+                    predict_survival_weighted_hdp_masses(
+                        np.ones(2),
+                        probabilities,
+                    )
+
 
 if __name__ == "__main__":
     unittest.main()
