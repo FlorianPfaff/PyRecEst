@@ -45,6 +45,8 @@ _TEMPORAL_SCALAR_TYPES = (np.datetime64, np.timedelta64)
 
 def _validate_positive_sample_count(n) -> int:
     message = "n must be a positive integer"
+    if np.ma.is_masked(n):
+        raise ValueError(message)
     try:
         count_array = np.asarray(n)
     except (OverflowError, TypeError, ValueError) as exc:
