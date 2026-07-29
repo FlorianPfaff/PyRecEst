@@ -34,6 +34,8 @@ def _is_rejected_real_scalar(value: Any) -> bool:
 
 
 def _as_finite_float(value: Any, name: str) -> float:
+    if np.ma.is_masked(value):
+        raise ValueError(f"{name} must be a finite scalar")
     arr = np.asarray(value)
     if arr.ndim != 0 or arr.dtype == np.bool_ or arr.dtype.kind in "USbcMm":
         raise ValueError(f"{name} must be a finite scalar")
@@ -50,6 +52,8 @@ def _as_finite_float(value: Any, name: str) -> float:
 
 
 def _as_nonnegative_time_delta(value: Any, name: str) -> float:
+    if np.ma.is_masked(value):
+        raise ValueError(f"{name} must be nonnegative")
     arr = np.asarray(value)
     if arr.ndim != 0 or arr.dtype == np.bool_ or arr.dtype.kind in "USbcMm":
         raise ValueError(f"{name} must be nonnegative")
@@ -66,6 +70,8 @@ def _as_nonnegative_time_delta(value: Any, name: str) -> float:
 
 
 def _as_real_numeric_array(value: Any, name: str) -> np.ndarray:
+    if np.ma.is_masked(value):
+        raise ValueError(f"{name} must contain real numeric values")
     arr = np.asarray(value)
     if arr.dtype == np.bool_ or arr.dtype.kind in "USbcMm":
         raise ValueError(f"{name} must contain real numeric values")
@@ -86,6 +92,8 @@ def _as_real_numeric_array(value: Any, name: str) -> np.ndarray:
 
 
 def _as_summary_scalar(value: Any, name: str, *, allow_nan: bool = False) -> float:
+    if np.ma.is_masked(value):
+        raise ValueError(f"{name} must be a real scalar")
     arr = np.asarray(value)
     if arr.ndim != 0 or arr.dtype == np.bool_ or arr.dtype.kind in "USbcMm":
         raise ValueError(f"{name} must be a real scalar")
@@ -137,9 +145,31 @@ _time_offset_module._aggregate_summary_metric = _aggregate_summary_metric
 
 from . import bias as _bias_module  # noqa: E402
 
+_base_bias_as_numeric_array = _bias_module._as_numeric_array
+_base_bias_as_nonnegative_int = _bias_module._as_nonnegative_int
+_base_bias_as_nonnegative_finite_float = _bias_module._as_nonnegative_finite_float
+
+
+def _as_bias_numeric_array(value: Any, name: str) -> np.ndarray:
+    if np.ma.is_masked(value):
+        raise ValueError(f"{name} must contain numeric values")
+    return _base_bias_as_numeric_array(value, name)
+
+
+def _as_bias_nonnegative_int(value: Any, name: str) -> int:
+    if np.ma.is_masked(value):
+        raise ValueError(f"{name} must be a nonnegative integer")
+    return _base_bias_as_nonnegative_int(value, name)
+
+
+def _as_bias_nonnegative_finite_float(value: Any, name: str) -> float:
+    if np.ma.is_masked(value):
+        raise ValueError(f"{name} must be a nonnegative finite scalar")
+    return _base_bias_as_nonnegative_finite_float(value, name)
+
 
 def _as_numeric_vector(value: Any, name: str) -> np.ndarray:
-    result = _bias_module._as_numeric_array(value, name)
+    result = _as_bias_numeric_array(value, name)
     if result.ndim == 0:
         return result.reshape(1)
     if result.ndim != 1:
@@ -147,6 +177,9 @@ def _as_numeric_vector(value: Any, name: str) -> np.ndarray:
     return result
 
 
+_bias_module._as_numeric_array = _as_bias_numeric_array
+_bias_module._as_nonnegative_int = _as_bias_nonnegative_int
+_bias_module._as_nonnegative_finite_float = _as_bias_nonnegative_finite_float
 _bias_module._as_numeric_vector = _as_numeric_vector
 
 from .bias import (  # noqa: E402
