@@ -43,6 +43,44 @@ def _normalize_bool_option(value: Any, name: str) -> bool:
     raise ValueError(f"{name} must be a bool")
 
 
+def _normalize_positive_finite_real_option(value: Any, name: str) -> float:
+    """Return a finite positive real-valued scalar option."""
+
+    message = f"{name} must be a positive finite real scalar"
+    if np.ma.is_masked(value):
+        raise ValueError(message)
+    try:
+        value_array = np.asarray(value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(message) from exc
+    if value_array.shape != () or value_array.dtype.kind in {"M", "m"}:
+        raise ValueError(message)
+
+    scalar = value_array.item()
+    if isinstance(
+        scalar,
+        (
+            bool,
+            np.bool_,
+            str,
+            bytes,
+            bytearray,
+            complex,
+            np.complexfloating,
+            np.datetime64,
+            np.timedelta64,
+        ),
+    ):
+        raise ValueError(message)
+    try:
+        parsed = float(scalar)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(message) from exc
+    if not np.isfinite(parsed) or parsed <= 0.0:
+        raise ValueError(message)
+    return parsed
+
+
 def install_mem_rbpf_ffbsi_option_contract() -> None:
     """Install strict validation for constructor and per-call FFBSi options."""
 
@@ -69,6 +107,10 @@ def install_mem_rbpf_ffbsi_option_contract() -> None:
                 angle_wrap_terms,
                 "angle_wrap_terms",
                 minimum=0,
+            )
+            axis_floor = _normalize_positive_finite_real_option(
+                axis_floor,
+                "axis_floor",
             )
             return current_init(
                 self,
