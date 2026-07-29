@@ -56,6 +56,8 @@ def _has_complex_dtype(value) -> bool:
 def _scalar_item(value, name: str):
     """Return a scalar value while rejecting arrays and booleans."""
 
+    if np.ma.is_masked(value):
+        raise ValueError(f"{name} must be a scalar")
     if isinstance(value, (bool, np.bool_)):
         raise ValueError(f"{name} must be a scalar")
     shape = getattr(value, "shape", ())
