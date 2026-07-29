@@ -1,8 +1,10 @@
-"""Runtime patches for ROI-assignment threshold semantics."""
+"""Runtime patches for ROI-assignment numeric semantics."""
 
 from __future__ import annotations
 
 import numpy as np
+
+from ._roi_assignment_extreme_range import patch_similarity_assignment_extreme_range
 
 
 def _as_positive_nbins(roi_assignment_module, nbins) -> int:
@@ -49,8 +51,9 @@ def _patch_minimum_similarity_threshold(roi_assignment_module) -> None:
 
 
 def patch_otsu_similarity_threshold(roi_assignment_module) -> None:
-    """Patch ROI threshold helpers for strict Otsu splitting and input validation."""
+    """Patch ROI threshold helpers and finite-range assignment costs."""
 
+    patch_similarity_assignment_extreme_range(roi_assignment_module)
     original_otsu = roi_assignment_module.otsu_similarity_threshold
     if getattr(original_otsu, "_pyrecest_strict_foreground_split", False) and getattr(
         original_otsu, "_pyrecest_positive_nbins_validation", False
