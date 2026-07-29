@@ -1,8 +1,6 @@
 import numpy as np
 import pytest
-
 from pyrecest.utils.metrics import chi_square_confidence_bounds
-
 
 _TEMPORAL_COUNTS = (
     np.timedelta64(2, "ns"),

@@ -8,7 +8,6 @@ from pyrecest.tracking import (
     rank_hypothesis_replays,
 )
 
-
 _TEMPORAL_VALUES = (
     np.timedelta64(2, "ns"),
     np.datetime64("1970-01-01T00:00:00.000000002"),
@@ -45,9 +44,7 @@ def test_temporal_record_statistics_are_ignored() -> None:
         records=[
             {
                 "nis": np.timedelta64(4, "ns"),
-                "residual_norm_m": np.datetime64(
-                    "1970-01-01T00:00:00.000000005"
-                ),
+                "residual_norm_m": np.datetime64("1970-01-01T00:00:00.000000005"),
             },
             {
                 "nis": np.asarray(np.timedelta64(6, "ns"), dtype=object),
