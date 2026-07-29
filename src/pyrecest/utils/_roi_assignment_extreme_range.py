@@ -31,7 +31,7 @@ def _stable_extreme_assignment(
     num_dummy,
     unmatched_value: int,
 ):
-    """Solve an unsafe finite-range assignment after positive score scaling."""
+    """Solve an unsafe finite-range assignment without collapsing score ordering."""
 
     n_rows, n_cols = similarities.shape
     if num_dummy is None:
@@ -43,35 +43,55 @@ def _stable_extreme_assignment(
         )
 
     finite_mask = roi_assignment_module.isfinite(similarities)
-    maximum = float(roi_assignment_module.amax(similarities[finite_mask]))
-    scale = max(1.0, abs(maximum), abs(minimum))
-    normalized_similarities = similarities / scale
-    normalized_maximum = maximum / scale
-    normalized_minimum = minimum / scale
-
-    threshold_cost = normalized_maximum - normalized_minimum
-    dummy_penalty = max(1e-12 / scale, sys.float_info.epsilon)
-    dummy_cost = threshold_cost + dummy_penalty
-    if dummy_cost <= threshold_cost:
-        dummy_cost = math.nextafter(threshold_cost, math.inf)
-
     valid_mask = finite_mask & (similarities >= minimum)
-    cost_matrix = roi_assignment_module.full_like(
-        normalized_similarities,
-        dummy_cost,
-    )
-    cost_matrix[valid_mask] = (
-        normalized_maximum - normalized_similarities[valid_mask]
-    )
-
+    maximum = float(roi_assignment_module.amax(similarities[finite_mask]))
     padded_size = max(n_rows, n_cols) + num_dummy
-    padded_cost = roi_assignment_module.full(
-        (padded_size, padded_size),
-        dummy_cost,
-        dtype=roi_assignment_module.float64,
-    )
-    padded_cost[:n_rows, :n_cols] = cost_matrix
-    row_ind, col_ind = roi_assignment_module.linear_sum_assignment(padded_cost)
+
+    dummy_similarity = math.nextafter(minimum, -math.inf)
+    if math.isfinite(dummy_similarity):
+        score_matrix = roi_assignment_module.full_like(
+            similarities,
+            dummy_similarity,
+        )
+        score_matrix[valid_mask] = similarities[valid_mask]
+        padded_matrix = roi_assignment_module.full(
+            (padded_size, padded_size),
+            dummy_similarity,
+            dtype=roi_assignment_module.float64,
+        )
+        padded_matrix[:n_rows, :n_cols] = score_matrix
+        row_ind, col_ind = roi_assignment_module.linear_sum_assignment(
+            padded_matrix,
+            maximize=True,
+        )
+    else:
+        # The smallest finite float has no finite predecessor for dummy matches.
+        # Retain the normalized cost fallback for that boundary-only case.
+        scale = max(1.0, abs(maximum), abs(minimum))
+        normalized_similarities = similarities / scale
+        normalized_maximum = maximum / scale
+        normalized_minimum = minimum / scale
+
+        threshold_cost = normalized_maximum - normalized_minimum
+        dummy_penalty = max(1e-12 / scale, sys.float_info.epsilon)
+        dummy_cost = threshold_cost + dummy_penalty
+        if dummy_cost <= threshold_cost:
+            dummy_cost = math.nextafter(threshold_cost, math.inf)
+
+        cost_matrix = roi_assignment_module.full_like(
+            normalized_similarities,
+            dummy_cost,
+        )
+        cost_matrix[valid_mask] = (
+            normalized_maximum - normalized_similarities[valid_mask]
+        )
+        padded_matrix = roi_assignment_module.full(
+            (padded_size, padded_size),
+            dummy_cost,
+            dtype=roi_assignment_module.float64,
+        )
+        padded_matrix[:n_rows, :n_cols] = cost_matrix
+        row_ind, col_ind = roi_assignment_module.linear_sum_assignment(padded_matrix)
 
     assignment = roi_assignment_module.full(
         (n_rows,),
