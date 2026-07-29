@@ -242,12 +242,7 @@ class RollingNISProcessNoiseAdapter:
     def scale(self, source_weights: Mapping[str, float] | None = None) -> float:
         """Return the adapted process-noise multiplier."""
 
-        scale = self.config.base_scale * adaptive_scale_from_ratio(
-            self.ratio(source_weights), self.config
-        )
-        return float(
-            np.clip(scale, float(self.config.min_scale), float(self.config.max_scale))
-        )
+        return adaptive_scale_from_ratio(self.ratio(source_weights), self.config)
 
     def scaled_covariance(
         self,
@@ -271,11 +266,16 @@ def adaptive_scale_from_ratio(
     config = AdaptiveProcessNoiseConfig() if config is None else config
     ratio = _normalize_nonnegative_finite_scalar(ratio, "ratio")
     if ratio > float(config.high_nis_ratio):
-        scale = 1.0 + float(config.scale_gain) * (ratio - float(config.high_nis_ratio))
+        multiplier = 1.0 + float(config.scale_gain) * (
+            ratio - float(config.high_nis_ratio)
+        )
     elif ratio < float(config.low_nis_ratio):
-        scale = 1.0 - float(config.scale_gain) * (float(config.low_nis_ratio) - ratio)
+        multiplier = 1.0 - float(config.scale_gain) * (
+            float(config.low_nis_ratio) - ratio
+        )
     else:
-        scale = 1.0
+        multiplier = 1.0
+    scale = float(config.base_scale) * multiplier
     return float(np.clip(scale, float(config.min_scale), float(config.max_scale)))
 
 
