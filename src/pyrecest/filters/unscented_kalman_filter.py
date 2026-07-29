@@ -112,12 +112,14 @@ class UnscentedKalmanFilter(AbstractFilter, EuclideanFilterMixin):
 
         This is an adapter around :meth:`predict_nonlinear`; it does not change
         the UKF algorithm or deprecate the existing function/covariance API.
+        The model's additive noise mean is folded into the propagated sigma
+        points, while its covariance is supplied as the UKF process covariance.
 
         Parameters
         ----------
         model:
             Reusable transition model containing the deterministic transition
-            function and additive process-noise covariance.
+            function and additive process-noise statistics.
         dt:
             Optional time step overriding ``model.dt``.
         fx_args:
@@ -125,7 +127,7 @@ class UnscentedKalmanFilter(AbstractFilter, EuclideanFilterMixin):
             model's default ``function_args`` for this prediction.
         """
         return self.predict_nonlinear(
-            model.evaluate,
+            model.mean,
             model.noise_covariance,
             dt=model.dt if dt is None else dt,
             **fx_args,
@@ -141,10 +143,13 @@ class UnscentedKalmanFilter(AbstractFilter, EuclideanFilterMixin):
 
         This is an adapter around :meth:`update_nonlinear`; it preserves the
         existing direct nonlinear update API while allowing model-object reuse.
+        The model's additive noise mean is included in the predicted
+        measurement, while its covariance is supplied as the UKF measurement
+        covariance.
         """
         return self.update_nonlinear(
             measurement,
-            model.evaluate,
+            model.predict_measurement,
             model.noise_covariance,
             **hx_args,
         )
