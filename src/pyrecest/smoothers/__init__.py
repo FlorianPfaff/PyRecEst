@@ -1,3 +1,4 @@
+from ._mem_rbpf_ffbsi_option_contract import install_mem_rbpf_ffbsi_option_contract
 from ._record_smoother_numeric_contract import install_record_smoother_numeric_contract
 from .abstract_smoother import AbstractSmoother
 from .delayed_output import DelayedStateOutput, DelayedStateOutputMixin
@@ -69,6 +70,7 @@ from .unscented_rauch_tung_striebel_smoother import (
     URTSSmoother,
 )
 
+install_mem_rbpf_ffbsi_option_contract()
 install_record_smoother_numeric_contract()
 
 __all__ = [
