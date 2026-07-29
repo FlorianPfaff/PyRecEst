@@ -1,5 +1,7 @@
 import operator as _operator
 
+import numpy as _onp
+
 from ._dispatch import _common
 from ._dispatch import numpy as _np
 
@@ -33,6 +35,16 @@ def _contains_boolean_value(value):
     return any(isinstance(item, _BOOLEAN_TYPES) for item in values)
 
 
+def _contains_masked_value(value):
+    if _onp.ma.is_masked(value):
+        return True
+    try:
+        values = _onp.asarray(value, dtype=object).reshape(-1)
+    except (TypeError, ValueError, RuntimeError):
+        return False
+    return any(_onp.ma.is_masked(item) for item in values)
+
+
 def _is_temporal_scalar_array(value_array):
     return value_array.ndim == 0 and value_array.dtype.kind in _TEMPORAL_DTYPE_KINDS
 
@@ -44,7 +56,11 @@ def _size_type_error():
 def _normalize_size(size):
     if size is None:
         return None
-    if _contains_boolean_value(size) or isinstance(size, (str, bytes)):
+    if (
+        _contains_boolean_value(size)
+        or _contains_masked_value(size)
+        or isinstance(size, (str, bytes))
+    ):
         raise _size_type_error()
     try:
         size_array = _np.asarray(size)
