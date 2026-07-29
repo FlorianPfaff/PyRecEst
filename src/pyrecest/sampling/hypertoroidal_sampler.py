@@ -6,9 +6,13 @@ from pyrecest.distributions import CircularUniformDistribution
 from .abstract_sampler import AbstractSampler
 
 _TEXT_TYPES = (str, bytes, bytearray, np.str_, np.bytes_)
+_TEMPORAL_TYPES = (np.datetime64, np.timedelta64)
 
 
 def _validate_integral_scalar(value, name: str, *, minimum: int) -> int:
+    if np.ma.is_masked(value):
+        raise ValueError(f"{name} must be an integer")
+
     scalar = np.asarray(value)
     if scalar.ndim != 0:
         raise ValueError(f"{name} must be a scalar integer")
@@ -18,7 +22,7 @@ def _validate_integral_scalar(value, name: str, *, minimum: int) -> int:
     scalar_value = scalar.item()
     if isinstance(scalar_value, (bool, np.bool_)):
         raise ValueError(f"{name} must be an integer, not a boolean")
-    if isinstance(scalar_value, _TEXT_TYPES):
+    if isinstance(scalar_value, (*_TEXT_TYPES, *_TEMPORAL_TYPES)):
         raise ValueError(f"{name} must be an integer")
 
     try:
