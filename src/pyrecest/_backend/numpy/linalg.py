@@ -22,16 +22,20 @@ from scipy.linalg import (
 
 from .._shared_numpy.linalg import (
     _normalize_fractional_matrix_power_exponent,
-    fractional_matrix_power as _fractional_matrix_power,
+)
+from .._shared_numpy.linalg import fractional_matrix_power as _fractional_matrix_power
+from .._shared_numpy.linalg import (
     is_single_matrix_pd,
-    logm as _logm,
+)
+from .._shared_numpy.linalg import logm as _logm
+from .._shared_numpy.linalg import (
     polar,
     qr,
     quadratic_assignment,
     solve,
     solve_sylvester,
-    sqrtm as _sqrtm,
 )
+from .._shared_numpy.linalg import sqrtm as _sqrtm
 
 
 def _empty_zero_by_zero_matrix_result(value):

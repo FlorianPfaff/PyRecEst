@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
 
-
 torch = pytest.importorskip("torch")
 
 from pyrecest._backend.pytorch import random  # noqa: E402
@@ -16,9 +15,7 @@ from pyrecest._backend.pytorch import random  # noqa: E402
         ([0], [129], np.int8, "high is out of bounds for int8"),
     ],
 )
-def test_array_randint_rejects_bounds_outside_output_dtype(
-    low, high, dtype, message
-):
+def test_array_randint_rejects_bounds_outside_output_dtype(low, high, dtype, message):
     with pytest.raises(ValueError, match=message):
         random.randint(low, high, dtype=dtype)
 
