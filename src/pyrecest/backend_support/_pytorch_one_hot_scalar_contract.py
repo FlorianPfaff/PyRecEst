@@ -1,4 +1,4 @@
-"""PyTorch ``one_hot``, ``take``, and gamma compatibility hooks."""
+"""PyTorch ``one_hot``, ``take``, gamma, and equality compatibility hooks."""
 
 from __future__ import annotations
 
@@ -184,6 +184,114 @@ def _patch_pytorch_gamma_autograd_contract(
         backend.gamma = gamma
 
 
+def _patch_pytorch_array_equal_dtype_contract(
+    pytorch_backend,
+    backend,
+    torch_module,
+) -> None:
+    """Make mixed-dtype ``array_equal`` follow NumPy promotion semantics."""
+    original_array_equal = getattr(pytorch_backend, "array_equal", None)
+    if original_array_equal is None:
+        return
+    active_pytorch_backend = getattr(backend, "__backend_name__", None) == "pytorch"
+    if getattr(
+        original_array_equal,
+        "_pyrecest_numpy_dtype_promotion_contract",
+        False,
+    ):
+        if active_pytorch_backend:
+            backend.array_equal = original_array_equal
+        return
+
+    try:
+        import numpy as np  # pylint: disable=import-outside-toplevel
+    except ModuleNotFoundError:  # pragma: no cover - NumPy is a core dependency
+        return
+
+    torch_to_numpy_dtype = {}
+    numpy_to_torch_dtype = {}
+    for torch_name, numpy_dtype in (
+        ("bool", np.bool_),
+        ("uint8", np.uint8),
+        ("uint16", np.uint16),
+        ("uint32", np.uint32),
+        ("uint64", np.uint64),
+        ("int8", np.int8),
+        ("int16", np.int16),
+        ("int32", np.int32),
+        ("int64", np.int64),
+        ("float16", np.float16),
+        ("float32", np.float32),
+        ("float64", np.float64),
+        ("complex64", np.complex64),
+        ("complex128", np.complex128),
+    ):
+        torch_dtype = getattr(torch_module, torch_name, None)
+        if torch_dtype is None:
+            continue
+        numpy_dtype = np.dtype(numpy_dtype)
+        torch_to_numpy_dtype[torch_dtype] = numpy_dtype
+        numpy_to_torch_dtype[numpy_dtype] = torch_dtype
+
+    def _preferred_device(*values):
+        for value in values:
+            if torch_module.is_tensor(value) and value.device.type != "cpu":
+                return value.device
+        for value in values:
+            if torch_module.is_tensor(value):
+                return value.device
+        return None
+
+    def _coerce(value, *, device):
+        if not torch_module.is_tensor(value):
+            return torch_module.as_tensor(value, device=device)
+        if device is not None and value.device != device:
+            return value.to(device=device)
+        return value
+
+    def _promoted_dtype(first_dtype, second_dtype):
+        first_numpy_dtype = torch_to_numpy_dtype.get(first_dtype)
+        second_numpy_dtype = torch_to_numpy_dtype.get(second_dtype)
+        if first_numpy_dtype is None or second_numpy_dtype is None:
+            return torch_module.promote_types(first_dtype, second_dtype)
+        promoted_numpy_dtype = np.dtype(
+            np.result_type(first_numpy_dtype, second_numpy_dtype)
+        )
+        return numpy_to_torch_dtype.get(
+            promoted_numpy_dtype,
+            torch_module.promote_types(first_dtype, second_dtype),
+        )
+
+    def array_equal(a, b, equal_nan=False):
+        device = _preferred_device(a, b)
+        a = _coerce(a, device=device)
+        b = _coerce(b, device=device)
+        if tuple(a.shape) != tuple(b.shape):
+            return False
+
+        dtype = _promoted_dtype(a.dtype, b.dtype)
+        a = a.to(dtype=dtype)
+        b = b.to(dtype=dtype)
+        if not equal_nan:
+            return torch_module.equal(a, b)
+
+        comparison = torch_module.eq(a, b)
+        if dtype.is_floating_point or dtype.is_complex:
+            comparison = comparison | (
+                torch_module.isnan(a) & torch_module.isnan(b)
+            )
+        return bool(torch_module.all(comparison))
+
+    array_equal.__name__ = getattr(original_array_equal, "__name__", "array_equal")
+    array_equal.__doc__ = getattr(original_array_equal, "__doc__", None)
+    array_equal._pyrecest_equal_nan_contract = True
+    array_equal._pyrecest_numpy_contract = True
+    array_equal._pyrecest_numpy_dtype_promotion_contract = True
+    pytorch_backend.array_equal = array_equal
+    if active_pytorch_backend:
+        backend.array_equal = array_equal
+
+
 def patch_pytorch_one_hot_scalar_contract() -> None:
     """Patch small PyTorch backend compatibility contracts."""
     try:
@@ -200,6 +308,11 @@ def patch_pytorch_one_hot_scalar_contract() -> None:
     )
     _patch_pytorch_take_axis_contract(pytorch_backend, torch_module)
     _patch_pytorch_gamma_autograd_contract(
+        pytorch_backend,
+        backend,
+        torch_module,
+    )
+    _patch_pytorch_array_equal_dtype_contract(
         pytorch_backend,
         backend,
         torch_module,
