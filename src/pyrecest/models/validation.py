@@ -20,8 +20,23 @@ _TEMPORAL_ARRAY_KINDS = {"M", "m"}
 _TEMPORAL_SCALAR_TYPES = (np.datetime64, np.timedelta64)
 
 
+def _contains_masked_value(value: Any) -> bool:
+    """Return whether ``value`` contains genuinely masked NumPy entries."""
+    if np.ma.is_masked(value):
+        return True
+    if isinstance(value, np.ndarray):
+        if value.dtype != object:
+            return False
+        return any(_contains_masked_value(item) for item in value.reshape(-1))
+    if isinstance(value, (list, tuple)):
+        return any(_contains_masked_value(item) for item in value)
+    return False
+
+
 def _as_backend_array(value: Any, name: str):
     """Convert ``value`` to a backend array and raise a user-facing error."""
+    if _contains_masked_value(value):
+        raise ValueError(f"{name} must not contain masked values.")
     try:
         value_array = np.asarray(value)
     except (TypeError, ValueError, RuntimeError, OverflowError):
@@ -46,6 +61,8 @@ def _format_shape(shape: tuple[int, ...]) -> str:
 
 
 def _validate_bool_flag(value: Any, name: str) -> bool:
+    if _contains_masked_value(value):
+        raise TypeError(f"{name} must be a boolean.")
     if isinstance(value, (bool, np.bool_)):
         return bool(value)
     try:
@@ -87,6 +104,8 @@ def _contains_temporal_scalar(value: Any) -> bool:
 
 
 def _validate_nonnegative_finite_scalar(value: Any, name: str) -> float:
+    if _contains_masked_value(value):
+        raise ValueError(f"{name} must be a finite nonnegative scalar.")
     value_array = np.asarray(value)
     if (
         value_array.shape != ()
@@ -133,6 +152,8 @@ def _validate_expected_dim(
 
 
 def _validate_expected_dim_scalar(value: Any, dim_name: str) -> int:
+    if _contains_masked_value(value):
+        raise TypeError(f"{dim_name} must be an integer or None.")
     try:
         value_array = np.asarray(value)
     except (TypeError, ValueError, OverflowError) as exc:
@@ -407,6 +428,8 @@ def _maybe_call(value: Any, *, allow_methods: bool) -> Any:
 
 
 def _positive_int_or_none(value: Any) -> int | None:
+    if _contains_masked_value(value):
+        return None
     if isinstance(value, (bool, np.bool_, *_TEMPORAL_SCALAR_TYPES)):
         return None
     try:
