@@ -2,8 +2,10 @@ name: Apply masked tracking value fix
 
 on:
   push:
-    branches:
-      - agent/reject-masked-tracking-values
+    branches: [agent/reject-masked-tracking-values]
+  pull_request:
+    branches: [main]
+    types: [opened, reopened, synchronize]
 
 permissions:
   contents: write
@@ -13,45 +15,42 @@ jobs:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
-      - name: Check out branch
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           ref: agent/reject-masked-tracking-values
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
 
-      - name: Apply source and regression changes
+      - name: Apply fix and regression tests
         run: |
           python - <<'PY'
           from pathlib import Path
 
-          source_path = Path("src/pyrecest/tracking/event_records.py")
-          source = source_path.read_text(encoding="utf-8")
-          replacements = [
+          path = Path("src/pyrecest/tracking/event_records.py")
+          source = path.read_text(encoding="utf-8")
+          replacements = (
               (
-                  """def _raw_item_is_invalid_numeric(value: Any) -> bool:\n    if isinstance(value, _INVALID_NUMERIC_SCALAR_TYPES):\n        return True\n""",
-                  """def _raw_item_is_invalid_numeric(value: Any) -> bool:\n    if np.ma.is_masked(value):\n        return True\n    if isinstance(value, _INVALID_NUMERIC_SCALAR_TYPES):\n        return True\n""",
+                  "def _raw_item_is_invalid_numeric(value: Any) -> bool:\n    if isinstance(value, _INVALID_NUMERIC_SCALAR_TYPES):\n",
+                  "def _raw_item_is_invalid_numeric(value: Any) -> bool:\n    if np.ma.is_masked(value):\n        return True\n    if isinstance(value, _INVALID_NUMERIC_SCALAR_TYPES):\n",
               ),
               (
-                  """def _optional_bool(value: Any, *, name: str) -> bool | None:\n    if value is None:\n        return None\n    if isinstance(value, (bool, np.bool_)):\n""",
-                  """def _optional_bool(value: Any, *, name: str) -> bool | None:\n    if value is None:\n        return None\n    if np.ma.is_masked(value):\n        raise ValueError(f\"{name} must be a boolean or None\")\n    if isinstance(value, (bool, np.bool_)):\n""",
+                  "def _optional_bool(value: Any, *, name: str) -> bool | None:\n    if value is None:\n        return None\n    if isinstance(value, (bool, np.bool_)):\n",
+                  "def _optional_bool(value: Any, *, name: str) -> bool | None:\n    if value is None:\n        return None\n    if np.ma.is_masked(value):\n        raise ValueError(f\"{name} must be a boolean or None\")\n    if isinstance(value, (bool, np.bool_)):\n",
               ),
               (
-                  """def _finite_scalar(value: Any, *, name: str, message: str) -> float:\n    value_array = np.asarray(value)\n""",
-                  """def _finite_scalar(value: Any, *, name: str, message: str) -> float:\n    if np.ma.is_masked(value):\n        raise ValueError(message)\n    value_array = np.asarray(value)\n""",
+                  "def _finite_scalar(value: Any, *, name: str, message: str) -> float:\n    value_array = np.asarray(value)\n",
+                  "def _finite_scalar(value: Any, *, name: str, message: str) -> float:\n    if np.ma.is_masked(value):\n        raise ValueError(message)\n    value_array = np.asarray(value)\n",
               ),
-          ]
+          )
           for old, new in replacements:
               if source.count(old) != 1:
                   raise RuntimeError(f"Expected one source occurrence, found {source.count(old)}")
               source = source.replace(old, new, 1)
-          source_path.write_text(source, encoding="utf-8")
+          path.write_text(source, encoding="utf-8")
 
-          test_path = Path("tests/tracking/test_event_record_masked_validation.py")
-          test_path.write_text(
+          Path("tests/tracking/test_event_record_masked_validation.py").write_text(
               '''from __future__ import annotations
 
 import numpy as np
@@ -62,16 +61,10 @@ from pyrecest.tracking import TrackingEvent, event_from_measurement, record_from
 @pytest.mark.parametrize(
     ("field", "value"),
     (
-        (
-            "measurement",
-            np.ma.array([1.0, 2.0], mask=[False, True]),
-        ),
+        ("measurement", np.ma.array([1.0, 2.0], mask=[False, True])),
         (
             "covariance",
-            np.ma.array(
-                [[1.0, 0.0], [0.0, 1.0]],
-                mask=[[False, False], [False, True]],
-            ),
+            np.ma.array(np.eye(2), mask=[[False, False], [False, True]]),
         ),
     ),
 )
@@ -83,23 +76,22 @@ def test_tracking_event_rejects_masked_numeric_arrays(field, value) -> None:
         "covariance": np.eye(2),
     }
     kwargs[field] = value
-
     with pytest.raises(
         ValueError, match=f"{field} must contain real-valued numeric entries"
     ):
         TrackingEvent(**kwargs)
 
 
-def test_tracking_record_rejects_masked_state_and_diagnostic_values() -> None:
+def test_tracking_record_rejects_masked_values() -> None:
     event = event_from_measurement(time=0.0, source="rf")
-    base_kwargs = {
+    base = {
         "event": event,
         "prior_mean": [0.0, 0.0],
         "prior_cov": np.eye(2),
         "posterior_mean": [0.0, 0.0],
         "posterior_cov": np.eye(2),
     }
-    invalid_cases = (
+    cases = (
         (
             "prior_mean",
             np.ma.array([0.0, 1.0], mask=[False, True]),
@@ -110,15 +102,10 @@ def test_tracking_record_rejects_masked_state_and_diagnostic_values() -> None:
             np.ma.array([[1.0]], mask=[[True]]),
             "innovation_cov must contain real-valued numeric entries",
         ),
-        (
-            "nis",
-            np.ma.array(1.0, mask=True),
-            "nis must be finite and nonnegative",
-        ),
+        ("nis", np.ma.array(1.0, mask=True), "nis must be finite and nonnegative"),
     )
-
-    for field, value, message in invalid_cases:
-        kwargs = dict(base_kwargs)
+    for field, value, message in cases:
+        kwargs = dict(base)
         kwargs[field] = value
         with pytest.raises(ValueError, match=message):
             record_from_update(**kwargs)
@@ -126,11 +113,7 @@ def test_tracking_record_rejects_masked_state_and_diagnostic_values() -> None:
 
 def test_tracking_event_rejects_masked_scalar_fields() -> None:
     with pytest.raises(ValueError, match="time must be finite"):
-        TrackingEvent(
-            time=np.ma.array(1.0, mask=True),
-            source="rf",
-        )
-
+        TrackingEvent(time=np.ma.array(1.0, mask=True), source="rf")
     with pytest.raises(ValueError, match="accepted must be a boolean or None"):
         TrackingEvent(
             time=0.0,
@@ -143,11 +126,10 @@ def test_tracking_event_accepts_fully_unmasked_masked_arrays() -> None:
     event = TrackingEvent(
         time=np.ma.array(1.0, mask=False),
         source="rf",
-        measurement=np.ma.array([1.0, 2.0], mask=[False, False]),
-        covariance=np.ma.array(np.eye(2), mask=np.zeros((2, 2), dtype=bool)),
+        measurement=np.ma.array([1.0, 2.0], mask=False),
+        covariance=np.ma.array(np.eye(2), mask=False),
         accepted=np.ma.array(True, mask=False),
     )
-
     assert event.time == 1.0
     assert event.accepted is True
     assert np.array_equal(event.measurement, np.array([1.0, 2.0]))
@@ -155,30 +137,27 @@ def test_tracking_event_accepts_fully_unmasked_masked_arrays() -> None:
 ''',
               encoding="utf-8",
           )
-
           Path(".github/workflows/agent-apply-masked-tracking-fix.yml").unlink()
           PY
 
       - name: Validate focused behavior
         run: |
           python -m pip install --disable-pip-version-check numpy
-          python -m py_compile \
-            src/pyrecest/tracking/event_records.py \
-            tests/tracking/test_event_record_masked_validation.py
+          python -m py_compile src/pyrecest/tracking/event_records.py tests/tracking/test_event_record_masked_validation.py
           python - <<'PY'
           import importlib.util
           import sys
           from pathlib import Path
-
           import numpy as np
 
-          path = Path("src/pyrecest/tracking/event_records.py")
-          spec = importlib.util.spec_from_file_location("_agent_event_records", path)
+          spec = importlib.util.spec_from_file_location(
+              "_agent_event_records", Path("src/pyrecest/tracking/event_records.py")
+          )
           module = importlib.util.module_from_spec(spec)
           sys.modules[spec.name] = module
           spec.loader.exec_module(module)
 
-          invalid_events = (
+          for kwargs in (
               {"time": np.ma.array(1.0, mask=True), "source": "rf"},
               {
                   "time": 0.0,
@@ -190,8 +169,7 @@ def test_tracking_event_accepts_fully_unmasked_masked_arrays() -> None:
                   "source": "rf",
                   "accepted": np.ma.array(True, mask=True),
               },
-          )
-          for kwargs in invalid_events:
+          ):
               try:
                   module.TrackingEvent(**kwargs)
               except ValueError:
@@ -199,24 +177,21 @@ def test_tracking_event_accepts_fully_unmasked_masked_arrays() -> None:
               else:
                   raise AssertionError(f"masked value was accepted: {kwargs}")
 
-          event = module.TrackingEvent(
+          valid = module.TrackingEvent(
               time=np.ma.array(1.0, mask=False),
               source="rf",
               measurement=np.ma.array([1.0], mask=[False]),
               accepted=np.ma.array(True, mask=False),
           )
-          assert event.time == 1.0
-          assert event.accepted is True
-          assert np.array_equal(event.measurement, np.array([1.0]))
+          assert valid.time == 1.0
+          assert valid.accepted is True
+          assert np.array_equal(valid.measurement, np.array([1.0]))
           PY
 
-      - name: Commit the fix
+      - name: Commit generated changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add \
-            src/pyrecest/tracking/event_records.py \
-            tests/tracking/test_event_record_masked_validation.py \
-            .github/workflows/agent-apply-masked-tracking-fix.yml
+          git add src/pyrecest/tracking/event_records.py tests/tracking/test_event_record_masked_validation.py .github/workflows/agent-apply-masked-tracking-fix.yml
           git commit -m "Reject masked tracking event values"
           git push origin HEAD:agent/reject-masked-tracking-values
