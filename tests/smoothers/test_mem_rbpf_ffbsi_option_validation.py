@@ -49,9 +49,29 @@ def _single_particle_record() -> MEMRBPFForwardRecord:
             np.ma.array(2, mask=True),
             "angle_wrap_terms must be a non-negative integer",
         ),
+        (
+            "axis_floor",
+            np.nan,
+            "axis_floor must be a positive finite real scalar",
+        ),
+        (
+            "axis_floor",
+            np.inf,
+            "axis_floor must be a positive finite real scalar",
+        ),
+        (
+            "axis_floor",
+            True,
+            "axis_floor must be a positive finite real scalar",
+        ),
+        (
+            "axis_floor",
+            np.ma.array(1e-9, mask=True),
+            "axis_floor must be a positive finite real scalar",
+        ),
     ),
 )
-def test_constructor_rejects_lossy_or_invalid_integer_options(
+def test_constructor_rejects_lossy_or_invalid_options(
     option_name, invalid_value, message
 ):
     with pytest.raises(ValueError, match=message):
@@ -78,6 +98,7 @@ def test_exact_numpy_scalar_options_remain_supported():
         n_trajectories=np.int64(1),
         sample_axis=False,
         angle_wrap_terms=np.array(0),
+        axis_floor=np.ma.array(1e-8, mask=False),
     )
 
     result = smoother.smooth(
@@ -88,5 +109,6 @@ def test_exact_numpy_scalar_options_remain_supported():
         full_axis_lengths=np.bool_(False),
     )
 
+    assert smoother.axis_floor == 1e-8
     assert result.sample_states.shape == (2, 1, 4)
     npt.assert_allclose(result.sample_states[:, 0, -2:], [[1.0, 0.5], [1.0, 0.5]])
