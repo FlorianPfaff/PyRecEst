@@ -45,6 +45,8 @@ def _dtype_is_temporal(dtype: np.dtype) -> bool:
 
 
 def _raw_item_is_invalid_numeric(value: Any) -> bool:
+    if np.ma.is_masked(value):
+        return True
     if isinstance(value, _INVALID_NUMERIC_SCALAR_TYPES):
         return True
     if isinstance(value, np.ndarray):
@@ -109,6 +111,8 @@ def _square_matrix(value: Any, *, name: str, dim: int | None = None) -> np.ndarr
 def _optional_bool(value: Any, *, name: str) -> bool | None:
     if value is None:
         return None
+    if np.ma.is_masked(value):
+        raise ValueError(f"{name} must be a boolean or None")
     if isinstance(value, (bool, np.bool_)):
         return bool(value)
     array = np.asarray(value)
@@ -118,6 +122,8 @@ def _optional_bool(value: Any, *, name: str) -> bool | None:
 
 
 def _finite_scalar(value: Any, *, name: str, message: str) -> float:
+    if np.ma.is_masked(value):
+        raise ValueError(message)
     value_array = np.asarray(value)
     if (
         value_array.shape != ()
