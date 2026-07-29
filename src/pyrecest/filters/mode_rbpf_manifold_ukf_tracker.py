@@ -876,9 +876,7 @@ class ModeRBPFManifoldUKFTracker(AbstractExtendedObjectTracker):
             )
         total = float(np.sum(probs))
         if total <= 0.0:
-            raise ValueError(
-                "initial_mode_probs must have positive total probability"
-            )
+            raise ValueError("initial_mode_probs must have positive total probability")
         return probs / total
 
     @staticmethod

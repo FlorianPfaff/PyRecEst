@@ -15,27 +15,19 @@ class LinearGaussianFiniteInputsTest(unittest.TestCase):
         for value in (np.nan, np.inf, -np.inf):
             with self.subTest(model="transition", value=value):
                 with self.assertRaisesRegex(ValueError, "matrix.*finite"):
-                    LinearGaussianTransitionModel(
-                        array([[value]]), array([[1.0]])
-                    )
+                    LinearGaussianTransitionModel(array([[value]]), array([[1.0]]))
             with self.subTest(model="measurement", value=value):
                 with self.assertRaisesRegex(ValueError, "matrix.*finite"):
-                    LinearGaussianMeasurementModel(
-                        array([[value]]), array([[1.0]])
-                    )
+                    LinearGaussianMeasurementModel(array([[value]]), array([[1.0]]))
 
     def test_models_reject_nonfinite_noise_covariances(self):
         for value in (np.nan, np.inf, -np.inf):
             with self.subTest(model="transition", value=value):
                 with self.assertRaisesRegex(ValueError, "noise_cov.*finite"):
-                    LinearGaussianTransitionModel(
-                        array([[1.0]]), array([[value]])
-                    )
+                    LinearGaussianTransitionModel(array([[1.0]]), array([[value]]))
             with self.subTest(model="measurement", value=value):
                 with self.assertRaisesRegex(ValueError, "noise_cov.*finite"):
-                    LinearGaussianMeasurementModel(
-                        array([[1.0]]), array([[value]])
-                    )
+                    LinearGaussianMeasurementModel(array([[1.0]]), array([[value]]))
 
     def test_transition_model_rejects_nonfinite_offset(self):
         for value in (np.nan, np.inf, -np.inf):
@@ -55,12 +47,8 @@ class LinearGaussianFiniteInputsTest(unittest.TestCase):
                     IdentityGaussianMeasurementModel(1, value)
 
     def test_prediction_rejects_nonfinite_state_inputs(self):
-        transition = LinearGaussianTransitionModel(
-            array([[1.0]]), array([[1.0]])
-        )
-        measurement = LinearGaussianMeasurementModel(
-            array([[1.0]]), array([[1.0]])
-        )
+        transition = LinearGaussianTransitionModel(array([[1.0]]), array([[1.0]]))
+        measurement = LinearGaussianMeasurementModel(array([[1.0]]), array([[1.0]]))
 
         for value in (np.nan, np.inf, -np.inf):
             with self.subTest(method="transition mean", value=value):

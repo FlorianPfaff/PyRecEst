@@ -29,7 +29,6 @@ from pyrecest.backend import (
 from .abstract_hyperspherical_distribution import AbstractHypersphericalDistribution
 from .bingham_distribution import BinghamDistribution
 
-
 _INVALID_REAL_SCALAR_TYPES = (
     bool,
     np.bool_,

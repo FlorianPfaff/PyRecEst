@@ -161,7 +161,6 @@ class TestModeRBPFManifoldUKFTracker(unittest.TestCase):
 
         npt.assert_allclose(posterior, prior)
 
-
     def test_preserves_impossible_mode_probabilities(self):
         transition_matrix = np.eye(3)
         tracker = self.make_tracker(

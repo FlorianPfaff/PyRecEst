@@ -10,7 +10,6 @@ import pyrecest.backend
 
 from .abstract_distribution_type import AbstractDistributionType
 
-
 _INVALID_INTEGRAL_TYPES = (
     bool,
     np.bool_,
