@@ -11,12 +11,8 @@ from pyrecest.distributions.nonperiodic.gaussian_mixture import GaussianMixture
 
 class GaussianMixtureComplexMeanTest(unittest.TestCase):
     def test_set_mean_rejects_complex_target_without_mutating_components(self):
-        component_1 = GaussianDistribution(
-            array([0.0, 1.0]), diag(array([1.0, 2.0]))
-        )
-        component_2 = GaussianDistribution(
-            array([2.0, 3.0]), diag(array([3.0, 4.0]))
-        )
+        component_1 = GaussianDistribution(array([0.0, 1.0]), diag(array([1.0, 2.0])))
+        component_2 = GaussianDistribution(array([2.0, 3.0]), diag(array([3.0, 4.0])))
         mixture = GaussianMixture([component_1, component_2], array([0.25, 0.75]))
         original_means = [to_numpy(dist.mu).copy() for dist in mixture.dists]
 
