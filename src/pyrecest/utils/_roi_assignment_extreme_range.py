@@ -23,6 +23,71 @@ def _cost_conversion_is_finite(
     )
 
 
+def _stable_extreme_assignment(
+    roi_assignment_module,
+    similarities,
+    *,
+    minimum: float,
+    num_dummy,
+    unmatched_value: int,
+):
+    """Solve an unsafe finite-range assignment after positive score scaling."""
+
+    n_rows, n_cols = similarities.shape
+    if num_dummy is None:
+        num_dummy = max(n_rows, n_cols)
+    else:
+        num_dummy = roi_assignment_module._as_nonnegative_integer(
+            num_dummy,
+            "num_dummy",
+        )
+
+    finite_mask = roi_assignment_module.isfinite(similarities)
+    maximum = float(roi_assignment_module.amax(similarities[finite_mask]))
+    scale = max(1.0, abs(maximum), abs(minimum))
+    normalized_similarities = similarities / scale
+    normalized_maximum = maximum / scale
+    normalized_minimum = minimum / scale
+
+    threshold_cost = normalized_maximum - normalized_minimum
+    dummy_penalty = max(1e-12 / scale, sys.float_info.epsilon)
+    dummy_cost = threshold_cost + dummy_penalty
+    if dummy_cost <= threshold_cost:
+        dummy_cost = math.nextafter(threshold_cost, math.inf)
+
+    valid_mask = finite_mask & (similarities >= minimum)
+    cost_matrix = roi_assignment_module.full_like(
+        normalized_similarities,
+        dummy_cost,
+    )
+    cost_matrix[valid_mask] = (
+        normalized_maximum - normalized_similarities[valid_mask]
+    )
+
+    padded_size = max(n_rows, n_cols) + num_dummy
+    padded_cost = roi_assignment_module.full(
+        (padded_size, padded_size),
+        dummy_cost,
+        dtype=roi_assignment_module.float64,
+    )
+    padded_cost[:n_rows, :n_cols] = cost_matrix
+    row_ind, col_ind = roi_assignment_module.linear_sum_assignment(padded_cost)
+
+    assignment = roi_assignment_module.full(
+        (n_rows,),
+        unmatched_value,
+        dtype=roi_assignment_module.int64,
+    )
+    for row_index, col_index in zip(row_ind, col_ind):
+        if (
+            row_index < n_rows
+            and col_index < n_cols
+            and valid_mask[row_index, col_index]
+        ):
+            assignment[row_index] = int(col_index)
+    return assignment
+
+
 def patch_similarity_assignment_extreme_range(roi_assignment_module) -> None:
     """Normalize only score ranges that overflow the Hungarian cost transform."""
 
@@ -109,14 +174,12 @@ def patch_similarity_assignment_extreme_range(roi_assignment_module) -> None:
                 return_result=return_result,
             )
 
-        scale = max(1.0, abs(maximum), abs(minimum))
-        normalized_similarities = similarities / scale
-        assignment = original_assign(
-            normalized_similarities,
-            min_similarity=minimum / scale,
+        assignment = _stable_extreme_assignment(
+            roi_assignment_module,
+            similarities,
+            minimum=minimum,
             num_dummy=num_dummy,
             unmatched_value=unmatched_value,
-            return_result=False,
         )
         if return_result:
             return roi_assignment_module._assignment_to_result(
