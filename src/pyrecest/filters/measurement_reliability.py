@@ -27,9 +27,25 @@ class MeasurementReliabilitySelection:
     active_measurement_indices: list[int]
 
 
+def _contains_masked_value(value: Any) -> bool:
+    """Return whether *value* contains genuinely masked NumPy entries."""
+
+    if np.ma.is_masked(value):
+        return True
+    if isinstance(value, np.ndarray):
+        if value.dtype != object:
+            return False
+        return any(_contains_masked_value(item) for item in value.reshape(-1))
+    if isinstance(value, (list, tuple)):
+        return any(_contains_masked_value(item) for item in value)
+    return False
+
+
 def _normalize_integer_count(
     value: Any, name: str, *, minimum: int, message: str
 ) -> int:
+    if _contains_masked_value(value):
+        raise ValueError(message)
     try:
         value_array = np.asarray(value)
     except (TypeError, ValueError) as exc:
@@ -197,6 +213,8 @@ def normalize_measurement_weights(measurement_weights, n_measurements: int):
     n_measurements = _normalize_nonnegative_integer(n_measurements, "n_measurements")
     if measurement_weights is None:
         return ones(n_measurements)
+    if _contains_masked_value(measurement_weights):
+        raise ValueError("measurement_weights must not contain masked values")
 
     weights = array(measurement_weights)
     _raise_if_not_real_numeric_weights(weights)
@@ -242,6 +260,8 @@ def normalize_active_measurement_mask(
     n_measurements = _normalize_nonnegative_integer(n_measurements, "n_measurements")
     if active_measurement_mask is None:
         return [True] * n_measurements
+    if _contains_masked_value(active_measurement_mask):
+        raise ValueError("active_measurement_mask must not contain masked values")
 
     mask = array(active_measurement_mask)
     if not _has_boolean_dtype(mask):
@@ -297,6 +317,8 @@ def normalize_measurement_noise_covariances(
 
     n_measurements = _normalize_nonnegative_integer(n_measurements, "n_measurements")
     measurement_dim = _normalize_positive_integer(measurement_dim, "measurement_dim")
+    if _contains_masked_value(measurement_noise):
+        raise ValueError(f"{name} must not contain masked values")
 
     noise = array(measurement_noise)
     empty_shape = (0, measurement_dim, measurement_dim)
