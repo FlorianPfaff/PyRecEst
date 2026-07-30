@@ -262,9 +262,7 @@ class DaumHuangParticleFlowFilter(EuclideanParticleFilter):
         )
         self.n_steps = _validate_positive_int(n_steps, "n_steps")
         self.step_schedule = (
-            None
-            if step_schedule is None
-            else tuple(float(value) for value in step_schedule)
+            None if step_schedule is None else tuple(step_schedule)
         )
         self.jitter = _validate_nonnegative_float(jitter, "jitter")
 
@@ -341,6 +339,18 @@ EDHParticleFlowFilter = DaumHuangParticleFlowFilter
 LEDHParticleFlowFilter = LocalizedDaumHuangParticleFlowFilter
 
 
+def _contains_masked_value(value) -> bool:
+    if np.ma.is_masked(value):
+        return True
+    if isinstance(value, np.ndarray):
+        if value.dtype != object:
+            return False
+        return any(_contains_masked_value(item) for item in value.reshape(-1))
+    if isinstance(value, (list, tuple)):
+        return any(_contains_masked_value(item) for item in value)
+    return False
+
+
 def _validate_flow_type(flow_type) -> FlowType:
     if flow_type not in {"edh", "ledh"}:
         raise ValueError("flow_type must be 'edh' or 'ledh'.")
@@ -349,6 +359,8 @@ def _validate_flow_type(flow_type) -> FlowType:
 
 def _validate_positive_int(value, name: str) -> int:
     message = f"{name} must be a positive integer."
+    if _contains_masked_value(value):
+        raise ValueError(message)
     value_array = np.asarray(value)
     if value_array.shape != () or value_array.dtype == np.bool_:
         raise ValueError(message)
@@ -376,6 +388,8 @@ def _validate_positive_int(value, name: str) -> int:
 
 def _validate_nonnegative_float(value, name: str) -> float:
     message = f"{name} must be finite and nonnegative."
+    if _contains_masked_value(value):
+        raise ValueError(message)
     value_array = np.asarray(value)
     if value_array.shape != () or value_array.dtype == np.bool_:
         raise ValueError(message)
@@ -636,6 +650,8 @@ def _weighted_mean_np(particles, weights):
 
 
 def _as_particle_matrix_np(value):
+    if _contains_masked_value(value):
+        raise ValueError("particles must not contain masked values.")
     X = np.asarray(to_numpy(value), dtype=float)
     if X.ndim == 1:
         X = X[None, :]
@@ -649,6 +665,8 @@ def _as_particle_matrix_np(value):
 
 
 def _as_weights_np(value, n_particles: int):
+    if _contains_masked_value(value):
+        raise ValueError("weights must not contain masked values.")
     weights = np.asarray(to_numpy(value), dtype=float).reshape(-1)
     if weights.shape != (n_particles,):
         raise ValueError("weights must have one entry per particle.")
@@ -663,6 +681,8 @@ def _as_weights_np(value, n_particles: int):
 
 
 def _as_vector_np(value, name):
+    if _contains_masked_value(value):
+        raise ValueError(f"{name} must not contain masked values.")
     vector = np.asarray(to_numpy(value), dtype=float)
     if vector.ndim == 0:
         vector = vector.reshape(1)
@@ -675,6 +695,8 @@ def _as_vector_np(value, name):
 
 
 def _as_matrix_np(value, name, *, scalar_dim: int | None = None):
+    if _contains_masked_value(value):
+        raise ValueError(f"{name} must not contain masked values.")
     matrix = np.asarray(to_numpy(value), dtype=float)
     if matrix.ndim == 0 and scalar_dim == 1:
         matrix = matrix.reshape(1, 1)
@@ -689,6 +711,8 @@ def _lambda_deltas_np(n_steps, step_schedule):
     if step_schedule is None:
         n_steps = _validate_positive_int(n_steps, "n_steps")
         return np.full(n_steps, 1.0 / float(n_steps))
+    if _contains_masked_value(step_schedule):
+        raise ValueError("step_schedule must not contain masked values.")
     deltas = np.asarray(step_schedule, dtype=float).reshape(-1)
     if deltas.size == 0:
         raise ValueError("step_schedule must not be empty.")
@@ -704,15 +728,34 @@ def _regularize_cov_np(covariance, jitter):
     covariance = _symmetrize_np(np.asarray(covariance, dtype=float))
     if covariance.ndim != 2 or covariance.shape[0] != covariance.shape[1]:
         raise ValueError("covariance must be square.")
-    if jitter > 0.0:
-        scale = max(float(np.trace(covariance) / max(covariance.shape[0], 1)), 1.0)
-        covariance = covariance + float(jitter) * scale * np.eye(covariance.shape[0])
-    sign = np.linalg.slogdet(covariance)[0]
-    if sign <= 0.0:
-        scale = max(float(np.trace(covariance) / max(covariance.shape[0], 1)), 1.0)
-        covariance = covariance + max(float(jitter), 1e-10) * scale * np.eye(
-            covariance.shape[0]
-        )
+    if covariance.shape[0] == 0:
+        raise ValueError("covariance must not be empty.")
+    if not np.all(np.isfinite(covariance)):
+        raise ValueError("covariance must be finite.")
+
+    eigenvalues = np.linalg.eigvalsh(covariance)
+    spectral_scale = max(float(np.max(np.abs(eigenvalues))), 1.0)
+    tolerance = (
+        10.0
+        * np.finfo(float).eps
+        * max(covariance.shape[0], 1)
+        * spectral_scale
+    )
+    min_eigenvalue = float(eigenvalues[0])
+    if min_eigenvalue < -tolerance:
+        raise ValueError("covariance must be positive semidefinite.")
+
+    diagonal = np.diag(covariance)
+    diagonal_scale = max(float(np.max(np.abs(diagonal))), 1.0)
+    mean_diagonal = diagonal_scale * float(np.mean(diagonal / diagonal_scale))
+    scale = max(mean_diagonal, 1.0)
+    diagonal_shift = float(jitter) * scale
+    shifted_min_eigenvalue = min_eigenvalue + diagonal_shift
+    if shifted_min_eigenvalue <= 0.0:
+        floor = 1e-10 * scale
+        diagonal_shift += max(floor, -shifted_min_eigenvalue + floor)
+    if diagonal_shift > 0.0:
+        covariance = covariance + diagonal_shift * np.eye(covariance.shape[0])
     return _symmetrize_np(covariance)
 
 
