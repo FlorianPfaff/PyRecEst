@@ -2,7 +2,6 @@ import unittest
 from fractions import Fraction
 
 import numpy as np
-
 from pyrecest.backend_support._pytorch_split_index_contract import (
     _normalize_split_section_count,
 )

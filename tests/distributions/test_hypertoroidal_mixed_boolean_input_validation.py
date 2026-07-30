@@ -23,9 +23,7 @@ class TestHypertoroidalMixedBooleanInputValidation(unittest.TestCase):
 
     def test_numeric_python_sequences_remain_valid(self):
         npt.assert_allclose(as_shift_vector([0.0, 1.0], 2), [0.0, 1.0])
-        npt.assert_allclose(
-            as_hypertoroidal_points([[0.0, 1.0]], 2), [[0.0, 1.0]]
-        )
+        npt.assert_allclose(as_hypertoroidal_points([[0.0, 1.0]], 2), [[0.0, 1.0]])
 
 
 if __name__ == "__main__":

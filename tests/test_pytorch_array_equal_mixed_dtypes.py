@@ -35,9 +35,7 @@ class TestPytorchArrayEqualMixedDtypes(unittest.TestCase):
             pytorch_backend.array_equal(integer_tensor, float_tensor), expected
         )
         self.assertEqual(
-            pytorch_backend.array_equal(
-                integer_tensor, float_tensor, equal_nan=True
-            ),
+            pytorch_backend.array_equal(integer_tensor, float_tensor, equal_nan=True),
             expected,
         )
 

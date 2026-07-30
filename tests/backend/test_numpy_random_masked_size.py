@@ -2,7 +2,6 @@ import numpy as np
 import pytest
 from pyrecest._backend.numpy import random
 
-
 _MASKED_SIZE_ARGUMENTS = (
     np.ma.masked,
     np.ma.array(3, mask=True),
