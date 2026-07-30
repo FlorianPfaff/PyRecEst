@@ -12,7 +12,18 @@ from dataclasses import dataclass
 from math import isfinite
 from operator import index as operator_index
 
-from pyrecest.backend import asarray, atleast_1d, atleast_2d, float64, linalg, transpose
+from pyrecest.backend import (
+    asarray,
+    atleast_1d,
+    atleast_2d,
+    float64,
+    isfinite,
+    linalg,
+    maximum,
+    minimum,
+    transpose,
+    where,
+)
 from pyrecest.distributions import GaussianDistribution
 
 from .kalman_filter import KalmanFilter
@@ -641,6 +652,28 @@ def _as_matrix(x, name):
     return x
 
 
+def _stable_symmetric_average(matrix):
+    """Average a matrix with its transpose without finite overflow."""
+    transposed = transpose(matrix)
+    finite_same_sign = (
+        isfinite(matrix)
+        & isfinite(transposed)
+        & ((matrix >= 0.0) == (transposed >= 0.0))
+    )
+
+    same_left = where(finite_same_sign, matrix, 0.0)
+    same_right = where(finite_same_sign, transposed, 0.0)
+    lower = minimum(same_left, same_right)
+    upper = maximum(same_left, same_right)
+    same_sign_average = lower + 0.5 * (upper - lower)
+
+    other = ~finite_same_sign
+    other_average = 0.5 * where(other, matrix, 0.0) + 0.5 * where(
+        other, transposed, 0.0
+    )
+    return same_sign_average + other_average
+
+
 def retrodict_linear_gaussian(
     mean,
     covariance,
@@ -688,7 +721,7 @@ def retrodict_linear_gaussian(
     previous_mean = linalg.solve(system_matrix, shifted_mean)
     left_solved = linalg.solve(system_matrix, effective_covariance)
     previous_covariance = transpose(linalg.solve(system_matrix, transpose(left_solved)))
-    previous_covariance = 0.5 * (previous_covariance + transpose(previous_covariance))
+    previous_covariance = _stable_symmetric_average(previous_covariance)
     return previous_mean, previous_covariance
 
 
