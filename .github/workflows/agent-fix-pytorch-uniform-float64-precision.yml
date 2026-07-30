@@ -1,0 +1,87 @@
+name: Apply PyTorch uniform float64 precision fix
+
+on:
+  push:
+    branches:
+      - agent/fix-pytorch-uniform-float64-precision-20260730
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/fix-pytorch-uniform-float64-precision-20260730
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Apply source and regression-test patch
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          source_path = Path("src/pyrecest/_backend/pytorch/random/__init__.py")
+          source = source_path.read_text(encoding="utf-8")
+          old = "return span * torch.rand(size, dtype=dtype, device=device) + low"
+          new = """return span * torch.rand(
+                  size, dtype=arithmetic_dtype, device=device
+              ) + low"""
+          if source.count(old) != 1:
+              raise RuntimeError("Expected exactly one PyTorch uniform sampling expression")
+          source_path.write_text(source.replace(old, new), encoding="utf-8")
+
+          test_path = Path("tests/backend/test_pytorch_uniform_float64_precision.py")
+          test_path.write_text(
+              '''"""Regression tests for PyTorch uniform sampling precision."""
+
+          import pytest
+
+          torch = pytest.importorskip("torch")
+
+          from pyrecest._backend.pytorch import random  # noqa: E402
+
+
+          def test_uniform_preserves_float64_bounds_and_random_precision():
+              torch.manual_seed(0)
+              samples = random.uniform(
+                  torch.tensor(0.0, dtype=torch.float64),
+                  torch.tensor(1.0, dtype=torch.float64),
+                  size=(256,),
+              )
+
+              assert samples.dtype == torch.float64
+
+              # A float32-generated uniform sample promoted afterwards is always on
+              # the binary grid k / 2**24. Genuine float64 draws are not restricted
+              # to that grid.
+              scaled = samples * float(2**24)
+              assert bool(torch.any(scaled != torch.round(scaled)))
+          ''',
+              encoding="utf-8",
+          )
+
+          Path(".github/workflows/agent-fix-pytorch-uniform-float64-precision.yml").unlink()
+          PY
+
+      - name: Validate patch shape
+        run: |
+          python -m py_compile \
+            src/pyrecest/_backend/pytorch/random/__init__.py \
+            tests/backend/test_pytorch_uniform_float64_precision.py
+          git diff --check
+
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            src/pyrecest/_backend/pytorch/random/__init__.py \
+            tests/backend/test_pytorch_uniform_float64_precision.py \
+            .github/workflows/agent-fix-pytorch-uniform-float64-precision.yml
+          git commit -m "Fix PyTorch uniform float64 precision"
+          git push origin HEAD:agent/fix-pytorch-uniform-float64-precision-20260730
