@@ -17,7 +17,7 @@ from pyrecest.backend import (
     atleast_1d,
     atleast_2d,
     float64,
-    isfinite,
+    isfinite as backend_isfinite,
     linalg,
     maximum,
     minimum,
@@ -656,8 +656,8 @@ def _stable_symmetric_average(matrix):
     """Average a matrix with its transpose without finite overflow."""
     transposed = transpose(matrix)
     finite_same_sign = (
-        isfinite(matrix)
-        & isfinite(transposed)
+        backend_isfinite(matrix)
+        & backend_isfinite(transposed)
         & ((matrix >= 0.0) == (transposed >= 0.0))
     )
 
