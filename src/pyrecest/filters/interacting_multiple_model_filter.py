@@ -49,6 +49,25 @@ def _reject_complex_values(values, name):
         raise ValueError(message)
 
 
+def _normalize_nonnegative_weights(weights, positive_mass_message):
+    """Normalize finite nonnegative weights without overflowing their sum."""
+
+    weight_scale = pyrecest.backend.max(weights)
+    if not bool(isfinite(weight_scale)) or not bool(weight_scale > 0.0):
+        raise ValueError(positive_mass_message)
+
+    scale_root = pyrecest.backend.sqrt(weight_scale)
+    # Splitting by sqrt(scale) avoids reciprocal underflow on JAX for values near
+    # the largest representable floating-point number while preserving ratios.
+    scaled_weights = (weights / scale_root) / scale_root
+    scaled_sum = scaled_weights.sum()
+    if not bool(isfinite(scaled_sum)) or not bool(scaled_sum > 0.0):
+        raise ValueError(positive_mass_message)
+
+    normalized_weights = scaled_weights / scaled_sum
+    return normalized_weights, bool(allclose(normalized_weights, weights))
+
+
 class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
     """Linear-Gaussian interacting multiple model (IMM) filter.
 
@@ -499,17 +518,22 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
         if pyrecest.backend.any(transition_matrix < 0.0):
             raise ValueError("transition_matrix must be elementwise nonnegative.")
 
-        row_sums = transition_matrix.sum(axis=1)
-        if pyrecest.backend.any(row_sums <= 0.0):
-            raise ValueError(
-                "Each row of transition_matrix must sum to a positive value."
+        normalized_rows = []
+        rows_sum_to_one = True
+        for row in transition_matrix:
+            normalized_row, row_sums_to_one = _normalize_nonnegative_weights(
+                row,
+                "Each row of transition_matrix must sum to a positive value.",
             )
-        if not allclose(row_sums, 1.0):
+            normalized_rows.append(normalized_row)
+            rows_sum_to_one = rows_sum_to_one and row_sums_to_one
+
+        transition_matrix = stack(normalized_rows)
+        if not rows_sum_to_one:
             warnings.warn(
                 "Rows of transition_matrix do not sum to one. Renormalizing rows.",
                 UserWarning,
             )
-            transition_matrix = transition_matrix / row_sums[:, None]
         return transition_matrix
 
     @staticmethod
@@ -527,17 +551,17 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
                 raise ValueError("mode_probabilities entries must be finite.")
             if pyrecest.backend.any(mode_probabilities < 0.0):
                 raise ValueError("mode_probabilities must be elementwise nonnegative.")
-            curr_sum = mode_probabilities.sum()
-            if curr_sum <= 0.0:
-                raise ValueError(
-                    "At least one model probability must be strictly positive."
+            mode_probabilities, probabilities_sum_to_one = (
+                _normalize_nonnegative_weights(
+                    mode_probabilities,
+                    "At least one model probability must be strictly positive.",
                 )
-            if not isclose(curr_sum, 1.0):
+            )
+            if not probabilities_sum_to_one:
                 warnings.warn(
                     "mode_probabilities do not sum to one. Renormalizing.",
                     UserWarning,
                 )
-                mode_probabilities = mode_probabilities / curr_sum
         return array(mode_probabilities)
 
     def _broadcast_model_argument(self, value, name):
@@ -600,11 +624,12 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
             raise ValueError("weights must have one entry per Gaussian component.")
         if not bool(pyrecest.backend.all(isfinite(weights))):
             raise ValueError("weights must be finite.")
-        curr_sum = weights.sum()
-        if curr_sum <= 0.0:
-            raise ValueError("At least one mixture weight must be strictly positive.")
-        if not isclose(curr_sum, 1.0):
-            weights = weights / curr_sum
+        if pyrecest.backend.any(weights < 0.0):
+            raise ValueError("weights must be nonnegative.")
+        weights, _ = _normalize_nonnegative_weights(
+            weights,
+            "At least one mixture weight must be strictly positive.",
+        )
 
         means = stack([asarray(curr_state.mu, dtype=float) for curr_state in gaussians])
         covariance = zeros_like(asarray(gaussians[0].C, dtype=float))
