@@ -34,27 +34,17 @@ jobs:
           source_path = Path("src/pyrecest/filters/out_of_sequence.py")
           source = source_path.read_text(encoding="utf-8")
 
-          old_import = "    isfinite,\n"
-          new_import = "    isfinite as backend_isfinite,\n"
-          if source.count(old_import) != 1:
-              raise RuntimeError("Expected exactly one backend isfinite import")
-          source = source.replace(old_import, new_import, 1)
+          replacements = {
+              "    isfinite,\n": "    isfinite as backend_isfinite,\n",
+              "isfinite(matrix)": "backend_isfinite(matrix)",
+              "isfinite(transposed)": "backend_isfinite(transposed)",
+          }
+          for old, new in replacements.items():
+              if source.count(old) != 1:
+                  raise RuntimeError(f"Expected exactly one occurrence of {old!r}")
+              source = source.replace(old, new, 1)
 
-          old_helper = """    finite_same_sign = (
-              isfinite(matrix)
-              & isfinite(transposed)
-              & ((matrix >= 0.0) == (transposed >= 0.0))
-          )"""
-          new_helper = """    finite_same_sign = (
-              backend_isfinite(matrix)
-              & backend_isfinite(transposed)
-              & ((matrix >= 0.0) == (transposed >= 0.0))
-          )"""
-          if old_helper not in source:
-              raise RuntimeError("Expected stable-average finiteness block was not found")
-          source = source.replace(old_helper, new_helper, 1)
           source_path.write_text(source, encoding="utf-8")
-
           Path(
               ".github/workflows/one-shot-retrodiction-symmetrization.yml"
           ).unlink()
