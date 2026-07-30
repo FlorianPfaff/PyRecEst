@@ -35,9 +35,7 @@ def test_particle_filter_count_validation_is_exact(validator):
         np.timedelta64(3, "ns"),
         np.datetime64("1970-01-01T00:00:00.000000003"),
         np.array(np.timedelta64(3, "ns"), dtype=object),
-        np.array(
-            np.datetime64("1970-01-01T00:00:00.000000003"), dtype=object
-        ),
+        np.array(np.datetime64("1970-01-01T00:00:00.000000003"), dtype=object),
     ],
     ids=["timedelta", "datetime", "object-timedelta", "object-datetime"],
 )

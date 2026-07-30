@@ -28,9 +28,7 @@ class TestGroupResultsByFilter(unittest.TestCase):
 
         grouped = group_results_by_filter(rows)["pf"]
 
-        self.assertEqual(
-            grouped["score"], ["none", "zero", "one", "nan", "category"]
-        )
+        self.assertEqual(grouped["score"], ["none", "zero", "one", "nan", "category"])
         self.assertTrue(math.isnan(grouped["parameter"][3]))
 
 

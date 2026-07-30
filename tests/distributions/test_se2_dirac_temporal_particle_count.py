@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.distributions import SE2DiracDistribution
 from pyrecest.distributions.cart_prod.abstract_hypercylindrical_distribution import (
     AbstractHypercylindricalDistribution,
@@ -18,10 +17,14 @@ class _NoSamplingSE2Distribution(AbstractHypercylindricalDistribution):
         raise AssertionError("invalid temporal counts must not reach sampling")
 
     def marginalize_linear(self):
-        raise AssertionError("marginalization must not be evaluated for count validation")
+        raise AssertionError(
+            "marginalization must not be evaluated for count validation"
+        )
 
     def marginalize_periodic(self):
-        raise AssertionError("marginalization must not be evaluated for count validation")
+        raise AssertionError(
+            "marginalization must not be evaluated for count validation"
+        )
 
 
 @pytest.mark.parametrize(
