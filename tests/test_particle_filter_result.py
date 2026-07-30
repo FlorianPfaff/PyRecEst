@@ -75,6 +75,18 @@ class ParticleFilterResultTest(unittest.TestCase):
         self.assertAlmostEqual(summary["final_effective_sample_size"], 4.0)
         self.assertAlmostEqual(summary["mean_particle_spread"], 0.5)
 
+    def test_summary_statistics_keep_extreme_finite_means_finite(self):
+        result = ParticleFilterResult(
+            estimates=[],
+            effective_sample_size=[1.0],
+            resampled=[],
+            particle_spread=[1.0e308, 1.0e308],
+        )
+
+        summary = result.summary_statistics()
+
+        self.assertEqual(summary["mean_particle_spread"], 1.0e308)
+
 
 if __name__ == "__main__":
     unittest.main()
