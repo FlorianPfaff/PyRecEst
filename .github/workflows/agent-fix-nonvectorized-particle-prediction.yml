@@ -1,0 +1,66 @@
+name: Apply nonvectorized particle prediction fix
+
+on:
+  push:
+    branches:
+      - agent/fix-nonvectorized-particle-prediction-20260730
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-test:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/fix-nonvectorized-particle-prediction-20260730
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+
+      - name: Apply source fix and regression test
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          source_path = Path("src/pyrecest/filters/abstract_particle_filter.py")
+          source = source_path.read_text(encoding="utf-8")
+          old = """        else:\n            self.filter_state = self.filter_state.apply_function(f)\n            d_f_applied = self.filter_state.d\n"""
+          new = """        else:\n            self.filter_state = self.filter_state.apply_function(\n                f, function_is_vectorized=False\n            )\n            d_f_applied = self.filter_state.d\n"""
+          if source.count(old) != 1:
+              raise SystemExit("Expected exactly one nonvectorized prediction call site")
+          source_path.write_text(source.replace(old, new), encoding="utf-8")
+
+          test_path = Path(
+              "tests/filters/test_particle_filter_nonvectorized_prediction.py"
+          )
+          test_path.write_text(
+              '''import numpy.testing as npt\n\n# pylint: disable=no-name-in-module,no-member\nfrom pyrecest.backend import array\nfrom pyrecest.distributions.nonperiodic.linear_dirac_distribution import (\n    LinearDiracDistribution,\n)\nfrom pyrecest.filters.euclidean_particle_filter import EuclideanParticleFilter\n\n\ndef test_nonvectorized_prediction_calls_transition_per_particle():\n    particles = array(\n        [\n            [1.0, 2.0],\n            [3.0, 4.0],\n            [5.0, 6.0],\n            [7.0, 8.0],\n        ]\n    )\n    particle_filter = EuclideanParticleFilter(n_particles=4, dim=2)\n    particle_filter.filter_state = LinearDiracDistribution(particles)\n    observed_shapes = []\n\n    def transition(particle):\n        observed_shapes.append(tuple(particle.shape))\n        x_coord, y_coord = particle\n        return array([x_coord + y_coord, x_coord - y_coord])\n\n    particle_filter.predict_nonlinear(\n        transition,\n        noise_distribution=None,\n        function_is_vectorized=False,\n    )\n\n    npt.assert_allclose(\n        particle_filter.filter_state.d,\n        array(\n            [\n                [3.0, -1.0],\n                [7.0, -1.0],\n                [11.0, -1.0],\n                [15.0, -1.0],\n            ]\n        ),\n    )\n    assert observed_shapes == [(2,), (2,), (2,), (2,)]\n''',
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Install test dependencies
+        run: python -m pip install -e . pytest
+
+      - name: Run focused regression tests
+        run: |
+          python -m pytest -q \
+            tests/filters/test_particle_filter_nonvectorized_prediction.py \
+            tests/filters/test_particle_filter_model_adapter.py
+
+      - name: Commit tested fix
+        run: |
+          rm .github/workflows/agent-fix-nonvectorized-particle-prediction.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            src/pyrecest/filters/abstract_particle_filter.py \
+            tests/filters/test_particle_filter_nonvectorized_prediction.py \
+            .github/workflows/agent-fix-nonvectorized-particle-prediction.yml
+          git commit -m "Honor nonvectorized particle prediction flag"
+          git push
