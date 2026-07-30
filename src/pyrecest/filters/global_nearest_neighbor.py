@@ -22,7 +22,6 @@ from scipy.stats import chi2
 
 from .abstract_nearest_neighbor_tracker import AbstractNearestNeighborTracker
 
-
 _INVALID_PAIRWISE_COST_SCALAR_TYPES = (
     type(None),
     bool,
