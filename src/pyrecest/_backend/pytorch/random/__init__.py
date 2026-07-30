@@ -248,7 +248,9 @@ def uniform(low=0.0, high=1.0, size=None, dtype=None):
     span = high - low
     if bool(torch.any(~torch.isfinite(span))):
         raise OverflowError(_UNIFORM_RANGE_ERROR)
-    return span * torch.rand(size, dtype=dtype, device=device) + low
+    return span * torch.rand(
+        size, dtype=arithmetic_dtype, device=device
+    ) + low
 
 
 def multivariate_normal(mean, cov, size=None, *args, **kwargs):
