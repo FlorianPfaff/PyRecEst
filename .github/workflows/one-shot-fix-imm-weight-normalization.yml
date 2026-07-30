@@ -48,4 +48,4 @@ jobs:
           git rm .github/workflows/one-shot-fix-imm-weight-normalization.yml .github/scripts/apply_imm_normalization_fix.py
           git add src/pyrecest/filters/interacting_multiple_model_filter.py tests/filters/test_imm_extreme_weight_normalization.py
           git commit -m "Fix IMM weight normalization overflow"
-          git push origin HEAD:${GITHUB_REF_NAME}
+          git push origin HEAD:agent/fix-imm-weight-normalization-20260730
