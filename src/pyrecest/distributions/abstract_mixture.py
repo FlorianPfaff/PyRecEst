@@ -93,6 +93,8 @@ def _validate_mixture_weight_values(weights) -> None:
     """Reject invalid mixture weights before backend scalar comparisons."""
     if np.ma.is_masked(weights):
         raise ValueError("Mixture weights must not contain masked values")
+    if isinstance(weights, np.ma.MaskedArray):
+        weights = np.ma.getdata(weights)
     try:
         converted_weights = pyrecest.backend.to_numpy(weights)
         native_weight_values = np.asarray(converted_weights)
