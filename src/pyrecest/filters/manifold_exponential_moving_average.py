@@ -53,6 +53,8 @@ class ManifoldExponentialMovingAverage(AbstractFilter):
     @staticmethod
     def _validate_alpha(alpha: float) -> float:
         message = "alpha must be a real scalar between 0 and 1"
+        if np.ma.is_masked(alpha):
+            raise TypeError(message)
         try:
             alpha_array = np.asarray(alpha)
         except (TypeError, ValueError) as exc:
