@@ -10,7 +10,6 @@ import pyrecest.backend
 from pyrecest.backend import (
     array,
     asarray,
-    empty,
     int32,
     int64,
     ones,
@@ -254,16 +253,26 @@ class AbstractMixture(AbstractDistributionType):
             ]
             return pyrecest.backend.concatenate(samples, axis=0)
 
-        s = empty((n, self.input_dim))
+        sample_blocks = []
+        position_blocks = []
         for component_index in range(len(self.dists)):
             positions = np.flatnonzero(component_indices_np == component_index)
             occ_val = int(positions.size)
             if occ_val == 0:
                 continue
-            sample_i = self._sample_component_matrix(component_index, occ_val)
-            s[array(positions, dtype=int64)] = sample_i
+            sample_blocks.append(
+                self._sample_component_matrix(component_index, occ_val)
+            )
+            position_blocks.append(positions)
 
-        return s
+        sample_blocks = pyrecest.backend.convert_to_wider_dtype(sample_blocks)
+        samples_by_component = pyrecest.backend.concatenate(sample_blocks, axis=0)
+        positions_by_component = np.concatenate(position_blocks)
+        sampled_position_order = array(
+            np.argsort(positions_by_component),
+            dtype=int64,
+        )
+        return samples_by_component[sampled_position_order]
 
     def pdf(self, xs):
         xs = asarray(xs)
