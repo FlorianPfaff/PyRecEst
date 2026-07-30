@@ -124,7 +124,7 @@ jobs:
             src/pyrecest/filters/daum_huang_particle_filter.py \
             tests/filters/test_daum_huang_particle_flow_validation.py
           pytest -q \
-            tests/filters/test_daum_huang_particle_flow.py \
+            tests/filters/test_daum_huang_particle_filter.py \
             tests/filters/test_daum_huang_particle_flow_validation.py
 
       - name: Commit generated patch
