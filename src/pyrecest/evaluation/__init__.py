@@ -181,9 +181,39 @@ def _classify_evidence_margin(delta_log_evidence: float) -> str:
 
 
 def _validated_margin_threshold(margin_threshold):
-    threshold = float(margin_threshold)
+    message = "margin_threshold must be finite and non-negative"
+    if _np.ma.is_masked(margin_threshold):
+        raise ValueError(message)
+    try:
+        threshold_array = _np.asarray(margin_threshold)
+    except (TypeError, ValueError, OverflowError, RuntimeError) as exc:
+        raise ValueError(message) from exc
+    if threshold_array.shape != () or threshold_array.dtype.kind in "bMmSUc":
+        raise ValueError(message)
+    scalar = threshold_array.item()
+    if isinstance(
+        scalar,
+        (
+            bool,
+            _np.bool_,
+            str,
+            bytes,
+            bytearray,
+            _np.str_,
+            _np.bytes_,
+            complex,
+            _np.complexfloating,
+            _np.datetime64,
+            _np.timedelta64,
+        ),
+    ):
+        raise ValueError(message)
+    try:
+        threshold = float(scalar)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(message) from exc
     if threshold < 0.0 or not _isfinite(threshold):
-        raise ValueError("margin_threshold must be finite and non-negative")
+        raise ValueError(message)
     return threshold
 
 
