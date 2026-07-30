@@ -174,11 +174,39 @@ def _raise_if_not_square_matrix(matrix: np.ndarray, name: str = "matrix") -> Non
         raise ShapeError(f"Expected a square matrix, got shape {matrix.shape}.")
 
 
+def _stable_symmetric_average(matrix: np.ndarray) -> np.ndarray:
+    """Average a matrix with its transpose without overflowing finite pairs."""
+
+    transpose = matrix.T
+    result = np.empty_like(matrix)
+    finite = np.isfinite(matrix) & np.isfinite(transpose)
+    same_sign = finite & (np.signbit(matrix) == np.signbit(transpose))
+
+    if np.any(same_sign):
+        lower = np.minimum(matrix[same_sign], transpose[same_sign])
+        upper = np.maximum(matrix[same_sign], transpose[same_sign])
+        result[same_sign] = lower + 0.5 * (upper - lower)
+
+    opposite_sign = finite & ~same_sign
+    if np.any(opposite_sign):
+        result[opposite_sign] = 0.5 * (
+            matrix[opposite_sign] + transpose[opposite_sign]
+        )
+
+    nonfinite = ~finite
+    if np.any(nonfinite):
+        with np.errstate(invalid="ignore", over="ignore"):
+            result[nonfinite] = 0.5 * (
+                matrix[nonfinite] + transpose[nonfinite]
+            )
+    return result
+
+
 def symmetrize_matrix(matrix):
     """Return ``0.5 * (matrix + matrix.T)`` in the active backend representation."""
     arr = _to_numpy_array(matrix)
     _raise_if_not_square_matrix(arr)
-    return _from_numpy_array(0.5 * (arr + arr.T))
+    return _from_numpy_array(_stable_symmetric_average(arr))
 
 
 def is_symmetric(matrix, *, atol: float = 1e-10) -> bool:
@@ -227,11 +255,11 @@ def nearest_symmetric_psd(matrix, *, min_eigenvalue: float = 0.0):
     arr = _to_numpy_array(matrix)
     _raise_if_not_square_matrix(arr)
     _raise_if_nonfinite_matrix(arr, "matrix")
-    sym = 0.5 * (arr + arr.T)
+    sym = _stable_symmetric_average(arr)
     eigvals, eigvecs = np.linalg.eigh(sym)
     clipped = np.maximum(eigvals, min_eigenvalue)
     repaired = (eigvecs * clipped) @ eigvecs.T
-    return _from_numpy_array(0.5 * (repaired + repaired.T))
+    return _from_numpy_array(_stable_symmetric_average(repaired))
 
 
 def jittered_cholesky(matrix, *, initial_jitter: float = 1e-12, max_attempts: int = 8):
@@ -247,7 +275,7 @@ def jittered_cholesky(matrix, *, initial_jitter: float = 1e-12, max_attempts: in
     arr = _to_numpy_array(matrix)
     _raise_if_not_square_matrix(arr)
     _raise_if_nonfinite_matrix(arr, "matrix")
-    sym = 0.5 * (arr + arr.T)
+    sym = _stable_symmetric_average(arr)
     eye = np.eye(sym.shape[0])
     jitter = 0.0
     for attempt in range(max_attempts + 1):
