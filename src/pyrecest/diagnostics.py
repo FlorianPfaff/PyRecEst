@@ -28,6 +28,8 @@ _WEIGHT_TEXT_OR_BOOL_TYPES = (bool, np.bool_, str, bytes, bytearray)
 
 def _coerce_metadata_bool(value: Any, name: str) -> bool:
     """Return a boolean metadata value without string truthiness surprises."""
+    if np.ma.is_masked(value):
+        raise ValueError(f"{name} must be a boolean value")
     if isinstance(value, bool):
         return value
     if isinstance(value, int) and value in (0, 1):
