@@ -196,7 +196,9 @@ class AbstractParticleFilter(AbstractFilter):
         if function_is_vectorized:
             d_f_applied = f(self.filter_state.d)
         else:
-            self.filter_state = self.filter_state.apply_function(f)
+            self.filter_state = self.filter_state.apply_function(
+                f, function_is_vectorized=False
+            )
             d_f_applied = self.filter_state.d
 
         n_particles = self.filter_state.w.shape[0]
