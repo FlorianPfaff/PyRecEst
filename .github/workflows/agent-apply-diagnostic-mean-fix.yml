@@ -1,0 +1,92 @@
+name: Apply diagnostic mean overflow fix
+
+on:
+  push:
+    branches:
+      - agent/fix-diagnostic-mean-overflow-20260730
+
+permissions:
+  contents: write
+
+jobs:
+  apply-fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/fix-diagnostic-mean-overflow-20260730
+
+      - name: Apply source and regression-test patch
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          source_path = Path("src/pyrecest/diagnostics.py")
+          source = source_path.read_text(encoding="utf-8")
+          old_import = "from math import isfinite, log"
+          new_import = "from math import fsum, isfinite, log"
+          if source.count(old_import) != 1:
+              raise RuntimeError("unexpected diagnostics math import")
+          source = source.replace(old_import, new_import, 1)
+
+          old_function = '''def _finite_mean(values: list[float]) -> float | None:
+              valid = [value for value in values if isfinite(value)]
+              if not valid:
+                  return None
+              return sum(valid) / len(valid)
+          '''
+          new_function = '''def _finite_mean(values: list[float]) -> float | None:
+              valid = [value for value in values if isfinite(value)]
+              if not valid:
+                  return None
+              scale = max(abs(value) for value in valid)
+              if scale == 0.0:
+                  return 0.0
+              return scale * (fsum(value / scale for value in valid) / len(valid))
+          '''
+          if source.count(old_function) != 1:
+              raise RuntimeError("unexpected _finite_mean implementation")
+          source_path.write_text(
+              source.replace(old_function, new_function, 1),
+              encoding="utf-8",
+          )
+
+          test_path = Path("tests/test_particle_filter_result.py")
+          tests = test_path.read_text(encoding="utf-8")
+          marker = '\n\nif __name__ == "__main__":\n'
+          regression = '''
+
+              def test_summary_statistics_keep_extreme_finite_means_finite(self):
+                  result = ParticleFilterResult(
+                      estimates=[],
+                      effective_sample_size=[1.0],
+                      resampled=[],
+                      particle_spread=[1.0e308, 1.0e308],
+                  )
+
+                  summary = result.summary_statistics()
+
+                  self.assertEqual(summary["mean_particle_spread"], 1.0e308)
+          '''
+          if marker not in tests:
+              raise RuntimeError("unexpected particle-filter result test layout")
+          if "test_summary_statistics_keep_extreme_finite_means_finite" in tests:
+              raise RuntimeError("regression test already exists")
+          test_path.write_text(
+              tests.replace(marker, regression + marker, 1),
+              encoding="utf-8",
+          )
+
+          Path(".github/workflows/agent-apply-diagnostic-mean-fix.yml").unlink()
+          PY
+
+          python -m pytest tests/test_particle_filter_result.py
+          python -m compileall -q src/pyrecest/diagnostics.py
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/pyrecest/diagnostics.py tests/test_particle_filter_result.py .github/workflows/agent-apply-diagnostic-mean-fix.yml
+          git commit -m "Fix overflow in diagnostic finite means"
+          git push origin HEAD:agent/fix-diagnostic-mean-overflow-20260730
