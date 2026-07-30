@@ -336,12 +336,20 @@ def multisensor_hdp_association(
             f"clutter_weights[{sensor_id!r}]",
         )
 
-        target_prior_masses = (counts + concentration * base_target_weights) * detection
-        target_log_priors = _safe_log(target_prior_masses)
+        log_concentration = np.log(concentration)
+        target_log_priors = (
+            np.logaddexp(
+                _safe_log(counts),
+                log_concentration + _safe_log(base_target_weights),
+            )
+            + _safe_log(detection)
+        )
         existing_log_weights = log_likelihoods + target_log_priors[None, :]
 
-        birth_log_weights = birth_log_likelihood + _safe_log(
-            concentration * base_birth_weight
+        birth_log_weights = (
+            birth_log_likelihood
+            + log_concentration
+            + _safe_log(base_birth_weight)
         )
         clutter_log_weights = clutter_log_likelihood + _safe_log(clutter_weight)
         log_weights = np.concatenate(
