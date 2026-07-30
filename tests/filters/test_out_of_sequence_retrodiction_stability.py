@@ -6,6 +6,7 @@ from pyrecest.filters import retrodict_linear_gaussian
 
 
 def test_retrodiction_preserves_extreme_finite_covariance():
+    """Avoid overflow in the intermediate covariance symmetry sum."""
     largest = np.finfo(np.float64).max
     covariance = array(
         [[largest, 0.0], [0.0, largest]],
