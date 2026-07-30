@@ -115,6 +115,17 @@ def _validate_finite_scalar(value, name: str) -> float:
     return result
 
 
+def _merwe_scale(alpha: float, n: int, kappa: float) -> float:
+    """Return the scaled sigma-point covariance factor without cancellation."""
+
+    scale = alpha * alpha * (n + kappa)
+    if not math.isfinite(scale) or scale <= 0.0:
+        raise ValueError(
+            "alpha and kappa must yield a finite, positive sigma-point scale"
+        )
+    return scale
+
+
 def _validate_sigma_inputs(x, P, n: int):
     if _has_complex_dtype(x):
         raise ValueError("x must contain real values")
@@ -163,22 +174,45 @@ class MerweScaledSigmaPoints:
 
     def _compute_weights(self):
         n = self.n
-        lam = self.alpha**2 * (n + self.kappa) - n
-        scale = n + lam
+        scale = _merwe_scale(self.alpha, n, self.kappa)
+        central_mean_weight = (scale - n) / scale
+        off_center_weight = 0.5 / scale
+        off_center_sum = 2.0 * n * off_center_weight
+        mean_weight_sum = math.fsum((central_mean_weight, off_center_sum))
+
+        if (
+            not math.isfinite(central_mean_weight)
+            or not math.isfinite(off_center_weight)
+            or not math.isfinite(off_center_sum)
+            or not math.isclose(
+                mean_weight_sum,
+                1.0,
+                rel_tol=0.0,
+                abs_tol=8.0 * np.finfo(np.float64).eps,
+            )
+        ):
+            raise ValueError(
+                "alpha and kappa must yield finite, normalized mean weights"
+            )
+
+        central_covariance_weight = central_mean_weight + (
+            1.0 - self.alpha * self.alpha + self.beta
+        )
+        if not math.isfinite(central_covariance_weight):
+            raise ValueError(
+                "alpha, beta, and kappa must yield finite covariance weights"
+            )
 
         self.Wm = concatenate(
             [
-                asarray([lam / scale], dtype=float64),
-                full(2 * n, 0.5 / scale, dtype=float64),
+                asarray([central_mean_weight], dtype=float64),
+                full(2 * n, off_center_weight, dtype=float64),
             ]
         )
         self.Wc = concatenate(
             [
-                asarray(
-                    [lam / scale + (1.0 - self.alpha**2 + self.beta)],
-                    dtype=float64,
-                ),
-                full(2 * n, 0.5 / scale, dtype=float64),
+                asarray([central_covariance_weight], dtype=float64),
+                full(2 * n, off_center_weight, dtype=float64),
             ]
         )
 
@@ -193,11 +227,11 @@ class MerweScaledSigmaPoints:
             State covariance, shape ``(n, n)``.
         """
         n = self.n
-        lam = self.alpha**2 * (n + self.kappa) - n
+        scale = _merwe_scale(self.alpha, n, self.kappa)
 
         x, P = _validate_sigma_inputs(x, P, n)
 
-        U = linalg.cholesky((n + lam) * P)  # lower-triangular
+        U = linalg.cholesky(scale * P)  # lower-triangular
 
         positive = [x + U[:, i] for i in range(n)]
         negative = [x - U[:, i] for i in range(n)]
