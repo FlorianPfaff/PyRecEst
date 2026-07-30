@@ -169,8 +169,41 @@ def _first_randint_bound_device(*values):
 _LEGACY_ARRAY_RANDINT = _LEGACY._randint_array
 
 
+def _sample_array_randint_exactly(low, high, dtype, generator):
+    """Sample array-valued bounds without passing through floating-point values."""
+
+    torch = _LEGACY._torch
+    flat_low = low.reshape(-1).to(dtype=torch.int64)
+    flat_high = high.reshape(-1).to(dtype=torch.int64)
+    flat_result = torch.empty(flat_low.shape, dtype=dtype, device=low.device)
+    if flat_low.numel() == 0:
+        return flat_result.reshape(low.shape)
+
+    bounds = torch.stack((flat_low, flat_high), dim=1)
+    unique_bounds, inverse = torch.unique(bounds, dim=0, return_inverse=True)
+    order = torch.argsort(inverse)
+    counts = torch.bincount(
+        inverse, minlength=unique_bounds.shape[0]
+    ).tolist()
+
+    offset = 0
+    for bound_pair, count in zip(unique_bounds, counts):
+        positions = order[offset : offset + count]
+        flat_result[positions] = torch.randint(
+            int(bound_pair[0].item()),
+            int(bound_pair[1].item()),
+            (count,),
+            dtype=dtype,
+            device=low.device,
+            generator=generator,
+        )
+        offset += count
+
+    return flat_result.reshape(low.shape)
+
+
 def _randint_array_with_wide_arithmetic(low, high, size, *args, **kwargs):
-    """Widen array bounds and intermediate samples before integer arithmetic."""
+    """Sample array bounds exactly while retaining wide integer arithmetic."""
 
     if args:
         return _LEGACY_ARRAY_RANDINT(low, high, size, *args, **kwargs)
@@ -193,14 +226,17 @@ def _randint_array_with_wide_arithmetic(low, high, size, *args, **kwargs):
     _LEGACY._validate_randint_array_dtype_bounds(low, high, requested_dtype)
 
     sampling_kwargs = dict(kwargs)
+    sampling_kwargs.pop("dtype", None)
+    sampling_kwargs.pop("device", None)
+    generator = sampling_kwargs.pop("generator", None)
     out = sampling_kwargs.pop("out", None)
-    sampling_kwargs["dtype"] = torch.int64
-    result = _LEGACY_ARRAY_RANDINT(
-        low.to(dtype=torch.int64),
-        high.to(dtype=torch.int64),
-        size,
-        **sampling_kwargs,
-    ).to(dtype=requested_dtype)
+    if sampling_kwargs:
+        unexpected = ", ".join(sorted(sampling_kwargs))
+        raise TypeError(f"Unexpected keyword argument(s): {unexpected}")
+
+    result = _sample_array_randint_exactly(
+        low, high, requested_dtype, generator
+    )
     if out is not None:
         out.copy_(result)
         return out
