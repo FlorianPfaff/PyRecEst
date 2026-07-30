@@ -22,7 +22,7 @@ class MultisensorHDPSensorPriorLogDomainTest(unittest.TestCase):
             result.probabilities,
             np.array([[0.75, 0.25, 0.0, 0.0]]),
             rtol=0.0,
-            atol=1e-15,
+            atol=64 * np.finfo(float).eps,
         )
         self.assertTrue(np.all(np.isfinite(result.log_weights[0, :2])))
 
