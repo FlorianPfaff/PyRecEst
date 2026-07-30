@@ -79,6 +79,8 @@ def _validate_positive_sample_count(n) -> int:
 def _validate_explicit_weight_shape(weights, num_distributions: int):
     """Return explicit mixture weights without silently flattening matrices."""
     _validate_mixture_weight_values(weights)
+    if isinstance(weights, np.ma.MaskedArray):
+        weights = np.ma.getdata(weights)
     weights = pyrecest.backend.copy(asarray(weights))
     if weights.ndim == 0:
         if num_distributions != 1:
@@ -91,6 +93,10 @@ def _validate_explicit_weight_shape(weights, num_distributions: int):
 
 def _validate_mixture_weight_values(weights) -> None:
     """Reject invalid mixture weights before backend scalar comparisons."""
+    if np.ma.is_masked(weights):
+        raise ValueError("Mixture weights must not contain masked values")
+    if isinstance(weights, np.ma.MaskedArray):
+        weights = np.ma.getdata(weights)
     try:
         converted_weights = pyrecest.backend.to_numpy(weights)
         native_weight_values = np.asarray(converted_weights)
