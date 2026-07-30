@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import asdict, dataclass, field, fields
-from math import isfinite, log
+from math import fsum, isfinite, log
 from typing import Any, Literal
 
 import numpy as np
@@ -155,7 +155,10 @@ def _finite_mean(values: list[float]) -> float | None:
     valid = [value for value in values if isfinite(value)]
     if not valid:
         return None
-    return sum(valid) / len(valid)
+    scale = max(abs(value) for value in valid)
+    if scale == 0.0:
+        return 0.0
+    return scale * (fsum(value / scale for value in valid) / len(valid))
 
 
 def _finite_min(values: list[float]) -> float | None:
