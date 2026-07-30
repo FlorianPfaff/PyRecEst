@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - agent/stabilize-retrodiction-symmetrization
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
 
 permissions:
   contents: write
