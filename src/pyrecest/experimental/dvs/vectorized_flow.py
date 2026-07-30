@@ -34,21 +34,23 @@ def tracker_signed_normal_flows_vectorized(
     velocity = np.asarray(event_velocity, dtype=float).reshape(2)
     if not np.isfinite(velocity).all():
         raise ValueError("event_velocity must contain finite values")
-    velocity_norm = float(np.linalg.norm(velocity))
+    velocity_norm = float(np.hypot(velocity[0], velocity[1]))
     if velocity_norm <= 1e-12:
         return np.zeros(measurements.shape[0], dtype=float)
+    unit_velocity = velocity / velocity_norm
 
     try:
         return _tracker_signed_normal_flows_vectorized_impl(
             tracker,
             measurements,
-            velocity,
-            velocity_norm,
+            unit_velocity,
         )
     except Exception:  # pragma: no cover - backend-specific safety fallback
         return np.asarray(
             [
-                tracker.signed_normal_flow_for_measurement(measurement, velocity)
+                tracker.signed_normal_flow_for_measurement(
+                    measurement, unit_velocity
+                )
                 for measurement in measurements
             ],
             dtype=float,
@@ -58,8 +60,7 @@ def tracker_signed_normal_flows_vectorized(
 def _tracker_signed_normal_flows_vectorized_impl(
     tracker: DVSFullSCGPTracker,
     measurements: np.ndarray,
-    velocity: np.ndarray,
-    velocity_norm: float,
+    unit_velocity: np.ndarray,
 ) -> np.ndarray:
     position = np.asarray(tracker.kinematic_state[:2], dtype=float)
     orientation = float(tracker.kinematic_state[2])
@@ -97,4 +98,4 @@ def _tracker_signed_normal_flows_vectorized_impl(
         out=np.array(unit, dtype=float, copy=True),
         where=normal_norm[:, None] > 1e-12,
     )
-    return (normals @ velocity) / velocity_norm
+    return normals @ unit_velocity
