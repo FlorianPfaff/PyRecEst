@@ -1,8 +1,6 @@
 import numpy as np
 import pytest
-
 from pyrecest.sampling import JulierSigmaPoints, MerweScaledSigmaPoints
-
 
 _TEMPORAL_VALUES = (
     np.timedelta64(2, "ns"),

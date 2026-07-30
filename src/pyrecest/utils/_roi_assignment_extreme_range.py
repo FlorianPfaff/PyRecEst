@@ -15,8 +15,7 @@ def _cost_conversion_is_finite(
     threshold_cost = max_similarity - min_similarity
     dummy_penalty = max(
         1e-12,
-        sys.float_info.epsilon
-        * max(1.0, abs(max_similarity), abs(min_similarity)),
+        sys.float_info.epsilon * max(1.0, abs(max_similarity), abs(min_similarity)),
     )
     return math.isfinite(threshold_cost) and math.isfinite(
         threshold_cost + dummy_penalty
