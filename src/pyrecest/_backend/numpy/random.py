@@ -9,6 +9,7 @@ from numpy.random import (  # For PyRecEst
 )
 
 from .._shared_numpy.random import (
+    _contains_masked_value,
     _normalize_probability_values,
     _normalize_size,
     choice,
@@ -32,7 +33,7 @@ def _contains_boolean_value(value):
 
 
 def _validate_randint_bound(bound, name):
-    if _contains_boolean_value(bound):
+    if _contains_masked_value(bound) or _contains_boolean_value(bound):
         raise TypeError(f"{name} must contain integer values")
     try:
         bound_array = _np.asarray(bound)
@@ -67,7 +68,7 @@ def randint(low, high=None, size=None, dtype=int):
 
 
 def _validate_multinomial_sample_count(n):
-    if _contains_boolean_value(n):
+    if _contains_masked_value(n) or _contains_boolean_value(n):
         raise TypeError("n must be a non-negative integer")
     try:
         n_array = _np.asarray(n)
@@ -82,7 +83,7 @@ def _validate_multinomial_sample_count(n):
 
 
 def _validate_multinomial_pvals(pvals):
-    if _contains_boolean_value(pvals):
+    if _contains_masked_value(pvals) or _contains_boolean_value(pvals):
         raise TypeError("pvals must be real numeric, not boolean")
     try:
         pvals_array = _np.asarray(pvals)
