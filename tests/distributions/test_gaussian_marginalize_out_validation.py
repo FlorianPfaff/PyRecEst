@@ -1,7 +1,6 @@
 import unittest
 
 import numpy as np
-
 from pyrecest.backend import array
 from pyrecest.distributions import GaussianDistribution
 
