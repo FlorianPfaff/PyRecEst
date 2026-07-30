@@ -44,6 +44,8 @@ def _contains_masked_value(value: Any) -> bool:
 
 
 def _validate_bool_flag(value: Any, name: str) -> bool:
+    if _contains_masked_value(value):
+        raise TypeError(f"{name} must be a boolean")
     if isinstance(value, bool):
         return value
     try:
