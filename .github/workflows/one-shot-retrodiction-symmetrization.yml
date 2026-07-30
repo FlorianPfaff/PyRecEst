@@ -146,30 +146,26 @@ jobs:
             src/pyrecest/filters/out_of_sequence.py \
             tests/filters/test_out_of_sequence_retrodiction_stability.py
           python - <<'PY'
-          import numpy as np
+          import math
+          import sys
 
-          largest = np.finfo(np.float64).max
-          smallest = np.nextafter(np.float64(0.0), np.float64(1.0))
-          matrix = np.array(
-              [[largest, smallest], [smallest, largest]],
-              dtype=np.float64,
-          )
-          transposed = matrix.T
-          finite_same_sign = (
-              np.isfinite(matrix)
-              & np.isfinite(transposed)
-              & ((matrix >= 0.0) == (transposed >= 0.0))
-          )
-          left = np.where(finite_same_sign, matrix, 0.0)
-          right = np.where(finite_same_sign, transposed, 0.0)
-          lower = np.minimum(left, right)
-          upper = np.maximum(left, right)
-          averaged = lower + 0.5 * (upper - lower)
-          other = ~finite_same_sign
-          averaged += 0.5 * np.where(other, matrix, 0.0)
-          averaged += 0.5 * np.where(other, transposed, 0.0)
-          assert np.array_equal(averaged, matrix)
-          assert np.all(np.isfinite(averaged))
+          largest = sys.float_info.max
+          smallest = math.nextafter(0.0, 1.0)
+
+          def stable_average(left, right):
+              if (
+                  math.isfinite(left)
+                  and math.isfinite(right)
+                  and ((left >= 0.0) == (right >= 0.0))
+              ):
+                  lower = min(left, right)
+                  upper = max(left, right)
+                  return lower + 0.5 * (upper - lower)
+              return 0.5 * left + 0.5 * right
+
+          assert stable_average(largest, largest) == largest
+          assert stable_average(smallest, smallest) == smallest
+          assert stable_average(largest, -largest) == 0.0
           PY
 
       - name: Commit patch
