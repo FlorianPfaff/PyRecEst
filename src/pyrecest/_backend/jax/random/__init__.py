@@ -53,24 +53,28 @@ def _validate_multivariate_normal_tol(tol):
     return tol_value
 
 
-def _multivariate_normal_requires_svd(mean, cov):
-    """Return whether a valid covariance needs a rank-tolerant factorization."""
+def _validate_and_classify_multivariate_normal_cov(cov, mean_dim):
+    """Validate a covariance and identify numerically rank-deficient inputs."""
 
-    mean_array = _LEGACY._validate_multivariate_normal_mean(mean)
-    cov_array = _LEGACY._validate_multivariate_normal_cov(
-        cov, mean_array.shape[0]
-    )
-    cov_float = cov_array.astype(
-        _LEGACY._jnp.result_type(cov_array, _LEGACY._jnp.float32)
-    )
+    cov = _LEGACY._validate_normal_parameter(cov, "cov")
+    if cov.ndim != 2:
+        raise ValueError("cov must be a 2-dimensional square matrix")
+    if cov.shape != (mean_dim, mean_dim):
+        raise ValueError("cov must have shape (mean.size, mean.size)")
+    if not bool(_LEGACY._jnp.allclose(cov, cov.T)):
+        raise ValueError("cov must be symmetric")
+
+    cov_float = cov.astype(_LEGACY._jnp.result_type(cov, _LEGACY._jnp.float32))
     eigenvalues = _LEGACY._jnp.linalg.eigvalsh(cov_float)
+    if bool(_LEGACY._jnp.any(eigenvalues < -1.0e-8)):
+        raise ValueError("cov must be positive semidefinite")
+
     scale = _LEGACY._jnp.max(_LEGACY._jnp.abs(eigenvalues))
-    tolerance = (
-        _LEGACY._jnp.finfo(cov_float.dtype).eps
-        * max(mean_array.shape[0], 1)
-        * scale
+    rank_tolerance = (
+        _LEGACY._jnp.finfo(cov_float.dtype).eps * max(mean_dim, 1) * scale
     )
-    return bool(_LEGACY._jnp.any(eigenvalues <= tolerance))
+    requires_svd = bool(_LEGACY._jnp.any(eigenvalues <= rank_tolerance))
+    return cov, requires_svd
 
 
 def multivariate_normal(mean, cov, size=None, *args, **kwargs):
@@ -80,10 +84,27 @@ def multivariate_normal(mean, cov, size=None, *args, **kwargs):
     tol = kwargs.pop("tol", 1e-8)
     _validate_multivariate_normal_check_valid(check_valid)
     _validate_multivariate_normal_tol(tol)
-    requires_svd = _multivariate_normal_requires_svd(mean, cov)
+
+    state, has_state, kwargs = _LEGACY._get_state(**kwargs)
+    state, key = _LEGACY.jax.random.split(state)
+    if "shape" in kwargs:
+        if size is not None:
+            raise TypeError("Specify only one of 'size' or 'shape'.")
+        size = kwargs.pop("shape")
+    shape = _LEGACY._shape_from_size(size)
+    mean = _LEGACY._validate_multivariate_normal_mean(mean)
+    cov, requires_svd = _validate_and_classify_multivariate_normal_cov(
+        cov, mean.shape[0]
+    )
+    dtype = _LEGACY._jnp.result_type(mean, cov, _LEGACY._jnp.float32)
+    mean = mean.astype(dtype)
+    cov = cov.astype(dtype)
     if requires_svd and len(args) < 2 and "method" not in kwargs:
         kwargs["method"] = "svd"
-    return _LEGACY.multivariate_normal(mean, cov, size=size, *args, **kwargs)
+    result = _LEGACY.jax.random.multivariate_normal(
+        key, mean, cov, shape, *args, **kwargs
+    )
+    return _LEGACY.set_state_return(has_state, state, result)
 
 
 __all__ = sorted(
