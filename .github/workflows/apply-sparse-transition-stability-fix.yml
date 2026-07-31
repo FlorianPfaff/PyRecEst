@@ -1,3 +1,4 @@
+# Retrigger after workflow registration.
 name: Apply sparse transition stability fix
 
 on:
