@@ -1,0 +1,141 @@
+name: Apply PyTorch registration host-conversion fix
+
+permissions:
+  contents: write
+
+on:
+  push:
+    branches:
+      - agent/fix-pytorch-registration-host-conversion
+
+jobs:
+  patch-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Apply focused source and regression changes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          source_path = Path("src/pyrecest/utils/_point_set_registration_common.py")
+          source = source_path.read_text(encoding="utf-8")
+
+          replacements = [
+              (
+                  """    mean,\n    sqrt,\n    where,\n    zeros,\n)""",
+                  """    mean,\n    sqrt,\n    to_numpy,\n    where,\n    zeros,\n)""",
+              ),
+              (
+                  """    costs_numpy = np.asarray(costs, dtype=float)\n    valid_cost_mask_numpy = np.asarray(valid_cost_mask, dtype=bool)""",
+                  """    costs_numpy = np.asarray(to_numpy(costs), dtype=float)\n    valid_cost_mask_numpy = np.asarray(to_numpy(valid_cost_mask), dtype=bool)""",
+              ),
+              (
+                  """def default_cost(transformed_reference_points, moving_points):\n    \"\"\"Default Euclidean association cost.\"\"\"\n    return cdist(transformed_reference_points, moving_points, metric=\"euclidean\")""",
+                  """def default_cost(transformed_reference_points, moving_points):\n    \"\"\"Default Euclidean association cost.\"\"\"\n    return cdist(\n        to_numpy(transformed_reference_points),\n        to_numpy(moving_points),\n        metric=\"euclidean\",\n    )""",
+              ),
+          ]
+
+          for old, new in replacements:
+              count = source.count(old)
+              if count != 1:
+                  raise RuntimeError(
+                      f"Expected exactly one source occurrence, found {count}: {old!r}"
+                  )
+              source = source.replace(old, new)
+
+          source_path.write_text(source, encoding="utf-8")
+
+          test_path = Path(
+              "tests/backend_support/test_pytorch_point_set_registration_host_conversion.py"
+          )
+          test_path.write_text(
+              '''"""Regression tests for PyTorch registration host conversion."""
+
+from __future__ import annotations
+
+import importlib.util
+
+import pytest
+from tests.support.backend_runner import run_backend_code
+
+
+@pytest.mark.backend_portable
+def test_pytorch_registration_converts_scipy_inputs_through_backend_bridge():
+    """Gradient-tracking tensors must cross SciPy's host boundary safely."""
+    if importlib.util.find_spec("torch") is None:
+        pytest.skip("PyTorch is not installed")
+
+    result = run_backend_code(
+        "pytorch",
+        """
+import torch
+from pyrecest.utils._point_set_registration_common import solve_gated_assignment
+from pyrecest.utils.point_set_registration import joint_registration_assignment
+
+reference = torch.tensor(
+    [[0.0], [2.0]], dtype=torch.float64, requires_grad=True
+)
+moving = torch.tensor(
+    [[1.0], [3.0]], dtype=torch.float64, requires_grad=True
+)
+
+registration = joint_registration_assignment(
+    reference,
+    moving,
+    model="translation",
+    max_iterations=2,
+)
+assert registration.assignment.detach().cpu().tolist() == [0, 1]
+assert torch.allclose(
+    registration.transform.offset,
+    torch.tensor([1.0], dtype=torch.float64),
+)
+
+costs = torch.tensor(
+    [[0.0, 4.0], [4.0, 0.0]],
+    dtype=torch.float64,
+    requires_grad=True,
+)
+assignment = solve_gated_assignment(costs)
+assert assignment.detach().cpu().tolist() == [0, 1]
+assert costs.requires_grad
+print("ok")
+""",
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "ok" in result.stdout
+''',
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Install focused test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[pytorch_support]" pytest
+
+      - name: Validate the patch
+        run: |
+          python -m py_compile \
+            src/pyrecest/utils/_point_set_registration_common.py \
+            tests/backend_support/test_pytorch_point_set_registration_host_conversion.py
+          python -m pytest -q \
+            tests/backend_support/test_pytorch_point_set_registration_host_conversion.py
+
+      - name: Commit the validated fix and remove this workflow
+        run: |
+          rm .github/workflows/agent-fix-pytorch-registration-host-conversion.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Fix PyTorch registration host conversion"
+          git push origin HEAD:${{ github.ref_name }}
