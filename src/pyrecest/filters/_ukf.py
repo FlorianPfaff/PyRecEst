@@ -8,7 +8,7 @@ from copy import deepcopy
 
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import (
-    absolute,
+    abs,
     asarray,
     einsum,
     expand_dims,
@@ -53,7 +53,7 @@ def _as_vector(value, description):
 def _stable_symmetric_average(matrix):
     """Average a matrix with its transpose without finite overflow."""
     transposed = transpose(matrix)
-    scale = maximum(absolute(matrix), absolute(transposed))
+    scale = maximum(abs(matrix), abs(transposed))
     safe_scale = where(scale == 0.0, 1.0, scale)
     normalized_average = 0.5 * (matrix / safe_scale + transposed / safe_scale)
     return scale * normalized_average
