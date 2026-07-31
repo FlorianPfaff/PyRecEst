@@ -9,7 +9,9 @@ from typing import Any, Callable
 import numpy as np
 
 # pylint: disable=no-name-in-module,no-member
+from pyrecest.backend import abs as backend_abs
 from pyrecest.backend import all as backend_all
+from pyrecest.backend import max as backend_max
 from pyrecest.backend import (
     array_equal,
     asarray,
@@ -390,10 +392,15 @@ def default_cost(transformed_reference_points, moving_points):
 
 
 def compute_rmse(matched_costs) -> float:
-    """Compute the RMSE over matched costs."""
-    if matched_costs.shape[0] > 0:
-        return float(sqrt(mean(matched_costs * matched_costs)))
-    return float("inf")
+    """Compute the RMSE over matched costs without squaring overflow."""
+    if matched_costs.shape[0] == 0:
+        return float("inf")
+
+    scale = float(backend_max(backend_abs(matched_costs)))
+    if scale == 0.0 or not math.isfinite(scale):
+        return scale
+    scaled_costs = matched_costs / scale
+    return scale * float(sqrt(mean(scaled_costs * scaled_costs)))
 
 
 def summarize_assignment(assignment, costs) -> MatchSummary:
