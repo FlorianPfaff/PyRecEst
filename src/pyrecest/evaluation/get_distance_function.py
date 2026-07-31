@@ -255,7 +255,7 @@ def _euclidean_mtt_distance(x1, x2, *, cutoff_distance: float) -> float:
         return float(cutoff_distance * abs(first.shape[0] - second.shape[0]))
 
     deltas = first[:, None, :] - second[None, :, :]
-    costs = numpy.linalg.norm(deltas, axis=2)
+    costs = numpy.hypot.reduce(deltas, axis=2)
     costs = numpy.minimum(costs, float(cutoff_distance))
     row_indices, column_indices = linear_sum_assignment(costs)
     matched_cost = float(costs[row_indices, column_indices].sum())
