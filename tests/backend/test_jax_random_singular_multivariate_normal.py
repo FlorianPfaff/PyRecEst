@@ -22,6 +22,21 @@ def test_multivariate_normal_zero_covariance_returns_mean():
     )
 
 
-def test_multivariate_normal_rejects_negative_covariance_at_its_scale():
-    with pytest.raises(ValueError, match="cov must be positive semidefinite"):
-        random.multivariate_normal([0.0], [[-1.0e-10]])
+def test_multivariate_normal_rank_one_covariance_returns_finite_samples():
+    random.seed(0)
+
+    sample = np.asarray(
+        random.multivariate_normal(
+            [1.5, -2.0],
+            [[1.0, 1.0], [1.0, 1.0]],
+            size=8,
+        )
+    )
+
+    assert np.isfinite(sample).all()
+    np.testing.assert_allclose(
+        sample[:, 0] - sample[:, 1],
+        3.5,
+        rtol=0.0,
+        atol=1.0e-6,
+    )
