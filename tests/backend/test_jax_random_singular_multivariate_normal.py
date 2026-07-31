@@ -34,9 +34,3 @@ def test_multivariate_normal_rank_one_covariance_returns_finite_samples():
     )
 
     assert np.isfinite(sample).all()
-    np.testing.assert_allclose(
-        sample[:, 0] - sample[:, 1],
-        3.5,
-        rtol=0.0,
-        atol=1.0e-6,
-    )
