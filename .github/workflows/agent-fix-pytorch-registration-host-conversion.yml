@@ -7,13 +7,22 @@ on:
   push:
     branches:
       - agent/fix-pytorch-registration-host-conversion
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
 
 jobs:
   patch-and-test:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out branch
+      - name: Check out fix branch
         uses: actions/checkout@v7
+        with:
+          ref: agent/fix-pytorch-registration-host-conversion
 
       - name: Set up Python
         uses: actions/setup-python@v7
@@ -23,7 +32,7 @@ jobs:
       - name: Apply focused source and regression changes
         run: |
           python - <<'PY'
-          from pathlib import Path
+          from pathlib import import Path
 
           source_path = Path("src/pyrecest/utils/_point_set_registration_common.py")
           source = source_path.read_text(encoding="utf-8")
@@ -138,4 +147,4 @@ print("ok")
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "Fix PyTorch registration host conversion"
-          git push origin HEAD:${{ github.ref_name }}
+          git push origin HEAD:agent/fix-pytorch-registration-host-conversion
