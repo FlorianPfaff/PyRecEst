@@ -5,13 +5,14 @@ from tests.support.backend_runner import run_backend_code
 
 
 @pytest.mark.backend_portable
-def test_pytorch_nonzero_rejects_zero_dimensional_inputs():
+def test_pytorch_nonzero_rejects_scalars_and_honors_masks():
     if importlib.util.find_spec("torch") is None:
         pytest.skip("PyTorch is not installed")
 
     result = run_backend_code(
         "pytorch",
         """
+import numpy as np
 import pyrecest._backend.pytorch as raw_pytorch
 import pyrecest.backend as backend
 import torch
@@ -33,6 +34,14 @@ for nonzero in (backend.nonzero, raw_pytorch.nonzero):
     rows, columns = nonzero([[0, 2], [3, 0]])
     assert rows.tolist() == [0, 1]
     assert columns.tolist() == [1, 0]
+
+    masked = np.ma.array(
+        [[0, 2], [3, 4]],
+        mask=[[False, True], [False, True]],
+    )
+    rows, columns = nonzero(masked)
+    assert rows.tolist() == [1]
+    assert columns.tolist() == [0]
 
 print("ok")
 """,
