@@ -1,0 +1,121 @@
+name: Apply registration RMSE stability fix
+
+on:
+  push:
+    branches:
+      - agent/fix-registration-rmse-overflow-20260731
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Apply focused source and regression patch
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          source_path = Path('src/pyrecest/utils/_point_set_registration_common.py')
+          source = source_path.read_text(encoding='utf-8')
+
+          old_import = 'from pyrecest.backend import all as backend_all\n'
+          new_import = (
+              'from pyrecest.backend import abs as backend_abs\n'
+              'from pyrecest.backend import all as backend_all\n'
+              'from pyrecest.backend import max as backend_max\n'
+          )
+          if source.count(old_import) != 1:
+              raise RuntimeError('unexpected backend import layout')
+          source = source.replace(old_import, new_import, 1)
+
+          old_function = '''def compute_rmse(matched_costs) -> float:
+              """Compute the RMSE over matched costs."""
+              if matched_costs.shape[0] > 0:
+                  return float(sqrt(mean(matched_costs * matched_costs)))
+              return float("inf")
+          '''
+          new_function = '''def compute_rmse(matched_costs) -> float:
+              """Compute the RMSE over matched costs without squaring overflow."""
+              if matched_costs.shape[0] == 0:
+                  return float("inf")
+
+              scale = float(backend_max(backend_abs(matched_costs)))
+              if scale == 0.0 or not math.isfinite(scale):
+                  return scale
+              scaled_costs = matched_costs / scale
+              return scale * float(sqrt(mean(scaled_costs * scaled_costs)))
+          '''
+          if source.count(old_function) != 1:
+              raise RuntimeError('unexpected compute_rmse implementation')
+          source_path.write_text(
+              source.replace(old_function, new_function, 1),
+              encoding='utf-8',
+          )
+
+          test_path = Path('tests/test_point_set_registration_rmse_stability.py')
+          test_path.write_text(
+              '''import math
+          import unittest
+
+          import numpy as np
+          from pyrecest.backend import array, float64
+          from pyrecest.utils._point_set_registration_common import compute_rmse
+
+
+          class TestPointSetRegistrationRmseStability(unittest.TestCase):
+              def test_rmse_preserves_maximum_finite_cost(self):
+                  largest = np.finfo(np.float64).max
+
+                  rmse = compute_rmse(array([largest], dtype=float64))
+
+                  self.assertTrue(math.isfinite(rmse))
+                  self.assertEqual(rmse, largest)
+
+              def test_rmse_preserves_zero_and_empty_contract(self):
+                  self.assertEqual(compute_rmse(array([0.0], dtype=float64)), 0.0)
+                  self.assertTrue(
+                      math.isinf(compute_rmse(array([], dtype=float64)))
+                  )
+
+
+          if __name__ == "__main__":
+              unittest.main()
+          ''',
+              encoding='utf-8',
+          )
+          PY
+
+      - name: Validate focused regression
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e . pytest
+          python -m py_compile \
+            src/pyrecest/utils/_point_set_registration_common.py \
+            tests/test_point_set_registration_rmse_stability.py
+          python -m pytest -q tests/test_point_set_registration_rmse_stability.py
+
+      - name: Commit final patch
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/agent-fix-registration-rmse-overflow.yml
+          git add \
+            src/pyrecest/utils/_point_set_registration_common.py \
+            tests/test_point_set_registration_rmse_stability.py
+          git commit -m 'Stabilize registration RMSE'
+          git push origin HEAD:${{ github.ref_name }}
