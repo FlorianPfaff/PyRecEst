@@ -18,6 +18,8 @@ def _as_linalg_array(value):
 
 def _as_integer_scalar(value, name):
     """Return a Python integer for JAX static integer arguments."""
+    if _np.ma.is_masked(value):
+        raise TypeError(f"{name} must be an integer scalar")
     if isinstance(value, (bool, _np.bool_)):
         raise TypeError(f"{name} must be an integer scalar")
     try:
