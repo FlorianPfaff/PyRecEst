@@ -70,8 +70,6 @@ def _multivariate_normal_requires_svd(mean, cov):
         * max(mean_array.shape[0], 1)
         * scale
     )
-    if bool(_LEGACY._jnp.any(eigenvalues < -tolerance)):
-        raise ValueError("cov must be positive semidefinite")
     return bool(_LEGACY._jnp.any(eigenvalues <= tolerance))
 
 
