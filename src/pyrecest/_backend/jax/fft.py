@@ -10,6 +10,7 @@ _BOOLEAN_FFT_AXIS_ERROR = "axis must be an integer, not boolean"
 _BOOLEAN_FFT_LENGTH_ERROR = "n must be an integer length, not boolean"
 _FFT_SHAPE_SEQUENCE_ERROR = "s must be None or a sequence of integer lengths"
 _FFT_AXES_SEQUENCE_ERROR = "axes must be None or a sequence of integer axes"
+_SHIFT_AXES_ERROR = "axes must be None, an integer axis, or a sequence of integer axes"
 
 
 def _normalize_real_fft_axis(axis):
@@ -138,6 +139,50 @@ def _normalize_complex_fft_axes(axes):
     )
 
 
+def _normalize_shift_axes(axes):
+    """Normalize scalar or sequence axis inputs accepted by FFT shifts."""
+    if axes is None:
+        return None
+    if isinstance(axes, (bool, _np.bool_)):
+        raise TypeError(_BOOLEAN_FFT_AXIS_ERROR)
+    if isinstance(axes, _np.ndarray):
+        if _np.issubdtype(axes.dtype, _np.bool_):
+            raise TypeError(_BOOLEAN_FFT_AXIS_ERROR)
+        if axes.ndim == 0:
+            return _normalize_fft_sequence_item(
+                axes, _BOOLEAN_FFT_AXIS_ERROR, _SHIFT_AXES_ERROR
+            )
+        return tuple(
+            _normalize_fft_sequence_item(
+                item, _BOOLEAN_FFT_AXIS_ERROR, _SHIFT_AXES_ERROR
+            )
+            for item in axes.tolist()
+        )
+    if isinstance(axes, _jnp.ndarray):
+        axes_array = _np.asarray(axes)
+        if _np.issubdtype(axes_array.dtype, _np.bool_):
+            raise TypeError(_BOOLEAN_FFT_AXIS_ERROR)
+        if axes_array.ndim == 0:
+            return _normalize_fft_sequence_item(
+                axes, _BOOLEAN_FFT_AXIS_ERROR, _SHIFT_AXES_ERROR
+            )
+        return tuple(
+            _normalize_fft_sequence_item(
+                item, _BOOLEAN_FFT_AXIS_ERROR, _SHIFT_AXES_ERROR
+            )
+            for item in axes_array.tolist()
+        )
+    try:
+        return _operator_index(axes)
+    except TypeError:
+        return _normalize_fft_integer_sequence(
+            axes,
+            _SHIFT_AXES_ERROR,
+            _BOOLEAN_FFT_AXIS_ERROR,
+            _SHIFT_AXES_ERROR,
+        )
+
+
 def rfft(a, n=None, axis=-1, norm=None):
     return _fft.rfft(
         _jnp.asarray(a),
@@ -175,8 +220,8 @@ def ifftn(a, s=None, axes=None, norm=None):
 
 
 def fftshift(x, axes=None):
-    return _fft.fftshift(_jnp.asarray(x), axes=axes)
+    return _fft.fftshift(_jnp.asarray(x), axes=_normalize_shift_axes(axes))
 
 
 def ifftshift(x, axes=None):
-    return _fft.ifftshift(_jnp.asarray(x), axes=axes)
+    return _fft.ifftshift(_jnp.asarray(x), axes=_normalize_shift_axes(axes))
