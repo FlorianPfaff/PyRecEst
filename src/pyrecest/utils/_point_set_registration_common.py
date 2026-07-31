@@ -21,6 +21,7 @@ from pyrecest.backend import (
     isfinite,
     mean,
     sqrt,
+    to_numpy,
     where,
     zeros,
 )
@@ -347,8 +348,8 @@ def solve_gated_assignment(cost_matrix, *, max_cost: float = float("inf")):
     if valid_costs.shape[0] == 0:
         return zeros((costs.shape[0],), dtype=int64) - 1
 
-    costs_numpy = np.asarray(costs, dtype=float)
-    valid_cost_mask_numpy = np.asarray(valid_cost_mask, dtype=bool)
+    costs_numpy = np.asarray(to_numpy(costs), dtype=float)
+    valid_cost_mask_numpy = np.asarray(to_numpy(valid_cost_mask), dtype=bool)
     valid_costs_numpy = costs_numpy[valid_cost_mask_numpy]
     cost_scale = max(float(np.max(np.abs(valid_costs_numpy))), 1.0)
     scaled_costs = costs_numpy / cost_scale
@@ -388,7 +389,11 @@ def solve_gated_assignment(cost_matrix, *, max_cost: float = float("inf")):
 
 def default_cost(transformed_reference_points, moving_points):
     """Default Euclidean association cost."""
-    return cdist(transformed_reference_points, moving_points, metric="euclidean")
+    return cdist(
+        to_numpy(transformed_reference_points),
+        to_numpy(moving_points),
+        metric="euclidean",
+    )
 
 
 def compute_rmse(matched_costs) -> float:
