@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import numpy as np
+
 _NONZERO_SCALAR_MESSAGE = (
     "Calling nonzero on 0d arrays is not allowed. "
     "Use np.atleast_1d(scalar).nonzero() instead."
@@ -9,7 +11,7 @@ _NONZERO_SCALAR_MESSAGE = (
 
 
 def patch_pytorch_nonzero_scalar_contract() -> None:
-    """Make public and raw PyTorch ``nonzero`` reject 0-D inputs."""
+    """Make public and raw PyTorch ``nonzero`` reject 0-D inputs and honor masks."""
 
     try:
         import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
@@ -27,6 +29,8 @@ def patch_pytorch_nonzero_scalar_contract() -> None:
         return
 
     def nonzero(x):
+        if np.ma.isMaskedArray(x):
+            x = np.ma.filled(x, 0)
         values = x if torch.is_tensor(x) else torch.as_tensor(x)
         if values.ndim == 0:
             raise ValueError(_NONZERO_SCALAR_MESSAGE)
