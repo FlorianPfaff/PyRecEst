@@ -661,7 +661,23 @@ def _pairwise_distances(
 ) -> np.ndarray:
     if distance_fn is None:
         differences = estimated[:, None, :] - reference[None, :, :]
-        return np.linalg.norm(differences, axis=-1)
+        scales = np.max(np.abs(differences), axis=-1)
+        distances = scales.copy()
+        finite_nonzero = np.isfinite(scales) & (scales > 0.0)
+        if np.any(finite_nonzero):
+            normalized = np.zeros_like(differences)
+            np.divide(
+                differences,
+                scales[..., None],
+                out=normalized,
+                where=finite_nonzero[..., None],
+            )
+            normalized_norms = np.linalg.norm(normalized, axis=-1)
+            distances[finite_nonzero] = (
+                scales[finite_nonzero] * normalized_norms[finite_nonzero]
+            )
+        distances[scales == 0.0] = 0.0
+        return distances
     distances = np.empty((estimated.shape[0], reference.shape[0]), dtype=float)
     for row, estimate in enumerate(estimated):
         for col, truth in enumerate(reference):
