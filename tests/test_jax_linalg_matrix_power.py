@@ -37,3 +37,24 @@ for exponent in (True, np.bool_(True), jnp.array(True)):
 """
     result = run_backend_code("jax", code)
     assert result.returncode == 0, result.stderr
+
+
+def test_jax_matrix_power_rejects_masked_exponents():
+    pytest.importorskip("jax")
+
+    code = """
+import numpy as np
+import pytest
+import pyrecest.backend as backend
+from pyrecest.backend import linalg
+
+matrix = [[1.0, 1.0], [0.0, 1.0]]
+for exponent in (np.ma.masked, np.ma.array(2, mask=True)):
+    with pytest.raises(TypeError, match="n must be an integer scalar"):
+        linalg.matrix_power(matrix, exponent)
+
+result = linalg.matrix_power(matrix, np.ma.array(2, mask=False))
+assert backend.to_numpy(result).tolist() == [[1.0, 2.0], [0.0, 1.0]]
+"""
+    result = run_backend_code("jax", code)
+    assert result.returncode == 0, result.stderr
