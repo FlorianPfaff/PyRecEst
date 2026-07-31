@@ -41,3 +41,18 @@ def test_empty_target_dimension_disambiguates_small_dim_first_target_set():
 
     np.testing.assert_allclose(distance(no_targets, dim_first_targets), 21.0)
     np.testing.assert_allclose(distance(dim_first_targets, no_targets), 21.0)
+
+
+def test_euclidean_mtt_distance_preserves_extreme_finite_norm_below_cutoff():
+    distance = get_distance_function(
+        "euclidean_mtt",
+        {"cutoff_distance": 1.5e308},
+    )
+    first = np.array([[1.0e308, 1.0e308]])
+    second = np.array([[0.0, 0.0]])
+    expected = np.hypot(1.0e308, 1.0e308)
+
+    with np.errstate(over="raise", invalid="raise"):
+        result = distance(first, second)
+
+    np.testing.assert_allclose(result, expected, rtol=1.0e-15)
