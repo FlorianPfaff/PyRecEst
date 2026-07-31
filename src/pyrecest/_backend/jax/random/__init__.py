@@ -53,6 +53,28 @@ def _validate_multivariate_normal_tol(tol):
     return tol_value
 
 
+def _multivariate_normal_requires_svd(mean, cov):
+    """Return whether a valid covariance needs a rank-tolerant factorization."""
+
+    mean_array = _LEGACY._validate_multivariate_normal_mean(mean)
+    cov_array = _LEGACY._validate_multivariate_normal_cov(
+        cov, mean_array.shape[0]
+    )
+    cov_float = cov_array.astype(
+        _LEGACY._jnp.result_type(cov_array, _LEGACY._jnp.float32)
+    )
+    eigenvalues = _LEGACY._jnp.linalg.eigvalsh(cov_float)
+    scale = _LEGACY._jnp.max(_LEGACY._jnp.abs(eigenvalues))
+    tolerance = (
+        _LEGACY._jnp.finfo(cov_float.dtype).eps
+        * max(mean_array.shape[0], 1)
+        * scale
+    )
+    if bool(_LEGACY._jnp.any(eigenvalues < -tolerance)):
+        raise ValueError("cov must be positive semidefinite")
+    return bool(_LEGACY._jnp.any(eigenvalues <= tolerance))
+
+
 def multivariate_normal(mean, cov, size=None, *args, **kwargs):
     """Draw samples with NumPy-compatible validation keyword handling."""
 
@@ -60,6 +82,9 @@ def multivariate_normal(mean, cov, size=None, *args, **kwargs):
     tol = kwargs.pop("tol", 1e-8)
     _validate_multivariate_normal_check_valid(check_valid)
     _validate_multivariate_normal_tol(tol)
+    requires_svd = _multivariate_normal_requires_svd(mean, cov)
+    if requires_svd and len(args) < 2 and "method" not in kwargs:
+        kwargs["method"] = "svd"
     return _LEGACY.multivariate_normal(mean, cov, size=size, *args, **kwargs)
 
 
