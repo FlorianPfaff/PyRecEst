@@ -8,15 +8,18 @@ from copy import deepcopy
 
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import (
+    absolute,
     asarray,
     einsum,
     expand_dims,
     eye,
     float64,
     linalg,
+    maximum,
     reshape,
     stack,
     transpose,
+    where,
     zeros,
 )
 from pyrecest.sampling.sigma_points import JulierSigmaPoints, MerweScaledSigmaPoints
@@ -45,6 +48,15 @@ def _as_vector(value, description):
             f"{description} must be scalar or one-dimensional; got shape {value.shape}"
         )
     return value
+
+
+def _stable_symmetric_average(matrix):
+    """Average a matrix with its transpose without finite overflow."""
+    transposed = transpose(matrix)
+    scale = maximum(absolute(matrix), absolute(transposed))
+    safe_scale = where(scale == 0.0, 1.0, scale)
+    normalized_average = 0.5 * (matrix / safe_scale + transposed / safe_scale)
+    return scale * normalized_average
 
 
 # ---------------------------------------------------------------------------
@@ -121,7 +133,7 @@ class UnscentedKalmanFilter:
             d = expand_dims(sigmas_f[i] - x_pred, -1)
             P_pred = P_pred + Wc[i] * (d @ transpose(d))
         P_pred = P_pred + asarray(self.Q, dtype=float64)
-        P_pred = 0.5 * (P_pred + transpose(P_pred))
+        P_pred = _stable_symmetric_average(P_pred)
 
         self.x = x_pred
         self.P = P_pred
@@ -213,7 +225,7 @@ class UnscentedKalmanFilter:
 
         self.x = self.x + K @ (z - z_pred)
         self.P = self.P - K @ Pz @ transpose(K)
-        self.P = 0.5 * (self.P + transpose(self.P))
+        self.P = _stable_symmetric_average(self.P)
 
         self._sigmas_f = None  # clear cached sigma points
 
