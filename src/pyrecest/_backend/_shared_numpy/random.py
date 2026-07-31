@@ -84,6 +84,8 @@ def _normalize_size(size):
 
 
 def _validate_uniform_bound(bound, name):
+    if _contains_masked_value(bound):
+        raise TypeError(f"{name} must be real numeric")
     if _contains_boolean_value(bound):
         raise TypeError(f"{name} must be real numeric, not boolean")
     try:
@@ -118,6 +120,8 @@ uniform = _modify_func_default_dtype(
 
 
 def _validate_normal_parameter(value, name):
+    if _contains_masked_value(value):
+        raise TypeError(f"{name} must be real numeric")
     if _contains_boolean_value(value):
         raise TypeError(f"{name} must be real numeric, not boolean")
     try:
@@ -150,6 +154,8 @@ normal = _modify_func_default_dtype(
 
 
 def _validate_multivariate_normal_parameter(value, name):
+    if _contains_masked_value(value):
+        raise TypeError(f"{name} must be real numeric")
     if _contains_boolean_value(value):
         raise TypeError(f"{name} must be real numeric, not boolean")
     try:
@@ -246,6 +252,8 @@ def _integer_choice_population_size(a_array):
 def _validate_choice_probabilities(p, population_size):
     if p is None:
         return None
+    if _contains_masked_value(p):
+        raise TypeError("p must be real numeric")
     if _contains_boolean_value(p):
         raise TypeError("p must be real numeric, not boolean")
     try:
