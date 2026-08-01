@@ -51,6 +51,30 @@ def test_k_best_tracklet_paths_prefers_feasible_low_cost_chain() -> None:
     assert paths[0].length == 2
 
 
+def test_constant_velocity_edge_cost_preserves_extreme_finite_distance() -> None:
+    left = Tracklet(
+        "left",
+        0.0,
+        1.0,
+        np.zeros(2),
+        np.zeros(2),
+    )
+    right_state = np.full(2, 1.0e308)
+    right = Tracklet(
+        "right",
+        2.0,
+        3.0,
+        right_state,
+        right_state,
+    )
+    edge_cost = constant_velocity_edge_cost()
+
+    with np.errstate(over="raise", invalid="raise"):
+        cost = edge_cost(left, right)
+
+    assert np.isfinite(cost)
+    assert cost == pytest.approx(np.hypot(1.0e308, 1.0e308))
+
 def test_duplicate_tracklet_ids_are_rejected() -> None:
     tracklets = [
         _tracklet("dup", 0.0, 1.0, 0.0, 1.0),
