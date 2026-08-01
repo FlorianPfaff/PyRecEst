@@ -124,6 +124,26 @@ def _normalize_fft_shape_args(args, kwargs):
     return args, kwargs
 
 
+def _normalize_fft_dim_args(args, kwargs, position, normalizer):
+    """Normalize a positional or keyword ``dim`` FFT argument."""
+    if position is not None and len(args) > position:
+        args = list(args)
+        args[position] = normalizer(args[position])
+        return tuple(args), kwargs
+    if "dim" not in kwargs:
+        return args, kwargs
+    kwargs = dict(kwargs)
+    kwargs["dim"] = normalizer(kwargs["dim"])
+    return args, kwargs
+
+
+def _get_fft_dim_arg(args, kwargs, position):
+    """Return the effective positional or keyword ``dim`` FFT argument."""
+    if position is not None and len(args) > position:
+        return args[position]
+    return kwargs.get("dim")
+
+
 def _with_dim_alias(kwargs, alias, func_name, *, none_alias_means_default=True):
     if alias not in kwargs:
         return kwargs
@@ -153,6 +173,7 @@ def _wrap_arraylike_fft(
     *,
     func_name,
     dim_alias=None,
+    dim_arg_position=None,
     empty_dim_is_noop=False,
     normalize_scalar_dim=False,
     normalize_dim_sequence=False,
@@ -171,18 +192,21 @@ def _wrap_arraylike_fft(
             )
         if validate_real_length:
             _validate_real_fft_length_args(args, kwargs)
-        if normalize_scalar_dim and "dim" in kwargs:
-            kwargs = dict(kwargs)
-            kwargs["dim"] = _normalize_single_fft_dim(kwargs["dim"])
-        if normalize_dim_sequence and "dim" in kwargs:
-            kwargs = dict(kwargs)
-            kwargs["dim"] = _normalize_fft_dim_sequence(kwargs["dim"])
+        if normalize_scalar_dim:
+            args, kwargs = _normalize_fft_dim_args(
+                args, kwargs, dim_arg_position, _normalize_single_fft_dim
+            )
+        if normalize_dim_sequence:
+            args, kwargs = _normalize_fft_dim_args(
+                args, kwargs, dim_arg_position, _normalize_fft_dim_sequence
+            )
         if normalize_shape_sequence:
             args, kwargs = _normalize_fft_shape_args(args, kwargs)
         value = _as_fft_tensor(value)
+        dim = _get_fft_dim_arg(args, kwargs, dim_arg_position)
         if (
             empty_dim_is_noop
-            and _is_empty_dim(kwargs.get("dim"))
+            and _is_empty_dim(dim)
             and _empty_dim_noop_is_valid(args, kwargs)
         ):
             return value
@@ -195,6 +219,7 @@ rfft = _wrap_arraylike_fft(
     _torch.fft.rfft,
     func_name="rfft",
     dim_alias="axis",
+    dim_arg_position=1,
     normalize_scalar_dim=True,
     validate_real_length=True,
     none_alias_means_default=False,
@@ -203,6 +228,7 @@ irfft = _wrap_arraylike_fft(
     _torch.fft.irfft,
     func_name="irfft",
     dim_alias="axis",
+    dim_arg_position=1,
     normalize_scalar_dim=True,
     validate_real_length=True,
     none_alias_means_default=False,
@@ -211,6 +237,7 @@ fftshift = _wrap_arraylike_fft(
     _torch.fft.fftshift,
     func_name="fftshift",
     dim_alias="axes",
+    dim_arg_position=0,
     empty_dim_is_noop=True,
     normalize_dim_sequence=True,
 )
@@ -218,6 +245,7 @@ ifftshift = _wrap_arraylike_fft(
     _torch.fft.ifftshift,
     func_name="ifftshift",
     dim_alias="axes",
+    dim_arg_position=0,
     empty_dim_is_noop=True,
     normalize_dim_sequence=True,
 )
@@ -225,6 +253,7 @@ fftn = _wrap_arraylike_fft(
     _torch.fft.fftn,
     func_name="fftn",
     dim_alias="axes",
+    dim_arg_position=1,
     empty_dim_is_noop=True,
     normalize_dim_sequence=True,
     normalize_shape_sequence=True,
@@ -233,6 +262,7 @@ ifftn = _wrap_arraylike_fft(
     _torch.fft.ifftn,
     func_name="ifftn",
     dim_alias="axes",
+    dim_arg_position=1,
     empty_dim_is_noop=True,
     normalize_dim_sequence=True,
     normalize_shape_sequence=True,
