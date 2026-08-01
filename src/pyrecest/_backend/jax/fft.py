@@ -8,13 +8,24 @@ from jax.numpy import fft as _fft
 
 _BOOLEAN_FFT_AXIS_ERROR = "axis must be an integer, not boolean"
 _BOOLEAN_FFT_LENGTH_ERROR = "n must be an integer length, not boolean"
+_FFT_AXIS_ERROR = "axis must be an integer"
+_FFT_LENGTH_ERROR = "n must be an integer length"
 _FFT_SHAPE_SEQUENCE_ERROR = "s must be None or a sequence of integer lengths"
 _FFT_AXES_SEQUENCE_ERROR = "axes must be None or a sequence of integer axes"
 _SHIFT_AXES_ERROR = "axes must be None, an integer axis, or a sequence of integer axes"
 
 
+def _has_masked_values(value):
+    """Return whether a NumPy masked array contains missing values."""
+    return isinstance(value, _np.ma.MaskedArray) and bool(
+        _np.any(_np.ma.getmaskarray(value))
+    )
+
+
 def _normalize_real_fft_axis(axis):
     """Return a Python ``int`` for integer scalar-array FFT axes."""
+    if _has_masked_values(axis):
+        raise TypeError(_FFT_AXIS_ERROR)
     if isinstance(axis, (bool, _np.bool_)):
         raise TypeError(_BOOLEAN_FFT_AXIS_ERROR)
     if isinstance(axis, _np.ndarray):
@@ -39,6 +50,8 @@ def _normalize_real_fft_length(n):
     """Return a Python ``int`` for integer scalar-array real FFT lengths."""
     if n is None:
         return None
+    if _has_masked_values(n):
+        raise TypeError(_FFT_LENGTH_ERROR)
     if isinstance(n, (bool, _np.bool_)):
         raise TypeError(_BOOLEAN_FFT_LENGTH_ERROR)
     if isinstance(n, _np.ndarray):
@@ -61,6 +74,8 @@ def _normalize_real_fft_length(n):
 
 def _normalize_fft_sequence_item(value, boolean_error, integer_error):
     """Return a Python ``int`` for one FFT shape or axis sequence entry."""
+    if _has_masked_values(value):
+        raise TypeError(integer_error)
     if isinstance(value, (bool, _np.bool_)):
         raise TypeError(boolean_error)
     if isinstance(value, _np.ndarray):
@@ -88,6 +103,8 @@ def _normalize_fft_integer_sequence(
     """Normalize NumPy/JAX scalar-array entries inside FFT integer sequences."""
     if value is None:
         return None
+    if _has_masked_values(value):
+        raise TypeError(integer_error)
     if isinstance(value, (bool, _np.bool_)):
         raise TypeError(sequence_error)
     if isinstance(value, _np.ndarray):
@@ -143,6 +160,8 @@ def _normalize_shift_axes(axes):
     """Normalize scalar or sequence axis inputs accepted by FFT shifts."""
     if axes is None:
         return None
+    if _has_masked_values(axes):
+        raise TypeError(_SHIFT_AXES_ERROR)
     if isinstance(axes, (bool, _np.bool_)):
         raise TypeError(_BOOLEAN_FFT_AXIS_ERROR)
     if isinstance(axes, _np.ndarray):
