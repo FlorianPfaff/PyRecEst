@@ -27,6 +27,30 @@ _TIME_VECTOR_NAMES = frozenset(
         "times_s",
     }
 )
+_ORIGINAL_AGGREGATE_SUMMARY_METRIC_ATTR = (
+    "_pyrecest_original_aggregate_summary_metric"
+)
+_ORIGINAL_AGGREGATE_TIME_OFFSET_SWEEPS_ATTR = (
+    "_pyrecest_original_aggregate_time_offset_sweeps"
+)
+_ORIGINAL_BIAS_NUMERIC_ARRAY_ATTR = "_pyrecest_original_bias_as_numeric_array"
+_ORIGINAL_BIAS_NONNEGATIVE_INT_ATTR = "_pyrecest_original_bias_as_nonnegative_int"
+_ORIGINAL_BIAS_NONNEGATIVE_FINITE_FLOAT_ATTR = (
+    "_pyrecest_original_bias_as_nonnegative_finite_float"
+)
+
+if not hasattr(_time_offset_module, _ORIGINAL_AGGREGATE_SUMMARY_METRIC_ATTR):
+    setattr(
+        _time_offset_module,
+        _ORIGINAL_AGGREGATE_SUMMARY_METRIC_ATTR,
+        _time_offset_module._aggregate_summary_metric,
+    )
+if not hasattr(_time_offset_module, _ORIGINAL_AGGREGATE_TIME_OFFSET_SWEEPS_ATTR):
+    setattr(
+        _time_offset_module,
+        _ORIGINAL_AGGREGATE_TIME_OFFSET_SWEEPS_ATTR,
+        _time_offset_module.aggregate_time_offset_sweeps,
+    )
 
 
 def _is_rejected_real_scalar(value: Any) -> bool:
@@ -118,7 +142,9 @@ def _as_nonnegative_summary_count(value: Any, name: str) -> float:
     return result
 
 
-_base_aggregate_summary_metric = _time_offset_module._aggregate_summary_metric
+_base_aggregate_summary_metric = getattr(
+    _time_offset_module, _ORIGINAL_AGGREGATE_SUMMARY_METRIC_ATTR
+)
 
 
 def _aggregate_summary_metric(
@@ -145,9 +171,34 @@ _time_offset_module._aggregate_summary_metric = _aggregate_summary_metric
 
 from . import bias as _bias_module  # noqa: E402
 
-_base_bias_as_numeric_array = _bias_module._as_numeric_array
-_base_bias_as_nonnegative_int = _bias_module._as_nonnegative_int
-_base_bias_as_nonnegative_finite_float = _bias_module._as_nonnegative_finite_float
+if not hasattr(_bias_module, _ORIGINAL_BIAS_NUMERIC_ARRAY_ATTR):
+    setattr(
+        _bias_module,
+        _ORIGINAL_BIAS_NUMERIC_ARRAY_ATTR,
+        _bias_module._as_numeric_array,
+    )
+if not hasattr(_bias_module, _ORIGINAL_BIAS_NONNEGATIVE_INT_ATTR):
+    setattr(
+        _bias_module,
+        _ORIGINAL_BIAS_NONNEGATIVE_INT_ATTR,
+        _bias_module._as_nonnegative_int,
+    )
+if not hasattr(_bias_module, _ORIGINAL_BIAS_NONNEGATIVE_FINITE_FLOAT_ATTR):
+    setattr(
+        _bias_module,
+        _ORIGINAL_BIAS_NONNEGATIVE_FINITE_FLOAT_ATTR,
+        _bias_module._as_nonnegative_finite_float,
+    )
+
+_base_bias_as_numeric_array = getattr(
+    _bias_module, _ORIGINAL_BIAS_NUMERIC_ARRAY_ATTR
+)
+_base_bias_as_nonnegative_int = getattr(
+    _bias_module, _ORIGINAL_BIAS_NONNEGATIVE_INT_ATTR
+)
+_base_bias_as_nonnegative_finite_float = getattr(
+    _bias_module, _ORIGINAL_BIAS_NONNEGATIVE_FINITE_FLOAT_ATTR
+)
 
 
 def _as_bias_numeric_array(value: Any, name: str) -> np.ndarray:
@@ -194,7 +245,6 @@ from .time_offset import (  # noqa: E402
     _aggregate_std_metric,
     _validate_error_metric,
 )
-from .time_offset import aggregate_time_offset_sweeps as _aggregate_time_offset_sweeps
 from .time_offset import (  # noqa: E402
     apply_time_offset,
     fit_time_offset,
@@ -203,6 +253,10 @@ from .time_offset import (  # noqa: E402
     nearest_time_indices,
     time_offset_error_summary,
     time_offset_sweep,
+)
+
+_base_aggregate_time_offset_sweeps = getattr(
+    _time_offset_module, _ORIGINAL_AGGREGATE_TIME_OFFSET_SWEEPS_ATTR
 )
 
 
@@ -215,7 +269,7 @@ def aggregate_time_offset_sweeps(
 
     metric = _validate_error_metric(metric)
     materialized_sweeps = [list(sweep) for sweep in sweeps]
-    rows = _aggregate_time_offset_sweeps(materialized_sweeps, metric=metric)
+    rows = _base_aggregate_time_offset_sweeps(materialized_sweeps, metric=metric)
     if metric == "std":
         return rows
 
