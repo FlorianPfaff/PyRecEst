@@ -47,14 +47,14 @@ class AbstractSE3Distribution(AbstractLinBoundedCartProdDistribution):
         h = []
         if showMarginalized:
             h.append(self.marginalize_periodic().plot_state())
-        for i in range(samples.shape[1]):
+        for i in range(samples.shape[0]):
             if showMarginalized:
                 linearPart = mode[4:]
             else:
-                linearPart = samples[4:, i]
+                linearPart = samples[i, 4:]
             h.append(
                 AbstractSE3Distribution.plot_point(
-                    concatenate((samples[:4, i], linearPart), axis=0)
+                    concatenate((samples[i, :4], linearPart), axis=0)
                 )
             )
         return h
