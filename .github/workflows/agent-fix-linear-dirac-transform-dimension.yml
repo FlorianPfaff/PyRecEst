@@ -1,21 +1,23 @@
 name: Apply Linear Dirac transform-dimension fix
 
 on:
-  push:
+  pull_request:
     branches:
-      - agent/fix-linear-dirac-transform-dimension
+      - main
+    types: [opened, reopened, synchronize]
 
 permissions:
   contents: write
 
 jobs:
   patch-and-test:
-    if: github.actor != 'github-actions[bot]'
+    if: github.head_ref == 'agent/fix-linear-dirac-transform-dimension' && github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref }}
 
       - uses: actions/setup-python@v5
         with:
