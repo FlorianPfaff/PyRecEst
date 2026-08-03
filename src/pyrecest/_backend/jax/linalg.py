@@ -35,6 +35,8 @@ def _as_integer_scalar(value, name):
 
 def _norm_axis_entry(axis) -> int:
     """Return one non-boolean NumPy-style linalg.norm axis."""
+    if _np.ma.is_masked(axis):
+        raise TypeError(_AXIS_TYPE_ERROR)
     if isinstance(axis, (bool, _np.bool_)):
         raise TypeError(_AXIS_TYPE_ERROR)
     try:
@@ -54,6 +56,8 @@ def _normalize_norm_axis(axis):
     """Normalize JAX linalg.norm axes before they become static arguments."""
     if axis is None:
         return None
+    if _np.ma.is_masked(axis):
+        raise TypeError(_AXIS_TYPE_ERROR)
     if isinstance(axis, (list, tuple)):
         return tuple(_norm_axis_entry(one_axis) for one_axis in axis)
 
