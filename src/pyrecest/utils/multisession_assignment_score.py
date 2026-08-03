@@ -50,6 +50,7 @@ _INVALID_SCORE_SCALAR_TYPES = (
 )
 _REJECTED_SCORE_ARRAY_KINDS = frozenset({"b", "c", "S", "U", "M", "m"})
 _SCORE_TO_COST_ERROR = "score_to_cost must return real numeric cost matrices."
+_INT64_MIN = int(np.iinfo(np.int64).min)
 
 
 def _ensure_supported_backend(feature_name: str) -> None:
@@ -193,6 +194,8 @@ def _normalize_index_matrix_fill_value(fill_value: Any) -> int:
 
     if integer_fill_value >= 0:
         raise ValueError("fill_value must be a negative integer.")
+    if integer_fill_value < _INT64_MIN:
+        raise ValueError("fill_value must fit in int64.")
     return integer_fill_value
 
 
