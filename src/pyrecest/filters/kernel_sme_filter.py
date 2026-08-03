@@ -352,7 +352,8 @@ class KernelSMEFilter(AbstractMultitargetTracker):
 
         # Mean of pseudo-measurements:
         # mu_s[i] = sum_l lambda_l P_l^Gamma(a_i) + lambda_c * clutter_pdf[i]
-        mu_s = P_target @ lambda_vec + lam_c * clutter_pdf
+        target_mu_s = P_target @ lambda_vec
+        mu_s = target_mu_s + lam_c * clutter_pdf
 
         # Second-order target term:
         # Pij[i, j, k] = P_l^{Gamma/2}((a_i + a_j)/2)
@@ -397,8 +398,8 @@ class KernelSMEFilter(AbstractMultitargetTracker):
                 clutter_mid_pdf = gd_clutter.pdf(midpoint)
 
                 term3 = (lam_c**2) * clutter_i * clutter_j
-                term4 = mu_s[i] * lam_c * clutter_j
-                term5 = mu_s[j] * lam_c * clutter_i
+                term4 = target_mu_s[i] * lam_c * clutter_j
+                term5 = target_mu_s[j] * lam_c * clutter_i
                 term6 = lam_c * kernel_between * clutter_mid_pdf
 
                 # Full Sigma^{s_i, s_j}
