@@ -80,6 +80,58 @@ class AbstractNearestNeighborTracker(AbstractMultitargetTracker):
             )
 
     @staticmethod
+    def _prediction_input_shape(value):
+        shape = getattr(value, "shape", None)
+        if shape is None:
+            shape = pyrecest.backend.asarray(value).shape
+        return tuple(shape)
+
+    def _validate_prediction_input_shapes(
+        self, system_matrices, sys_noises, inputs
+    ):
+        n_targets = self.get_number_of_targets()
+        state_dim = self.filter_bank[0].dim
+
+        if any(filter_obj.dim != state_dim for filter_obj in self.filter_bank[1:]):
+            raise ValueError("All target filters must have the same state dimension.")
+
+        shared_matrix_shapes = {(state_dim, state_dim)}
+        shared_input_shapes = {(state_dim,)}
+        if state_dim == 1:
+            # Preserve the scalar conveniences accepted by the Kalman primitive.
+            shared_matrix_shapes.update({(), (1,)})
+            shared_input_shapes.add(())
+
+        system_matrix_shape = self._prediction_input_shape(system_matrices)
+        valid_system_matrix_shapes = shared_matrix_shapes | {
+            (state_dim, state_dim, n_targets)
+        }
+        if system_matrix_shape not in valid_system_matrix_shapes:
+            raise ValueError(
+                "system_matrices may be a single (dimSingleState, dimSingleState) "
+                "matrix or a (dimSingleState, dimSingleState, noTargets) tensor."
+            )
+
+        sys_noise_shape = self._prediction_input_shape(sys_noises)
+        valid_sys_noise_shapes = shared_matrix_shapes | {
+            (state_dim, state_dim, n_targets)
+        }
+        if sys_noise_shape not in valid_sys_noise_shapes:
+            raise ValueError(
+                "sys_noises may be a single (dimSingleState, dimSingleState) "
+                "matrix or a (dimSingleState, dimSingleState, noTargets) tensor."
+            )
+
+        if inputs is not None:
+            input_shape = self._prediction_input_shape(inputs)
+            valid_input_shapes = shared_input_shapes | {(state_dim, n_targets)}
+            if input_shape not in valid_input_shapes:
+                raise ValueError(
+                    "inputs may be a single (dimSingleState,) vector or a "
+                    "(dimSingleState, noTargets) matrix."
+                )
+
+    @staticmethod
     def _validate_measurement_update_inputs(
         measurements, measurement_matrix, state_dim
     ):
@@ -132,27 +184,21 @@ class AbstractNearestNeighborTracker(AbstractMultitargetTracker):
             warnings.warn("Currently, there are zero targets.")
             return
 
-        if system_matrices is None or not all(
-            dim == self.filter_bank[0].dim for dim in system_matrices.shape[:2]
-        ):
-            raise ValueError(
-                "system_matrices may be a single (dimSingleState, dimSingleState) "
-                "matrix or a (dimSingleState, dimSingleState, noTargets) tensor."
-            )
-
         if isinstance(sys_noises, GaussianDistribution):
             if bool(backend_any(sys_noises.mu != 0)):
                 raise ValueError("Gaussian process noise must have zero mean.")
             sys_noises = sys_noises.C
+
+        self._validate_prediction_input_shapes(system_matrices, sys_noises, inputs)
 
         curr_sys_matrix = system_matrices
         curr_sys_noise = sys_noises
         curr_input = inputs
 
         for i in range(self.get_number_of_targets()):
-            if system_matrices is not None and ndim(system_matrices) == 3:
+            if ndim(system_matrices) == 3:
                 curr_sys_matrix = system_matrices[:, :, i]
-            if sys_noises is not None and ndim(sys_noises) == 3:
+            if ndim(sys_noises) == 3:
                 curr_sys_noise = sys_noises[:, :, i]
             if inputs is not None and ndim(inputs) == 2:
                 curr_input = inputs[:, i]
