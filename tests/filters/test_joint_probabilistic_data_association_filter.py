@@ -212,6 +212,46 @@ class JointProbabilisticDataAssociationFilterTest(unittest.TestCase):
                 pairwise_cost_matrix=array([[0.0, 0.0], [0.0, 0.0]]),
             )
 
+    def test_rejects_broadcastable_shared_measurement_covariance(self):
+        tracker = JPDAF(self.kfs_init, association_param=self.association_param)
+        measurements = array([[-10.0], [0.0]])
+
+        with self.assertRaisesRegex(ValueError, "cov_mats_meas must have shape"):
+            tracker.find_association_probabilities(
+                measurements,
+                self.meas_mat,
+                array([[1.0]]),
+            )
+
+    def test_rejects_broadcastable_per_measurement_covariances(self):
+        tracker = JPDAF(self.kfs_init, association_param=self.association_param)
+        measurements = array([[-10.0, 10.0], [0.0, 0.0]])
+
+        with self.assertRaisesRegex(ValueError, "cov_mats_meas must have shape"):
+            tracker.find_association_probabilities(
+                measurements,
+                self.meas_mat,
+                array([[[1.0, 1.0]]]),
+            )
+
+    def test_accepts_matching_per_measurement_covariances(self):
+        tracker = JPDAF(self.kfs_init, association_param=self.association_param)
+        measurements = array([[-10.0, 10.0], [0.0, 0.0]])
+        covariances = array(
+            [
+                [[1.0, 2.0], [0.0, 0.0]],
+                [[0.0, 0.0], [1.0, 2.0]],
+            ]
+        )
+
+        association_probabilities, _ = tracker.find_association_probabilities(
+            measurements,
+            self.meas_mat,
+            covariances,
+        )
+
+        npt.assert_allclose(association_probabilities.sum(axis=1), array([1.0, 1.0]))
+
     def test_symmetric_ambiguous_case_leads_to_symmetric_probabilities(self):
         tracker = JPDAF(
             [
