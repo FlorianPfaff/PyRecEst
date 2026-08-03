@@ -1,0 +1,148 @@
+name: Apply Kernel SME clutter moment fix
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'agent/fix-kernel-sme-clutter-moments'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/fix-kernel-sme-clutter-moments
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Apply focused source and regression patch
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          source_path = Path('src/pyrecest/filters/kernel_sme_filter.py')
+          source = source_path.read_text(encoding='utf-8')
+
+          old_mean = '''        # Mean of pseudo-measurements:
+          # mu_s[i] = sum_l lambda_l P_l^Gamma(a_i) + lambda_c * clutter_pdf[i]
+          mu_s = P_target @ lambda_vec + lam_c * clutter_pdf
+          '''
+          new_mean = '''        # Mean of pseudo-measurements:
+          # mu_s[i] = sum_l lambda_l P_l^Gamma(a_i) + lambda_c * clutter_pdf[i]
+          target_mu_s = P_target @ lambda_vec
+          mu_s = target_mu_s + lam_c * clutter_pdf
+          '''
+          if source.count(old_mean) != 1:
+              raise RuntimeError('Could not locate the Kernel SME mean block exactly once')
+          source = source.replace(old_mean, new_mean)
+
+          old_clutter_terms = '''                term3 = (lam_c**2) * clutter_i * clutter_j
+                          term4 = mu_s[i] * lam_c * clutter_j
+                          term5 = mu_s[j] * lam_c * clutter_i
+                          term6 = lam_c * kernel_between * clutter_mid_pdf
+          '''
+          new_clutter_terms = '''                term3 = (lam_c**2) * clutter_i * clutter_j
+                          term4 = target_mu_s[i] * lam_c * clutter_j
+                          term5 = target_mu_s[j] * lam_c * clutter_i
+                          term6 = lam_c * kernel_between * clutter_mid_pdf
+          '''
+          if source.count(old_clutter_terms) != 1:
+              raise RuntimeError('Could not locate the Kernel SME clutter terms exactly once')
+          source = source.replace(old_clutter_terms, new_clutter_terms)
+          source_path.write_text(source, encoding='utf-8')
+
+          test_path = Path('tests/filters/test_kernel_sme_clutter_moments.py')
+          test_path.write_text('''import math
+
+import numpy as np
+import numpy.testing as npt
+
+from pyrecest.backend import array, to_numpy
+from pyrecest.filters.kernel_sme_filter import KernelSMEFilter
+
+
+def _normal_pdf(value, mean, variance):
+    return math.exp(-0.5 * (value - mean) ** 2 / variance) / math.sqrt(
+        2.0 * math.pi * variance
+    )
+
+
+def test_clutter_only_covariance_does_not_double_count_clutter_products():
+    false_alarm_rate = 2.0
+    kernel_width = 0.7
+    clutter_variance = 1.5
+    test_points_np = np.array([0.25, -0.5])
+
+    mu_s, sigma_s, sigma_xs = KernelSMEFilter.calc_moments(
+        x_prior=array([0.0]),
+        C_prior=array([[1.0]]),
+        measurement_matrix=array([[1.0]]),
+        covMatMeas=array([[0.2]]),
+        testPoints=array(test_points_np.reshape(1, -1)),
+        kernel_width=kernel_width,
+        n_targets=1,
+        falseAlarmRate=false_alarm_rate,
+        clutterCov=array([[clutter_variance]]),
+        lambdaMultimeas=0.0,
+    )
+
+    clutter_kernel_variance = clutter_variance + kernel_width
+    clutter_pdf = np.array(
+        [
+            _normal_pdf(point, 0.0, clutter_kernel_variance)
+            for point in test_points_np
+        ]
+    )
+    expected_mu = false_alarm_rate * clutter_pdf
+    expected_sigma = np.empty((test_points_np.size, test_points_np.size))
+    for i, point_i in enumerate(test_points_np):
+        for j, point_j in enumerate(test_points_np):
+            kernel_between = _normal_pdf(
+                point_i,
+                point_j,
+                2.0 * kernel_width,
+            )
+            clutter_mid_pdf = _normal_pdf(
+                0.5 * (point_i + point_j),
+                0.0,
+                clutter_kernel_variance,
+            )
+            expected_sigma[i, j] = (
+                false_alarm_rate * kernel_between * clutter_mid_pdf
+            )
+
+    npt.assert_allclose(to_numpy(mu_s), expected_mu, rtol=1e-7, atol=1e-10)
+    npt.assert_allclose(to_numpy(sigma_s), expected_sigma, rtol=1e-7, atol=1e-10)
+    npt.assert_allclose(to_numpy(sigma_xs), np.zeros((1, 2)), atol=1e-12)
+''', encoding='utf-8')
+
+          Path('.github/workflows/agent-fix-kernel-sme-clutter-moments.yml').unlink()
+          PY
+
+      - name: Install package and test dependency
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e . pytest
+
+      - name: Validate focused regression
+        run: |
+          python -m py_compile \
+            src/pyrecest/filters/kernel_sme_filter.py \
+            tests/filters/test_kernel_sme_clutter_moments.py
+          python -m pytest -q tests/filters/test_kernel_sme_clutter_moments.py
+          git diff --check
+
+      - name: Commit focused patch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Fix Kernel SME clutter covariance moments'
+          git push origin HEAD:agent/fix-kernel-sme-clutter-moments
