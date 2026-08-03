@@ -123,6 +123,15 @@ class RauchTungStriebelSmoother(AbstractSmoother):
             state_dim,
             default=identity_matrix,
         )
+        expected_measurement_matrix_shape = (measurement_dim, state_dim)
+        if any(
+            tuple(matrix.shape) != expected_measurement_matrix_shape
+            for matrix in measurement_matrices_list
+        ):
+            raise ValueError(
+                "measurement_matrices must contain matrices with shape "
+                f"{expected_measurement_matrix_shape}."
+            )
         meas_noise_covariances_list = self._normalize_matrix_sequence(
             meas_noise_covariances,
             len(measurement_list),
