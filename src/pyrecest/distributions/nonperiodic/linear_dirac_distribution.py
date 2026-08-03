@@ -53,8 +53,10 @@ class LinearDiracDistribution(AbstractDiracDistribution, AbstractLinearDistribut
         AbstractDiracDistribution.__init__(self, d, w)
 
     def mean(self):
-        # Like np.average(self.d, weights=self.w, axis=0) but for all backends
-        return self.w @ self.d
+        # Keep the state-vector convention even when one-dimensional support is
+        # stored as a flat array of scalar samples.
+        sample_matrix = reshape(self.d, (-1, 1)) if self.d.ndim == 1 else self.d
+        return self.w @ sample_matrix
 
     def set_mean(self, new_mean):
         new_mean = asarray(new_mean)
