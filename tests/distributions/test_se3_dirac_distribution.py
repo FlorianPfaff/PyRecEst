@@ -26,6 +26,39 @@ class SE3DiracDistributionTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "same number of samples"):
             AbstractSE3Distribution.plot_trajectory(periodic_states, lin_states)
 
+    def test_plot_state_treats_sample_rows_as_se3_points(self):
+        expected_samples = np.array(
+            [
+                [1.0, 0.0, 0.0, 0.0, 10.0, 20.0, 30.0],
+                [0.0, 1.0, 0.0, 0.0, 40.0, 50.0, 60.0],
+            ]
+        )
+        test_case = self
+
+        class SampleDistribution:
+            @staticmethod
+            def sample(n_samples):
+                test_case.assertEqual(n_samples, 2)
+                return array(expected_samples)
+
+            @staticmethod
+            def mode():
+                return array(expected_samples[0])
+
+        with patch.object(
+            AbstractSE3Distribution,
+            "plot_point",
+            side_effect=lambda point: np.asarray(point, dtype=float),
+        ):
+            plotted_points = AbstractSE3Distribution.plot_state(
+                SampleDistribution(),
+                orientationSamples=2,
+                showMarginalized=False,
+            )
+
+        self.assertEqual(len(plotted_points), 2)
+        npt.assert_allclose(np.asarray(plotted_points), expected_samples)
+
     def test_plot_point_draws_rotated_body_axes(self):
         class RecordingAxes:
             def __init__(self):
