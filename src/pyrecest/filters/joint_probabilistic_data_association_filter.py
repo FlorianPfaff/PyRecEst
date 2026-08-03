@@ -91,6 +91,18 @@ class JointProbabilisticDataAssociationFilter(AbstractNearestNeighborTracker):
         )
 
     @staticmethod
+    def _validate_measurement_covariance_shape(
+        cov_mats_meas, measurement_dim, n_meas
+    ):
+        shared_shape = (measurement_dim, measurement_dim)
+        per_measurement_shape = (measurement_dim, measurement_dim, n_meas)
+        if cov_mats_meas.shape not in (shared_shape, per_measurement_shape):
+            raise ValueError(
+                "cov_mats_meas must have shape (dim_meas, dim_meas) or "
+                "(dim_meas, dim_meas, n_meas)"
+            )
+
+    @staticmethod
     def _prepare_clutter_intensity(clutter_intensity, n_meas):
         if isscalar(clutter_intensity):
             clutter_intensity = full((n_meas,), float(clutter_intensity))
@@ -186,10 +198,9 @@ class JointProbabilisticDataAssociationFilter(AbstractNearestNeighborTracker):
             raise ValueError(
                 "State dimension of measurement_matrix and tracker state must match."
             )
-        if cov_mats_meas.ndim == 3 and cov_mats_meas.shape[2] != n_meas:
-            raise ValueError(
-                "If cov_mats_meas has three dimensions, the third dimension must be n_meas."
-            )
+        self._validate_measurement_covariance_shape(
+            cov_mats_meas, measurements.shape[0], n_meas
+        )
 
         detection_probability = float(self.association_param["detection_probability"])
         if not 0.0 < detection_probability < 1.0:
