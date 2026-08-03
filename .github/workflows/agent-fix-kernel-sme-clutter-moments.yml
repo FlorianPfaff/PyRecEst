@@ -1,6 +1,8 @@
 name: Apply Kernel SME clutter moment fix
 
 on:
+  push:
+    branches: [agent/fix-kernel-sme-clutter-moments]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -10,7 +12,7 @@ permissions:
 
 jobs:
   patch:
-    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'agent/fix-kernel-sme-clutter-moments'
+    if: github.event_name == 'workflow_dispatch' || github.ref_name == 'agent/fix-kernel-sme-clutter-moments' || github.head_ref == 'agent/fix-kernel-sme-clutter-moments'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
