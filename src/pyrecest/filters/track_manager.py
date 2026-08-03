@@ -216,11 +216,16 @@ class TrackManager(
 
     @filter_state.setter
     def filter_state(self, new_state):
+        replacement_filters = [
+            self._normalize_filter(filter_or_state)
+            for filter_or_state in new_state
+        ]
+
         self.tracks = []
         self._next_track_id = 0
-        for filter_or_state in new_state:
+        for single_target_filter in replacement_filters:
             self.add_track(
-                filter_or_state,
+                single_target_filter,
                 step=self._current_step,
                 status=TrackStatus.CONFIRMED,
             )
