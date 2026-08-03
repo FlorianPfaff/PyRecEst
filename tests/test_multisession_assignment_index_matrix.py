@@ -44,6 +44,29 @@ class TestMultiSessionAssignmentIndexMatrix(unittest.TestCase):
 
         self.assertTrue(array_equal(matrix, array([[0, -1, 1]], dtype=int)))
 
+    @unittest.skipIf(
+        __backend_name__ == "jax",
+        reason="Not supported on this backend",
+    )
+    def test_fill_value_must_fit_in_int64(self):
+        int64_min = int(np.iinfo(np.int64).min)
+
+        for fill_value in (int64_min - 1, -(1 << 100)):
+            with self.subTest(fill_value=fill_value):
+                with self.assertRaisesRegex(ValueError, "fit in int64"):
+                    tracks_to_index_matrix(
+                        [{0: 0}],
+                        session_sizes=[1, 0],
+                        fill_value=fill_value,
+                    )
+
+        matrix = tracks_to_index_matrix(
+            [{0: 0}],
+            session_sizes=[1, 0],
+            fill_value=int64_min,
+        )
+        self.assertEqual(int(matrix[0, 1]), int64_min)
+
 
 if __name__ == "__main__":
     unittest.main()
