@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - agent/fix-track-manager-atomic-state
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
@@ -29,7 +32,8 @@ jobs:
 
           source_path = Path("src/pyrecest/filters/track_manager.py")
           source = source_path.read_text(encoding="utf-8")
-          old = '''    @filter_state.setter
+          old = """\
+              @filter_state.setter
               def filter_state(self, new_state):
                   self.tracks = []
                   self._next_track_id = 0
@@ -41,9 +45,9 @@ jobs:
                       )
                   if self.log_prior_estimates:
                       self.store_prior_estimates()
-          '''
-          old = '\n'.join(line[10:] if line.startswith('          ') else line for line in old.splitlines()) + '\n'
-          new = '''    @filter_state.setter
+          """
+          new = """\
+              @filter_state.setter
               def filter_state(self, new_state):
                   replacement_filters = [
                       self._normalize_filter(filter_or_state)
@@ -60,15 +64,15 @@ jobs:
                       )
                   if self.log_prior_estimates:
                       self.store_prior_estimates()
-          '''
-          new = '\n'.join(line[10:] if line.startswith('          ') else line for line in new.splitlines()) + '\n'
+          """
           if source.count(old) != 1:
               raise SystemExit("Expected exactly one TrackManager.filter_state setter")
           source_path.write_text(source.replace(old, new), encoding="utf-8")
 
           test_path = Path("tests/filters/test_track_manager_atomic_filter_state.py")
           test_path.write_text(
-              '''import unittest
+              """\
+          import unittest
 
           import numpy as np
           from pyrecest.filters.track_manager import TrackManager
@@ -100,7 +104,7 @@ jobs:
                       manager.tracks[0].get_point_estimate(),
                       np.array([1.0]),
                   )
-          '''.replace('          ', ''),
+          """,
               encoding="utf-8",
           )
 
@@ -118,6 +122,6 @@ jobs:
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add src/pyrecest/filters/track_manager.py tests/filters/test_track_manager_atomic_filter_state.py .github/workflows/agent-track-manager-atomic-state.yml
+          git add -A
           git commit -m "Make TrackManager state replacement atomic"
           git push origin HEAD:agent/fix-track-manager-atomic-state
