@@ -1,3 +1,5 @@
+"""Regression tests for atomic TrackManager state replacement."""
+
 import unittest
 
 import numpy as np
