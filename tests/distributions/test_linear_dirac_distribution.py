@@ -31,6 +31,14 @@ class LinearDiracDistributionTest(TestAbstractDiracDistribution):
         npt.assert_allclose(multidimensional.d, array([[1.0, 2.0], [3.0, 4.0]]))
         npt.assert_allclose(multidimensional.w, array([0.25, 0.75]))
 
+    def test_one_dimensional_mean_preserves_state_vector_shape(self):
+        dist = LinearDiracDistribution([1.0, 3.0], [0.25, 0.75])
+
+        mean = dist.mean()
+
+        self.assertEqual(mean.shape, (1,))
+        npt.assert_allclose(mean, array([2.5]))
+
     def test_constructor_accepts_scalar_location(self):
         scalar_dist = LinearDiracDistribution(2.5)
 
