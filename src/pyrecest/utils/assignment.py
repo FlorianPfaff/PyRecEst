@@ -33,6 +33,31 @@ _TEMPORAL_TYPES = (_np.datetime64, _np.timedelta64)
 _INVALID_SCALAR_TYPES = _BOOLEAN_TYPES + _TEXT_TYPES + _TEMPORAL_TYPES
 
 
+def _contains_masked_values(value, active_ids: set[int] | None = None) -> bool:
+    """Return whether a nested input contains genuinely masked NumPy values."""
+    if _np.ma.is_masked(value):
+        return True
+    if isinstance(value, _np.ndarray):
+        if value.dtype != object:
+            return False
+        items = value.reshape(-1)
+    elif isinstance(value, (list, tuple)):
+        items = value
+    else:
+        return False
+
+    if active_ids is None:
+        active_ids = set()
+    value_id = id(value)
+    if value_id in active_ids:
+        return False
+    active_ids.add(value_id)
+    try:
+        return any(_contains_masked_values(item, active_ids) for item in items)
+    finally:
+        active_ids.remove(value_id)
+
+
 @dataclass(frozen=True)
 class _MurtySubproblem:
     """Internal Murty subproblem descriptor."""
@@ -43,6 +68,8 @@ class _MurtySubproblem:
 
 
 def _validate_assignment_count(k: int) -> int:
+    if _contains_masked_values(k):
+        raise ValueError("k must be an integer")
     if isinstance(k, _INVALID_SCALAR_TYPES):
         raise ValueError("k must be an integer")
     if isinstance(k, Integral):
@@ -163,6 +190,8 @@ def _contains_complex_values(value) -> bool:
 
 
 def _coerce_cost_matrix(cost_matrix):
+    if _contains_masked_values(cost_matrix):
+        raise ValueError("cost_matrix must not contain masked values")
     if _contains_boolean_values(cost_matrix):
         raise ValueError("cost_matrix must be numeric, not boolean")
     if _contains_text_values(cost_matrix) or _contains_temporal_values(cost_matrix):
@@ -207,6 +236,8 @@ def _coerce_cost_matrix(cost_matrix):
 def _coerce_non_assignment_costs(costs, size: int, name: str):
     if costs is None:
         return _zeros(size, dtype=float)
+    if _contains_masked_values(costs):
+        raise ValueError(f"{name} must not contain masked values")
 
     if _contains_temporal_values(costs):
         raise ValueError(f"{name} must be numeric and finite")
