@@ -182,9 +182,7 @@ def _sample_array_randint_exactly(low, high, dtype, generator):
     bounds = torch.stack((flat_low, flat_high), dim=1)
     unique_bounds, inverse = torch.unique(bounds, dim=0, return_inverse=True)
     order = torch.argsort(inverse)
-    counts = torch.bincount(
-        inverse, minlength=unique_bounds.shape[0]
-    ).tolist()
+    counts = torch.bincount(inverse, minlength=unique_bounds.shape[0]).tolist()
 
     offset = 0
     for bound_pair, count in zip(unique_bounds, counts):
@@ -234,9 +232,7 @@ def _randint_array_with_wide_arithmetic(low, high, size, *args, **kwargs):
         unexpected = ", ".join(sorted(sampling_kwargs))
         raise TypeError(f"Unexpected keyword argument(s): {unexpected}")
 
-    result = _sample_array_randint_exactly(
-        low, high, requested_dtype, generator
-    )
+    result = _sample_array_randint_exactly(low, high, requested_dtype, generator)
     if out is not None:
         out.copy_(result)
         return out
@@ -284,9 +280,7 @@ def uniform(low=0.0, high=1.0, size=None, dtype=None):
     span = high - low
     if bool(torch.any(~torch.isfinite(span))):
         raise OverflowError(_UNIFORM_RANGE_ERROR)
-    return span * torch.rand(
-        size, dtype=arithmetic_dtype, device=device
-    ) + low
+    return span * torch.rand(size, dtype=arithmetic_dtype, device=device) + low
 
 
 def multivariate_normal(mean, cov, size=None, *args, **kwargs):

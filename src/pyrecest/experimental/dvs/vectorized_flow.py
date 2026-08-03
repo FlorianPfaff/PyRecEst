@@ -48,9 +48,7 @@ def tracker_signed_normal_flows_vectorized(
     except Exception:  # pragma: no cover - backend-specific safety fallback
         return np.asarray(
             [
-                tracker.signed_normal_flow_for_measurement(
-                    measurement, unit_velocity
-                )
+                tracker.signed_normal_flow_for_measurement(measurement, unit_velocity)
                 for measurement in measurements
             ],
             dtype=float,

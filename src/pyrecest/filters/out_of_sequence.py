@@ -17,7 +17,9 @@ from pyrecest.backend import (
     atleast_1d,
     atleast_2d,
     float64,
-    isfinite as backend_isfinite,
+)
+from pyrecest.backend import isfinite as backend_isfinite
+from pyrecest.backend import (
     linalg,
     maximum,
     minimum,

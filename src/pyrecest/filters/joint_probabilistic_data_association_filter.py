@@ -91,9 +91,7 @@ class JointProbabilisticDataAssociationFilter(AbstractNearestNeighborTracker):
         )
 
     @staticmethod
-    def _validate_measurement_covariance_shape(
-        cov_mats_meas, measurement_dim, n_meas
-    ):
+    def _validate_measurement_covariance_shape(cov_mats_meas, measurement_dim, n_meas):
         shared_shape = (measurement_dim, measurement_dim)
         per_measurement_shape = (measurement_dim, measurement_dim, n_meas)
         if cov_mats_meas.shape not in (shared_shape, per_measurement_shape):
