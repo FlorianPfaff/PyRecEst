@@ -289,14 +289,87 @@ def uniform(low=0.0, high=1.0, size=None, dtype=None):
     ) + low
 
 
+def _singular_multivariate_normal_factor(mean, cov, tol):
+    """Return a square-root factor for a valid singular covariance."""
+
+    torch = _LEGACY._torch
+    device = _LEGACY._tensor_device(mean, cov)
+    dtype = _LEGACY._floating_distribution_dtype(mean, cov)
+    try:
+        mean = _LEGACY._validate_multivariate_normal_parameter(
+            mean, "mean", dtype=dtype, device=device
+        )
+        cov = _LEGACY._validate_multivariate_normal_parameter(
+            cov, "cov", dtype=mean.dtype, device=mean.device
+        )
+    except (TypeError, ValueError, RuntimeError):
+        return None
+
+    if mean.ndim != 1 or cov.ndim != 2:
+        return None
+    if cov.shape != (mean.shape[0], mean.shape[0]) or mean.shape[0] == 0:
+        return None
+    if not bool(torch.allclose(cov, cov.T, rtol=0.0, atol=tol)):
+        return None
+
+    symmetric_cov = 0.5 * (cov + cov.T)
+    try:
+        eigenvalues, eigenvectors = torch.linalg.eigh(symmetric_cov)
+    except RuntimeError:
+        return None
+    if bool(torch.any(eigenvalues < -tol)):
+        return None
+
+    scale = torch.max(torch.abs(eigenvalues))
+    rank_tolerance = (
+        torch.finfo(cov.dtype).eps * max(mean.shape[0], 1) * scale
+    )
+    if bool(torch.all(eigenvalues > rank_tolerance)):
+        return None
+
+    factor = eigenvectors * torch.sqrt(
+        torch.clamp(eigenvalues, min=0.0)
+    ).unsqueeze(0)
+    return mean, factor
+
+
+def _sample_singular_multivariate_normal(mean, factor, size):
+    """Sample a singular Gaussian through its eigendecomposition factor."""
+
+    torch = _LEGACY._torch
+    sample_shape = _LEGACY._normal_sample_size(size)
+    standard_normal = torch.randn(
+        (*sample_shape, mean.shape[0]),
+        dtype=mean.dtype,
+        device=mean.device,
+    )
+    return mean + torch.matmul(standard_normal, factor.T)
+
+
 def multivariate_normal(mean, cov, size=None, *args, **kwargs):
     """Draw samples with NumPy-compatible validation keyword handling."""
 
     check_valid = kwargs.pop("check_valid", "warn")
     tol = kwargs.pop("tol", 1e-8)
     _validate_multivariate_normal_check_valid(check_valid)
-    _validate_multivariate_normal_tol(tol)
-    return _LEGACY.multivariate_normal(mean, cov, size=size, *args, **kwargs)
+    tol = _validate_multivariate_normal_tol(tol)
+
+    try:
+        return _LEGACY.multivariate_normal(
+            mean, cov, size=size, *args, **kwargs
+        )
+    except ValueError:
+        if args or kwargs:
+            raise
+        singular_parameters = _singular_multivariate_normal_factor(
+            mean, cov, tol
+        )
+        if singular_parameters is None:
+            raise
+        singular_mean, factor = singular_parameters
+        return _sample_singular_multivariate_normal(
+            singular_mean, factor, size
+        )
 
 
 __all__ = sorted(
