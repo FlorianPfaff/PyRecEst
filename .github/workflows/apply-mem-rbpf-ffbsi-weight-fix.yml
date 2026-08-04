@@ -34,31 +34,31 @@ jobs:
 
           source_path = Path("src/pyrecest/smoothers/mem_rbpf_ffbsi_smoother.py")
           source = source_path.read_text(encoding="utf-8")
-          old = """    @staticmethod
-              def _safe_probs(weights):
-                  weights = np.asarray(weights, dtype=float).reshape(-1)
-                  weights = np.where(np.isfinite(weights), weights, 0.0)
-                  weights = np.maximum(weights, 0.0)
-                  total = float(np.sum(weights))
-                  if total <= 0.0:
-                      return np.full(weights.shape, 1.0 / weights.size)
-                  return weights / total
-          """
-          new = """    @staticmethod
-              def _safe_probs(weights):
-                  weights = np.asarray(weights, dtype=float).reshape(-1)
-                  weights = np.where(np.isfinite(weights), weights, 0.0)
-                  weights = np.maximum(weights, 0.0)
-                  if weights.size == 0:
-                      raise ValueError("weights must not be empty")
-                  scale = float(np.max(weights))
-                  if scale <= 0.0:
-                      return np.full(weights.shape, 1.0 / weights.size)
-                  scaled = weights / scale
-                  return scaled / float(np.sum(scaled))
-          """
-          old = dedent(old)
-          new = dedent(new)
+          old = (
+              "    @staticmethod\n"
+              "    def _safe_probs(weights):\n"
+              "        weights = np.asarray(weights, dtype=float).reshape(-1)\n"
+              "        weights = np.where(np.isfinite(weights), weights, 0.0)\n"
+              "        weights = np.maximum(weights, 0.0)\n"
+              "        total = float(np.sum(weights))\n"
+              "        if total <= 0.0:\n"
+              "            return np.full(weights.shape, 1.0 / weights.size)\n"
+              "        return weights / total\n"
+          )
+          new = (
+              "    @staticmethod\n"
+              "    def _safe_probs(weights):\n"
+              "        weights = np.asarray(weights, dtype=float).reshape(-1)\n"
+              "        weights = np.where(np.isfinite(weights), weights, 0.0)\n"
+              "        weights = np.maximum(weights, 0.0)\n"
+              "        if weights.size == 0:\n"
+              "            raise ValueError(\"weights must not be empty\")\n"
+              "        scale = float(np.max(weights))\n"
+              "        if scale <= 0.0:\n"
+              "            return np.full(weights.shape, 1.0 / weights.size)\n"
+              "        scaled = weights / scale\n"
+              "        return scaled / float(np.sum(scaled))\n"
+          )
           if old not in source:
               raise SystemExit("expected _safe_probs implementation was not found")
           source_path.write_text(source.replace(old, new, 1), encoding="utf-8")
