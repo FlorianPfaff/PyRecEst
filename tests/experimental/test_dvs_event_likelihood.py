@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 import numpy as np
 import pytest
 from pyrecest.experimental.dvs.event_likelihood import (
@@ -93,6 +95,30 @@ def test_contour_sample_rejects_nonfinite_geometry(keyword, value):
 
 
 @pytest.mark.parametrize(
+    ("keyword", "index"),
+    [
+        ("points", (0, 0)),
+        ("normals", (0, 0)),
+        ("weights", (0,)),
+        ("angles", (0,)),
+    ],
+)
+def test_contour_sample_rejects_complex_geometry(keyword, index):
+    kwargs = {
+        "points": np.array([[0.0, 0.0], [1.0, 0.0]]),
+        "normals": np.array([[0.0, 1.0], [0.0, 1.0]]),
+        "weights": np.array([1.0, 2.0]),
+        "angles": np.array([0.0, np.pi]),
+    }
+    complex_value = kwargs[keyword].astype(complex)
+    complex_value[index] += 1j
+    kwargs[keyword] = complex_value
+
+    with pytest.raises(ValueError, match=f"{keyword} must contain only real values"):
+        ContourSample(**kwargs)
+
+
+@pytest.mark.parametrize(
     ("keyword", "value"),
     [
         ("spatial_sigma_px", float("nan")),
@@ -183,6 +209,17 @@ def test_normal_flow_activities_rejects_nonfinite_inputs():
         normal_flow_activities(normals, np.array([0.0, 0.0]), activity_floor=np.nan)
 
 
+def test_normal_flow_activities_rejects_complex_inputs():
+    normals = np.array([[1.0, 0.0]], dtype=float)
+
+    with pytest.raises(ValueError, match="normals must contain only real values"):
+        normal_flow_activities(
+            np.array([[1.0 + 2.0j, 0.0]]), np.array([1.0, 0.0])
+        )
+    with pytest.raises(ValueError, match="velocity must contain only real values"):
+        normal_flow_activities(normals, np.array([1.0 + 2.0j, 0.0]))
+
+
 @pytest.mark.parametrize(
     "event_xy",
     [
@@ -199,6 +236,37 @@ def test_event_likelihood_rejects_nonfinite_event_coordinates(event_xy):
         contour_event_intensity(event_xy, contour, velocity)
     with pytest.raises(ValueError, match="event_xy must contain only finite values"):
         event_batch_log_likelihood(event_xy, contour, velocity)
+
+
+def test_event_likelihood_rejects_complex_event_coordinates():
+    contour = _rectangle_contour(width=1.0, height=2.0)
+    velocity = np.array([1.0, 0.0])
+    event_xy = np.array([[1.0 + 2.0j, 0.0]])
+
+    with pytest.raises(ValueError, match="event_xy must contain only real values"):
+        contour_event_intensity(event_xy, contour, velocity)
+    with pytest.raises(ValueError, match="event_xy must contain only real values"):
+        event_batch_log_likelihood(event_xy, contour, velocity)
+
+
+@pytest.mark.parametrize("attribute", ["points", "normals", "weights"])
+def test_contour_event_intensity_rejects_complex_contour_like_geometry(attribute):
+    valid = _rectangle_contour(width=1.0, height=2.0)
+    values = {
+        "points": valid.points.copy(),
+        "normals": valid.normals.copy(),
+        "weights": valid.weights.copy(),
+    }
+    complex_value = values[attribute].astype(complex)
+    complex_value.flat[0] += 1j
+    values[attribute] = complex_value
+    contour = SimpleNamespace(**values)
+
+    expected_name = "contour_points" if attribute == "points" else attribute
+    with pytest.raises(ValueError, match=expected_name):
+        contour_event_intensity(
+            np.array([[0.0, 0.0]]), contour, np.array([1.0, 0.0])
+        )
 
 
 def test_active_edge_events_have_higher_intensity():
