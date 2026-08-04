@@ -35,6 +35,8 @@ def get_registered_filter_factory(filter_name: str) -> FilterFactory | None:
 
 
 def _as_bool_scalar(value: Any, name: str) -> bool:
+    if np.ma.is_masked(value):
+        raise ValueError(f"{name} must be a boolean scalar")
     if isinstance(value, bool):
         return value
     value_array = np.asarray(value)
