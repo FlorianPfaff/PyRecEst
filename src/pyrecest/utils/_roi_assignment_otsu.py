@@ -1,10 +1,13 @@
-"""Runtime patches for ROI-assignment numeric semantics."""
+"""Runtime patches for utility numeric semantics."""
 
 from __future__ import annotations
 
 import numpy as np
 
+from ._metrics_covariance_symmetry import patch_metrics_covariance_symmetry
 from ._roi_assignment_extreme_range import patch_similarity_assignment_extreme_range
+
+patch_metrics_covariance_symmetry()
 
 
 def _as_positive_nbins(roi_assignment_module, nbins) -> int:
