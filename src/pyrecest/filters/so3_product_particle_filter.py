@@ -417,12 +417,17 @@ class SO3ProductParticleFilter(HyperhemisphereCartProdParticleFilter):
         particles = self._as_particle_array(particles, self.num_rotations)
         if particles.shape[0] != self.n_particles:
             raise ValueError("New particles must match the existing particle count.")
-        self.filter_state.d = self._flatten_particles(particles)
+
+        normalized_weights = None
         if weights is not None:
-            weights = self._normalize_weights(weights)
-            if weights.shape[0] != self.n_particles:
+            normalized_weights = self._normalize_weights(weights)
+            if normalized_weights.shape[0] != self.n_particles:
                 raise ValueError("weights must match the particle count.")
-            self.filter_state.w = weights
+
+        flattened_particles = self._flatten_particles(particles)
+        self.filter_state.d = flattened_particles
+        if normalized_weights is not None:
+            self.filter_state.w = normalized_weights
 
     def mean(self):
         """Return the component-wise chordal mean product rotation."""

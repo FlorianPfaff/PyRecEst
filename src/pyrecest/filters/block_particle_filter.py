@@ -294,9 +294,26 @@ class BlockParticleFilter:
 
     def set_particles(self, particles, weights=None, block_weights=None):
         """Replace particles and optionally global or block weights."""
+        normalized_weights = None
+        if weights is not None:
+            normalized_weights = self._normalize_weights(weights)
+            if normalized_weights.shape[0] != self.n_particles:
+                raise ValueError("weights must match the particle count.")
+
+        normalized_block_weights = None
+        if hasattr(self, "_block_weights"):
+            if block_weights is not None:
+                normalized_block_weights = self._normalize_block_weights(
+                    block_weights
+                )
+            elif normalized_weights is not None:
+                normalized_block_weights = self._normalize_block_weights(
+                    normalized_weights
+                )
+
         parent_set_particles = getattr(super(), "set_particles", None)
         if parent_set_particles is not None:
-            parent_set_particles(particles, weights=weights)
+            parent_set_particles(particles, weights=normalized_weights)
         else:
             particles = array(particles, dtype=float)
             if particles.shape != self._block_particle_array().shape:
@@ -304,20 +321,14 @@ class BlockParticleFilter:
                     "New particles must match the existing particle shape."
                 )
             self.filter_state.d = particles
-            if weights is not None:
-                weights = self._normalize_weights(weights)
-                if weights.shape[0] != self.n_particles:
-                    raise ValueError("weights must match the particle count.")
-                self.filter_state.w = weights
+            if normalized_weights is not None:
+                self.filter_state.w = normalized_weights
 
         if not hasattr(self, "_block_weights"):
             return
-        if block_weights is not None:
-            self.set_block_weights(block_weights)
-        elif weights is not None:
-            self.set_block_weights(weights)
-        else:
-            self._sync_global_weights()
+        if normalized_block_weights is not None:
+            self._block_weights = normalized_block_weights
+        self._sync_global_weights()
 
     def component_weights(self, component_idx: int):
         """Return the weight vector used for one product-state component."""
