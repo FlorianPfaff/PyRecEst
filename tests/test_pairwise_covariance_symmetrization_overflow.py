@@ -8,6 +8,7 @@ from pyrecest.utils import pairwise_covariance_shape_components
 
 
 def test_shape_components_preserve_extreme_finite_covariances():
+    # JAX may disable x64, so derive the limit after backend dtype selection.
     backend_dtype = np.asarray(array([0.0])).dtype
     largest = np.finfo(backend_dtype).max
     covariance_along_first_axis = array(
