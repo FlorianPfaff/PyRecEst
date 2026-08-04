@@ -175,3 +175,17 @@ def test_summarize_innovation_diagnostics_by_source() -> None:
     assert summaries["rf"].acceptance_rate == 0.5
     assert summaries["rf"].nis_mean == 5.0
     assert summaries["radar"].count == 1
+
+
+def test_innovation_diagnostic_uses_scale_stable_residual_norm() -> None:
+    residual = np.array([1.0e200, 1.0e200])
+
+    with np.errstate(over="raise", invalid="raise"):
+        diagnostic = innovation_diagnostic(
+            residual,
+            np.eye(2) * 1.0e200,
+            gate_threshold=3.0e200,
+        )
+
+    assert diagnostic.accepted is True
+    assert np.isclose(diagnostic.residual_norm, np.sqrt(2.0) * 1.0e200)

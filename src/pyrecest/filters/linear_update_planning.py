@@ -33,6 +33,15 @@ except Exception:  # pragma: no cover - only used by standalone downstream copie
 ROBUST_UPDATE_MODES = ("nis-inflate", "student-t", "huber")
 DEFAULT_STUDENT_T_DOF = 4.0
 DEFAULT_HUBER_THRESHOLD = 2.0
+
+
+def _stable_euclidean_norm(values: np.ndarray) -> float:
+    """Return a scale-stable Euclidean norm for finite real values."""
+
+    flattened = np.abs(np.asarray(values, dtype=float)).reshape(-1)
+    return float(np.hypot.reduce(flattened, initial=0.0))
+
+
 _TEMPORAL_TYPES = (np.datetime64, np.timedelta64)
 _INVALID_REAL_NUMERIC_TYPES = (
     bool,
@@ -287,7 +296,7 @@ def plan_linear_measurement_update(
     )
     nominal_innovation_covariance = _symmetrized(nominal_innovation_covariance)
     nis = normalized_innovation_squared(residual, nominal_innovation_covariance)
-    residual_norm = float(np.linalg.norm(residual))
+    residual_norm = _stable_euclidean_norm(residual)
 
     accepted = True
     action = "updated"

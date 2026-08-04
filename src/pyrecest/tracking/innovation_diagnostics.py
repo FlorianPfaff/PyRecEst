@@ -13,6 +13,13 @@ from pyrecest.filters.linear_update_planning import (
 )
 
 
+def _stable_euclidean_norm(values: np.ndarray) -> float:
+    """Return a scale-stable Euclidean norm for finite real values."""
+
+    flattened = np.abs(np.asarray(values, dtype=float)).reshape(-1)
+    return float(np.hypot.reduce(flattened, initial=0.0))
+
+
 @dataclass(frozen=True)
 class InnovationDiagnostic:
     """Diagnostics for one innovation/update decision."""
@@ -132,7 +139,7 @@ def innovation_diagnostic(
     return InnovationDiagnostic(
         measurement_dim=int(residual_array.size),
         nis=nis,
-        residual_norm=float(np.linalg.norm(residual_array)),
+        residual_norm=_stable_euclidean_norm(residual_array),
         gate_threshold=(
             None if resolved_threshold is None else float(resolved_threshold)
         ),
