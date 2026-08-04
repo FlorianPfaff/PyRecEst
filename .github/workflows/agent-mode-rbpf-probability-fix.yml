@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   patch:
-    if: github.event.head_commit.message == 'Bootstrap Mode RBPF probability fix'
+    if: github.event.head_commit.message == 'Retry Mode RBPF probability fix'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,195 +21,186 @@ jobs:
         shell: bash
         run: |
           python - <<'PY'
+          import re
+          import textwrap
           from pathlib import Path
 
           source_path = Path("src/pyrecest/filters/mode_rbpf_manifold_ukf_tracker.py")
           source = source_path.read_text(encoding="utf-8")
 
-          old_sample = '''    def _sample_indices(self, weights, size):
-              weights = np.asarray(weights, dtype=float)
-              weights = weights / np.sum(weights)
-              mode = str(self.resampling_mode).lower()
-          '''
-          new_sample = '''    def _sample_indices(self, weights, size):
-              weights = self._normalize_resampling_weights(weights)
-              mode = str(self.resampling_mode).lower()
-          '''
-          if source.count(old_sample) != 1:
+          source, count = re.subn(
+              r"    def _sample_indices\(self, weights, size\):\n"
+              r"        weights = np\.asarray\(weights, dtype=float\)\n"
+              r"        weights = weights / np\.sum\(weights\)\n",
+              "    def _sample_indices(self, weights, size):\n"
+              "        weights = self._normalize_resampling_weights(weights)\n",
+              source,
+              count=1,
+          )
+          if count != 1:
               raise RuntimeError("unexpected _sample_indices implementation")
-          source = source.replace(old_sample, new_sample)
 
-          old_rows = '''    @staticmethod
-              def _normalize_rows(matrix):
-                  matrix = np.asarray(matrix, dtype=float)
-                  if matrix.ndim != 2:
-                      raise ValueError("transition_matrix must be two-dimensional")
-                  if np.any(~np.isfinite(matrix)) or np.any(matrix < 0.0):
-                      raise ValueError(
-                          "transition_matrix must contain finite non-negative probabilities"
-                      )
-                  row_sums = np.sum(matrix, axis=1, keepdims=True)
-                  if np.any(row_sums <= 0.0):
-                      raise ValueError(
-                          "each transition_matrix row must have positive total probability"
-                      )
-                  return matrix / row_sums
-          '''
-          new_rows = '''    @staticmethod
-              def _normalize_rows(matrix):
-                  matrix = np.asarray(matrix, dtype=float)
-                  if matrix.ndim != 2:
-                      raise ValueError("transition_matrix must be two-dimensional")
-                  if np.any(~np.isfinite(matrix)) or np.any(matrix < 0.0):
-                      raise ValueError(
-                          "transition_matrix must contain finite non-negative probabilities"
-                      )
-                  row_scales = np.max(matrix, axis=1, keepdims=True)
-                  if np.any(row_scales <= 0.0):
-                      raise ValueError(
-                          "each transition_matrix row must have positive total probability"
-                      )
-                  scaled = matrix / row_scales
-                  row_sums = np.sum(scaled, axis=1, keepdims=True)
-                  return scaled / row_sums
-          '''
-          if source.count(old_rows) != 1:
+          rows_replacement = textwrap.dedent(
+              '''\
+                  @staticmethod
+                  def _normalize_rows(matrix):
+                      matrix = np.asarray(matrix, dtype=float)
+                      if matrix.ndim != 2:
+                          raise ValueError("transition_matrix must be two-dimensional")
+                      if np.any(~np.isfinite(matrix)) or np.any(matrix < 0.0):
+                          raise ValueError(
+                              "transition_matrix must contain finite non-negative probabilities"
+                          )
+                      row_scales = np.max(matrix, axis=1, keepdims=True)
+                      if np.any(row_scales <= 0.0):
+                          raise ValueError(
+                              "each transition_matrix row must have positive total probability"
+                          )
+                      scaled = matrix / row_scales
+                      row_sums = np.sum(scaled, axis=1, keepdims=True)
+                      return scaled / row_sums
+              '''
+          )
+          source, count = re.subn(
+              r"    @staticmethod\n"
+              r"    def _normalize_rows\(matrix\):\n"
+              r".*?"
+              r"(?=\n    @staticmethod\n    def _normalize_probs)",
+              rows_replacement.rstrip(),
+              source,
+              count=1,
+              flags=re.DOTALL,
+          )
+          if count != 1:
               raise RuntimeError("unexpected _normalize_rows implementation")
-          source = source.replace(old_rows, new_rows)
 
-          old_probs = '''    @staticmethod
-              def _normalize_probs(probs):
-                  probs = np.asarray(probs, dtype=float)
-                  expected_shape = (len(ModeRBPFManifoldUKFTracker.mode_names),)
-                  if probs.shape != expected_shape:
-                      raise ValueError("initial_mode_probs must have one entry per mode")
-                  if np.any(~np.isfinite(probs)) or np.any(probs < 0.0):
-                      raise ValueError(
-                          "initial_mode_probs must contain finite non-negative probabilities"
-                      )
-                  total = float(np.sum(probs))
-                  if total <= 0.0:
-                      raise ValueError(
-                          "initial_mode_probs must have positive total probability"
-                      )
-                  return probs / total
+          probs_replacement = textwrap.dedent(
+              '''\
+                  @staticmethod
+                  def _normalize_probs(probs):
+                      probs = np.asarray(probs, dtype=float)
+                      expected_shape = (len(ModeRBPFManifoldUKFTracker.mode_names),)
+                      if probs.shape != expected_shape:
+                          raise ValueError("initial_mode_probs must have one entry per mode")
+                      if np.any(~np.isfinite(probs)) or np.any(probs < 0.0):
+                          raise ValueError(
+                              "initial_mode_probs must contain finite non-negative probabilities"
+                          )
+                      scale = float(np.max(probs))
+                      if scale <= 0.0:
+                          raise ValueError(
+                              "initial_mode_probs must have positive total probability"
+                          )
+                      scaled = probs / scale
+                      return scaled / np.sum(scaled)
 
-              @staticmethod
-              def _normalize_log_weights(log_weights):
-          '''
-          new_probs = '''    @staticmethod
-              def _normalize_probs(probs):
-                  probs = np.asarray(probs, dtype=float)
-                  expected_shape = (len(ModeRBPFManifoldUKFTracker.mode_names),)
-                  if probs.shape != expected_shape:
-                      raise ValueError("initial_mode_probs must have one entry per mode")
-                  if np.any(~np.isfinite(probs)) or np.any(probs < 0.0):
-                      raise ValueError(
-                          "initial_mode_probs must contain finite non-negative probabilities"
-                      )
-                  scale = float(np.max(probs))
-                  if scale <= 0.0:
-                      raise ValueError(
-                          "initial_mode_probs must have positive total probability"
-                      )
-                  scaled = probs / scale
-                  return scaled / np.sum(scaled)
-
-              @staticmethod
-              def _normalize_resampling_weights(weights):
-                  weights = np.asarray(weights, dtype=float)
-                  if weights.ndim != 1 or weights.size == 0:
-                      raise ValueError("weights must be a non-empty one-dimensional array")
-                  if np.any(~np.isfinite(weights)) or np.any(weights < 0.0):
-                      raise ValueError("weights must contain finite non-negative values")
-                  scale = float(np.max(weights))
-                  if scale <= 0.0:
-                      raise ValueError("weights must have positive total mass")
-                  scaled = weights / scale
-                  return scaled / np.sum(scaled)
-
-              @staticmethod
-              def _normalize_log_weights(log_weights):
-          '''
-          if source.count(old_probs) != 1:
+                  @staticmethod
+                  def _normalize_resampling_weights(weights):
+                      weights = np.asarray(weights, dtype=float)
+                      if weights.ndim != 1 or weights.size == 0:
+                          raise ValueError("weights must be a non-empty one-dimensional array")
+                      if np.any(~np.isfinite(weights)) or np.any(weights < 0.0):
+                          raise ValueError("weights must contain finite non-negative values")
+                      scale = float(np.max(weights))
+                      if scale <= 0.0:
+                          raise ValueError("weights must have positive total mass")
+                      scaled = weights / scale
+                      return scaled / np.sum(scaled)
+              '''
+          )
+          source, count = re.subn(
+              r"    @staticmethod\n"
+              r"    def _normalize_probs\(probs\):\n"
+              r".*?"
+              r"(?=\n    @staticmethod\n    def _normalize_log_weights)",
+              probs_replacement.rstrip(),
+              source,
+              count=1,
+              flags=re.DOTALL,
+          )
+          if count != 1:
               raise RuntimeError("unexpected _normalize_probs implementation")
-          source = source.replace(old_probs, new_probs)
           source_path.write_text(source, encoding="utf-8")
 
           test_path = Path("tests/filters/test_mode_rbpf_probability_normalization_overflow.py")
           test_path.write_text(
-              '''import unittest
+              textwrap.dedent(
+                  '''\
+                  import unittest
 
-          import numpy as np
-          import numpy.testing as npt
+                  import numpy as np
+                  import numpy.testing as npt
 
-          from pyrecest.filters import ModeRBPFManifoldUKFTracker
+                  from pyrecest.filters import ModeRBPFManifoldUKFTracker
 
 
-          class TestModeRBPFProbabilityNormalizationOverflow(unittest.TestCase):
-              def setUp(self):
-                  self.large = np.finfo(np.float64).max
+                  class TestModeRBPFProbabilityNormalizationOverflow(unittest.TestCase):
+                      def setUp(self):
+                          self.large = np.finfo(np.float64).max
 
-              def test_stabilizes_transition_rows(self):
-                  matrix = np.array(
-                      [
-                          [self.large, self.large / 2.0, 0.0],
-                          [0.0, self.large, self.large / 2.0],
-                          [self.large / 2.0, 0.0, self.large],
-                      ]
-                  )
-
-                  with np.errstate(over="raise", invalid="raise", divide="raise"):
-                      normalized = ModeRBPFManifoldUKFTracker._normalize_rows(matrix)
-
-                  npt.assert_allclose(
-                      normalized,
-                      np.array(
-                          [
-                              [2.0 / 3.0, 1.0 / 3.0, 0.0],
-                              [0.0, 2.0 / 3.0, 1.0 / 3.0],
-                              [1.0 / 3.0, 0.0, 2.0 / 3.0],
-                          ]
-                      ),
-                  )
-                  npt.assert_allclose(np.sum(normalized, axis=1), np.ones(3))
-
-              def test_stabilizes_initial_mode_probabilities(self):
-                  with np.errstate(over="raise", invalid="raise", divide="raise"):
-                      normalized = ModeRBPFManifoldUKFTracker._normalize_probs(
-                          [self.large, self.large / 2.0, 0.0]
-                      )
-
-                  npt.assert_allclose(normalized, [2.0 / 3.0, 1.0 / 3.0, 0.0])
-                  self.assertEqual(float(np.sum(normalized)), 1.0)
-
-              def test_stabilizes_resampling_weights(self):
-                  with np.errstate(over="raise", invalid="raise", divide="raise"):
-                      normalized = (
-                          ModeRBPFManifoldUKFTracker._normalize_resampling_weights(
-                              [self.large, self.large / 2.0, 0.0]
+                      def test_stabilizes_transition_rows(self):
+                          matrix = np.array(
+                              [
+                                  [self.large, self.large / 2.0, 0.0],
+                                  [0.0, self.large, self.large / 2.0],
+                                  [self.large / 2.0, 0.0, self.large],
+                              ]
                           )
-                      )
 
-                  npt.assert_allclose(normalized, [2.0 / 3.0, 1.0 / 3.0, 0.0])
-                  self.assertEqual(float(np.sum(normalized)), 1.0)
+                          with np.errstate(over="raise", invalid="raise", divide="raise"):
+                              normalized = ModeRBPFManifoldUKFTracker._normalize_rows(matrix)
 
-              def test_public_resampling_path_accepts_extreme_finite_weights(self):
-                  tracker = object.__new__(ModeRBPFManifoldUKFTracker)
-                  tracker.resampling_mode = "systematic"
-                  tracker.rng = np.random.default_rng(0)
+                          npt.assert_allclose(
+                              normalized,
+                              np.array(
+                                  [
+                                      [2.0 / 3.0, 1.0 / 3.0, 0.0],
+                                      [0.0, 2.0 / 3.0, 1.0 / 3.0],
+                                      [1.0 / 3.0, 0.0, 2.0 / 3.0],
+                                  ]
+                              ),
+                          )
+                          npt.assert_allclose(np.sum(normalized, axis=1), np.ones(3))
 
-                  with np.errstate(over="raise", invalid="raise", divide="raise"):
-                      indices = tracker._sample_indices(
-                          np.array([self.large, self.large / 2.0, 0.0]), 6
-                      )
+                      def test_stabilizes_initial_mode_probabilities(self):
+                          with np.errstate(over="raise", invalid="raise", divide="raise"):
+                              normalized = ModeRBPFManifoldUKFTracker._normalize_probs(
+                                  [self.large, self.large / 2.0, 0.0]
+                              )
 
-                  npt.assert_array_equal(np.bincount(indices, minlength=3), [4, 2, 0])
+                          npt.assert_allclose(normalized, [2.0 / 3.0, 1.0 / 3.0, 0.0])
+                          self.assertEqual(float(np.sum(normalized)), 1.0)
+
+                      def test_stabilizes_resampling_weights(self):
+                          with np.errstate(over="raise", invalid="raise", divide="raise"):
+                              normalized = (
+                                  ModeRBPFManifoldUKFTracker._normalize_resampling_weights(
+                                      [self.large, self.large / 2.0, 0.0]
+                                  )
+                              )
+
+                          npt.assert_allclose(normalized, [2.0 / 3.0, 1.0 / 3.0, 0.0])
+                          self.assertEqual(float(np.sum(normalized)), 1.0)
+
+                      def test_public_resampling_path_accepts_extreme_finite_weights(self):
+                          tracker = object.__new__(ModeRBPFManifoldUKFTracker)
+                          tracker.resampling_mode = "systematic"
+                          tracker.rng = np.random.default_rng(0)
+
+                          with np.errstate(over="raise", invalid="raise", divide="raise"):
+                              indices = tracker._sample_indices(
+                                  np.array([self.large, self.large / 2.0, 0.0]), 6
+                              )
+
+                          npt.assert_array_equal(
+                              np.bincount(indices, minlength=3), [4, 2, 0]
+                          )
 
 
-          if __name__ == "__main__":
-              unittest.main()
-          ''',
+                  if __name__ == "__main__":
+                      unittest.main()
+                  '''
+              ),
               encoding="utf-8",
           )
           PY
