@@ -13,7 +13,7 @@ class TrackManagerCostValidationTest(unittest.TestCase):
 
         for cost_matrix in invalid_cost_matrices:
             with self.subTest(dtype=cost_matrix.dtype):
-                with self.assertRaisesRegex(ValueError, "cost_matrix.*unmasked real"):
+                with self.assertRaisesRegex(ValueError, "cost_matrix.*numeric"):
                     solve_global_nearest_neighbor(
                         cost_matrix,
                         unassigned_track_cost=5.0,
@@ -21,9 +21,7 @@ class TrackManagerCostValidationTest(unittest.TestCase):
                     )
 
     def test_solver_rejects_complex_unassigned_cost_vectors(self):
-        with self.assertRaisesRegex(
-            ValueError, "unassigned_track_cost.*unmasked real"
-        ):
+        with self.assertRaisesRegex(ValueError, "unassigned_track_cost.*numeric"):
             solve_global_nearest_neighbor(
                 np.array([[0.0, 10.0], [10.0, 0.0]]),
                 unassigned_track_cost=np.array([5.0 + 3.0j, 5.0]),
@@ -35,7 +33,7 @@ class TrackManagerCostValidationTest(unittest.TestCase):
             [[0.0, 10.0], [10.0, 0.0]],
             mask=[[True, False], [False, False]],
         )
-        with self.assertRaisesRegex(ValueError, "cost_matrix.*unmasked real"):
+        with self.assertRaisesRegex(ValueError, "cost_matrix.*numeric"):
             solve_global_nearest_neighbor(
                 masked_matrix,
                 unassigned_track_cost=5.0,
@@ -43,9 +41,7 @@ class TrackManagerCostValidationTest(unittest.TestCase):
             )
 
         masked_unassigned_cost = np.ma.array([5.0, 5.0], mask=[False, True])
-        with self.assertRaisesRegex(
-            ValueError, "unassigned_track_cost.*unmasked real"
-        ):
+        with self.assertRaisesRegex(ValueError, "unassigned_track_cost.*numeric"):
             solve_global_nearest_neighbor(
                 np.array([[0.0, 10.0], [10.0, 0.0]]),
                 unassigned_track_cost=masked_unassigned_cost,
