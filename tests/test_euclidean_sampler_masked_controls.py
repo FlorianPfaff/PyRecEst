@@ -28,7 +28,9 @@ def test_euclidean_samplers_reject_masked_count_and_dimension(sampler):
 
 def test_fibonacci_rejection_rejects_masked_scalar_controls():
     sampler = FibonacciRejectionSampler()
-    density = lambda xs: np.ones(xs.shape[0])
+
+    def density(xs):
+        return np.ones(xs.shape[0])
 
     with pytest.raises(ValueError, match="n_candidates"):
         sampler.sample_rejection(
