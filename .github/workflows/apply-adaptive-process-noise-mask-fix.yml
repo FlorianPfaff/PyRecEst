@@ -1,0 +1,79 @@
+name: Apply adaptive process-noise mask fix
+
+on:
+  push:
+    branches:
+      - agent/reject-masked-adaptive-process-noise-controls-20260804
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Apply source and regression patch
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          source_path = Path("src/pyrecest/filters/adaptive_process_noise.py")
+          source = source_path.read_text()
+
+          anchor = '''_REJECTED_DTYPE_KINDS = "USbcMm"\n\n\ndef _has_rejected_numeric_dtype(value: object) -> bool:\n'''
+          replacement = '''_REJECTED_DTYPE_KINDS = "USbcMm"\n\n\ndef _contains_masked_values(\n    value: object, active_ids: set[int] | None = None\n) -> bool:\n    if np.ma.is_masked(value):\n        return True\n    if not isinstance(value, (np.ndarray, list, tuple)):\n        return False\n    if active_ids is None:\n        active_ids = set()\n    value_id = id(value)\n    if value_id in active_ids:\n        return True\n    active_ids.add(value_id)\n    try:\n        if isinstance(value, np.ndarray):\n            if value.dtype.kind != "O":\n                return False\n            items = value.flat\n        else:\n            items = value\n        return any(_contains_masked_values(item, active_ids) for item in items)\n    finally:\n        active_ids.remove(value_id)\n\n\ndef _has_rejected_numeric_dtype(value: object) -> bool:\n'''
+          if source.count(anchor) != 1:
+              raise SystemExit("masked-value helper insertion anchor changed")
+          source = source.replace(anchor, replacement)
+
+          old = '''def _is_rejected_scalar_payload(value: object) -> bool:\n    return isinstance(value, _REJECTED_SCALAR_TYPES) or _has_rejected_numeric_dtype(\n        value\n    )\n'''
+          new = '''def _is_rejected_scalar_payload(value: object) -> bool:\n    return (\n        _contains_masked_values(value)\n        or isinstance(value, _REJECTED_SCALAR_TYPES)\n        or _has_rejected_numeric_dtype(value)\n    )\n'''
+          if source.count(old) != 1:
+              raise SystemExit("scalar validation anchor changed")
+          source = source.replace(old, new)
+
+          old = '''def _normalize_finite_real_array(value: object, name: str) -> np.ndarray:\n    message = f"{name} must contain only finite real numeric values"\n    if _has_rejected_numeric_dtype(value):\n        raise ValueError(message)\n'''
+          new = '''def _normalize_finite_real_array(value: object, name: str) -> np.ndarray:\n    message = f"{name} must contain only finite real numeric values"\n    if _contains_masked_values(value) or _has_rejected_numeric_dtype(value):\n        raise ValueError(message)\n'''
+          if source.count(old) != 1:
+              raise SystemExit("array validation anchor changed")
+          source = source.replace(old, new)
+
+          old = '''def _normalize_bool_flag(value: bool, name: str) -> bool:\n    if isinstance(value, (bool, np.bool_)):\n'''
+          new = '''def _normalize_bool_flag(value: bool, name: str) -> bool:\n    if _contains_masked_values(value):\n        raise ValueError(f"{name} must be a boolean")\n    if isinstance(value, (bool, np.bool_)):\n'''
+          if source.count(old) != 1:
+              raise SystemExit("boolean validation anchor changed")
+          source = source.replace(old, new)
+          source_path.write_text(source)
+
+          test_path = Path("tests/filters/test_adaptive_process_noise_masked_inputs.py")
+          test_path.write_text('''import numpy as np\nimport pytest\n\nfrom pyrecest.filters.adaptive_process_noise import (\n    AdaptiveProcessNoiseConfig,\n    RollingNISProcessNoiseAdapter,\n    adaptive_scale_from_ratio,\n)\n\n\ndef test_config_and_ratio_reject_masked_scalars():\n    with pytest.raises(ValueError, match="base_scale must be a finite scalar"):\n        AdaptiveProcessNoiseConfig(base_scale=np.ma.array(1.25, mask=True))\n\n    with pytest.raises(\n        ValueError, match="ratio must be a nonnegative finite scalar"\n    ):\n        adaptive_scale_from_ratio(np.ma.array(2.0, mask=True))\n\n\ndef test_observe_rejects_masked_controls_before_mutation():\n    adapter = RollingNISProcessNoiseAdapter()\n\n    for kwargs, message in (\n        (\n            {"measurement_dim": np.ma.array(2, mask=True), "nis": 4.0},\n            "measurement_dim must be a positive integer",\n        ),\n        (\n            {"measurement_dim": 2, "nis": np.ma.array(4.0, mask=True)},\n            "nis must be a nonnegative finite scalar",\n        ),\n        (\n            {\n                "measurement_dim": 2,\n                "nis": 4.0,\n                "accepted": np.ma.array(True, mask=True),\n            },\n            "accepted must be a boolean",\n        ),\n    ):\n        with pytest.raises(ValueError, match=message):\n            adapter.observe(**kwargs)\n        assert adapter.ratios_by_source == {}\n        assert adapter.updates_by_source == {}\n\n\ndef test_source_weight_rejects_masked_scalar():\n    adapter = RollingNISProcessNoiseAdapter()\n    adapter.observe(source="radar", measurement_dim=2, nis=4.0)\n\n    with pytest.raises(\n        ValueError,\n        match=r"source_weights\['radar'\] must be a nonnegative finite scalar",\n    ):\n        adapter.ratio({"radar": np.ma.array(1.0, mask=True)})\n\n\n@pytest.mark.parametrize(\n    "covariance",\n    [\n        np.ma.array([[1.0, 0.0], [0.0, 1.0]], mask=[[False, True], [False, False]]),\n        [[1.0, np.ma.masked], [0.0, 1.0]],\n        np.array([[1.0, np.ma.masked], [0.0, 1.0]], dtype=object),\n    ],\n)\ndef test_scaled_covariance_rejects_masked_values(covariance):\n    adapter = RollingNISProcessNoiseAdapter()\n\n    with pytest.raises(\n        ValueError,\n        match="process_noise_covariance must contain only finite real numeric values",\n    ):\n        adapter.scaled_covariance(covariance)\n\n\ndef test_clear_mask_wrappers_remain_supported():\n    config = AdaptiveProcessNoiseConfig(\n        base_scale=np.ma.array(1.25, mask=False),\n        ewma_alpha=np.ma.array(1.0, mask=False),\n    )\n    adapter = RollingNISProcessNoiseAdapter(config)\n\n    ratio = adapter.observe(\n        source="radar",\n        measurement_dim=np.ma.array(2, mask=False),\n        nis=np.ma.array(4.0, mask=False),\n        accepted=np.ma.array(True, mask=False),\n    )\n    scaled = adapter.scaled_covariance(\n        np.ma.array(np.eye(2), mask=False),\n        {"radar": np.ma.array(1.0, mask=False)},\n    )\n\n    assert ratio == 2.0\n    assert np.allclose(scaled, np.eye(2) * adapter.scale({"radar": 1.0}))\n''')
+          PY
+
+      - name: Install package and focused test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e . pytest
+
+      - name: Validate patch
+        run: |
+          python -m compileall -q src/pyrecest/filters/adaptive_process_noise.py tests/filters/test_adaptive_process_noise_masked_inputs.py
+          python -m pytest -q tests/filters/test_adaptive_process_noise_masked_inputs.py tests/filters/test_adaptive_process_noise.py
+          git diff --check
+
+      - name: Commit validated fix
+        run: |
+          rm .github/workflows/apply-adaptive-process-noise-mask-fix.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/pyrecest/filters/adaptive_process_noise.py tests/filters/test_adaptive_process_noise_masked_inputs.py .github/workflows/apply-adaptive-process-noise-mask-fix.yml
+          git commit -m "Reject masked adaptive process-noise inputs"
+          git push
