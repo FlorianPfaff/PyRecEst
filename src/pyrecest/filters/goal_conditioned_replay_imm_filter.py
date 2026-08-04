@@ -451,6 +451,8 @@ class GoalConditionedReplayIMMFilter(  # pylint: disable=too-many-instance-attri
             raise ValueError(
                 f"{name} must have shape ({expected_size}, {expected_size})"
             )
+        if not bool(pyrecest.backend.all(pyrecest.backend.isfinite(matrix))):
+            raise ValueError(f"{name} must contain only finite entries")
 
         row_sums = backend_sum(matrix, axis=1)
         for idx in range(expected_size):
@@ -467,12 +469,15 @@ class GoalConditionedReplayIMMFilter(  # pylint: disable=too-many-instance-attri
         vector = atleast_1d(array(vector))
         if vector.shape != (expected_size,):
             raise ValueError(f"{name} must have shape ({expected_size},)")
-        if float(backend_sum(vector)) <= 0.0:
+        if not bool(pyrecest.backend.all(pyrecest.backend.isfinite(vector))):
+            raise ValueError(f"{name} must contain only finite entries")
+        vector_sum = backend_sum(vector)
+        if float(vector_sum) <= 0.0:
             raise ValueError(f"{name} must have positive total mass")
         for idx in range(expected_size):
             if float(vector[idx]) < 0.0:
                 raise ValueError(f"{name} must not contain negative entries")
-        return vector / backend_sum(vector)
+        return vector / vector_sum
 
     def _build_initial_component_weights(self):
         weights = zeros((self.n_components,))
