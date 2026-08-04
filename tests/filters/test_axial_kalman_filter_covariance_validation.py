@@ -6,7 +6,7 @@ import numpy as np
 import numpy.testing as npt
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import array, eye, to_numpy
+from pyrecest.backend import array, to_numpy
 from pyrecest.distributions import GaussianDistribution
 from pyrecest.filters import AxialKalmanFilter
 
