@@ -43,7 +43,13 @@ jobs:
           python /tmp/apply_patch.py
 
       - name: Install focused test dependencies
-        run: python -m pip install --upgrade pip && python -m pip install -e . pytest
+        run: python -m pip install --upgrade pip && python -m pip install -e . pytest autopep8
+
+      - name: Format changed Python files
+        run: |
+          python -m autopep8 --in-place --aggressive --aggressive --aggressive \
+            src/pyrecest/filters/dirichlet_process_birth_tracker.py \
+            tests/filters/test_dirichlet_process_birth_tracker.py
 
       - name: Run focused regression tests
         run: python -m pytest tests/filters/test_dirichlet_process_birth_tracker.py -q
