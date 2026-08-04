@@ -66,8 +66,30 @@ class GaussianMixture(LinearMixture, AbstractLinearDistribution):
     def mixture_parameters_to_gaussian_parameters(
         means, covariance_matrices, weights=None
     ):
+        means = array(means)
+        covariance_matrices = array(covariance_matrices)
+
+        if means.ndim == 1:
+            n_components = means.shape[0]
+            state_dim = 1
+        elif means.ndim == 2:
+            n_components, state_dim = means.shape
+        else:
+            raise ValueError(
+                "means must have shape (n_components,) or (n_components, state_dim)"
+            )
+        if n_components == 0 or state_dim == 0:
+            raise ValueError("means must contain at least one nonempty component mean")
+
+        expected_covariance_shape = (state_dim, state_dim, n_components)
+        if covariance_matrices.shape != expected_covariance_shape:
+            raise ValueError(
+                "covariance_matrices must have shape "
+                f"{expected_covariance_shape}, got {covariance_matrices.shape}"
+            )
+
         if weights is None:
-            weights = ones(means.shape[0]) / means.shape[0]
+            weights = ones(n_components) / n_components
         else:
             weights = array(weights)
             if weights.ndim == 0:
