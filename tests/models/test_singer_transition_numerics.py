@@ -14,6 +14,8 @@ from pyrecest.models import singer_transition_matrix
         (1.0, 5.0),
         (1.0, 1.0e12),
         (0.25, 1.0e10),
+        (0.0, 1.0e12),
+        (-0.5, 1.0e9),
     ],
 )
 def test_singer_transition_matches_matrix_exponential(dt, tau):
