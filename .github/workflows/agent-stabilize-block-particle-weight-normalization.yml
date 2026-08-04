@@ -1,20 +1,26 @@
 name: Apply block particle weight normalization fix
 
 on:
-  push:
+  pull_request:
     branches:
-      - agent/stabilize-block-particle-weight-normalization
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
 
 permissions:
   contents: write
 
 jobs:
   patch-and-test:
+    if: github.event.pull_request.head.ref == 'agent/stabilize-block-particle-weight-normalization'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: agent/stabilize-block-particle-weight-normalization
 
       - uses: actions/setup-python@v5
         with:
