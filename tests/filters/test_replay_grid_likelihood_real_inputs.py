@@ -14,7 +14,7 @@ class TestReplayGridLikelihoodRealInputs(unittest.TestCase):
         invalid_values = (
             np.asarray([0.0 + 0.0j, 1.0 + 2.0j]),
             np.asarray([np.complex64(0.0 + 1.0j), 1.0], dtype=object),
-            np.ma.asarray([0.0, 1.0], mask=[False, True]),
+            np.ma.array([0.0, 1.0], mask=[False, True]),
             [0.0, np.ma.masked],
         )
         bin_centers = np.asarray([[0.0], [1.0]])
@@ -38,7 +38,7 @@ class TestReplayGridLikelihoodRealInputs(unittest.TestCase):
                     )
 
     def test_accepts_clear_masks_and_nonfinite_zero_mass_entries(self):
-        values = np.ma.asarray([0.0, -np.inf], mask=False)
+        values = np.ma.array([0.0, -np.inf], mask=False)
         bin_centers = np.asarray([[0.0], [1.0]])
 
         proposal = grid_proposal_weights(values)
