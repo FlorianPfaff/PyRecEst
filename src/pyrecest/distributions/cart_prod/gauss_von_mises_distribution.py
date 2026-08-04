@@ -37,7 +37,6 @@ from scipy.stats import vonmises as _vonmises
 from ..nonperiodic.gaussian_distribution import GaussianDistribution
 from .abstract_hypercylindrical_distribution import AbstractHypercylindricalDistribution
 
-
 _INVALID_SCALAR_TYPES = (
     str,
     bytes,

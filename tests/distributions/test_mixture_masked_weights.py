@@ -2,7 +2,6 @@
 
 import numpy as np
 import pytest
-
 from pyrecest.backend import array, to_numpy
 from pyrecest.distributions.nonperiodic.gaussian_distribution import (
     GaussianDistribution,
@@ -30,8 +29,6 @@ def test_mixture_rejects_masked_weights(weights):
 
 
 def test_unmasked_masked_array_weights_remain_supported():
-    mixture = GaussianMixture(
-        _components(), np.ma.array([0.25, 0.75], mask=False)
-    )
+    mixture = GaussianMixture(_components(), np.ma.array([0.25, 0.75], mask=False))
 
     np.testing.assert_allclose(to_numpy(mixture.w), [0.25, 0.75])

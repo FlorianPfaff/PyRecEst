@@ -32,9 +32,7 @@ def _time_step_call_mode(function: Callable) -> tuple[str, str | None] | None:
             return "positional", None
         return "keyword", parameter_name
 
-    if any(
-        parameter.kind == inspect.Parameter.VAR_KEYWORD for parameter in parameters
-    ):
+    if any(parameter.kind == inspect.Parameter.VAR_KEYWORD for parameter in parameters):
         return "keyword", "dt"
 
     positional_parameters = [
@@ -46,9 +44,13 @@ def _time_step_call_mode(function: Callable) -> tuple[str, str | None] | None:
             inspect.Parameter.POSITIONAL_OR_KEYWORD,
         )
     ]
-    if any(
-        parameter.kind == inspect.Parameter.VAR_POSITIONAL for parameter in parameters
-    ) or len(positional_parameters) >= 2:
+    if (
+        any(
+            parameter.kind == inspect.Parameter.VAR_POSITIONAL
+            for parameter in parameters
+        )
+        or len(positional_parameters) >= 2
+    ):
         return "positional", None
     return None
 

@@ -27,9 +27,7 @@ _TIME_VECTOR_NAMES = frozenset(
         "times_s",
     }
 )
-_ORIGINAL_AGGREGATE_SUMMARY_METRIC_ATTR = (
-    "_pyrecest_original_aggregate_summary_metric"
-)
+_ORIGINAL_AGGREGATE_SUMMARY_METRIC_ATTR = "_pyrecest_original_aggregate_summary_metric"
 _ORIGINAL_AGGREGATE_TIME_OFFSET_SWEEPS_ATTR = (
     "_pyrecest_original_aggregate_time_offset_sweeps"
 )
@@ -190,9 +188,7 @@ if not hasattr(_bias_module, _ORIGINAL_BIAS_NONNEGATIVE_FINITE_FLOAT_ATTR):
         _bias_module._as_nonnegative_finite_float,
     )
 
-_base_bias_as_numeric_array = getattr(
-    _bias_module, _ORIGINAL_BIAS_NUMERIC_ARRAY_ATTR
-)
+_base_bias_as_numeric_array = getattr(_bias_module, _ORIGINAL_BIAS_NUMERIC_ARRAY_ATTR)
 _base_bias_as_nonnegative_int = getattr(
     _bias_module, _ORIGINAL_BIAS_NONNEGATIVE_INT_ATTR
 )
@@ -244,8 +240,6 @@ from .time_offset import (  # noqa: E402
     TimeOffsetFitResult,
     _aggregate_std_metric,
     _validate_error_metric,
-)
-from .time_offset import (  # noqa: E402
     apply_time_offset,
     fit_time_offset,
     interpolate_reference_values,
