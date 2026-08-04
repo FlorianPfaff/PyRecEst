@@ -26,10 +26,13 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          from textwrap import dedent
 
           source_path = Path("src/pyrecest/filters/block_particle_filter.py")
           source = source_path.read_text(encoding="utf-8")
-          old = '''    @staticmethod
+          old = dedent(
+              """\
+              @staticmethod
               def _normalize_weights(weights):
                   weights = array(weights, dtype=float)
                   if ndim(weights) != 1:
@@ -42,8 +45,11 @@ jobs:
                   if weight_sum <= 0.0:
                       raise ValueError("At least one particle weight must be positive.")
                   return weights / weight_sum
-          '''
-          new = '''    @staticmethod
+              """
+          )
+          new = dedent(
+              """\
+              @staticmethod
               def _normalize_weights(weights):
                   weights = array(weights, dtype=float)
                   if ndim(weights) != 1:
@@ -62,10 +68,10 @@ jobs:
                   if not isfinite(scaled_sum) or scaled_sum <= 0.0:
                       raise ValueError("At least one particle weight must be positive.")
                   return scaled_weights / scaled_sum
-          '''
-          # The triple-quoted strings above are indented by the Python heredoc.
-          old = "\n".join(line[10:] if line.startswith("          ") else line for line in old.splitlines()) + "\n"
-          new = "\n".join(line[10:] if line.startswith("          ") else line for line in new.splitlines()) + "\n"
+              """
+          )
+          old = "    " + old.replace("\n", "\n    ").rstrip() + "\n"
+          new = "    " + new.replace("\n", "\n    ").rstrip() + "\n"
           if source.count(old) != 1:
               raise RuntimeError("Expected exactly one block-particle normalization implementation")
           source_path.write_text(source.replace(old, new), encoding="utf-8")
@@ -84,23 +90,26 @@ jobs:
           tests = tests.replace(backend_old, backend_new, 1)
 
           anchor = "    def test_rejects_nonfinite_weights(self):\n"
-          regression = '''    def test_normalizes_extreme_finite_weights_without_overflow(self):
-              backend_dtype = np.asarray(to_numpy(array([1.0]))).dtype
-              max_float = np.finfo(backend_dtype).max
-              filt = DummyBlockParticleFilter(
-                  array([[0.0, 10.0], [1.0, 11.0]]),
-                  partition="singleton",
-                  weights=array([max_float, max_float / 2.0]),
-              )
+          regression = dedent(
+              """\
+              def test_normalizes_extreme_finite_weights_without_overflow(self):
+                  backend_dtype = np.asarray(to_numpy(array([1.0]))).dtype
+                  max_float = np.finfo(backend_dtype).max
+                  filt = DummyBlockParticleFilter(
+                      array([[0.0, 10.0], [1.0, 11.0]]),
+                      partition="singleton",
+                      weights=array([max_float, max_float / 2.0]),
+                  )
 
-              expected = np.array([2.0 / 3.0, 1.0 / 3.0])
-              npt.assert_allclose(to_numpy(filt.weights), expected)
-              npt.assert_allclose(
-                  to_numpy(filt.block_weights), np.tile(expected, (2, 1))
-              )
+                  expected = np.array([2.0 / 3.0, 1.0 / 3.0])
+                  npt.assert_allclose(to_numpy(filt.weights), expected)
+                  npt.assert_allclose(
+                      to_numpy(filt.block_weights), np.tile(expected, (2, 1))
+                  )
 
-          '''
-          regression = "\n".join(line[10:] if line.startswith("          ") else line for line in regression.splitlines()) + "\n"
+              """
+          )
+          regression = "    " + regression.replace("\n", "\n    ").rstrip() + "\n\n"
           if tests.count(anchor) != 1:
               raise RuntimeError("Unexpected regression insertion point")
           test_path.write_text(tests.replace(anchor, regression + anchor, 1), encoding="utf-8")
