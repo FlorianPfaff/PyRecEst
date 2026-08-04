@@ -308,6 +308,13 @@ def aggregate_time_offset_sweeps(
 
 _time_offset_module.aggregate_time_offset_sweeps = aggregate_time_offset_sweeps
 
+from ._time_offset_grid_extreme_range import (  # noqa: E402
+    install_time_offset_grid_extreme_range_contract,
+)
+
+install_time_offset_grid_extreme_range_contract()
+make_offset_grid = _time_offset_module.make_offset_grid
+
 
 __all__ = [
     "BiasTrainingExamples",
