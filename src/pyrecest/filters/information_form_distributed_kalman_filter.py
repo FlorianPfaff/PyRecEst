@@ -326,6 +326,7 @@ class IdkfNode(AbstractFilter, EuclideanFilterMixin):
             self.global_information_state.operation_hash, "predict_linear"
         )
 
+        predicted_contributions = {}
         for contribution in self.contribution_bank.values():
             explicit_input = self._input_for_contribution(
                 contribution.key,
@@ -336,21 +337,32 @@ class IdkfNode(AbstractFilter, EuclideanFilterMixin):
             predicted_component = (
                 A @ linalg.solve(Y_old, contribution.y) + explicit_input
             )
-            contribution.y = linalg.solve(predicted_covariance, predicted_component)
+            predicted_contributions[contribution.key] = linalg.solve(
+                predicted_covariance, predicted_component
+            )
+
+        state = self.global_information_state
+        predicted_transform_to_end = state.transform_to_end
+        if state.transform_to_end is not None:
+            predicted_transform_to_end = (
+                state.transform_to_end @ Y_old @ linalg.inv(A) @ predicted_covariance
+            )
+        predicted_information_matrix = linalg.inv(predicted_covariance)
+
+        for key, predicted_y in predicted_contributions.items():
+            contribution = self.contribution_bank[key]
+            contribution.y = predicted_y
             contribution.epoch += 1
             contribution.operation_count += 1
             contribution.operation_hash = operation_hash
-            self.seen_contribution_ids.add(self._message_identity(contribution))
 
-        state = self.global_information_state
-        if state.transform_to_end is not None:
-            state.transform_to_end = (
-                state.transform_to_end @ Y_old @ linalg.inv(A) @ predicted_covariance
-            )
-        state.Y = linalg.inv(predicted_covariance)
+        state.transform_to_end = predicted_transform_to_end
+        state.Y = predicted_information_matrix
         state.epoch += 1
         state.operation_count += 1
         state.operation_hash = operation_hash
+        for contribution in self.contribution_bank.values():
+            self.seen_contribution_ids.add(self._message_identity(contribution))
 
     def predict_model(self, transition_model, **kwargs):
         system_matrix = _required(transition_model, "system_matrix")
@@ -379,7 +391,9 @@ class IdkfNode(AbstractFilter, EuclideanFilterMixin):
             raise ValueError("Cannot update a stale IDKF contribution")
 
         H, R = self._resolve_measurement_model(measurement_matrix, meas_noise)
-        contribution.y = contribution.y + H.T @ linalg.solve(R, atleast_1d(measurement))
+        information_vector_increment = H.T @ linalg.solve(
+            R, atleast_1d(measurement)
+        )
 
         all_models = (
             measurement_models
@@ -388,13 +402,22 @@ class IdkfNode(AbstractFilter, EuclideanFilterMixin):
         )
         if all_models is None:
             all_models = ((H, R),)
-        state = self.global_information_state
-        state.Y = state.Y + self._measurement_information_sum(all_models)
-        state.operation_count += 1
-        state.operation_hash = _extend_hash(state.operation_hash, "update_linear")
+        information_matrix_increment = self._measurement_information_sum(all_models)
 
-        contribution.operation_count = state.operation_count
-        contribution.operation_hash = state.operation_hash
+        state = self.global_information_state
+        updated_y = contribution.y + information_vector_increment
+        updated_Y = state.Y + information_matrix_increment
+        updated_operation_count = state.operation_count + 1
+        updated_operation_hash = _extend_hash(
+            state.operation_hash, "update_linear"
+        )
+
+        contribution.y = updated_y
+        state.Y = updated_Y
+        state.operation_count = updated_operation_count
+        state.operation_hash = updated_operation_hash
+        contribution.operation_count = updated_operation_count
+        contribution.operation_hash = updated_operation_hash
         contribution.epoch = state.epoch
         self.seen_contribution_ids.add(self._message_identity(contribution))
 
