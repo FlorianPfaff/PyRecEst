@@ -252,8 +252,13 @@ def _validate_covariance_stack(name: str, covariances: Any) -> Any:
 
 
 def _symmetrized_covariance_batch(covariances: Any) -> Any:
+    """Move and symmetrize a covariance stack without finite overflow."""
     moved = moveaxis(covariances, -1, 0)
-    return 0.5 * (moved + transpose(moved, (0, 2, 1)))
+    transposed = transpose(moved, (0, 2, 1))
+    scale = maximum(abs(moved), abs(transposed))
+    safe_scale = where(scale == 0.0, 1.0, scale)
+    normalized_average = 0.5 * (moved / safe_scale + transposed / safe_scale)
+    return scale * normalized_average
 
 
 def _batch_trace(matrices: Any) -> Any:
