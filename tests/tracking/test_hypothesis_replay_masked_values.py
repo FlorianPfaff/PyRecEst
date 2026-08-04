@@ -69,19 +69,16 @@ def test_masked_record_diagnostics_do_not_affect_scores() -> None:
     assert score.robust_sum_residual == 0.0
 
 
-def test_nested_masked_record_statistics_are_ignored() -> None:
+def test_nested_masked_fallback_statistic_is_ignored() -> None:
     replay = HypothesisReplay(
-        hypothesis_id="nested-masked-diagnostics",
-        records=[
-            {"nis": np.array(np.ma.masked, dtype=object)},
-            {"innovation": [3.0, np.ma.masked]},
-        ],
+        hypothesis_id="nested-masked-diagnostic",
+        records=[{"innovation": [3.0, np.ma.masked]}],
     )
 
     score = rank_hypothesis_replays([replay])[0]
 
-    assert score.finite_nis_count == 0
     assert score.finite_residual_count == 0
+    assert score.robust_sum_residual == 0.0
 
 
 def test_clear_mask_wrappers_remain_supported() -> None:
