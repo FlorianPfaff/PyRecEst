@@ -1,5 +1,11 @@
 """Generic tracking event and replay-record helpers."""
 
+from ._innovation_diagnostic_record_contract import (
+    install_innovation_diagnostic_record_contract,
+)
+
+install_innovation_diagnostic_record_contract()
+
 from .event_records import (
     TrackingEvent,
     TrackingRecord,
