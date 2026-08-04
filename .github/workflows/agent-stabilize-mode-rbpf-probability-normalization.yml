@@ -1,0 +1,208 @@
+name: Stabilize ModeRBPF probability normalization
+
+on:
+  push:
+    branches:
+      - agent/stabilize-mode-rbpf-probability-normalization
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Apply scale-stable normalization patch
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          source_path = Path("src/pyrecest/filters/mode_rbpf_manifold_ukf_tracker.py")
+          source = source_path.read_text(encoding="utf-8")
+
+          old_rows = '''    @staticmethod
+              def _normalize_rows(matrix):
+                  matrix = np.asarray(matrix, dtype=float)
+                  if matrix.ndim != 2:
+                      raise ValueError("transition_matrix must be two-dimensional")
+                  if np.any(~np.isfinite(matrix)) or np.any(matrix < 0.0):
+                      raise ValueError(
+                          "transition_matrix must contain finite non-negative probabilities"
+                      )
+                  row_sums = np.sum(matrix, axis=1, keepdims=True)
+                  if np.any(row_sums <= 0.0):
+                      raise ValueError(
+                          "each transition_matrix row must have positive total probability"
+                      )
+                  return matrix / row_sums
+          '''.replace("          ", "")
+          new_rows = '''    @staticmethod
+              def _normalize_rows(matrix):
+                  matrix = np.asarray(matrix, dtype=float)
+                  if matrix.ndim != 2:
+                      raise ValueError("transition_matrix must be two-dimensional")
+                  if np.any(~np.isfinite(matrix)) or np.any(matrix < 0.0):
+                      raise ValueError(
+                          "transition_matrix must contain finite non-negative probabilities"
+                      )
+                  row_scale = np.max(matrix, axis=1, keepdims=True)
+                  if np.any(row_scale <= 0.0):
+                      raise ValueError(
+                          "each transition_matrix row must have positive total probability"
+                      )
+                  scaled = matrix / row_scale
+                  row_sums = np.sum(scaled, axis=1, keepdims=True)
+                  if np.any(row_sums <= 0.0) or np.any(~np.isfinite(row_sums)):
+                      raise ValueError(
+                          "each transition_matrix row must have positive total probability"
+                      )
+                  return scaled / row_sums
+          '''.replace("          ", "")
+
+          old_probs = '''    @staticmethod
+              def _normalize_probs(probs):
+                  probs = np.asarray(probs, dtype=float)
+                  expected_shape = (len(ModeRBPFManifoldUKFTracker.mode_names),)
+                  if probs.shape != expected_shape:
+                      raise ValueError("initial_mode_probs must have one entry per mode")
+                  if np.any(~np.isfinite(probs)) or np.any(probs < 0.0):
+                      raise ValueError(
+                          "initial_mode_probs must contain finite non-negative probabilities"
+                      )
+                  total = float(np.sum(probs))
+                  if total <= 0.0:
+                      raise ValueError(
+                          "initial_mode_probs must have positive total probability"
+                      )
+                  return probs / total
+          '''.replace("          ", "")
+          new_probs = '''    @staticmethod
+              def _normalize_probs(probs):
+                  probs = np.asarray(probs, dtype=float)
+                  expected_shape = (len(ModeRBPFManifoldUKFTracker.mode_names),)
+                  if probs.shape != expected_shape:
+                      raise ValueError("initial_mode_probs must have one entry per mode")
+                  if np.any(~np.isfinite(probs)) or np.any(probs < 0.0):
+                      raise ValueError(
+                          "initial_mode_probs must contain finite non-negative probabilities"
+                      )
+                  scale = float(np.max(probs))
+                  if scale <= 0.0:
+                      raise ValueError(
+                          "initial_mode_probs must have positive total probability"
+                      )
+                  scaled = probs / scale
+                  total = float(np.sum(scaled))
+                  if total <= 0.0 or not np.isfinite(total):
+                      raise ValueError(
+                          "initial_mode_probs must have positive total probability"
+                      )
+                  return scaled / total
+          '''.replace("          ", "")
+
+          if source.count(old_rows) != 1:
+              raise RuntimeError("Could not locate the expected transition normalization block")
+          if source.count(old_probs) != 1:
+              raise RuntimeError("Could not locate the expected initial probability block")
+          source = source.replace(old_rows, new_rows).replace(old_probs, new_probs)
+          source_path.write_text(source, encoding="utf-8")
+
+          test_path = Path(
+              "tests/filters/test_mode_rbpf_extreme_probability_normalization.py"
+          )
+          test_path.write_text(
+              '''import unittest
+
+          import numpy as np
+          import numpy.testing as npt
+          import pyrecest.backend as pyrecest_backend
+          from pyrecest.filters import ModeRBPFManifoldUKFTracker
+
+
+          @unittest.skipIf(
+              pyrecest_backend.__backend_name__ != "numpy",
+              reason="ModeRBPFManifoldUKFTracker is currently NumPy-backend only",
+          )
+          class TestModeRBPFExtremeProbabilityNormalization(unittest.TestCase):
+              def test_extreme_finite_probabilities_preserve_ratios(self):
+                  largest = np.finfo(np.float64).max
+                  transition_matrix = np.array(
+                      [
+                          [largest, largest / 2.0, 0.0],
+                          [0.0, largest, largest / 2.0],
+                          [largest / 2.0, 0.0, largest],
+                      ]
+                  )
+                  initial_mode_probs = np.array([largest, largest / 2.0, 0.0])
+
+                  with np.errstate(over="raise", invalid="raise", divide="raise"):
+                      tracker = ModeRBPFManifoldUKFTracker(
+                          kinematic_state=np.array([0.0, 0.0, 0.0, 0.0]),
+                          covariance=np.eye(4),
+                          shape_state=np.array([0.0, 2.0, 1.0]),
+                          shape_covariance=np.eye(3),
+                          transition_matrix=transition_matrix,
+                          initial_mode_probs=initial_mode_probs,
+                          n_particles=12,
+                          rng=0,
+                      )
+                      normalized_initial = tracker._normalize_probs(initial_mode_probs)
+
+                  npt.assert_allclose(
+                      tracker.transition_matrix,
+                      np.array(
+                          [
+                              [2.0 / 3.0, 1.0 / 3.0, 0.0],
+                              [0.0, 2.0 / 3.0, 1.0 / 3.0],
+                              [1.0 / 3.0, 0.0, 2.0 / 3.0],
+                          ]
+                      ),
+                  )
+                  npt.assert_allclose(
+                      normalized_initial,
+                      np.array([2.0 / 3.0, 1.0 / 3.0, 0.0]),
+                  )
+                  self.assertFalse(np.any(tracker.modes == 2))
+
+
+          if __name__ == "__main__":
+              unittest.main()
+          '''.replace("          ", ""),
+              encoding="utf-8",
+          )
+
+          Path(
+              ".github/workflows/agent-stabilize-mode-rbpf-probability-normalization.yml"
+          ).unlink()
+          PY
+
+      - name: Install test dependencies
+        run: python -m pip install -e . pytest
+
+      - name: Run focused tracker tests
+        run: >-
+          python -m pytest -q
+          tests/filters/test_mode_rbpf_extreme_probability_normalization.py
+          tests/filters/test_mode_rbpf_manifold_ukf_tracker.py
+          tests/filters/test_mode_rbpf_axis_canonicalization.py
+
+      - name: Commit validated patch
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/pyrecest/filters/mode_rbpf_manifold_ukf_tracker.py \
+            tests/filters/test_mode_rbpf_extreme_probability_normalization.py \
+            .github/workflows/agent-stabilize-mode-rbpf-probability-normalization.yml
+          git commit -m "Stabilize ModeRBPF probability normalization"
+          git push
