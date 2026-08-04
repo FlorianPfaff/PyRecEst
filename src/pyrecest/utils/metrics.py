@@ -581,12 +581,17 @@ def _as_covariance_stack(
 
     if not np.all(np.isfinite(covariance_stack)):
         raise ValueError(f"{name} must contain only finite values")
-    if not np.allclose(
-        covariance_stack,
-        np.swapaxes(covariance_stack, -1, -2),
-        rtol=1e-12,
-        atol=1e-12,
-    ):
+    covariance_transpose = np.swapaxes(covariance_stack, -1, -2)
+    covariance_scale = np.maximum(
+        np.maximum(np.abs(covariance_stack), np.abs(covariance_transpose)),
+        1.0,
+    )
+    with np.errstate(over="ignore", under="ignore", invalid="ignore"):
+        relative_asymmetry = np.abs(
+            covariance_stack / covariance_scale
+            - covariance_transpose / covariance_scale
+        )
+    if np.any(relative_asymmetry > 1e-12):
         raise ValueError(f"{name} must contain symmetric covariance matrices")
     try:
         np.linalg.cholesky(covariance_stack)
