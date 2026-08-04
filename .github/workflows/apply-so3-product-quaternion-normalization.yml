@@ -119,14 +119,14 @@ jobs:
                       )
 
 
-                  def test_geodesic_distance_preserves_scalar_shape_for_single_rotations():
+                  def test_geodesic_distance_preserves_scalar_result_for_single_rotations():
                       rotation = array([0.0, 0.0, 0.0, 1.0])
 
                       distance = SO3ProductDiracDistribution.geodesic_distance(
                           rotation, rotation
                       )
 
-                      assert tuple(distance.shape) == ()
+                      assert np.isscalar(distance)
                       assert float(distance) == 0.0
                   '''
               ),
