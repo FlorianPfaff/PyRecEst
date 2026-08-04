@@ -33,7 +33,6 @@ from scipy.special import ive
 
 from .abstract_hyperspherical_distribution import AbstractHypersphericalDistribution
 
-
 _INVALID_REAL_SCALAR_TYPES = (
     bool,
     np.bool_,
