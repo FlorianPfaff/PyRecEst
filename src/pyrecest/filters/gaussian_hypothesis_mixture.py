@@ -47,7 +47,9 @@ class WeightedGaussianHypothesis:
             raise ValueError("covariance must match mean dimension")
         if not np.all(np.isfinite(covariance)):
             raise ValueError("covariance must contain only finite values")
-        if not is_symmetric(covariance):
+        with np.errstate(over="ignore", invalid="ignore"):
+            covariance_is_symmetric = is_symmetric(covariance)
+        if not covariance_is_symmetric:
             raise ValueError("covariance must be symmetric")
         covariance = _symmetrized(covariance)
         if not is_positive_semidefinite(covariance):
