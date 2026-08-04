@@ -1,0 +1,180 @@
+name: Apply stable SO(3) quaternion normalization
+
+on:
+  push:
+    branches:
+      - agent/stabilize-so3-product-quaternion-normalization
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-test:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Patch stable quaternion normalization and add regression
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          source_path = Path("src/pyrecest/distributions/so3_product_dirac_distribution.py")
+          source = source_path.read_text(encoding="utf-8")
+
+          old_import = '''    isfinite,
+              linalg,
+              ndim,
+              pi,
+              random,
+              reshape,
+              spatial,
+              stack,
+          '''
+          new_import = '''    isfinite,
+              linalg,
+              max as backend_max,
+              ndim,
+              pi,
+              random,
+              reshape,
+              spatial,
+              sqrt,
+              stack,
+          '''
+          if source.count(old_import) != 1:
+              raise RuntimeError("unexpected SO(3) import anchor count")
+          source = source.replace(old_import, new_import, 1)
+
+          old_method = '''    @staticmethod
+              def _normalize_quaternions(quaternions):
+                  norms = linalg.norm(quaternions, axis=-1)
+                  if not all(isfinite(quaternions)):
+                      raise ValueError("SO(3) quaternions must be finite.")
+                  if not all(isfinite(norms)):
+                      raise ValueError("SO(3) quaternion norms must be finite.")
+                  if not all(norms > 0.0):
+                      raise ValueError("SO(3) quaternions must be nonzero.")
+                  return quaternions / reshape(norms, tuple(norms.shape) + (1,))
+          '''
+          new_method = '''    @staticmethod
+              def _normalize_quaternions(quaternions):
+                  if not all(isfinite(quaternions)):
+                      raise ValueError("SO(3) quaternions must be finite.")
+
+                  scales = backend_max(abs(quaternions), axis=-1)
+                  if not all(scales > 0.0):
+                      raise ValueError("SO(3) quaternions must be nonzero.")
+
+                  scale_roots = sqrt(scales)
+                  expanded_scale_roots = reshape(
+                      scale_roots, tuple(scale_roots.shape) + (1,)
+                  )
+                  scaled_quaternions = (
+                      quaternions / expanded_scale_roots
+                  ) / expanded_scale_roots
+                  scaled_norms = linalg.norm(scaled_quaternions, axis=-1)
+                  if not all(isfinite(scaled_norms)):
+                      raise ValueError("SO(3) quaternion norms must be finite.")
+                  return scaled_quaternions / reshape(
+                      scaled_norms, tuple(scaled_norms.shape) + (1,)
+                  )
+          '''
+          if source.count(old_method) != 1:
+              raise RuntimeError("unexpected quaternion-normalization anchor count")
+          source = source.replace(old_method, new_method, 1)
+          source_path.write_text(source, encoding="utf-8")
+
+          test_path = Path(
+              "tests/distributions/test_so3_product_dirac_extreme_norms.py"
+          )
+          test_path.write_text(
+              '''"""Regression tests for scale-stable SO(3) quaternion normalization."""
+
+          import unittest
+
+          import numpy as np
+          import numpy.testing as npt
+          import pyrecest.backend
+          from pyrecest.backend import to_numpy
+          from pyrecest.distributions import SO3ProductDiracDistribution
+
+
+          @unittest.skipUnless(
+              pyrecest.backend.__backend_name__ == "numpy",
+              "Extreme float64 normalization regression is NumPy-specific.",
+          )
+          class SO3ProductDiracExtremeNormTest(unittest.TestCase):
+              def test_normalizes_extreme_finite_quaternion_scales(self):
+                  extreme_scales = (
+                      np.finfo(float).max,
+                      np.nextafter(0.0, 1.0),
+                  )
+                  expected = np.array(
+                      [np.sqrt(0.5), np.sqrt(0.5), 0.0, 0.0]
+                  )
+
+                  for scale in extreme_scales:
+                      with self.subTest(scale=scale):
+                          distribution = SO3ProductDiracDistribution(
+                              np.array([[[scale, scale, 0.0, 0.0]]])
+                          )
+                          quaternion = to_numpy(distribution.d[0, 0])
+
+                          npt.assert_allclose(
+                              quaternion,
+                              expected,
+                              rtol=1.0e-15,
+                              atol=0.0,
+                          )
+                          self.assertAlmostEqual(
+                              float(np.linalg.norm(quaternion)),
+                              1.0,
+                          )
+
+
+          if __name__ == "__main__":
+              unittest.main()
+          ''',
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Install focused test dependencies
+        run: python -m pip install --upgrade pip && python -m pip install -e . pytest
+
+      - name: Run focused regressions
+        run: |
+          python -m pytest \
+            tests/distributions/test_so3_product_dirac_distribution.py \
+            tests/distributions/test_so3_product_dirac_extreme_norms.py \
+            -q
+
+      - name: Check syntax and whitespace
+        run: |
+          python -m compileall -q \
+            src/pyrecest/distributions/so3_product_dirac_distribution.py \
+            tests/distributions/test_so3_product_dirac_extreme_norms.py
+          git diff --check
+
+      - name: Commit final patch and remove one-shot workflow
+        shell: bash
+        run: |
+          rm .github/workflows/apply-so3-product-quaternion-normalization.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            src/pyrecest/distributions/so3_product_dirac_distribution.py \
+            tests/distributions/test_so3_product_dirac_extreme_norms.py \
+            .github/workflows/apply-so3-product-quaternion-normalization.yml
+          git commit -m "Stabilize SO(3) quaternion normalization"
+          git push origin HEAD:${{ github.ref_name }}
