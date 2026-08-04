@@ -11,7 +11,7 @@ from pyrecest.distributions.nonperiodic.hyperrectangular_uniform_distribution im
     "bounds",
     (
         [[0.0 + 0.0j, 1.0 + 0.0j]],
-        [[0.0 + 1.0j, 1.0 + 1.0j]],
+        [[0.0 + 0.0j, 1.0 + 1.0j]],
     ),
 )
 def test_constructor_rejects_complex_bounds(bounds):
@@ -23,7 +23,7 @@ def test_constructor_rejects_complex_bounds(bounds):
     "integration_boundaries",
     (
         [[0.0 + 0.0j, 0.5 + 0.0j]],
-        [[0.0 + 1.0j, 0.5 + 1.0j]],
+        [[0.0 + 0.0j, 0.5 + 0.5j]],
     ),
 )
 def test_integrate_rejects_complex_boundaries(integration_boundaries):
