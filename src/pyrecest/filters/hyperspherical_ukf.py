@@ -15,6 +15,7 @@ from typing import Callable
 
 import pyrecest.backend
 from pyrecest.backend import (  # pylint: disable=redefined-builtin
+    abs,
     all,
     array,
     asarray,
@@ -114,10 +115,17 @@ class HypersphericalUKF(AbstractFilter, HypersphericalFilterMixin):
 
     @staticmethod
     def _normalize(x):
-        n = linalg.norm(x)
-        if n == 0.0:
+        x = asarray(x, dtype=float64)
+        if not all(isfinite(x)):
+            raise ValueError("Mean must be finite; normalization failed.")
+        scale = abs(x).max()
+        if scale == 0.0:
             raise ValueError("Mean is zero; normalization failed.")
-        return x / n
+        scaled_x = x / scale
+        scaled_norm = linalg.norm(scaled_x)
+        if scaled_norm == 0.0 or not isfinite(scaled_norm):
+            raise ValueError("Mean could not be normalized.")
+        return scaled_x / scaled_norm
 
     @staticmethod
     def _validate_zero_mean_noise(noise: GaussianDistribution, parameter_name: str):
