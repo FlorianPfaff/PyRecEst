@@ -2,7 +2,7 @@
 from math import isfinite as math_isfinite
 
 from pyrecest.backend import all as backend_all
-from pyrecest.backend import array, diff, isfinite, prod, reshape, to_numpy
+from pyrecest.backend import array, diff, is_complex, isfinite, prod, reshape, to_numpy
 from scipy.integrate import nquad
 
 from ..abstract_bounded_nonperiodic_distribution import (
@@ -15,12 +15,15 @@ _ERROR_SCALAR_PDF_VALUE = (
 
 
 def _require_finite_bounds(bounds, name: str) -> None:
+    message = f"{name} must contain only finite real values"
+    if is_complex(bounds):
+        raise ValueError(message)
     try:
         finite = bool(backend_all(isfinite(bounds)))
     except TypeError as exc:
-        raise ValueError(f"{name} must contain only finite values") from exc
+        raise ValueError(message) from exc
     if not finite:
-        raise ValueError(f"{name} must contain only finite values")
+        raise ValueError(message)
 
 
 def _require_increasing_bounds(bounds, name: str) -> None:
