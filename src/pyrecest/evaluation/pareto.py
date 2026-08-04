@@ -408,10 +408,21 @@ def _coerce_numeric(value: Any) -> float:
         return float("nan")
 
 
+def _is_complex_scalar(value: Any) -> bool:
+    try:
+        value_array = np.asarray(value)
+    except (TypeError, ValueError, OverflowError):
+        return False
+    return value_array.shape == () and value_array.dtype.kind == "c"
+
+
 def _coerce_constraint_values(values: pd.Series) -> pd.Series:
     value_array = values.to_numpy()
-    if value_array.dtype.kind in "Mm":
+    if value_array.dtype.kind in "cMm":
         return pd.Series(np.nan, index=values.index, dtype=float)
+    complex_values = values.map(_is_complex_scalar)
+    if bool(complex_values.any()):
+        values = values.mask(complex_values)
     return pd.to_numeric(values, errors="coerce").astype(float)
 
 
