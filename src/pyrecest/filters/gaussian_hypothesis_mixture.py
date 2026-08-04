@@ -112,11 +112,11 @@ def normalize_log_weights(log_weights: list[float] | np.ndarray) -> np.ndarray:
 
     maximum = float(np.max(values))
     if not np.isfinite(maximum):
-        return np.full(values.size, 1.0 / values.size)
+        raise ValueError("log_weights must contain positive total mass")
     weights = np.exp(values - maximum)
     total = float(np.sum(weights))
     if total <= 0.0 or not np.isfinite(total):
-        return np.full(values.size, 1.0 / values.size)
+        raise ValueError("log_weights must contain positive finite total mass")
     return weights / total
 
 
