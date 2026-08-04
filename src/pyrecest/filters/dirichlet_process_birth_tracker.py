@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 from dataclasses import dataclass
+from numbers import Real
 from typing import Any
 
 import numpy as np
@@ -168,20 +169,24 @@ class DirichletProcessBirthMultiBernoulliTracker(MultiBernoulliTracker):
         birth_components=None,
     ):
         """Predict targets and decay DP birth-atom counts."""
+        survival_probability = self._normalize_birth_atom_survival_probability()
+        pruning_threshold = self._normalize_birth_atom_pruning_threshold()
+        maximum_number_of_birth_atoms = (
+            self._normalize_maximum_number_of_birth_atoms()
+        )
+
         super().predict_linear(
             system_matrices,
             sys_noises,
             inputs=inputs,
             birth_components=birth_components,
         )
-        survival_probability = float(
-            self.tracker_param["dp_birth_atom_survival_probability"]
-        )
-        if not 0.0 <= survival_probability <= 1.0:
-            raise ValueError("dp_birth_atom_survival_probability must be in [0, 1]")
         for atom in self.birth_atoms:
             atom.count *= survival_probability
-        self._prune_and_cap_birth_atoms()
+        self._prune_and_cap_birth_atoms(
+            pruning_threshold=pruning_threshold,
+            maximum_number_of_birth_atoms=maximum_number_of_birth_atoms,
+        )
 
     def update_linear(self, measurements, measurement_matrix, cov_mats_meas):
         """Update targets and reset DP-birth diagnostics for this scan."""
@@ -352,43 +357,63 @@ class DirichletProcessBirthMultiBernoulliTracker(MultiBernoulliTracker):
                 "Set dp_birth_clutter_intensity when clutter_intensity is measurement-dependent."
             ) from exc
 
-    def _prune_and_cap_birth_atoms(self):
-        pruning_threshold = float(self.tracker_param["dp_birth_atom_pruning_threshold"])
-        self.birth_atoms = [
-            atom for atom in self.birth_atoms if atom.count >= pruning_threshold
-        ]
+    def _normalize_birth_atom_survival_probability(self):
+        message = "dp_birth_atom_survival_probability must be in [0, 1]"
+        survival_probability = _as_finite_real_scalar(
+            self.tracker_param["dp_birth_atom_survival_probability"],
+            message,
+        )
+        if not 0.0 <= survival_probability <= 1.0:
+            raise ValueError(message)
+        return survival_probability
+
+    def _normalize_birth_atom_pruning_threshold(self):
+        message = "dp_birth_atom_pruning_threshold must be finite and non-negative"
+        pruning_threshold = _as_finite_real_scalar(
+            self.tracker_param["dp_birth_atom_pruning_threshold"],
+            message,
+        )
+        if pruning_threshold < 0.0:
+            raise ValueError(message)
+        return pruning_threshold
+
+    def _normalize_maximum_number_of_birth_atoms(self):
         maximum_number_of_birth_atoms = self.tracker_param[
             "maximum_number_of_birth_atoms"
         ]
         if maximum_number_of_birth_atoms is None:
-            return
+            return None
 
         validation_message = (
             "maximum_number_of_birth_atoms must be a non-negative integer or None"
         )
-        if isinstance(maximum_number_of_birth_atoms, (bool, np.bool_)):
+        parsed_limit = _as_finite_real_scalar(
+            maximum_number_of_birth_atoms,
+            validation_message,
+        )
+        if parsed_limit < 0.0 or not parsed_limit.is_integer():
             raise ValueError(validation_message)
-        try:
-            maximum_number_of_birth_atoms_array = np.asarray(
-                maximum_number_of_birth_atoms
+        return int(parsed_limit)
+
+    def _prune_and_cap_birth_atoms(
+        self,
+        *,
+        pruning_threshold=None,
+        maximum_number_of_birth_atoms=None,
+    ):
+        if pruning_threshold is None:
+            pruning_threshold = self._normalize_birth_atom_pruning_threshold()
+        if maximum_number_of_birth_atoms is None:
+            maximum_number_of_birth_atoms = (
+                self._normalize_maximum_number_of_birth_atoms()
             )
-        except (TypeError, ValueError, OverflowError) as exc:
-            raise ValueError(validation_message) from exc
-        if maximum_number_of_birth_atoms_array.shape != ():
-            raise ValueError(validation_message)
-        try:
-            maximum_number_of_birth_atoms_float = float(
-                maximum_number_of_birth_atoms_array.item()
-            )
-        except (TypeError, ValueError, OverflowError) as exc:
-            raise ValueError(validation_message) from exc
-        if (
-            not np.isfinite(maximum_number_of_birth_atoms_float)
-            or maximum_number_of_birth_atoms_float < 0.0
-            or not maximum_number_of_birth_atoms_float.is_integer()
-        ):
-            raise ValueError(validation_message)
-        maximum_number_of_birth_atoms = int(maximum_number_of_birth_atoms_float)
+
+        self.birth_atoms = [
+            atom for atom in self.birth_atoms if atom.count >= pruning_threshold
+        ]
+        if maximum_number_of_birth_atoms is None:
+            return
+
         self.birth_atoms = sorted(
             self.birth_atoms,
             key=lambda atom: atom.count,
@@ -398,6 +423,28 @@ class DirichletProcessBirthMultiBernoulliTracker(MultiBernoulliTracker):
 
 DPBirthMultiBernoulliTracker = DirichletProcessBirthMultiBernoulliTracker
 DPBirthAtom = DirichletProcessBirthAtom
+
+
+def _as_finite_real_scalar(value, message):
+    if np.ma.is_masked(value) or isinstance(value, (bool, np.bool_)):
+        raise ValueError(message)
+    try:
+        value_array = np.asarray(value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(message) from exc
+    if value_array.shape != () or value_array.dtype.kind in {"b", "c", "M", "m"}:
+        raise ValueError(message)
+
+    scalar = value_array.item()
+    if isinstance(scalar, (bool, np.bool_)) or not isinstance(scalar, Real):
+        raise ValueError(message)
+    try:
+        parsed = float(scalar)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(message) from exc
+    if not np.isfinite(parsed):
+        raise ValueError(message)
+    return parsed
 
 
 def _as_vector(value, name):
