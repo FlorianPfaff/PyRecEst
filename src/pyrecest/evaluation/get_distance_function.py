@@ -336,7 +336,7 @@ def get_distance_function(
         def distance_function(x1, x2):
             orientation1 = _state_slice(x1, 0, 4)
             orientation2 = _state_slice(x2, 0, 4)
-            return min(
+            return 2.0 * min(
                 _angular_distance_from_inner_product(dot(orientation1, orientation2)),
                 _angular_distance_from_inner_product(dot(orientation1, -orientation2)),
             )
