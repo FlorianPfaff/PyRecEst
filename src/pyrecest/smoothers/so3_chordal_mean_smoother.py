@@ -108,13 +108,14 @@ class SO3ChordalMeanSmoother(AbstractSmoother):
             if weights_array[idx] < 0.0:
                 raise ValueError(f"{name} must be nonnegative.")
 
-        weight_sum = backend.sum(weights_array)
-        if weight_sum <= 0.0:
+        weight_scale = backend.max(weights_array)
+        if weight_scale <= 0.0:
             raise ValueError(f"{name} must contain at least one positive entry.")
 
+        scaled_weights = weights_array / weight_scale
         if normalize:
-            return weights_array / weight_sum
-        return weights_array
+            return scaled_weights / backend.sum(scaled_weights)
+        return scaled_weights
 
     @staticmethod
     def project_to_so3(matrix):
