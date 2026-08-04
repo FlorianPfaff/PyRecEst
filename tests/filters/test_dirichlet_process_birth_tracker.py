@@ -1,6 +1,7 @@
 import numpy as np
 import pyrecest.backend
 import pytest
+from pyrecest.distributions import GaussianDistribution
 from pyrecest.filters.dirichlet_process_birth_tracker import (
     DirichletProcessBirthMultiBernoulliTracker,
     DPBirthAtom,
@@ -154,3 +155,52 @@ def test_birth_atom_cap_accepts_nonnegative_integer_limits(valid_limit):
     tracker._prune_and_cap_birth_atoms()
 
     assert len(tracker.birth_atoms) == min(int(valid_limit), 2)
+
+
+@pytest.mark.parametrize(
+    ("parameter", "invalid_value"),
+    [
+        ("dp_birth_atom_survival_probability", 1.5),
+        ("dp_birth_atom_survival_probability", np.nan),
+        ("dp_birth_atom_survival_probability", True),
+        ("dp_birth_atom_pruning_threshold", -1.0),
+        ("dp_birth_atom_pruning_threshold", np.nan),
+        ("dp_birth_atom_pruning_threshold", np.inf),
+        ("maximum_number_of_birth_atoms", 1.5),
+    ],
+)
+def test_predict_rejects_invalid_birth_atom_controls_atomically(
+    parameter,
+    invalid_value,
+):
+    overrides = {
+        "birth_atoms": [(np.zeros(4), np.eye(4), 2.0)],
+        "dp_birth_atom_survival_probability": 0.5,
+    }
+    overrides[parameter] = invalid_value
+    tracker, _, _ = _tracker(**overrides)
+    tracker.filter_state = [
+        (
+            0.8,
+            GaussianDistribution(
+                np.array([1.0, 2.0, 0.0, 0.0]),
+                np.eye(4),
+            ),
+        )
+    ]
+
+    component_before = tracker.get_component_by_label(0)
+    mean_before = np.asarray(component_before.get_point_estimate()).copy()
+    existence_before = component_before.existence_probability
+    atom_counts_before = [atom.count for atom in tracker.birth_atoms]
+
+    with pytest.raises(ValueError, match=parameter):
+        tracker.predict_linear(2.0 * np.eye(4), 0.1 * np.eye(4))
+
+    component_after = tracker.get_component_by_label(0)
+    np.testing.assert_allclose(
+        component_after.get_point_estimate(),
+        mean_before,
+    )
+    assert component_after.existence_probability == existence_before
+    assert [atom.count for atom in tracker.birth_atoms] == atom_counts_before
