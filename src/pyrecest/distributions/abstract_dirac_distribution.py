@@ -16,8 +16,11 @@ from pyrecest.backend import (
     argmax,
     asarray,
 )
+from pyrecest.backend import any as backend_any
 from pyrecest.backend import copy as backend_copy
+from pyrecest.backend import max as backend_max
 from pyrecest.backend import (
+    exp,
     int32,
     int64,
     isclose,
@@ -190,7 +193,23 @@ class AbstractDiracDistribution(AbstractDistributionType):
             raise ValueError("Function returned wrong output dimensions.")
         self._validate_weights(w_new)
 
-        dist.w = self._normalized_weights(w_new * dist.w)
+        positive_product = (dist.w > 0) & (w_new > 0)
+        if not bool(backend_any(positive_product)):
+            raise ValueError("Dirac weights must have positive finite total mass.")
+
+        safe_prior_weights = where(positive_product, dist.w, 1.0)
+        safe_update_weights = where(positive_product, w_new, 1.0)
+        log_product = log(safe_prior_weights) + log(safe_update_weights)
+        maximum_log_product = backend_max(
+            where(positive_product, log_product, -float("inf"))
+        )
+        shifted_log_product = where(
+            positive_product,
+            log_product - maximum_log_product,
+            0.0,
+        )
+        stable_product = where(positive_product, exp(shifted_log_product), 0.0)
+        dist.w = self._normalized_weights(stable_product)
         return dist
 
     def sample(self, n: Union[int, int32, int64]):
