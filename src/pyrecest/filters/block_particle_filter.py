@@ -397,8 +397,17 @@ class BlockParticleFilter:
         """Systematically resample selected blocks and reset their weights."""
         if block_indices is None:
             block_indices = range(self.n_blocks)
+        normalized_block_indices = tuple(
+            _as_integer(block_idx, "block_index", 0) for block_idx in block_indices
+        )
+        for block_idx in normalized_block_indices:
+            if block_idx >= self.n_blocks:
+                raise ValueError("block_index is out of range.")
         return stack(
-            [self.resample_block_systematic(block_idx) for block_idx in block_indices],
+            [
+                self.resample_block_systematic(block_idx)
+                for block_idx in normalized_block_indices
+            ],
             axis=0,
         )
 
