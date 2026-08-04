@@ -1,0 +1,250 @@
+name: Apply particle replacement atomicity fix
+
+on:
+  push:
+    branches:
+      - agent/fix-particle-replacement-atomicity
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/fix-particle-replacement-atomicity
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Apply atomic particle replacement patch
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          so3_path = Path("src/pyrecest/filters/so3_product_particle_filter.py")
+          so3_source = so3_path.read_text(encoding="utf-8")
+          old_so3 = '''    def set_particles(self, particles, weights=None):
+              """Replace particles and optionally weights."""
+              particles = self._as_particle_array(particles, self.num_rotations)
+              if particles.shape[0] != self.n_particles:
+                  raise ValueError("New particles must match the existing particle count.")
+              self.filter_state.d = self._flatten_particles(particles)
+              if weights is not None:
+                  weights = self._normalize_weights(weights)
+                  if weights.shape[0] != self.n_particles:
+                      raise ValueError("weights must match the particle count.")
+                  self.filter_state.w = weights
+          '''
+          new_so3 = '''    def set_particles(self, particles, weights=None):
+              """Replace particles and optionally weights."""
+              particles = self._as_particle_array(particles, self.num_rotations)
+              if particles.shape[0] != self.n_particles:
+                  raise ValueError("New particles must match the existing particle count.")
+
+              normalized_weights = None
+              if weights is not None:
+                  normalized_weights = self._normalize_weights(weights)
+                  if normalized_weights.shape[0] != self.n_particles:
+                      raise ValueError("weights must match the particle count.")
+
+              flattened_particles = self._flatten_particles(particles)
+              self.filter_state.d = flattened_particles
+              if normalized_weights is not None:
+                  self.filter_state.w = normalized_weights
+          '''
+          if so3_source.count(old_so3) != 1:
+              raise RuntimeError("SO3 set_particles patch context did not match exactly once")
+          so3_path.write_text(so3_source.replace(old_so3, new_so3), encoding="utf-8")
+
+          block_path = Path("src/pyrecest/filters/block_particle_filter.py")
+          block_source = block_path.read_text(encoding="utf-8")
+          old_block = '''    def set_particles(self, particles, weights=None, block_weights=None):
+              """Replace particles and optionally global or block weights."""
+              parent_set_particles = getattr(super(), "set_particles", None)
+              if parent_set_particles is not None:
+                  parent_set_particles(particles, weights=weights)
+              else:
+                  particles = array(particles, dtype=float)
+                  if particles.shape != self._block_particle_array().shape:
+                      raise ValueError(
+                          "New particles must match the existing particle shape."
+                      )
+                  self.filter_state.d = particles
+                  if weights is not None:
+                      weights = self._normalize_weights(weights)
+                      if weights.shape[0] != self.n_particles:
+                          raise ValueError("weights must match the particle count.")
+                      self.filter_state.w = weights
+
+              if not hasattr(self, "_block_weights"):
+                  return
+              if block_weights is not None:
+                  self.set_block_weights(block_weights)
+              elif weights is not None:
+                  self.set_block_weights(weights)
+              else:
+                  self._sync_global_weights()
+          '''
+          new_block = '''    def set_particles(self, particles, weights=None, block_weights=None):
+              """Replace particles and optionally global or block weights."""
+              normalized_weights = None
+              if weights is not None:
+                  normalized_weights = self._normalize_weights(weights)
+                  if normalized_weights.shape[0] != self.n_particles:
+                      raise ValueError("weights must match the particle count.")
+
+              normalized_block_weights = None
+              if hasattr(self, "_block_weights"):
+                  if block_weights is not None:
+                      normalized_block_weights = self._normalize_block_weights(
+                          block_weights
+                      )
+                  elif normalized_weights is not None:
+                      normalized_block_weights = self._normalize_block_weights(
+                          normalized_weights
+                      )
+
+              parent_set_particles = getattr(super(), "set_particles", None)
+              if parent_set_particles is not None:
+                  parent_set_particles(particles, weights=normalized_weights)
+              else:
+                  particles = array(particles, dtype=float)
+                  if particles.shape != self._block_particle_array().shape:
+                      raise ValueError(
+                          "New particles must match the existing particle shape."
+                      )
+                  self.filter_state.d = particles
+                  if normalized_weights is not None:
+                      self.filter_state.w = normalized_weights
+
+              if not hasattr(self, "_block_weights"):
+                  return
+              if normalized_block_weights is not None:
+                  self._block_weights = normalized_block_weights
+              self._sync_global_weights()
+          '''
+          if block_source.count(old_block) != 1:
+              raise RuntimeError("Block set_particles patch context did not match exactly once")
+          block_path.write_text(
+              block_source.replace(old_block, new_block), encoding="utf-8"
+          )
+
+          block_test_path = Path("tests/filters/test_block_particle_filter.py")
+          block_tests = block_test_path.read_text(encoding="utf-8")
+          old_imports = '''import unittest
+          from types import SimpleNamespace
+          '''
+          new_imports = '''import copy
+          import unittest
+          from types import SimpleNamespace
+          '''
+          if block_tests.count(old_imports) != 1:
+              raise RuntimeError("Block test import context did not match exactly once")
+          block_tests = block_tests.replace(old_imports, new_imports)
+
+          block_test_anchor = '''    def test_component_indices_must_be_integral(self):
+          '''
+          block_regression = '''    def test_set_particles_rejects_invalid_weights_atomically(self):
+              replacement_particles = array([[2.0, 12.0], [3.0, 13.0]])
+              invalid_cases = (
+                  ({"weights": array([1.0])}, "weights must match"),
+                  (
+                      {"block_weights": array([[1.0, 0.0]])},
+                      "block_weights must have shape",
+                  ),
+              )
+
+              for kwargs, error_message in invalid_cases:
+                  with self.subTest(kwargs=kwargs):
+                      filt = DummyBlockParticleFilter(
+                          array([[0.0, 10.0], [1.0, 11.0]]),
+                          partition="singleton",
+                      )
+                      original_particles = copy.deepcopy(filt.particles)
+                      original_weights = copy.deepcopy(filt.weights)
+                      original_block_weights = copy.deepcopy(filt.block_weights)
+
+                      with self.assertRaisesRegex(ValueError, error_message):
+                          filt.set_particles(replacement_particles, **kwargs)
+
+                      npt.assert_allclose(filt.particles, original_particles)
+                      npt.assert_allclose(filt.weights, original_weights)
+                      npt.assert_allclose(filt.block_weights, original_block_weights)
+
+          '''
+          if block_test_anchor not in block_tests:
+              raise RuntimeError("Block test insertion context was not found")
+          if "test_set_particles_rejects_invalid_weights_atomically" in block_tests:
+              raise RuntimeError("Block particle atomicity regression already exists")
+          block_tests = block_tests.replace(
+              block_test_anchor, block_regression + block_test_anchor, 1
+          )
+          block_test_path.write_text(block_tests, encoding="utf-8")
+
+          so3_test_path = Path("tests/filters/test_so3_product_particle_filter.py")
+          so3_tests = so3_test_path.read_text(encoding="utf-8")
+          so3_test_anchor = '''    def test_rejects_nonfinite_particle_weights(self):
+          '''
+          so3_regression = '''    def test_set_particles_rejects_invalid_weights_atomically(self):
+              filt = SO3ProductParticleFilter(n_particles=2, num_rotations=1)
+              original_particles = to_numpy(filt.particles).copy()
+              original_weights = to_numpy(filt.weights).copy()
+              replacement_particles = array(
+                  [[z_quaternion(pi / 2.0)], [z_quaternion(pi)]]
+              )
+
+              with self.assertRaisesRegex(ValueError, "weights must match"):
+                  filt.set_particles(
+                      replacement_particles,
+                      weights=array([1.0]),
+                  )
+
+              npt.assert_allclose(to_numpy(filt.particles), original_particles)
+              npt.assert_allclose(to_numpy(filt.weights), original_weights)
+
+          '''
+          if so3_test_anchor not in so3_tests:
+              raise RuntimeError("SO3 test insertion context was not found")
+          if "test_set_particles_rejects_invalid_weights_atomically" in so3_tests:
+              raise RuntimeError("SO3 particle atomicity regression already exists")
+          so3_tests = so3_tests.replace(
+              so3_test_anchor, so3_regression + so3_test_anchor, 1
+          )
+          so3_test_path.write_text(so3_tests, encoding="utf-8")
+
+          Path(".github/workflows/apply-particle-replacement-atomicity-fix.yml").unlink()
+          PY
+
+      - name: Compile changed Python files
+        run: |
+          python -m py_compile \
+            src/pyrecest/filters/so3_product_particle_filter.py \
+            src/pyrecest/filters/block_particle_filter.py \
+            tests/filters/test_so3_product_particle_filter.py \
+            tests/filters/test_block_particle_filter.py
+
+      - name: Install focused test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e . pytest
+
+      - name: Run focused regression tests
+        run: |
+          python -m pytest -q \
+            tests/filters/test_so3_product_particle_filter.py \
+            tests/filters/test_block_particle_filter.py
+
+      - name: Commit and push patch
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Make particle replacement atomic"
+          git push origin HEAD:agent/fix-particle-replacement-atomicity
