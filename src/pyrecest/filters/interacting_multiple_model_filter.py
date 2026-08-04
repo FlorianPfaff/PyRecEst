@@ -250,19 +250,24 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
         ``sys_noise_covs`` and ``sys_inputs`` can either be shared across all models
         or be provided as lists/tuples with one entry per model.
         """
-        self.interact()
         sys_noise_covs = self._broadcast_model_argument(
             sys_noise_covs, "sys_noise_covs"
         )
         sys_inputs = self._broadcast_model_argument(sys_inputs, "sys_inputs")
 
-        for curr_filter, curr_noise_cov, curr_input in zip(
-            self.filter_bank, sys_noise_covs, sys_inputs
-        ):
-            if curr_input is None:
-                curr_filter.predict_identity(curr_noise_cov)
-            else:
-                curr_filter.predict_identity(curr_noise_cov, curr_input)
+        prediction_snapshot = self._snapshot_prediction_state()
+        try:
+            self.interact()
+            for curr_filter, curr_noise_cov, curr_input in zip(
+                self.filter_bank, sys_noise_covs, sys_inputs
+            ):
+                if curr_input is None:
+                    curr_filter.predict_identity(curr_noise_cov)
+                else:
+                    curr_filter.predict_identity(curr_noise_cov, curr_input)
+        except Exception:
+            self._restore_prediction_state(prediction_snapshot)
+            raise
 
     def predict_linear(self, system_matrices, sys_noise_covs, sys_inputs=None):
         """Predict each model with a linear system model.
@@ -271,7 +276,6 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
         shared across all models or be provided as lists/tuples with one entry per
         model.
         """
-        self.interact()
         system_matrices = self._broadcast_model_argument(
             system_matrices, "system_matrices"
         )
@@ -280,15 +284,21 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
         )
         sys_inputs = self._broadcast_model_argument(sys_inputs, "sys_inputs")
 
-        for curr_filter, curr_system_matrix, curr_noise_cov, curr_input in zip(
-            self.filter_bank, system_matrices, sys_noise_covs, sys_inputs
-        ):
-            if curr_input is None:
-                curr_filter.predict_linear(curr_system_matrix, curr_noise_cov)
-            else:
-                curr_filter.predict_linear(
-                    curr_system_matrix, curr_noise_cov, curr_input
-                )
+        prediction_snapshot = self._snapshot_prediction_state()
+        try:
+            self.interact()
+            for curr_filter, curr_system_matrix, curr_noise_cov, curr_input in zip(
+                self.filter_bank, system_matrices, sys_noise_covs, sys_inputs
+            ):
+                if curr_input is None:
+                    curr_filter.predict_linear(curr_system_matrix, curr_noise_cov)
+                else:
+                    curr_filter.predict_linear(
+                        curr_system_matrix, curr_noise_cov, curr_input
+                    )
+        except Exception:
+            self._restore_prediction_state(prediction_snapshot)
+            raise
 
     def predict_nonlinear(
         self,
@@ -303,7 +313,6 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
         may be ``None``, a single dictionary shared across all models, or a list/tuple
         of dictionaries.
         """
-        self.interact()
         transition_functions = self._broadcast_model_argument(
             transition_functions, "transition_functions"
         )
@@ -313,16 +322,28 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
         dts = self._broadcast_model_argument(dts, "dts")
         fx_args = self._broadcast_keyword_argument(fx_args, "fx_args")
 
-        for curr_filter, curr_fx, curr_noise_cov, curr_dt, curr_fx_args in zip(
-            self.filter_bank, transition_functions, sys_noise_covs, dts, fx_args
-        ):
-            curr_fx_args = {} if curr_fx_args is None else dict(curr_fx_args)
-            if curr_dt is None:
-                curr_filter.predict_nonlinear(curr_fx, curr_noise_cov, **curr_fx_args)
-            else:
-                curr_filter.predict_nonlinear(
-                    curr_fx, curr_noise_cov, dt=curr_dt, **curr_fx_args
-                )
+        prediction_snapshot = self._snapshot_prediction_state()
+        try:
+            self.interact()
+            for curr_filter, curr_fx, curr_noise_cov, curr_dt, curr_fx_args in zip(
+                self.filter_bank,
+                transition_functions,
+                sys_noise_covs,
+                dts,
+                fx_args,
+            ):
+                curr_fx_args = {} if curr_fx_args is None else dict(curr_fx_args)
+                if curr_dt is None:
+                    curr_filter.predict_nonlinear(
+                        curr_fx, curr_noise_cov, **curr_fx_args
+                    )
+                else:
+                    curr_filter.predict_nonlinear(
+                        curr_fx, curr_noise_cov, dt=curr_dt, **curr_fx_args
+                    )
+        except Exception:
+            self._restore_prediction_state(prediction_snapshot)
+            raise
 
     def update_identity(self, measurement, meas_noises):
         """Update each model with an identity measurement model.
@@ -418,6 +439,22 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
         except Exception:
             self._restore_update_state(update_snapshot)
             raise
+
+    def _snapshot_prediction_state(self):
+        """Capture mutable IMM state before interaction and prediction."""
+        return (
+            copy.deepcopy(self.filter_bank),
+            copy.deepcopy(self.mode_probabilities),
+            copy.deepcopy(self.latest_mixing_probabilities),
+        )
+
+    def _restore_prediction_state(self, snapshot):
+        """Restore state after interaction or a subfilter prediction fails."""
+        (
+            self.filter_bank,
+            self.mode_probabilities,
+            self.latest_mixing_probabilities,
+        ) = snapshot
 
     def _snapshot_update_state(self):
         """Capture mutable IMM state before a multi-model measurement update."""
