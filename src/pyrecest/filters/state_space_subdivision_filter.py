@@ -279,26 +279,36 @@ class StateSpaceSubdivisionFilter(AbstractFilter, HypercylindricalFilterMixin):
             )
             return
 
-        # Convert distribution to grid-value array if necessary
+        n_likelihoods = None
+        if likelihoods_linear is not None:
+            n_likelihoods = len(likelihoods_linear)
+            if n_likelihoods not in (1, n_areas):
+                raise ValueError("likelihoods_linear must have 1 or n_areas elements.")
+
+        # Convert distribution to grid-value array if necessary.
         if likelihood_periodic_grid is not None and hasattr(
             likelihood_periodic_grid, "pdf"
         ):
             grid = state.gd.get_grid()
             likelihood_periodic_grid = likelihood_periodic_grid.pdf(grid)
 
-        # Update grid weights from periodic likelihood.
-        # Flatten to 1-D to avoid shape-broadcasting surprises (e.g. when
-        # pdf() returns shape (n, 1) instead of (n,)).
+        # Validate the periodic likelihood before mutating the grid weights.
+        # Flatten to 1-D to accept pdf() outputs shaped (n, 1) while rejecting
+        # scalar or otherwise broadcastable inputs with the wrong number of values.
+        periodic_likelihood_values = None
         if likelihood_periodic_grid is not None:
-            state.gd.grid_values = state.gd.grid_values * asarray(
-                likelihood_periodic_grid
-            ).reshape(-1)
+            periodic_likelihood_values = asarray(likelihood_periodic_grid).reshape(-1)
+            if periodic_likelihood_values.shape[0] != n_areas:
+                raise ValueError(
+                    "likelihood_periodic_grid must contain one value per grid point."
+                )
+
+        if periodic_likelihood_values is not None:
+            state.gd.grid_values = (
+                state.gd.grid_values * periodic_likelihood_values
+            )
 
         if likelihoods_linear is not None:
-            n_likelihoods = len(likelihoods_linear)
-            if n_likelihoods not in (1, n_areas):
-                raise ValueError("likelihoods_linear must have 1 or n_areas elements.")
-
             if n_likelihoods == 1:
                 self._update_single_linear_likelihood(likelihoods_linear[0])
             else:
