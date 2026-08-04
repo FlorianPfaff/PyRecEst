@@ -617,8 +617,7 @@ class ModeRBPFManifoldUKFTracker(AbstractExtendedObjectTracker):
         self.weights = np.full(self.n_particles, 1.0 / self.n_particles, dtype=float)
 
     def _sample_indices(self, weights, size):
-        weights = np.asarray(weights, dtype=float)
-        weights = weights / np.sum(weights)
+        weights = self._normalize_resampling_weights(weights)
         mode = str(self.resampling_mode).lower()
         if mode == "multinomial":
             return self.rng.choice(len(weights), size=size, p=weights)
@@ -857,12 +856,14 @@ class ModeRBPFManifoldUKFTracker(AbstractExtendedObjectTracker):
             raise ValueError(
                 "transition_matrix must contain finite non-negative probabilities"
             )
-        row_sums = np.sum(matrix, axis=1, keepdims=True)
-        if np.any(row_sums <= 0.0):
+        row_scales = np.max(matrix, axis=1, keepdims=True)
+        if np.any(row_scales <= 0.0):
             raise ValueError(
                 "each transition_matrix row must have positive total probability"
             )
-        return matrix / row_sums
+        scaled = matrix / row_scales
+        row_sums = np.sum(scaled, axis=1, keepdims=True)
+        return scaled / row_sums
 
     @staticmethod
     def _normalize_probs(probs):
@@ -874,12 +875,26 @@ class ModeRBPFManifoldUKFTracker(AbstractExtendedObjectTracker):
             raise ValueError(
                 "initial_mode_probs must contain finite non-negative probabilities"
             )
-        total = float(np.sum(probs))
-        if total <= 0.0:
+        scale = float(np.max(probs))
+        if scale <= 0.0:
             raise ValueError(
                 "initial_mode_probs must have positive total probability"
             )
-        return probs / total
+        scaled = probs / scale
+        return scaled / np.sum(scaled)
+
+    @staticmethod
+    def _normalize_resampling_weights(weights):
+        weights = np.asarray(weights, dtype=float)
+        if weights.ndim != 1 or weights.size == 0:
+            raise ValueError("weights must be a non-empty one-dimensional array")
+        if np.any(~np.isfinite(weights)) or np.any(weights < 0.0):
+            raise ValueError("weights must contain finite non-negative values")
+        scale = float(np.max(weights))
+        if scale <= 0.0:
+            raise ValueError("weights must have positive total mass")
+        scaled = weights / scale
+        return scaled / np.sum(scaled)
 
     @staticmethod
     def _normalize_log_weights(log_weights):
