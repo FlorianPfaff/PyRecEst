@@ -1,3 +1,6 @@
+from ._fixed_lag_mem_qkf_option_contract import (
+    install_fixed_lag_mem_qkf_option_contract,
+)
 from ._mem_rbpf_ffbsi_option_contract import install_mem_rbpf_ffbsi_option_contract
 from ._record_smoother_numeric_contract import install_record_smoother_numeric_contract
 from ._urts_transition_call_contract import install_urts_transition_call_contract
@@ -71,6 +74,7 @@ from .unscented_rauch_tung_striebel_smoother import (
     URTSSmoother,
 )
 
+install_fixed_lag_mem_qkf_option_contract()
 install_mem_rbpf_ffbsi_option_contract()
 install_record_smoother_numeric_contract()
 install_urts_transition_call_contract()
