@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - agent/fix-particle-replacement-atomicity
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
