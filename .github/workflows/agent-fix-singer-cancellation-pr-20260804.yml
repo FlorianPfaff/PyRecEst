@@ -1,0 +1,128 @@
+name: Apply Singer cancellation fix
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/fix-singer-cancellation-pr-20260804
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Apply numerical stability fix
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("src/pyrecest/models/motion_models.py")
+          text = path.read_text(encoding="utf-8")
+          function_start = text.index("def singer_transition_matrix(")
+          block_start = text.index("    alpha = 1.0 / tau\n", function_start)
+          block_end = text.index(
+              "    matrix = np.zeros((3 * spatial_dim, 3 * spatial_dim), dtype=float)\n",
+              block_start,
+          )
+          replacement = "\n".join(
+              [
+                  "    alpha = 1.0 / tau",
+                  "    scaled_time = alpha * dt",
+                  "    decay_minus_one = np.expm1(-scaled_time)",
+                  "    decay = decay_minus_one + 1.0",
+                  "    velocity_from_acceleration = -decay_minus_one / alpha",
+                  "    if abs(scaled_time) < 1.0e-4:",
+                  "        position_from_acceleration = dt * dt * (",
+                  "            0.5",
+                  "            - scaled_time / 6.0",
+                  "            + scaled_time**2 / 24.0",
+                  "            - scaled_time**3 / 120.0",
+                  "            + scaled_time**4 / 720.0",
+                  "            - scaled_time**5 / 5040.0",
+                  "        )",
+                  "    else:",
+                  "        position_from_acceleration = (",
+                  "            scaled_time + decay_minus_one",
+                  "        ) / alpha**2",
+                  "    block = np.array(",
+                  "        [",
+                  "            [1.0, dt, position_from_acceleration],",
+                  "            [0.0, 1.0, velocity_from_acceleration],",
+                  "            [0.0, 0.0, decay],",
+                  "        ],",
+                  "        dtype=float,",
+                  "    )",
+                  "",
+              ]
+          )
+          path.write_text(
+              text[:block_start] + replacement + text[block_end:],
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Add regression test
+        run: |
+          mkdir -p tests/models
+          cat > tests/models/test_singer_transition_numerics.py <<'PY'
+          """Regression tests for numerically stable Singer transition matrices."""
+
+          import numpy as np
+          import numpy.testing as npt
+          import pytest
+          from scipy.linalg import expm
+
+          from pyrecest.models import singer_transition_matrix
+
+
+          @pytest.mark.parametrize(
+              ("dt", "tau"),
+              [
+                  (1.0, 5.0),
+                  (1.0, 1.0e12),
+                  (0.25, 1.0e10),
+              ],
+          )
+          def test_singer_transition_matches_matrix_exponential(dt, tau):
+              alpha = 1.0 / tau
+              generator = np.array(
+                  [
+                      [0.0, 1.0, 0.0],
+                      [0.0, 0.0, 1.0],
+                      [0.0, 0.0, -alpha],
+                  ]
+              )
+              expected = expm(generator * dt)
+
+              actual = np.asarray(
+                  singer_transition_matrix(dt, spatial_dim=1, tau=tau),
+                  dtype=float,
+              )
+
+              npt.assert_allclose(actual, expected, rtol=1.0e-12, atol=1.0e-14)
+          PY
+
+      - name: Install package and test
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e . pytest
+          python -m pytest -q tests/models/test_singer_transition_numerics.py
+          python -m compileall -q src/pyrecest/models/motion_models.py tests/models/test_singer_transition_numerics.py
+
+      - name: Commit tested fix
+        run: |
+          rm .github/workflows/agent-fix-singer-cancellation-pr-20260804.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/pyrecest/models/motion_models.py tests/models/test_singer_transition_numerics.py .github/workflows/agent-fix-singer-cancellation-pr-20260804.yml
+          git commit -m "Stabilize Singer transition coefficients"
+          git push origin HEAD:agent/fix-singer-cancellation-pr-20260804
