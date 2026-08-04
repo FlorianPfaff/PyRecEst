@@ -60,6 +60,13 @@ from .point_set_metrics import (
     precision_recall_curve,
     precision_recall_fscore,
 )
+from . import selection as _selection
+from ._selection_mask_contract import (
+    install_selection_mask_contract as _install_selection_mask_contract,
+)
+
+_install_selection_mask_contract()
+
 from .selection import (
     protected_tail_topk_mask,
     quantile_tail_mask,
