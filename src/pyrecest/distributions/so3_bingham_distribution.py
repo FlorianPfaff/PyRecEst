@@ -1,7 +1,7 @@
 """Bingham distribution on SO(3)."""
 
 # pylint: disable=no-name-in-module,no-member
-from math import isfinite as scalar_isfinite
+import numpy as np
 
 from pyrecest.backend import (
     abs,
@@ -32,6 +32,38 @@ from .hypersphere_subset.bingham_distribution import BinghamDistribution
 from .hypersphere_subset.hyperhemispherical_bingham_distribution import (
     HyperhemisphericalBinghamDistribution,
 )
+
+
+def _validate_nonnegative_concentration(value) -> float:
+    """Return a finite real scalar concentration without lossy coercion."""
+
+    message = "concentration must be finite and nonnegative."
+    if np.ma.is_masked(value):
+        raise ValueError(message)
+    try:
+        value_array = np.asarray(value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(message) from exc
+    if value_array.shape != () or value_array.dtype.kind in {
+        "b",
+        "c",
+        "M",
+        "m",
+        "S",
+        "U",
+    }:
+        raise ValueError(message)
+
+    scalar = value_array.item()
+    if isinstance(scalar, (bool, np.bool_, complex, np.complexfloating)):
+        raise ValueError(message)
+    try:
+        concentration = float(scalar)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(message) from exc
+    if not np.isfinite(concentration) or concentration < 0.0:
+        raise ValueError(message)
+    return concentration
 
 
 class SO3BinghamDistribution(HyperhemisphericalBinghamDistribution):
@@ -120,9 +152,7 @@ class SO3BinghamDistribution(HyperhemisphericalBinghamDistribution):
     @classmethod
     def from_mode_and_concentration(cls, mode, concentration):
         """Create an isotropic Bingham distribution around ``mode``."""
-        concentration = float(concentration)
-        if not scalar_isfinite(concentration) or concentration < 0.0:
-            raise ValueError("concentration must be finite and nonnegative.")
+        concentration = _validate_nonnegative_concentration(concentration)
         Z = array([-concentration, -concentration, -concentration, 0.0])
         M = cls._orthogonal_completion(mode)
         return cls(Z, M)
