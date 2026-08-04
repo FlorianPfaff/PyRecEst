@@ -8,6 +8,8 @@ import numpy as np
 
 from . import motion_models as _motion_models
 
+# The wrapper deliberately replaces private validators in the implementation module.
+# pylint: disable=protected-access
 _nearly_coordinated_turn_model_impl = _motion_models.nearly_coordinated_turn_model
 _continuous_to_discrete_lti_impl = _motion_models.continuous_to_discrete_lti
 _coordinated_turn_transition_impl = _motion_models.coordinated_turn_transition
@@ -118,11 +120,9 @@ def coordinated_turn_transition(
     state: Any, dt: float = 1.0, turn_threshold: float = 1e-8
 ) -> Any:
     """Propagate a coordinated-turn state with a valid branch threshold."""
-    turn_threshold = (
-        _motion_models._as_positive_float(  # pylint: disable=protected-access
-            turn_threshold,
-            "turn_threshold",
-        )
+    turn_threshold = _motion_models._as_positive_float(
+        turn_threshold,
+        "turn_threshold",
     )
     return _coordinated_turn_transition_impl(
         state,
@@ -135,11 +135,9 @@ def se2_unicycle_transition(
     state: Any, dt: float = 1.0, turn_threshold: float = 1e-8
 ) -> Any:
     """Propagate an SE(2) unicycle state with a valid branch threshold."""
-    turn_threshold = (
-        _motion_models._as_positive_float(  # pylint: disable=protected-access
-            turn_threshold,
-            "turn_threshold",
-        )
+    turn_threshold = _motion_models._as_positive_float(
+        turn_threshold,
+        "turn_threshold",
     )
     return _se2_unicycle_transition_impl(
         state,
@@ -154,15 +152,13 @@ def nearly_coordinated_turn_model(
     turn_rate_variance: float = 1e-4,
 ) -> Any:
     """Return a coordinated-turn model with validated turn covariance."""
-    dt = _motion_models._as_nonnegative_float(  # pylint: disable=protected-access
+    dt = _motion_models._as_nonnegative_float(
         dt,
         "dt",
     )
-    turn_rate_variance = (
-        _motion_models._as_nonnegative_float(  # pylint: disable=protected-access
-            turn_rate_variance,
-            "turn_rate_variance",
-        )
+    turn_rate_variance = _motion_models._as_nonnegative_float(
+        turn_rate_variance,
+        "turn_rate_variance",
     )
     return _nearly_coordinated_turn_model_impl(
         dt=dt,
