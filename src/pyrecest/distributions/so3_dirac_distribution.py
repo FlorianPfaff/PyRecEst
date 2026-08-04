@@ -1,7 +1,6 @@
 """Dirac distribution on SO(3)."""
 
 # pylint: disable=no-name-in-module,no-member
-from numbers import Integral
 from operator import index as operator_index
 
 import numpy as np
