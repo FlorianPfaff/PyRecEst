@@ -237,7 +237,11 @@ class RollingNISProcessNoiseAdapter:
                 return float(
                     np.dot(normalized_weights, np.asarray(ratios, dtype=float))
                 )
-        return float(np.mean(list(self.ratios_by_source.values())))
+        ratio_values = np.asarray(list(self.ratios_by_source.values()), dtype=float)
+        ratio_scale = float(np.max(ratio_values))
+        if ratio_scale == 0.0:
+            return 0.0
+        return float(ratio_scale * np.mean(ratio_values / ratio_scale))
 
     def scale(self, source_weights: Mapping[str, float] | None = None) -> float:
         """Return the adapted process-noise multiplier."""
