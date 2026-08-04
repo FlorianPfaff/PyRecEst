@@ -74,6 +74,23 @@ class SO3ProductParticleFilterTest(unittest.TestCase):
         self.assertGreaterEqual(float(filt.particles[1, 1, -1]), 0.0)
         npt.assert_allclose(filt.weights, array([0.25, 0.75]))
 
+    def test_set_particles_rejects_invalid_weights_atomically(self):
+        filt = SO3ProductParticleFilter(n_particles=2, num_rotations=1)
+        original_particles = to_numpy(filt.particles).copy()
+        original_weights = to_numpy(filt.weights).copy()
+        replacement_particles = array(
+            [[z_quaternion(pi / 2.0)], [z_quaternion(pi)]]
+        )
+
+        with self.assertRaisesRegex(ValueError, "weights must match"):
+            filt.set_particles(
+                replacement_particles,
+                weights=array([1.0]),
+            )
+
+        npt.assert_allclose(to_numpy(filt.particles), original_particles)
+        npt.assert_allclose(to_numpy(filt.weights), original_weights)
+
     def test_rejects_nonfinite_particle_weights(self):
         particles = array([[[0.0, 0.0, 0.0, 1.0]], [z_quaternion(pi / 2.0)]])
 

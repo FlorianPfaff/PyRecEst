@@ -1,3 +1,4 @@
+import copy
 import unittest
 from types import SimpleNamespace
 
@@ -61,6 +62,33 @@ class BlockParticleFilterTest(unittest.TestCase):
         npt.assert_allclose(filt.weights, array([0.5, 0.5]))
         npt.assert_allclose(filt.component_weights(0), array([0.8, 0.2]))
         npt.assert_allclose(filt.component_weights(1), array([0.2, 0.8]))
+
+    def test_set_particles_rejects_invalid_weights_atomically(self):
+        replacement_particles = array([[2.0, 12.0], [3.0, 13.0]])
+        invalid_cases = (
+            ({"weights": array([1.0])}, "weights must match"),
+            (
+                {"block_weights": array([[1.0, 0.0]])},
+                "block_weights must have shape",
+            ),
+        )
+
+        for kwargs, error_message in invalid_cases:
+            with self.subTest(kwargs=kwargs):
+                filt = DummyBlockParticleFilter(
+                    array([[0.0, 10.0], [1.0, 11.0]]),
+                    partition="singleton",
+                )
+                original_particles = copy.deepcopy(filt.particles)
+                original_weights = copy.deepcopy(filt.weights)
+                original_block_weights = copy.deepcopy(filt.block_weights)
+
+                with self.assertRaisesRegex(ValueError, error_message):
+                    filt.set_particles(replacement_particles, **kwargs)
+
+                npt.assert_allclose(filt.particles, original_particles)
+                npt.assert_allclose(filt.weights, original_weights)
+                npt.assert_allclose(filt.block_weights, original_block_weights)
 
     def test_component_indices_must_be_integral(self):
         filt = DummyBlockParticleFilter(
