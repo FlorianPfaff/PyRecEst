@@ -4,17 +4,25 @@ on:
   push:
     branches:
       - agent/reject-invalid-discrete-emissions
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
 
 permissions:
   contents: write
 
 jobs:
   patch-and-test:
-    if: github.actor != 'github-actions[bot]'
+    if: github.head_ref == 'agent/reject-invalid-discrete-emissions' && github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.head_ref || github.ref_name }}
           fetch-depth: 0
 
       - uses: actions/setup-python@v5
@@ -87,4 +95,4 @@ jobs:
             src/pyrecest/filters/discrete_state/__init__.py \
             .github/workflows/apply-discrete-emission-validation.yml
           git commit -m "Reject invalid discrete-state emissions"
-          git push
+          git push origin HEAD:agent/reject-invalid-discrete-emissions
