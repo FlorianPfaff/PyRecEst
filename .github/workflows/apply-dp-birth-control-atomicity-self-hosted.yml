@@ -51,6 +51,16 @@ jobs:
           python -m autopep8 --in-place --aggressive --aggressive --aggressive \
             src/pyrecest/filters/dirichlet_process_birth_tracker.py \
             tests/filters/test_dirichlet_process_birth_tracker.py
+          python - <<'PY'
+          from pathlib import Path
+
+          for file_name in (
+              'src/pyrecest/filters/dirichlet_process_birth_tracker.py',
+              'tests/filters/test_dirichlet_process_birth_tracker.py',
+          ):
+              path = Path(file_name)
+              path.write_text(path.read_text(encoding='utf-8').rstrip() + '\n', encoding='utf-8')
+          PY
 
       - name: Run focused regression tests
         run: python -m pytest tests/filters/test_dirichlet_process_birth_tracker.py -q
