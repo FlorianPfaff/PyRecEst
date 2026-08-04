@@ -674,10 +674,14 @@ def _as_weights_np(value, n_particles: int):
         raise ValueError("weights must be finite.")
     if np.any(weights < 0.0):
         raise ValueError("weights must be nonnegative.")
-    total = float(np.sum(weights))
+    scale = float(np.max(weights))
+    if not np.isfinite(scale) or scale <= 0.0:
+        raise ValueError("weights must have positive finite total mass.")
+    scaled = weights / scale
+    total = float(np.sum(scaled))
     if not np.isfinite(total) or total <= 0.0:
         raise ValueError("weights must have positive finite total mass.")
-    return weights / total
+    return scaled / total
 
 
 def _as_vector_np(value, name):
@@ -718,10 +722,14 @@ def _lambda_deltas_np(n_steps, step_schedule):
         raise ValueError("step_schedule must not be empty.")
     if np.any(deltas <= 0.0):
         raise ValueError("step_schedule entries must be positive.")
-    total = float(np.sum(deltas))
+    scale = float(np.max(deltas))
+    if not np.isfinite(scale) or scale <= 0.0:
+        raise ValueError("step_schedule must have positive finite sum.")
+    scaled = deltas / scale
+    total = float(np.sum(scaled))
     if not np.isfinite(total) or total <= 0.0:
         raise ValueError("step_schedule must have positive finite sum.")
-    return deltas / total
+    return scaled / total
 
 
 def _regularize_cov_np(covariance, jitter):
