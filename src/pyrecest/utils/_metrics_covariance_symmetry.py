@@ -33,14 +33,7 @@ def patch_metrics_covariance_symmetry() -> None:
         if np.any(relative_asymmetry > 1e-12):
             raise ValueError(f"{name} must be symmetric")
 
-        matrix = metrics_module._symmetrize(  # pylint: disable=protected-access
-            matrix
-        )
-        metrics_module._validate_positive_semidefinite(  # pylint: disable=protected-access
-            matrix,
-            name,
-        )
-        return matrix
+        return original(matrix, name)
 
     _as_covariance_matrix.__name__ = getattr(
         original,
