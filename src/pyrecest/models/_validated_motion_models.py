@@ -135,88 +135,10 @@ def nearly_coordinated_turn_model(
     )
 
 
-def _singer_coupling_factors(normalized_interval: float) -> tuple[float, float]:
-    """Return stable acceleration-to-position and acceleration-to-velocity factors."""
-
-    x = normalized_interval
-    if abs(x) < 1.0e-4:
-        x_squared = x * x
-        velocity_factor = (
-            1.0
-            - 0.5 * x
-            + x_squared / 6.0
-            - x_squared * x / 24.0
-            + x_squared * x_squared / 120.0
-        )
-        position_factor = (
-            0.5
-            - x / 6.0
-            + x_squared / 24.0
-            - x_squared * x / 120.0
-            + x_squared * x_squared / 720.0
-        )
-        return position_factor, velocity_factor
-
-    expm1_negative_x = np.expm1(-x)
-    velocity_factor = -expm1_negative_x / x
-    position_factor = (x + expm1_negative_x) / (x * x)
-    return position_factor, velocity_factor
-
-
-def singer_transition_matrix(
-    dt: float, spatial_dim: int = 2, tau: float = 20.0
-) -> Any:
-    """Return a numerically stable Singer acceleration transition matrix."""
-
-    dt = _motion_models._as_scalar_float(  # pylint: disable=protected-access
-        dt,
-        "dt",
-    )
-    spatial_dim = _motion_models._as_positive_integer(  # pylint: disable=protected-access
-        spatial_dim,
-        "spatial_dim",
-    )
-    tau = _motion_models._as_positive_float(  # pylint: disable=protected-access
-        tau,
-        "tau",
-    )
-
-    normalized_interval = dt / tau
-    position_factor, velocity_factor = _singer_coupling_factors(
-        normalized_interval
-    )
-    block = np.array(
-        [
-            [1.0, dt, dt * dt * position_factor],
-            [0.0, 1.0, dt * velocity_factor],
-            [0.0, 0.0, np.exp(-normalized_interval)],
-        ],
-        dtype=float,
-    )
-    matrix = np.zeros((3 * spatial_dim, 3 * spatial_dim), dtype=float)
-    for row_derivative in range(3):
-        for col_derivative in range(3):
-            for axis in range(spatial_dim):
-                matrix[
-                    _motion_models._state_index(  # pylint: disable=protected-access
-                        row_derivative,
-                        axis,
-                        spatial_dim,
-                    ),
-                    _motion_models._state_index(  # pylint: disable=protected-access
-                        col_derivative,
-                        axis,
-                        spatial_dim,
-                    ),
-                ] = block[row_derivative, col_derivative]
-    return _motion_models.asarray(matrix)
-
-
 _motion_models.continuous_to_discrete_lti = continuous_to_discrete_lti
 _motion_models.coordinated_turn_transition = coordinated_turn_transition
 _motion_models.nearly_coordinated_turn_model = nearly_coordinated_turn_model
 _motion_models.se2_unicycle_transition = se2_unicycle_transition
-_motion_models.singer_transition_matrix = singer_transition_matrix
 
 
 __all__ = [
@@ -224,5 +146,4 @@ __all__ = [
     "coordinated_turn_transition",
     "nearly_coordinated_turn_model",
     "se2_unicycle_transition",
-    "singer_transition_matrix",
 ]
