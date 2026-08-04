@@ -176,6 +176,9 @@ def shape_from_extent_matrix(
     )
     extent = symmetrize(_coerce_finite_matrix_shape(extent, "extent", (2, 2)))
     eigenvalues, eigenvectors = linalg.eigh(extent)
+    eigenvalue_scale = max(1.0, float(backend_abs(eigenvalues[-1])))
+    if float(eigenvalues[0]) < -1e-12 * eigenvalue_scale:
+        raise ValueError("extent must be positive semidefinite")
     if float(eigenvalues[1]) >= float(eigenvalues[0]):
         major_index = 1
         minor_index = 0
