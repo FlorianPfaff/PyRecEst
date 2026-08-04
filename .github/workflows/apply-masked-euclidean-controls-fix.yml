@@ -1,0 +1,166 @@
+name: Apply masked Euclidean sampler control fix
+
+on:
+  push:
+    branches:
+      - agent/reject-masked-euclidean-sampler-controls
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-test:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/reject-masked-euclidean-sampler-controls
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Apply focused fix and regression tests
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          source_path = Path('src/pyrecest/sampling/euclidean_sampler.py')
+          source = source_path.read_text(encoding='utf-8')
+
+          integral_old = '''def _validate_integral_argument(value, name: str) -> int:
+              """Return a scalar integer argument without silently truncating floats."""
+              try:
+          '''
+          integral_new = '''def _validate_integral_argument(value, name: str) -> int:
+              """Return a scalar integer argument without silently truncating floats."""
+              if np.ma.is_masked(value):
+                  raise ValueError(f"{name} must be an integer")
+              try:
+          '''
+          positive_old = '''def _validate_positive_finite_scalar_argument(value, name: str) -> float:
+              """Return a positive finite scalar float without accepting bools or vectors."""
+              try:
+          '''
+          positive_new = '''def _validate_positive_finite_scalar_argument(value, name: str) -> float:
+              """Return a positive finite scalar float without accepting bools or vectors."""
+              if np.ma.is_masked(value):
+                  raise ValueError(f"{name} must be a positive finite scalar")
+              try:
+          '''
+
+          if integral_new not in source:
+              if source.count(integral_old) != 1:
+                  raise SystemExit('Expected integral validator context was not found exactly once')
+              source = source.replace(integral_old, integral_new, 1)
+          if positive_new not in source:
+              if source.count(positive_old) != 1:
+                  raise SystemExit('Expected positive-scalar validator context was not found exactly once')
+              source = source.replace(positive_old, positive_new, 1)
+          source_path.write_text(source, encoding='utf-8')
+
+          test_path = Path('tests/test_euclidean_sampler_masked_controls.py')
+          test_path.write_text('''import numpy as np
+import pytest
+
+from pyrecest.sampling.euclidean_sampler import (
+    FibonacciGridSampler,
+    FibonacciRejectionSampler,
+    GaussianSampler,
+    HaltonGridSampler,
+    SobolGridSampler,
+)
+
+
+@pytest.mark.parametrize(
+    "sampler",
+    [
+        GaussianSampler(),
+        FibonacciGridSampler(),
+        SobolGridSampler(),
+        HaltonGridSampler(),
+    ],
+)
+def test_euclidean_samplers_reject_masked_count_and_dimension(sampler):
+    with pytest.raises(ValueError):
+        sampler.sample_stochastic(np.ma.array(4, mask=True), 2)
+    with pytest.raises(ValueError):
+        sampler.sample_stochastic(4, np.ma.array(2, mask=True))
+
+
+def test_fibonacci_rejection_rejects_masked_scalar_controls():
+    sampler = FibonacciRejectionSampler()
+    density = lambda xs: np.ones(xs.shape[0])
+
+    with pytest.raises(ValueError, match="n_candidates"):
+        sampler.sample_rejection(
+            density,
+            n_candidates=np.ma.array(4, mask=True),
+            dim=2,
+            max_density=1.0,
+        )
+    with pytest.raises(ValueError, match="dim"):
+        sampler.sample_rejection(
+            density,
+            n_candidates=4,
+            dim=np.ma.array(2, mask=True),
+            max_density=1.0,
+        )
+    with pytest.raises(ValueError, match="max_density"):
+        sampler.sample_rejection(
+            density,
+            n_candidates=4,
+            dim=2,
+            max_density=np.ma.array(1.0, mask=True),
+        )
+
+
+def test_fibonacci_rejection_accepts_clear_mask_scalar_wrappers():
+    samples, info = FibonacciRejectionSampler().sample_rejection(
+        lambda xs: np.ones(xs.shape[0]),
+        n_candidates=np.ma.array(4, mask=False),
+        dim=np.ma.array(2, mask=False),
+        max_density=np.ma.array(1.0, mask=False),
+    )
+
+    assert samples.shape == (4, 2)
+    assert info["n_candidates"] == 4
+''', encoding='utf-8')
+          PY
+
+      - name: Install focused test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e . pytest
+
+      - name: Run focused validation
+        run: |
+          python -m pytest \
+            tests/test_euclidean_sampler_masked_controls.py \
+            tests/test_euclidean_sampler_integer_args.py \
+            -q
+          python -m compileall -q \
+            src/pyrecest/sampling/euclidean_sampler.py \
+            tests/test_euclidean_sampler_masked_controls.py
+          git diff --check
+
+      - name: Commit validated patch
+        shell: bash
+        run: |
+          rm .github/workflows/apply-masked-euclidean-controls-fix.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            src/pyrecest/sampling/euclidean_sampler.py \
+            tests/test_euclidean_sampler_masked_controls.py \
+            .github/workflows/apply-masked-euclidean-controls-fix.yml
+          git commit -m 'Reject masked Euclidean sampler controls'
+          git push origin HEAD:agent/reject-masked-euclidean-sampler-controls
