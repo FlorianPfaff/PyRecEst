@@ -141,5 +141,6 @@ def test_tracklet_motion_accepts_clear_mask_vectors():
         ),
     )
 
-    assert result.path == [previous, current]
+    assert result.path[0] is previous
+    assert result.path[1] is current
     assert np.isfinite(result.total_cost)
