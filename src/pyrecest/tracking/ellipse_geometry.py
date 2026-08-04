@@ -12,6 +12,8 @@ from __future__ import annotations
 
 from math import isfinite as _isfinite_scalar
 
+import numpy as np
+
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import abs as backend_abs
 from pyrecest.backend import all as backend_all
@@ -31,6 +33,23 @@ from pyrecest.backend import (
 )
 
 _INVALID_SCALAR_TYPES = (bool, str, bytes, bytearray)
+
+
+def _floating_point_epsilon(value) -> float:
+    """Return machine epsilon for NumPy, JAX, or PyTorch floating dtypes."""
+
+    dtype = getattr(value, "dtype", None)
+    try:
+        return float(np.finfo(np.dtype(dtype)).eps)
+    except (TypeError, ValueError):
+        dtype_name = str(dtype).lower()
+        if "bfloat16" in dtype_name:
+            return 2.0**-7
+        if "float16" in dtype_name:
+            return float(np.finfo(np.float16).eps)
+        if "float32" in dtype_name:
+            return float(np.finfo(np.float32).eps)
+        return float(np.finfo(np.float64).eps)
 
 
 def symmetrize(matrix):
@@ -177,7 +196,10 @@ def shape_from_extent_matrix(
     extent = symmetrize(_coerce_finite_matrix_shape(extent, "extent", (2, 2)))
     eigenvalues, eigenvectors = linalg.eigh(extent)
     eigenvalue_scale = max(1.0, float(backend_abs(eigenvalues[-1])))
-    if float(eigenvalues[0]) < -1e-12 * eigenvalue_scale:
+    eigenvalue_tolerance = (
+        100.0 * _floating_point_epsilon(eigenvalues) * eigenvalue_scale
+    )
+    if float(eigenvalues[0]) < -eigenvalue_tolerance:
         raise ValueError("extent must be positive semidefinite")
     if float(eigenvalues[1]) >= float(eigenvalues[0]):
         major_index = 1
