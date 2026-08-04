@@ -7,6 +7,8 @@ from typing import Any
 
 import numpy as np
 
+from pyrecest.numerics import is_positive_semidefinite, is_symmetric
+
 from . import record_smoother as _record_smoother
 
 # pylint: disable=protected-access
@@ -39,6 +41,39 @@ def _reject_complex_values(value: Any, message: str) -> None:
         raise ValueError(message)
 
 
+def _validate_covariance_structure(value: Any) -> None:
+    """Reject finite square record covariances that are not symmetric PSD.
+
+    Shape, type, and finiteness failures remain delegated to the record smoother's
+    existing validation so this contract only tightens the covariance semantics.
+    """
+
+    try:
+        value_array = np.asarray(value)
+    except (TypeError, ValueError, OverflowError, RuntimeError):
+        return
+    if (
+        np.iscomplexobj(value_array)
+        or value_array.ndim != 2
+        or value_array.shape[0] != value_array.shape[1]
+    ):
+        return
+
+    try:
+        covariance = np.asarray(value_array, dtype=float)
+    except (TypeError, ValueError, OverflowError, RuntimeError):
+        return
+    if not np.isfinite(covariance).all():
+        return
+
+    with np.errstate(over="ignore", invalid="ignore"):
+        symmetric = is_symmetric(covariance)
+    if not symmetric:
+        raise ValueError("record covariances must be symmetric")
+    if not is_positive_semidefinite(covariance):
+        raise ValueError("record covariances must be positive semidefinite")
+
+
 def _record_arrays(
     records: Sequence[Mapping[str, Any]],
     *,
@@ -55,6 +90,7 @@ def _record_arrays(
             record[covariance_key],
             "record covariances must contain real values",
         )
+        _validate_covariance_structure(record[covariance_key])
     return _original_record_arrays(
         records,
         time_key=time_key,
