@@ -248,10 +248,13 @@ class MEMRBPFFFBSiSmoother(AbstractSmoother):
         weights = np.asarray(weights, dtype=float).reshape(-1)
         weights = np.where(np.isfinite(weights), weights, 0.0)
         weights = np.maximum(weights, 0.0)
-        total = float(np.sum(weights))
-        if total <= 0.0:
+        if weights.size == 0:
+            raise ValueError("weights must not be empty")
+        scale = float(np.max(weights))
+        if scale <= 0.0:
             return np.full(weights.shape, 1.0 / weights.size)
-        return weights / total
+        scaled = weights / scale
+        return scaled / float(np.sum(scaled))
 
     @staticmethod
     def _normalize_log_probs(log_probs):
