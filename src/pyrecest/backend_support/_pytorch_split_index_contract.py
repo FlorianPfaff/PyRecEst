@@ -18,12 +18,24 @@ _SPLIT_INDEX_TYPE_MESSAGE = (
 _SPLIT_SECTION_COUNT_MESSAGE = "number sections must be an integer"
 
 
+def _has_masked_values(value) -> bool:
+    if np.ma.isMaskedArray(value):
+        return bool(np.any(np.ma.getmaskarray(value)))
+    if isinstance(value, (list, tuple)):
+        return any(_has_masked_values(item) for item in value)
+    if isinstance(value, np.ndarray) and value.dtype == object:
+        return any(_has_masked_values(item) for item in value.reshape(-1))
+    return False
+
+
 def _normalize_split_section_count(indices_or_sections, torch_module):
     """Return a scalar section count without truncating fractional values."""
 
     if torch_module.is_tensor(indices_or_sections):
         scalar = indices_or_sections.item()
     else:
+        if _has_masked_values(indices_or_sections):
+            raise TypeError(_SPLIT_INDEX_TYPE_MESSAGE)
         value_array = np.asarray(indices_or_sections)
         if value_array.dtype.kind in "Mm":
             raise TypeError(_SPLIT_INDEX_TYPE_MESSAGE)
@@ -66,6 +78,8 @@ def _normalize_split_cut_indices(indices_or_sections, torch_module):
             raise ValueError("indices_or_sections must be a 1-D sequence")
         cut_points = tuple(indices_or_sections)
     else:
+        if _has_masked_values(indices_or_sections):
+            raise TypeError(_SPLIT_INDEX_TYPE_MESSAGE)
         cut_array = np.asarray(indices_or_sections)
         if cut_array.ndim == 0:
             return _normalize_split_section_count(indices_or_sections, torch_module)
@@ -79,6 +93,8 @@ def _normalize_split_cut_indices(indices_or_sections, torch_module):
 
     normalized = []
     for cut_point in cut_points:
+        if _has_masked_values(cut_point):
+            raise TypeError(_SPLIT_INDEX_TYPE_MESSAGE)
         if torch_module.is_tensor(cut_point) and cut_point.dtype == torch_module.bool:
             raise TypeError(_SPLIT_INDEX_TYPE_MESSAGE)
         try:
