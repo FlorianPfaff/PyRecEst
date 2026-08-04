@@ -1,0 +1,131 @@
+name: Apply no-op track split fix
+
+on:
+  push:
+    branches:
+      - agent/reject-noop-track-splits
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Apply focused patch and regression tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          source_path = Path("src/pyrecest/utils/track_edit_whatif.py")
+          source = source_path.read_text(encoding="utf-8")
+          old = '''    left = output[row_index].copy()
+              right = output[row_index].copy()
+              left[split_session:] = None
+              right[:split_session] = None
+              pieces = [row for index, row in enumerate(output) if index != row_index]
+              if any(value is not None for value in left):
+                  pieces.append(left)
+              if any(value is not None for value in right):
+                  pieces.append(right)
+          '''
+          new = '''    left = output[row_index].copy()
+              right = output[row_index].copy()
+              left[split_session:] = None
+              right[:split_session] = None
+              left_has_observation = any(value is not None for value in left)
+              right_has_observation = any(value is not None for value in right)
+              if not left_has_observation or not right_has_observation:
+                  return TrackEditApplication(
+                      edit,
+                      output,
+                      False,
+                      "reject",
+                      "split_does_not_partition_track",
+                  )
+              pieces = [row for index, row in enumerate(output) if index != row_index]
+              pieces.append(left)
+              pieces.append(right)
+          '''
+          if old not in source:
+              raise SystemExit("expected split_track implementation block not found")
+          source_path.write_text(source.replace(old, new, 1), encoding="utf-8")
+
+          test_path = Path("tests/test_track_edit_whatif.py")
+          tests = test_path.read_text(encoding="utf-8")
+          marker = "def test_split_track_rejects_boundary_with_empty_side()"
+          if marker not in tests:
+              tests += '''
+
+
+def test_split_track_rejects_boundary_with_empty_side() -> None:
+    cases = (
+        ([[None, 7, 8]], 1),
+        ([[7, 8, None]], 2),
+    )
+
+    for predicted, split_session in cases:
+        edit = TrackEdit(
+            kind="split_track",
+            track_index=0,
+            session_b=split_session,
+        )
+
+        application = apply_track_edit(predicted, edit)
+
+        assert not application.applied
+        assert application.action == "reject"
+        assert application.reason == "split_does_not_partition_track"
+        assert application.track_matrix.tolist() == predicted
+
+
+def test_split_track_partitions_observations_on_both_sides() -> None:
+    predicted = [[1, 2, 3]]
+    edit = TrackEdit(kind="split_track", track_index=0, session_b=2)
+
+    application = apply_track_edit(predicted, edit)
+
+    assert application.applied
+    assert application.action == "split_track"
+    assert application.track_matrix.tolist() == [
+        [1, 2, None],
+        [None, None, 3],
+    ]
+'''
+              test_path.write_text(tests, encoding="utf-8")
+          PY
+
+      - name: Validate patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m py_compile \
+            src/pyrecest/utils/track_edit_whatif.py \
+            tests/test_track_edit_whatif.py
+          git diff --check
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+          python -m pytest tests/test_track_edit_whatif.py -q
+
+      - name: Commit patch and remove workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/agent-reject-noop-track-splits.yml
+          git add src/pyrecest/utils/track_edit_whatif.py tests/test_track_edit_whatif.py
+          git commit -m "Reject no-op track splits"
+          git push origin HEAD:agent/reject-noop-track-splits
