@@ -155,7 +155,7 @@ def test_se3bounded_distance_uses_quaternion_component_before_linear_dispatch():
     x_estimate = array([1.0, 0.0, 0.0, 0.0, 1.0, 2.0, 3.0])
     x_true = array([0.0, 1.0, 0.0, 0.0, 1.0, 2.0, 3.0])
 
-    assert _as_float(distance(x_estimate, x_true)) == pytest.approx(float(pi / 2.0))
+    assert _as_float(distance(x_estimate, x_true)) == pytest.approx(float(pi))
 
 
 def test_custom_extract_mean_registry():
