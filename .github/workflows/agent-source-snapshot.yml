@@ -20,109 +20,115 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat > /tmp/stable-residual-norm.patch <<'PATCH'
-          --- a/src/pyrecest/filters/linear_update_planning.py
-          +++ b/src/pyrecest/filters/linear_update_planning.py
-          @@ -33,6 +33,15 @@
-           ROBUST_UPDATE_MODES = ("nis-inflate", "student-t", "huber")
-           DEFAULT_STUDENT_T_DOF = 4.0
-           DEFAULT_HUBER_THRESHOLD = 2.0
-          +
-          +
-          +def _stable_euclidean_norm(values: np.ndarray) -> float:
-          +    """Return a scale-stable Euclidean norm for finite real values."""
-          +
-          +    flattened = np.abs(np.asarray(values, dtype=float)).reshape(-1)
-          +    return float(np.hypot.reduce(flattened, initial=0.0))
-          +
-          +
-           _TEMPORAL_TYPES = (np.datetime64, np.timedelta64)
-           _INVALID_REAL_NUMERIC_TYPES = (
-               bool,
-          @@ -287,7 +296,7 @@
-               )
-               nominal_innovation_covariance = _symmetrized(nominal_innovation_covariance)
-               nis = normalized_innovation_squared(residual, nominal_innovation_covariance)
-          -    residual_norm = float(np.linalg.norm(residual))
-          +    residual_norm = _stable_euclidean_norm(residual)
-           
-               accepted = True
-               action = "updated"
-          --- a/src/pyrecest/tracking/innovation_diagnostics.py
-          +++ b/src/pyrecest/tracking/innovation_diagnostics.py
-          @@ -13,6 +13,13 @@
-           )
-           
-           
-          +def _stable_euclidean_norm(values: np.ndarray) -> float:
-          +    """Return a scale-stable Euclidean norm for finite real values."""
-          +
-          +    flattened = np.abs(np.asarray(values, dtype=float)).reshape(-1)
-          +    return float(np.hypot.reduce(flattened, initial=0.0))
-          +
-          +
-           @dataclass(frozen=True)
-           class InnovationDiagnostic:
-               """Diagnostics for one innovation/update decision."""
-          @@ -132,7 +139,7 @@
-               return InnovationDiagnostic(
-                   measurement_dim=int(residual_array.size),
-                   nis=nis,
-          -        residual_norm=float(np.linalg.norm(residual_array)),
-          +        residual_norm=_stable_euclidean_norm(residual_array),
-                   gate_threshold=(
-                       None if resolved_threshold is None else float(resolved_threshold)
-                   ),
-          --- a/tests/filters/test_linear_update_planning.py
-          +++ b/tests/filters/test_linear_update_planning.py
-          @@ -251,3 +251,22 @@
-           
-               assert plan.accepted
-               assert np.isclose(plan.nis, 1.0)
-          +
-          +
-          +def test_plan_linear_measurement_update_uses_scale_stable_residual_norm() -> None:
-          +    residual = np.array([1.0e200, 1.0e200])
-          +
-          +    with np.errstate(over="raise", invalid="raise"):
-          +        plan = plan_linear_measurement_update(
-          +            mean=np.zeros(2),
-          +            covariance_matrix=np.zeros((2, 2)),
-          +            measurement_vector=residual,
-          +            measurement_covariance=np.eye(2) * 1.0e200,
-          +            observation_matrix=np.eye(2),
-          +            max_residual_norm=1.5e200,
-          +        )
-          +
-          +    assert plan.accepted is True
-          +    assert plan.action == "updated"
-          +    assert np.isclose(plan.residual_norm, np.sqrt(2.0) * 1.0e200)
-          +
-          --- a/tests/tracking/test_innovation_diagnostics.py
-          +++ b/tests/tracking/test_innovation_diagnostics.py
-          @@ -175,3 +175,18 @@
-               assert summaries["rf"].acceptance_rate == 0.5
-               assert summaries["rf"].nis_mean == 5.0
-               assert summaries["radar"].count == 1
-          +
-          +
-          +def test_innovation_diagnostic_uses_scale_stable_residual_norm() -> None:
-          +    residual = np.array([1.0e200, 1.0e200])
-          +
-          +    with np.errstate(over="raise", invalid="raise"):
-          +        diagnostic = innovation_diagnostic(
-          +            residual,
-          +            np.eye(2) * 1.0e200,
-          +            gate_threshold=3.0e200,
-          +        )
-          +
-          +    assert diagnostic.accepted is True
-          +    assert np.isclose(diagnostic.residual_norm, np.sqrt(2.0) * 1.0e200)
-          +
-          PATCH
-          sed -i 's/^          //' /tmp/stable-residual-norm.patch
-          git apply --check /tmp/stable-residual-norm.patch
-          git apply /tmp/stable-residual-norm.patch
+          python - <<'PY'
+          from pathlib import Path
+
+          planning = Path("src/pyrecest/filters/linear_update_planning.py")
+          text = planning.read_text()
+          constants = (
+              'ROBUST_UPDATE_MODES = ("nis-inflate", "student-t", "huber")\n'
+              'DEFAULT_STUDENT_T_DOF = 4.0\n'
+              'DEFAULT_HUBER_THRESHOLD = 2.0\n'
+          )
+          helper = constants + '''
+
+
+def _stable_euclidean_norm(values: np.ndarray) -> float:
+    """Return a scale-stable Euclidean norm for finite real values."""
+
+    flattened = np.abs(np.asarray(values, dtype=float)).reshape(-1)
+    return float(np.hypot.reduce(flattened, initial=0.0))
+'''
+          if constants not in text:
+              raise SystemExit("linear-update constants anchor not found")
+          text = text.replace(constants, helper, 1)
+          old_norm = "    residual_norm = float(np.linalg.norm(residual))\n"
+          if old_norm not in text:
+              raise SystemExit("linear-update residual norm anchor not found")
+          text = text.replace(
+              old_norm,
+              "    residual_norm = _stable_euclidean_norm(residual)\n",
+              1,
+          )
+          planning.write_text(text)
+
+          diagnostics = Path("src/pyrecest/tracking/innovation_diagnostics.py")
+          text = diagnostics.read_text()
+          imports = '''from pyrecest.filters.linear_update_planning import (
+    chi_square_gate_threshold,
+    normalized_innovation_squared,
+)
+'''
+          helper = imports + '''
+
+
+def _stable_euclidean_norm(values: np.ndarray) -> float:
+    """Return a scale-stable Euclidean norm for finite real values."""
+
+    flattened = np.abs(np.asarray(values, dtype=float)).reshape(-1)
+    return float(np.hypot.reduce(flattened, initial=0.0))
+'''
+          if imports not in text:
+              raise SystemExit("innovation-diagnostic import anchor not found")
+          text = text.replace(imports, helper, 1)
+          old_norm = "        residual_norm=float(np.linalg.norm(residual_array)),\n"
+          if old_norm not in text:
+              raise SystemExit("innovation-diagnostic residual norm anchor not found")
+          text = text.replace(
+              old_norm,
+              "        residual_norm=_stable_euclidean_norm(residual_array),\n",
+              1,
+          )
+          diagnostics.write_text(text)
+
+          planning_test = Path("tests/filters/test_linear_update_planning.py")
+          text = planning_test.read_text().rstrip()
+          test_name = "test_plan_linear_measurement_update_uses_scale_stable_residual_norm"
+          if test_name not in text:
+              text += '''
+
+
+def test_plan_linear_measurement_update_uses_scale_stable_residual_norm() -> None:
+    residual = np.array([1.0e200, 1.0e200])
+
+    with np.errstate(over="raise", invalid="raise"):
+        plan = plan_linear_measurement_update(
+            mean=np.zeros(2),
+            covariance_matrix=np.zeros((2, 2)),
+            measurement_vector=residual,
+            measurement_covariance=np.eye(2) * 1.0e200,
+            observation_matrix=np.eye(2),
+            max_residual_norm=1.5e200,
+        )
+
+    assert plan.accepted is True
+    assert plan.action == "updated"
+    assert np.isclose(plan.residual_norm, np.sqrt(2.0) * 1.0e200)
+'''
+          planning_test.write_text(text + "\n")
+
+          diagnostics_test = Path("tests/tracking/test_innovation_diagnostics.py")
+          text = diagnostics_test.read_text().rstrip()
+          test_name = "test_innovation_diagnostic_uses_scale_stable_residual_norm"
+          if test_name not in text:
+              text += '''
+
+
+def test_innovation_diagnostic_uses_scale_stable_residual_norm() -> None:
+    residual = np.array([1.0e200, 1.0e200])
+
+    with np.errstate(over="raise", invalid="raise"):
+        diagnostic = innovation_diagnostic(
+            residual,
+            np.eye(2) * 1.0e200,
+            gate_threshold=3.0e200,
+        )
+
+    assert diagnostic.accepted is True
+    assert np.isclose(diagnostic.residual_norm, np.sqrt(2.0) * 1.0e200)
+'''
+          diagnostics_test.write_text(text + "\n")
+          PY
 
       - name: Validate focused regression
         shell: bash
@@ -139,13 +145,12 @@ jobs:
             tests/tracking/test_innovation_diagnostics.py
           git diff --check
 
-      - name: Commit final patch and remove temporary workflow
+      - name: Commit source fix
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git rm .github/workflows/agent-source-snapshot.yml
           git add \
             src/pyrecest/filters/linear_update_planning.py \
             src/pyrecest/tracking/innovation_diagnostics.py \
