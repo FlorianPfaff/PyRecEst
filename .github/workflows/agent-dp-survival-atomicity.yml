@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - agent/validate-dp-survival-before-predict
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
