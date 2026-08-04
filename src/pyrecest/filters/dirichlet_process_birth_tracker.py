@@ -168,17 +168,18 @@ class DirichletProcessBirthMultiBernoulliTracker(MultiBernoulliTracker):
         birth_components=None,
     ):
         """Predict targets and decay DP birth-atom counts."""
+        survival_probability = float(
+            self.tracker_param["dp_birth_atom_survival_probability"]
+        )
+        if not 0.0 <= survival_probability <= 1.0:
+            raise ValueError("dp_birth_atom_survival_probability must be in [0, 1]")
+
         super().predict_linear(
             system_matrices,
             sys_noises,
             inputs=inputs,
             birth_components=birth_components,
         )
-        survival_probability = float(
-            self.tracker_param["dp_birth_atom_survival_probability"]
-        )
-        if not 0.0 <= survival_probability <= 1.0:
-            raise ValueError("dp_birth_atom_survival_probability must be in [0, 1]")
         for atom in self.birth_atoms:
             atom.count *= survival_probability
         self._prune_and_cap_birth_atoms()
