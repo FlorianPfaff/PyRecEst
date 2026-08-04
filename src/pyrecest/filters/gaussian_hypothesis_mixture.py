@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
-from pyrecest.numerics import is_positive_semidefinite
+from pyrecest.numerics import is_positive_semidefinite, is_symmetric
 
 _INVALID_FLOAT_ARRAY_KINDS = {"b", "S", "U", "c", "M", "m"}
 _INVALID_FLOAT_ARRAY_SCALAR_TYPES = (
@@ -47,6 +47,8 @@ class WeightedGaussianHypothesis:
             raise ValueError("covariance must match mean dimension")
         if not np.all(np.isfinite(covariance)):
             raise ValueError("covariance must contain only finite values")
+        if not is_symmetric(covariance):
+            raise ValueError("covariance must be symmetric")
         covariance = _symmetrized(covariance)
         if not is_positive_semidefinite(covariance):
             raise ValueError("covariance must be positive semidefinite")
