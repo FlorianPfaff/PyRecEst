@@ -330,11 +330,16 @@ def _advance_sparse_pair_alpha(
                 raise ValueError(
                     "transition row weights must be finite and nonnegative"
                 )
-            total = float(weights.sum())
-            if total <= 0.0:
+            if weights.size == 0:
                 raise ValueError("transition row must contain positive mass")
-            if not np.isclose(total, 1.0):
-                weights = weights / total
+            maximum_weight = float(np.max(weights))
+            if maximum_weight <= 0.0:
+                raise ValueError("transition row must contain positive mass")
+            scaled_weights = weights / maximum_weight
+            scaled_total = float(scaled_weights.sum())
+            if scaled_total <= 0.0 or not np.isfinite(scaled_total):
+                raise ValueError("transition row must contain positive finite mass")
+            weights = scaled_weights / scaled_total
             return dst, weights
 
         if cache_key is None:
