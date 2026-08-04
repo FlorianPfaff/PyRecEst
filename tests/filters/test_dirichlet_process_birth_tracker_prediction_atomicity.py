@@ -1,3 +1,5 @@
+"""Regression tests for atomic DP birth prediction validation."""
+
 import numpy as np
 import pyrecest.backend
 import pytest
@@ -47,14 +49,13 @@ def _tracker_with_active_birth_atom(survival_probability):
 
 
 @pytest.mark.parametrize(
-    "invalid_survival_probability", [-0.1, 1.1, np.nan]
+    "invalid_survival_probability",
+    [-0.1, 1.1, np.nan, np.inf, -np.inf],
 )
 def test_invalid_birth_atom_survival_is_rejected_before_prediction(
     invalid_survival_probability,
 ):
-    tracker = _tracker_with_active_birth_atom(
-        invalid_survival_probability
-    )
+    tracker = _tracker_with_active_birth_atom(invalid_survival_probability)
     label = tracker.get_component_labels()[0]
     component_before = tracker.get_component_by_label(label)
     existence_before = component_before.existence_probability
@@ -66,7 +67,7 @@ def test_invalid_birth_atom_survival_is_rejected_before_prediction(
 
     with pytest.raises(
         ValueError,
-        match="dp_birth_atom_survival_probability must be in \[0, 1\]",
+        match=r"dp_birth_atom_survival_probability must be in \[0, 1\]",
     ):
         tracker.predict_linear(
             transition,
@@ -75,18 +76,9 @@ def test_invalid_birth_atom_survival_is_rejected_before_prediction(
         )
 
     component_after = tracker.get_component_by_label(label)
-    np.testing.assert_allclose(
-        component_after.get_point_estimate(), estimate_before
-    )
-    assert component_after.existence_probability == pytest.approx(
-        existence_before
-    )
-    np.testing.assert_allclose(
-        tracker.birth_atoms[0].mean, atom_before.mean
-    )
-    np.testing.assert_allclose(
-        tracker.birth_atoms[0].covariance, atom_before.covariance
-    )
-    assert tracker.birth_atoms[0].count == pytest.approx(
-        atom_before.count
-    )
+    atom_after = tracker.get_birth_atoms()[0]
+    np.testing.assert_allclose(component_after.get_point_estimate(), estimate_before)
+    assert component_after.existence_probability == pytest.approx(existence_before)
+    np.testing.assert_allclose(atom_after.mean, atom_before.mean)
+    np.testing.assert_allclose(atom_after.covariance, atom_before.covariance)
+    assert atom_after.count == pytest.approx(atom_before.count)
