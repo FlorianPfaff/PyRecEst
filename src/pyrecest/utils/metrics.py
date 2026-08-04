@@ -569,12 +569,32 @@ def _as_covariance_stack(
     if covariance_array.ndim == 2:
         if covariance_array.shape != (dim, dim):
             raise ValueError(f"{name} must have shape ({dim}, {dim})")
-        return np.broadcast_to(covariance_array, (n_samples, dim, dim))
-    if covariance_array.ndim == 3:
+        covariance_stack = np.broadcast_to(
+            covariance_array, (n_samples, dim, dim)
+        )
+    elif covariance_array.ndim == 3:
         if covariance_array.shape != (n_samples, dim, dim):
             raise ValueError(f"{name} must have shape ({n_samples}, {dim}, {dim})")
-        return covariance_array
-    raise ValueError(f"{name} must have shape (dim, dim) or (n, dim, dim)")
+        covariance_stack = covariance_array
+    else:
+        raise ValueError(f"{name} must have shape (dim, dim) or (n, dim, dim)")
+
+    if not np.all(np.isfinite(covariance_stack)):
+        raise ValueError(f"{name} must contain only finite values")
+    if not np.allclose(
+        covariance_stack,
+        np.swapaxes(covariance_stack, -1, -2),
+        rtol=1e-12,
+        atol=1e-12,
+    ):
+        raise ValueError(f"{name} must contain symmetric covariance matrices")
+    try:
+        np.linalg.cholesky(covariance_stack)
+    except np.linalg.LinAlgError as exc:
+        raise ValueError(
+            f"{name} must contain positive-definite covariance matrices"
+        ) from exc
+    return covariance_stack
 
 
 def _as_positive_int(value: Any, name: str) -> int:
