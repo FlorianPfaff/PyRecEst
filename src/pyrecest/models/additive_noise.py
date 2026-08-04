@@ -114,23 +114,76 @@ def _dt_call_mode(function: Callable[..., Any]) -> str | None:
     return "positional" if len(positional) >= 2 else None
 
 
-def _supported_kwargs(
-    function: Callable[..., Any], kwargs: dict[str, Any]
-) -> dict[str, Any]:
-    """Return kwargs accepted by ``function``, preserving opaque callables."""
-    if not kwargs:
-        return {}
+def _call_with_supported_arguments(
+    function: Callable[..., Any],
+    positional_args: tuple[Any, ...],
+    candidate_kwargs: dict[str, Any],
+    *,
+    filter_unsupported: bool,
+) -> Any:
+    """Call ``function`` while respecting positional-only parameters."""
+    if not candidate_kwargs:
+        return function(*positional_args)
     try:
         signature = inspect.signature(function)
     except (TypeError, ValueError):
-        return kwargs
+        return function(*positional_args, **candidate_kwargs)
 
-    parameters = signature.parameters
-    if any(
-        param.kind == inspect.Parameter.VAR_KEYWORD for param in parameters.values()
-    ):
-        return kwargs
-    return {key: value for key, value in kwargs.items() if key in parameters}
+    parameters = tuple(signature.parameters.values())
+    parameter_by_name = signature.parameters
+    remaining = dict(candidate_kwargs)
+    call_args = list(positional_args)
+
+    positional_parameters = tuple(
+        parameter
+        for parameter in parameters
+        if parameter.kind
+        in (
+            inspect.Parameter.POSITIONAL_ONLY,
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+        )
+    )
+    consumed_names = {
+        parameter.name for parameter in positional_parameters[: len(call_args)]
+    }
+    unbound_positional_only = tuple(
+        parameter
+        for parameter in parameters
+        if parameter.kind is inspect.Parameter.POSITIONAL_ONLY
+        and parameter.name not in consumed_names
+    )
+    requested_indices = [
+        index
+        for index, parameter in enumerate(unbound_positional_only)
+        if parameter.name in remaining
+    ]
+    if requested_indices:
+        for parameter in unbound_positional_only[: max(requested_indices) + 1]:
+            if parameter.name in remaining:
+                call_args.append(remaining.pop(parameter.name))
+            elif parameter.default is not inspect.Parameter.empty:
+                call_args.append(parameter.default)
+            else:
+                break
+
+    accepts_arbitrary_kwargs = any(
+        parameter.kind is inspect.Parameter.VAR_KEYWORD for parameter in parameters
+    )
+    if accepts_arbitrary_kwargs or not filter_unsupported:
+        call_kwargs = remaining
+    else:
+        call_kwargs = {
+            name: value
+            for name, value in remaining.items()
+            if name in parameter_by_name
+            and parameter_by_name[name].kind
+            in (
+                inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                inspect.Parameter.KEYWORD_ONLY,
+            )
+        }
+
+    return function(*call_args, **call_kwargs)
 
 
 def _call_transition_function(
@@ -143,16 +196,24 @@ def _call_transition_function(
     """Call a transition function with default and per-call arguments."""
     call_kwargs = {**function_args, **kwargs}
     if dt is None:
-        return function(state, **call_kwargs)
+        return _call_with_supported_arguments(
+            function, (state,), call_kwargs, filter_unsupported=False
+        )
 
     dt_mode = _dt_call_mode(function)
     if dt_mode == "keyword":
         call_kwargs["dt"] = dt
-        return function(state, **call_kwargs)
+        return _call_with_supported_arguments(
+            function, (state,), call_kwargs, filter_unsupported=False
+        )
     if dt_mode == "positional":
         call_kwargs.pop("dt", None)
-        return function(state, dt, **call_kwargs)
-    return function(state, **call_kwargs)
+        return _call_with_supported_arguments(
+            function, (state, dt), call_kwargs, filter_unsupported=False
+        )
+    return _call_with_supported_arguments(
+        function, (state,), call_kwargs, filter_unsupported=False
+    )
 
 
 def _call_transition_jacobian(
@@ -163,18 +224,26 @@ def _call_transition_jacobian(
     kwargs: dict[str, Any],
 ) -> Any:
     """Call a transition Jacobian with arguments it explicitly accepts."""
-    call_kwargs = _supported_kwargs(function, {**function_args, **kwargs})
+    call_kwargs = {**function_args, **kwargs}
     if dt is None:
-        return function(state, **call_kwargs)
+        return _call_with_supported_arguments(
+            function, (state,), call_kwargs, filter_unsupported=True
+        )
 
     dt_mode = _dt_call_mode(function)
     if dt_mode == "keyword":
         call_kwargs["dt"] = dt
-        return function(state, **call_kwargs)
+        return _call_with_supported_arguments(
+            function, (state,), call_kwargs, filter_unsupported=True
+        )
     if dt_mode == "positional":
         call_kwargs.pop("dt", None)
-        return function(state, dt, **call_kwargs)
-    return function(state, **call_kwargs)
+        return _call_with_supported_arguments(
+            function, (state, dt), call_kwargs, filter_unsupported=True
+        )
+    return _call_with_supported_arguments(
+        function, (state,), call_kwargs, filter_unsupported=True
+    )
 
 
 def _call_measurement_function(
@@ -184,7 +253,12 @@ def _call_measurement_function(
     kwargs: dict[str, Any],
 ) -> Any:
     """Call a measurement function with default and per-call arguments."""
-    return function(state, **{**function_args, **kwargs})
+    return _call_with_supported_arguments(
+        function,
+        (state,),
+        {**function_args, **kwargs},
+        filter_unsupported=False,
+    )
 
 
 def _call_measurement_jacobian(
@@ -194,7 +268,12 @@ def _call_measurement_jacobian(
     kwargs: dict[str, Any],
 ) -> Any:
     """Call a measurement Jacobian with arguments it explicitly accepts."""
-    return function(state, **_supported_kwargs(function, {**function_args, **kwargs}))
+    return _call_with_supported_arguments(
+        function,
+        (state,),
+        {**function_args, **kwargs},
+        filter_unsupported=True,
+    )
 
 
 class AdditiveNoiseTransitionModel:
