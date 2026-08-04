@@ -35,21 +35,30 @@ jobs:
 
           source_path = Path('src/pyrecest/filters/interacting_multiple_model_filter.py')
           source = source_path.read_text(encoding='utf-8')
-          old = '''            if pyrecest.backend.any(pyrecest.backend.isnan(log_likelihoods)):
-              raise ValueError("log_likelihoods entries must not be NaN.")
-            self.latest_model_likelihoods = exp(log_likelihoods)
-          '''
-          new = '''            if pyrecest.backend.any(pyrecest.backend.isnan(log_likelihoods)):
-              raise ValueError("log_likelihoods entries must not be NaN.")
-            if pyrecest.backend.any(log_likelihoods == float("inf")):
-              raise ValueError(
-                  "log_likelihoods entries must not be positive infinity."
-              )
-            self.latest_model_likelihoods = exp(log_likelihoods)
-          '''
-          if old not in source:
-              raise SystemExit('Expected IMM log-likelihood validation block was not found')
-          source_path.write_text(source.replace(old, new, 1), encoding='utf-8')
+          error_text = 'log_likelihoods entries must not be positive infinity.'
+          if error_text not in source:
+              lines = source.splitlines()
+              target = '                raise ValueError("log_likelihoods entries must not be NaN.")'
+              try:
+                  target_index = lines.index(target)
+              except ValueError as exc:
+                  raise SystemExit(
+                      'Expected IMM NaN validation line was not found'
+                  ) from exc
+              if lines[target_index - 1] != (
+                  '            if pyrecest.backend.any('
+                  'pyrecest.backend.isnan(log_likelihoods)):'
+              ):
+                  raise SystemExit('Unexpected IMM validation context')
+              lines[target_index + 1:target_index + 1] = [
+                  '            if pyrecest.backend.any(',
+                  '                log_likelihoods == float("inf")',
+                  '            ):',
+                  '                raise ValueError(',
+                  f'                    "{error_text}"',
+                  '                )',
+              ]
+              source_path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
 
           test_path = Path('tests/filters/test_imm_positive_infinite_log_likelihood.py')
           test_path.write_text('''import numpy as np
