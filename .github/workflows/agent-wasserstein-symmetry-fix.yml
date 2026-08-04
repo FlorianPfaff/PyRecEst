@@ -2,7 +2,7 @@ name: Apply Wasserstein covariance symmetry fix
 
 on:
   pull_request:
-    types: [opened]
+    types: [opened, synchronize]
     branches: [main]
 
 permissions:
@@ -11,7 +11,7 @@ permissions:
 jobs:
   apply-fix:
     if: github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64]
     steps:
       - name: Check out pull request branch
         uses: actions/checkout@v4
