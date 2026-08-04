@@ -56,6 +56,30 @@ TransformModel = Literal["translation", "rigid", "affine"]
 AssociationCostFn = Callable
 
 
+def _contains_complex_values(value) -> bool:
+    """Return whether an array-like value contains complex coordinates."""
+    dtype = getattr(value, "dtype", None)
+    if dtype is not None:
+        try:
+            if np.issubdtype(dtype, np.complexfloating):
+                return True
+        except TypeError:
+            if "complex" in str(dtype).lower():
+                return True
+
+    try:
+        native_values = np.asarray(pyrecest.backend.to_numpy(value), dtype=object)
+    except (TypeError, ValueError, RuntimeError):
+        try:
+            native_values = np.asarray(value, dtype=object)
+        except (TypeError, ValueError):
+            return False
+    return any(
+        isinstance(item, (complex, np.complexfloating))
+        for item in native_values.reshape(-1)
+    )
+
+
 @dataclass(frozen=True)
 class AffineTransform:
     """An affine transform represented by its linear part and translation.
@@ -72,6 +96,10 @@ class AffineTransform:
     offset: Any
 
     def __post_init__(self) -> None:
+        if _contains_complex_values(self.matrix):
+            raise ValueError("matrix must be real-valued.")
+        if _contains_complex_values(self.offset):
+            raise ValueError("offset must be real-valued.")
         matrix = asarray(self.matrix)
         offset = asarray(self.offset)
         if matrix.ndim != 2:
