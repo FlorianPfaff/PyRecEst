@@ -4,18 +4,28 @@ on:
   push:
     branches:
       - agent/reject-noop-track-splits
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
   patch:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - name: Check out branch
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -31,34 +41,36 @@ jobs:
 
           source_path = Path("src/pyrecest/utils/track_edit_whatif.py")
           source = source_path.read_text(encoding="utf-8")
-          old = '''    left = output[row_index].copy()
-              right = output[row_index].copy()
-              left[split_session:] = None
-              right[:split_session] = None
-              pieces = [row for index, row in enumerate(output) if index != row_index]
-              if any(value is not None for value in left):
-                  pieces.append(left)
-              if any(value is not None for value in right):
-                  pieces.append(right)
-          '''
-          new = '''    left = output[row_index].copy()
-              right = output[row_index].copy()
-              left[split_session:] = None
-              right[:split_session] = None
-              left_has_observation = any(value is not None for value in left)
-              right_has_observation = any(value is not None for value in right)
-              if not left_has_observation or not right_has_observation:
-                  return TrackEditApplication(
-                      edit,
-                      output,
-                      False,
-                      "reject",
-                      "split_does_not_partition_track",
-                  )
-              pieces = [row for index, row in enumerate(output) if index != row_index]
-              pieces.append(left)
-              pieces.append(right)
-          '''
+          old = (
+              "    left = output[row_index].copy()\n"
+              "    right = output[row_index].copy()\n"
+              "    left[split_session:] = None\n"
+              "    right[:split_session] = None\n"
+              "    pieces = [row for index, row in enumerate(output) if index != row_index]\n"
+              "    if any(value is not None for value in left):\n"
+              "        pieces.append(left)\n"
+              "    if any(value is not None for value in right):\n"
+              "        pieces.append(right)\n"
+          )
+          new = (
+              "    left = output[row_index].copy()\n"
+              "    right = output[row_index].copy()\n"
+              "    left[split_session:] = None\n"
+              "    right[:split_session] = None\n"
+              "    left_has_observation = any(value is not None for value in left)\n"
+              "    right_has_observation = any(value is not None for value in right)\n"
+              "    if not left_has_observation or not right_has_observation:\n"
+              "        return TrackEditApplication(\n"
+              "            edit,\n"
+              "            output,\n"
+              "            False,\n"
+              "            \"reject\",\n"
+              "            \"split_does_not_partition_track\",\n"
+              "        )\n"
+              "    pieces = [row for index, row in enumerate(output) if index != row_index]\n"
+              "    pieces.append(left)\n"
+              "    pieces.append(right)\n"
+          )
           if old not in source:
               raise SystemExit("expected split_track implementation block not found")
           source_path.write_text(source.replace(old, new, 1), encoding="utf-8")
