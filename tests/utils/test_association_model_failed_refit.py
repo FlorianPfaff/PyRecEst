@@ -1,6 +1,5 @@
 import numpy.testing as npt
 import pytest
-
 from pyrecest.backend import array, zeros
 from pyrecest.utils import LogisticPairwiseAssociationModel
 
@@ -17,9 +16,7 @@ def test_failed_refit_preserves_previous_fitted_state():
     converged_before = model.converged_
     class_weights_before = model.class_weights_
 
-    replacement_features = array(
-        [[-2.0, 0.0], [-1.0, 0.0], [1.0, 0.0], [2.0, 0.0]]
-    )
+    replacement_features = array([[-2.0, 0.0], [-1.0, 0.0], [1.0, 0.0], [2.0, 0.0]])
     with pytest.raises(
         ValueError, match="At least one example must receive positive weight"
     ):

@@ -220,9 +220,7 @@ def test_normalized_innovation_squared_rejects_nonpositive_definite_covariance()
         ("measurement_covariance", np.array([[-2.0]])),
     ],
 )
-def test_plan_rejects_indefinite_component_covariances(
-    field, invalid_covariance
-):
+def test_plan_rejects_indefinite_component_covariances(field, invalid_covariance):
     kwargs = {
         "mean": np.zeros(1),
         "covariance_matrix": np.eye(1),
