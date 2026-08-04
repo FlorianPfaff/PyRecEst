@@ -249,14 +249,87 @@ def _coerce_additional_params(additional_params: Any) -> Mapping[str, Any]:
     return additional_params
 
 
+def _capped_pairwise_euclidean_distances(
+    first: numpy.ndarray,
+    second: numpy.ndarray,
+    cutoff_distance: float,
+) -> numpy.ndarray:
+    """Return pairwise Euclidean distances capped without overflow."""
+    if cutoff_distance == 0.0:
+        return numpy.zeros((first.shape[0], second.shape[0]), dtype=float)
+
+    first_values = first[:, None, :]
+    second_values = second[None, :, :]
+    pairwise_shape = (first.shape[0], second.shape[0], first.shape[1])
+    same_sign = numpy.signbit(first_values) == numpy.signbit(second_values)
+    normalized_differences = numpy.ones(pairwise_shape, dtype=float)
+
+    same_sign_difference = numpy.zeros(pairwise_shape, dtype=float)
+    numpy.subtract(
+        first_values,
+        second_values,
+        out=same_sign_difference,
+        where=same_sign,
+    )
+    absolute_difference = numpy.abs(same_sign_difference)
+    same_sign_below_cutoff = same_sign & (
+        absolute_difference < cutoff_distance
+    )
+    numpy.divide(
+        absolute_difference,
+        cutoff_distance,
+        out=normalized_differences,
+        where=same_sign_below_cutoff,
+    )
+
+    absolute_first = numpy.abs(first_values)
+    absolute_second = numpy.abs(second_values)
+    opposite_sign_below_cutoff = (
+        ~same_sign
+        & (absolute_first < cutoff_distance)
+        & (absolute_second < cutoff_distance)
+    )
+    first_scaled = numpy.zeros(pairwise_shape, dtype=float)
+    second_scaled = numpy.zeros(pairwise_shape, dtype=float)
+    numpy.divide(
+        absolute_first,
+        cutoff_distance,
+        out=first_scaled,
+        where=opposite_sign_below_cutoff,
+    )
+    numpy.divide(
+        absolute_second,
+        cutoff_distance,
+        out=second_scaled,
+        where=opposite_sign_below_cutoff,
+    )
+    opposite_sign_difference = numpy.minimum(
+        first_scaled + second_scaled,
+        1.0,
+    )
+    numpy.copyto(
+        normalized_differences,
+        opposite_sign_difference,
+        where=opposite_sign_below_cutoff,
+    )
+
+    normalized_distances = numpy.linalg.norm(
+        normalized_differences,
+        axis=2,
+    )
+    return cutoff_distance * numpy.minimum(normalized_distances, 1.0)
+
+
 def _euclidean_mtt_distance(x1, x2, *, cutoff_distance: float) -> float:
     first, second = _compatible_target_matrices(x1, x2)
     if first.shape[0] == 0 or second.shape[0] == 0:
         return float(cutoff_distance * abs(first.shape[0] - second.shape[0]))
 
-    deltas = first[:, None, :] - second[None, :, :]
-    costs = numpy.linalg.norm(deltas, axis=2)
-    costs = numpy.minimum(costs, float(cutoff_distance))
+    costs = _capped_pairwise_euclidean_distances(
+        first,
+        second,
+        cutoff_distance,
+    )
     row_indices, column_indices = linear_sum_assignment(costs)
     matched_cost = float(costs[row_indices, column_indices].sum())
     missed_count = abs(first.shape[0] - second.shape[0])
