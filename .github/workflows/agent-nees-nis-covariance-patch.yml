@@ -1,9 +1,9 @@
 name: Apply NEES/NIS covariance validation
 
 on:
-  push:
+  pull_request:
     branches:
-      - agent/validate-nees-nis-covariances
+      - main
 
 permissions:
   contents: write
