@@ -217,8 +217,7 @@ class TrackManager(
     @filter_state.setter
     def filter_state(self, new_state):
         replacement_filters = [
-            self._normalize_filter(filter_or_state)
-            for filter_or_state in new_state
+            self._normalize_filter(filter_or_state) for filter_or_state in new_state
         ]
 
         self.tracks = []

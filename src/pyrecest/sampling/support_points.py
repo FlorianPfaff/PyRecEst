@@ -382,15 +382,11 @@ def mahalanobis_support_points(
     eigenvalues, eigenvectors = np.linalg.eigh(covariances)
     eigenvalues = np.clip(eigenvalues, 0.0, None)
     positive_eigenvalues = eigenvalues > 0.0
-    direction_components = np.einsum(
-        "mi,bij->bmj", directions_array, eigenvectors
-    )
+    direction_components = np.einsum("mi,bij->bmj", directions_array, eigenvectors)
     supported_components = np.where(
         positive_eigenvalues[:, None, :], direction_components, 0.0
     )
-    supported_directions = np.einsum(
-        "bmj,bij->bmi", supported_components, eigenvectors
-    )
+    supported_directions = np.einsum("bmj,bij->bmi", supported_components, eigenvectors)
 
     inverse_eigenvalues = np.zeros_like(eigenvalues)
     np.divide(

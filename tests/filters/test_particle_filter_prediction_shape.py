@@ -2,7 +2,6 @@ import copy
 
 import numpy.testing as npt
 import pytest
-
 from pyrecest.filters.hyperspherical_particle_filter import (
     HypersphericalParticleFilter,
 )

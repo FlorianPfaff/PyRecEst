@@ -11,7 +11,6 @@ import numpy as np
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import abs as backend_abs
 from pyrecest.backend import all as backend_all
-from pyrecest.backend import max as backend_max
 from pyrecest.backend import (
     array_equal,
     asarray,
@@ -19,6 +18,9 @@ from pyrecest.backend import (
     empty,
     int64,
     isfinite,
+)
+from pyrecest.backend import max as backend_max
+from pyrecest.backend import (
     mean,
     sqrt,
     to_numpy,
@@ -27,7 +29,6 @@ from pyrecest.backend import (
 )
 from scipy.optimize import linear_sum_assignment
 from scipy.spatial.distance import cdist
-
 
 _INVALID_REAL_SCALAR_TYPES = (
     type(None),

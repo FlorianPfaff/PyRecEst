@@ -78,9 +78,7 @@ class SO3ProductParticleFilterTest(unittest.TestCase):
         filt = SO3ProductParticleFilter(n_particles=2, num_rotations=1)
         original_particles = to_numpy(filt.particles).copy()
         original_weights = to_numpy(filt.weights).copy()
-        replacement_particles = array(
-            [[z_quaternion(pi / 2.0)], [z_quaternion(pi)]]
-        )
+        replacement_particles = array([[z_quaternion(pi / 2.0)], [z_quaternion(pi)]])
 
         with self.assertRaisesRegex(ValueError, "weights must match"):
             filt.set_particles(

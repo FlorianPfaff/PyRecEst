@@ -9,9 +9,7 @@ def test_multivariate_normal_zero_covariance_returns_mean():
     random.seed(0)
     mean = np.array([1.5, -2.0])
 
-    sample = np.asarray(
-        random.multivariate_normal(mean, np.zeros((2, 2)), size=8)
-    )
+    sample = np.asarray(random.multivariate_normal(mean, np.zeros((2, 2)), size=8))
 
     assert np.isfinite(sample).all()
     np.testing.assert_allclose(

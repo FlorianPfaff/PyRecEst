@@ -2,7 +2,6 @@
 
 import numpy as np
 import pytest
-
 from pyrecest.filters.discrete_state import (
     discrete_forward_backward,
     discrete_forward_backward_time_varying,
