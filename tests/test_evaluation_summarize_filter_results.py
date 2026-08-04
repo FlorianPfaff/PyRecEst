@@ -55,6 +55,38 @@ class TestSummarizeFilterResultsWarnings(unittest.TestCase):
         pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
         reason="Not supported on this backend",
     )
+    def test_rejects_filter_count_mismatch_before_mutating_configs(self):
+        groundtruths = np.empty((2, 2), dtype=object)
+        for index in np.ndindex(groundtruths.shape):
+            groundtruths[index] = np.zeros(2)
+
+        last_estimates = np.zeros((1, 2, 2))
+        runtimes = np.ones((1, 2))
+        run_failed = np.zeros((1, 2), dtype=bool)
+        filter_configs = [
+            {"name": "first", "parameter": None},
+            {"name": "second", "parameter": None},
+        ]
+        original_configs = [dict(config) for config in filter_configs]
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            with self.assertRaisesRegex(ValueError, "same number of filters"):
+                summarize_filter_results(
+                    scenario_config={"manifold": "Euclidean"},
+                    filter_configs=filter_configs,
+                    runtimes=runtimes,
+                    groundtruths=groundtruths,
+                    run_failed=run_failed,
+                    last_estimates=last_estimates,
+                )
+
+        self.assertEqual(filter_configs, original_configs)
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
+        reason="Not supported on this backend",
+    )
     def test_run_count_warning_uses_run_axis(self):
         n_runs = 1000
         n_timesteps = 2
