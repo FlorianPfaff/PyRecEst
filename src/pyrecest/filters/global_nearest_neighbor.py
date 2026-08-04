@@ -40,6 +40,20 @@ _INVALID_PAIRWISE_COST_SCALAR_TYPES = (
 _REJECTED_PAIRWISE_COST_DTYPE_KINDS = frozenset({"b", "c", "S", "U", "M", "m"})
 
 
+def _validate_boolean_association_param(value, name: str) -> bool:
+    """Return a scalar Boolean association option without truthiness coercion."""
+
+    if np.ma.isMaskedArray(value) and bool(np.any(np.ma.getmaskarray(value))):
+        raise ValueError(f"{name} must be a boolean.")
+    try:
+        value_array = np.asarray(value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{name} must be a boolean.") from exc
+    if value_array.shape == () and value_array.dtype.kind == "b":
+        return bool(value_array.item())
+    raise ValueError(f"{name} must be a boolean.")
+
+
 class GlobalNearestNeighbor(AbstractNearestNeighborTracker):
     """Global nearest-neighbor tracker for linear/Gaussian multitarget tracking.
 
@@ -79,6 +93,14 @@ class GlobalNearestNeighbor(AbstractNearestNeighborTracker):
                 **default_association_param,
                 **association_param,
             }
+        association_param["square_dist"] = _validate_boolean_association_param(
+            association_param["square_dist"], "square_dist"
+        )
+        association_param["maximize_cardinality"] = (
+            _validate_boolean_association_param(
+                association_param["maximize_cardinality"], "maximize_cardinality"
+            )
+        )
 
         super().__init__(
             initial_prior,
