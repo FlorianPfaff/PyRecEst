@@ -55,10 +55,29 @@ def _reject_complex_values(values: Any, message: str) -> None:
         raise ValueError(message)
 
 
+def _reject_invalid_log_likelihood(values: Any) -> None:
+    try:
+        log_likelihood = np.asarray(values, dtype=float)
+    except (TypeError, ValueError, OverflowError):
+        return
+    if log_likelihood.ndim != 2:
+        return
+    if np.any(np.isnan(log_likelihood)) or np.any(np.isposinf(log_likelihood)):
+        raise ValueError("log_likelihood must contain finite values or -np.inf")
+
+
 @wraps(_original_scaled_emissions)
 def scaled_emissions(log_likelihood):
     _reject_complex_values(log_likelihood, "log_likelihood must contain real values")
+    _reject_invalid_log_likelihood(log_likelihood)
     return _original_scaled_emissions(log_likelihood)
+
+
+scaled_emissions.__doc__ = _original_scaled_emissions.__doc__.replace(
+    "Non-finite entries are returned as zero in ``scaled``.",
+    "``-np.inf`` entries are returned as zero in ``scaled``; "
+    "NaN and positive infinity are rejected.",
+)
 
 
 @wraps(_original_probabilities_to_log_probabilities)
@@ -88,6 +107,7 @@ def discrete_forward_backward(
     valid_state_mask=None,
 ):
     _reject_complex_values(log_likelihood, "log_likelihood must contain real values")
+    _reject_invalid_log_likelihood(log_likelihood)
     _reject_complex_values(
         transition,
         "transition must contain real transition probabilities",
@@ -109,6 +129,7 @@ def discrete_forward_backward_time_varying(
     valid_state_mask=None,
 ):
     _reject_complex_values(log_likelihood, "log_likelihood must contain real values")
+    _reject_invalid_log_likelihood(log_likelihood)
     for index, transition in enumerate(transitions):
         _reject_complex_values(
             transition,
@@ -133,6 +154,7 @@ def imm_forward_backward(
     valid_state_mask=None,
 ):
     _reject_complex_values(log_likelihood, "log_likelihood must contain real values")
+    _reject_invalid_log_likelihood(log_likelihood)
     for index, transition in enumerate(state_transitions):
         if transition is not None:
             _reject_complex_values(
