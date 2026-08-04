@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - agent/reject-imm-positive-infinite-log-likelihoods
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -11,7 +14,10 @@ permissions:
 
 jobs:
   patch-and-test:
-    if: github.actor != 'github-actions[bot]'
+    if: >-
+      github.actor != 'github-actions[bot]' &&
+      (github.event_name != 'pull_request' ||
+       github.head_ref == 'agent/reject-imm-positive-infinite-log-likelihoods')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
