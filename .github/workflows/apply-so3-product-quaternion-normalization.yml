@@ -4,18 +4,25 @@ on:
   push:
     branches:
       - agent/stabilize-so3-product-quaternion-normalization
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
 
 permissions:
   contents: write
 
 jobs:
   patch-and-test:
-    if: github.actor != 'github-actions[bot]'
+    if: github.head_ref == 'agent/stabilize-so3-product-quaternion-normalization' && github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref_name }}
+          ref: ${{ github.head_ref }}
           fetch-depth: 0
 
       - uses: actions/setup-python@v5
@@ -156,4 +163,4 @@ jobs:
             tests/distributions/test_so3_product_dirac_extreme_norms.py \
             .github/workflows/apply-so3-product-quaternion-normalization.yml
           git commit -m "Reuse stable SO(3) quaternion normalization"
-          git push origin HEAD:${{ github.ref_name }}
+          git push origin HEAD:${{ github.head_ref }}
