@@ -31,11 +31,22 @@ def _to_python_float(value):
     return float(value)
 
 
+def _is_complex_array(value):
+    """Return whether a NumPy/JAX array or PyTorch tensor has complex dtype."""
+    dtype = getattr(value, "dtype", None)
+    if getattr(dtype, "kind", None) == "c":
+        return True
+    is_complex = getattr(value, "is_complex", None)
+    return bool(is_complex()) if callable(is_complex) else False
+
+
 def _validate_vmf_distribution(distribution, role):
     if not isinstance(distribution, VonMisesFisherDistribution):
         raise ValueError(f"{role} must be a VonMisesFisherDistribution.")
 
     mu = asarray(distribution.mu)
+    if _is_complex_array(mu):
+        raise ValueError(f"{role} mean direction must be real-valued.")
     if ndim(mu) != 1:
         raise ValueError(f"{role} mean direction must be a vector.")
     if mu.shape[0] < 2:
@@ -67,6 +78,8 @@ def _validate_zonal_vmf(distribution, role):
 
 def _validate_vmf_measurement(z, input_dim):
     measurement = asarray(z)
+    if _is_complex_array(measurement):
+        raise ValueError("measurement z must be real-valued.")
     if measurement.shape != (input_dim,):
         raise ValueError(f"measurement z must have shape ({input_dim},).")
     if not _to_python_bool(backend_all(isfinite(measurement))):
