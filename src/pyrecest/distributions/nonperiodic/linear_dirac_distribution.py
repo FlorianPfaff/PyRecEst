@@ -58,6 +58,13 @@ class LinearDiracDistribution(AbstractDiracDistribution, AbstractLinearDistribut
         sample_matrix = reshape(self.d, (-1, 1)) if self.d.ndim == 1 else self.d
         return self.w @ sample_matrix
 
+    def apply_function(self, f, function_is_vectorized=True):
+        """Apply a transform and rebuild dimension-dependent linear metadata."""
+        transformed = super().apply_function(
+            f, function_is_vectorized=function_is_vectorized
+        )
+        return LinearDiracDistribution(transformed.d, transformed.w)
+
     def set_mean(self, new_mean):
         new_mean = asarray(new_mean)
         if new_mean.ndim == 0:
