@@ -113,6 +113,10 @@ class TensorTrain:
                 raise ValueError(
                     "TT cores must have shape (left_rank, mode_size, right_rank)."
                 )
+            if any(axis_size < 1 for axis_size in core.shape):
+                raise ValueError("TT core ranks and mode sizes must be positive.")
+            if not np.all(np.isfinite(core)):
+                raise ValueError("TT cores must contain only finite values.")
         if checked[0].shape[0] != 1 or checked[-1].shape[2] != 1:
             raise ValueError("Boundary TT ranks must be one.")
         for left, right in zip(checked, checked[1:]):
@@ -150,6 +154,8 @@ class TensorTrain:
             raise ValueError("A tensor with at least one axis is required.")
         if any(axis_size < 1 for axis_size in array.shape):
             raise ValueError("All tensor axes must be non-empty.")
+        if not np.all(np.isfinite(array)):
+            raise ValueError("tensor must contain only finite values.")
         if array.ndim == 1:
             return cls((array.reshape(1, array.shape[0], 1),))
 
