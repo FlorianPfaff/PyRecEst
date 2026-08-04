@@ -1,0 +1,184 @@
+name: Apply DP birth survival atomicity fix (self-hosted)
+
+on:
+  push:
+    branches:
+      - agent/validate-dp-survival-before-predict
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: [self-hosted, Linux, X64]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/validate-dp-survival-before-predict
+
+      - name: Apply source and regression patch
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from textwrap import dedent
+
+          source_path = Path("src/pyrecest/filters/dirichlet_process_birth_tracker.py")
+          source = source_path.read_text(encoding="utf-8")
+          i = " " * 8
+          j = " " * 12
+          old = "\n".join([
+              f"{i}super().predict_linear(",
+              f"{j}system_matrices,",
+              f"{j}sys_noises,",
+              f"{j}inputs=inputs,",
+              f"{j}birth_components=birth_components,",
+              f"{i})",
+              f"{i}survival_probability = float(",
+              f'{j}self.tracker_param["dp_birth_atom_survival_probability"]',
+              f"{i})",
+              f"{i}if not 0.0 <= survival_probability <= 1.0:",
+              f'{j}raise ValueError("dp_birth_atom_survival_probability must be in [0, 1]")',
+              f"{i}for atom in self.birth_atoms:",
+          ]) + "\n"
+          new = "\n".join([
+              f"{i}survival_probability = float(",
+              f'{j}self.tracker_param["dp_birth_atom_survival_probability"]',
+              f"{i})",
+              f"{i}if not 0.0 <= survival_probability <= 1.0:",
+              f'{j}raise ValueError("dp_birth_atom_survival_probability must be in [0, 1]")',
+              "",
+              f"{i}super().predict_linear(",
+              f"{j}system_matrices,",
+              f"{j}sys_noises,",
+              f"{j}inputs=inputs,",
+              f"{j}birth_components=birth_components,",
+              f"{i})",
+              f"{i}for atom in self.birth_atoms:",
+          ]) + "\n"
+          if old in source:
+              source = source.replace(old, new, 1)
+              source_path.write_text(source, encoding="utf-8")
+          elif new not in source:
+              raise RuntimeError("Could not locate the DP prediction validation block")
+
+          Path("tests/filters/test_dirichlet_process_birth_tracker_prediction_atomicity.py").write_text(
+              dedent(
+                  '''\
+                  import numpy as np
+                  import pyrecest.backend
+                  import pytest
+                  from pyrecest.filters.dirichlet_process_birth_tracker import (
+                      DirichletProcessBirthMultiBernoulliTracker,
+                  )
+
+
+                  pytestmark = pytest.mark.skipif(
+                      pyrecest.backend.__backend_name__ != "numpy",
+                      reason="DP birth multi-Bernoulli tracker inherits the NumPy-only MultiBernoulliTracker.",
+                  )
+
+
+                  def _tracker_with_active_birth_atom(survival_probability):
+                      measurement_matrix = np.array(
+                          [
+                              [1.0, 0.0, 0.0, 0.0],
+                              [0.0, 1.0, 0.0, 0.0],
+                          ]
+                      )
+                      measurement_covariance = np.eye(2) * 0.2
+                      tracker = DirichletProcessBirthMultiBernoulliTracker(
+                          tracker_param={
+                              "birth_covariance": np.diag([1.0, 1.0, 4.0, 4.0]),
+                              "birth_existence_probability": 0.8,
+                              "clutter_intensity": 1e-6,
+                              "dp_concentration": 0.05,
+                              "dp_birth_threshold": 1.0,
+                              "dp_birth_atom_survival_probability": survival_probability,
+                              "measurement_to_state_matrix": np.array(
+                                  [
+                                      [1.0, 0.0],
+                                      [0.0, 1.0],
+                                      [0.0, 0.0],
+                                      [0.0, 0.0],
+                                  ]
+                              ),
+                          }
+                      )
+                      tracker.update_linear(
+                          np.array([[2.0], [3.0]]),
+                          measurement_matrix,
+                          measurement_covariance,
+                      )
+                      return tracker
+
+
+                  @pytest.mark.parametrize(
+                      "invalid_survival_probability", [-0.1, 1.1, np.nan]
+                  )
+                  def test_invalid_birth_atom_survival_is_rejected_before_prediction(
+                      invalid_survival_probability,
+                  ):
+                      tracker = _tracker_with_active_birth_atom(invalid_survival_probability)
+                      label = tracker.get_component_labels()[0]
+                      component_before = tracker.get_component_by_label(label)
+                      existence_before = component_before.existence_probability
+                      estimate_before = component_before.get_point_estimate().copy()
+                      atom_before = tracker.get_birth_atoms()[0]
+
+                      transition = np.eye(4)
+                      transition[0, 0] = 2.0
+
+                      with pytest.raises(
+                          ValueError,
+                          match="dp_birth_atom_survival_probability must be in \\[0, 1\\]",
+                      ):
+                          tracker.predict_linear(
+                              transition,
+                              np.zeros((4, 4)),
+                              inputs=np.ones(4),
+                          )
+
+                      component_after = tracker.get_component_by_label(label)
+                      np.testing.assert_allclose(
+                          component_after.get_point_estimate(), estimate_before
+                      )
+                      assert component_after.existence_probability == pytest.approx(
+                          existence_before
+                      )
+                      np.testing.assert_allclose(
+                          tracker.birth_atoms[0].mean, atom_before.mean
+                      )
+                      np.testing.assert_allclose(
+                          tracker.birth_atoms[0].covariance, atom_before.covariance
+                      )
+                      assert tracker.birth_atoms[0].count == pytest.approx(atom_before.count)
+                  '''
+              ),
+              encoding="utf-8",
+          )
+
+          for workflow in (
+              Path(".github/workflows/agent-dp-survival-atomicity.yml"),
+              Path(".github/workflows/agent-dp-survival-atomicity-selfhosted.yml"),
+          ):
+              workflow.unlink(missing_ok=True)
+          PY
+
+      - name: Compile changed Python files
+        run: |
+          python -m py_compile \
+            src/pyrecest/filters/dirichlet_process_birth_tracker.py \
+            tests/filters/test_dirichlet_process_birth_tracker_prediction_atomicity.py
+
+      - name: Commit patch
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "Validate DP birth survival before prediction"
+          git push origin HEAD:agent/validate-dp-survival-before-predict
