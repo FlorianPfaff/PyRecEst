@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - agent/validate-nees-nis-covariances
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
