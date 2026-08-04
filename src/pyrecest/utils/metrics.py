@@ -579,11 +579,7 @@ def _as_covariance_stack(
 
 def _as_positive_int(value: Any, name: str) -> int:
     array = np.asarray(value)
-    if (
-        array.ndim != 0
-        or array.dtype == np.bool_
-        or array.dtype.kind in {"M", "m"}
-    ):
+    if array.ndim != 0 or array.dtype == np.bool_ or array.dtype.kind in {"M", "m"}:
         raise ValueError(f"{name} must be a positive integer")
     scalar = array.item()
     if isinstance(scalar, (int, np.integer)) and not isinstance(scalar, bool):

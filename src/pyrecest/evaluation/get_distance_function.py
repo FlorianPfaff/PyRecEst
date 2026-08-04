@@ -164,9 +164,7 @@ def _symmetric_distance_function(
     return distance_function
 
 
-def _target_matrix_candidates(
-    value, name: str
-) -> list[tuple[numpy.ndarray, int]]:
+def _target_matrix_candidates(value, name: str) -> list[tuple[numpy.ndarray, int]]:
     value = _as_real_numeric_array(value, name)
     if value.ndim not in (1, 2):
         raise ValueError(f"{name} must be a one- or two-dimensional target set")
