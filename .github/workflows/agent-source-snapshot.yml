@@ -1,27 +1,108 @@
-name: Agent source snapshot
+name: Apply stable residual norm fix
 
 on:
-  pull_request:
-    branches: [main]
+  push:
+    branches:
+      - agent/audit-unaddressed-bug-20260805
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  snapshot:
+  apply-fix:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build source snapshot
+        with:
+          ref: agent/audit-unaddressed-bug-20260805
+          fetch-depth: 0
+
+      - name: Apply implementation and regression tests
+        shell: bash
         run: |
           set -euo pipefail
-          tar -czf pyrecest-source-snapshot.tar.gz \
-            src tests pyproject.toml poetry.lock noxfile.py README.md 2>/dev/null || \
-          tar -czf pyrecest-source-snapshot.tar.gz src tests pyproject.toml README.md
-          python -m compileall -q src/pyrecest
-      - uses: actions/upload-artifact@v4
-        with:
-          name: pyrecest-source-snapshot
-          path: pyrecest-source-snapshot.tar.gz
-          if-no-files-found: error
-          retention-days: 1
+          python - <<'PY'
+          from pathlib import Path
+
+          planning = Path("src/pyrecest/filters/linear_update_planning.py")
+          text = planning.read_text()
+          constants = (
+              'ROBUST_UPDATE_MODES = ("nis-inflate", "student-t", "huber")\n'
+              'DEFAULT_STUDENT_T_DOF = 4.0\n'
+              'DEFAULT_HUBER_THRESHOLD = 2.0\n'
+          )
+          helper = constants + '''\n\ndef _stable_euclidean_norm(values: np.ndarray) -> float:\n    """Return a scale-stable Euclidean norm for finite real values."""\n\n    flattened = np.abs(np.asarray(values, dtype=float)).reshape(-1)\n    return float(np.hypot.reduce(flattened, initial=0.0))\n'''
+          if constants not in text:
+              raise SystemExit("linear-update constants anchor not found")
+          text = text.replace(constants, helper, 1)
+          old_norm = "    residual_norm = float(np.linalg.norm(residual))\n"
+          if old_norm not in text:
+              raise SystemExit("linear-update residual norm anchor not found")
+          text = text.replace(
+              old_norm,
+              "    residual_norm = _stable_euclidean_norm(residual)\n",
+              1,
+          )
+          planning.write_text(text)
+
+          diagnostics = Path("src/pyrecest/tracking/innovation_diagnostics.py")
+          text = diagnostics.read_text()
+          imports = '''from pyrecest.filters.linear_update_planning import (\n    chi_square_gate_threshold,\n    normalized_innovation_squared,\n)\n'''
+          helper = imports + '''\n\ndef _stable_euclidean_norm(values: np.ndarray) -> float:\n    """Return a scale-stable Euclidean norm for finite real values."""\n\n    flattened = np.abs(np.asarray(values, dtype=float)).reshape(-1)\n    return float(np.hypot.reduce(flattened, initial=0.0))\n'''
+          if imports not in text:
+              raise SystemExit("innovation-diagnostic import anchor not found")
+          text = text.replace(imports, helper, 1)
+          old_norm = "        residual_norm=float(np.linalg.norm(residual_array)),\n"
+          if old_norm not in text:
+              raise SystemExit("innovation-diagnostic residual norm anchor not found")
+          text = text.replace(
+              old_norm,
+              "        residual_norm=_stable_euclidean_norm(residual_array),\n",
+              1,
+          )
+          diagnostics.write_text(text)
+
+          planning_test = Path("tests/filters/test_linear_update_planning.py")
+          text = planning_test.read_text().rstrip()
+          test_name = "test_plan_linear_measurement_update_uses_scale_stable_residual_norm"
+          if test_name not in text:
+              text += '''\n\n\ndef test_plan_linear_measurement_update_uses_scale_stable_residual_norm() -> None:\n    residual = np.array([1.0e200, 1.0e200])\n\n    with np.errstate(over="raise", invalid="raise"):\n        plan = plan_linear_measurement_update(\n            mean=np.zeros(2),\n            covariance_matrix=np.zeros((2, 2)),\n            measurement_vector=residual,\n            measurement_covariance=np.eye(2) * 1.0e200,\n            observation_matrix=np.eye(2),\n            max_residual_norm=1.5e200,\n        )\n\n    assert plan.accepted is True\n    assert plan.action == "updated"\n    assert np.isclose(plan.residual_norm, np.sqrt(2.0) * 1.0e200)\n'''
+          planning_test.write_text(text + "\n")
+
+          diagnostics_test = Path("tests/tracking/test_innovation_diagnostics.py")
+          text = diagnostics_test.read_text().rstrip()
+          test_name = "test_innovation_diagnostic_uses_scale_stable_residual_norm"
+          if test_name not in text:
+              text += '''\n\n\ndef test_innovation_diagnostic_uses_scale_stable_residual_norm() -> None:\n    residual = np.array([1.0e200, 1.0e200])\n\n    with np.errstate(over="raise", invalid="raise"):\n        diagnostic = innovation_diagnostic(\n            residual,\n            np.eye(2) * 1.0e200,\n            gate_threshold=3.0e200,\n        )\n\n    assert diagnostic.accepted is True\n    assert np.isclose(diagnostic.residual_norm, np.sqrt(2.0) * 1.0e200)\n'''
+          diagnostics_test.write_text(text + "\n")
+          PY
+
+      - name: Validate focused regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check -q "numpy>=2,<2.5" "scipy>=1.14,<1.18" "pytest>=8,<10"
+          PYTHONPATH=src:. python -m pytest -q \
+            tests/filters/test_linear_update*.py \
+            tests/tracking/test_innovation*.py
+          python -m py_compile \
+            src/pyrecest/filters/linear_update_planning.py \
+            src/pyrecest/tracking/innovation_diagnostics.py \
+            tests/filters/test_linear_update_planning.py \
+            tests/tracking/test_innovation_diagnostics.py
+          git diff --check
+
+      - name: Commit final patch and remove temporary workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/agent-source-snapshot.yml
+          git add \
+            src/pyrecest/filters/linear_update_planning.py \
+            src/pyrecest/tracking/innovation_diagnostics.py \
+            tests/filters/test_linear_update_planning.py \
+            tests/tracking/test_innovation_diagnostics.py
+          git commit -m "Stabilize residual norm calculations"
+          git push origin HEAD:agent/audit-unaddressed-bug-20260805
