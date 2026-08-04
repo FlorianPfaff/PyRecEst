@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - agent/reject-nonfinite-replay-imm-probabilities
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
@@ -16,6 +19,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: agent/reject-nonfinite-replay-imm-probabilities
 
       - uses: actions/setup-python@v5
         with:
@@ -28,20 +32,20 @@ jobs:
 
       - name: Check syntax and whitespace
         run: |
-          python -m compileall -q             src/pyrecest/filters/goal_conditioned_replay_imm_filter.py             tests/filters/test_goal_conditioned_replay_imm_probability_validation.py
+          python -m compileall -q src/pyrecest/filters/goal_conditioned_replay_imm_filter.py tests/filters/test_goal_conditioned_replay_imm_probability_validation.py
           git diff --check
 
       - name: Install project and run focused regression
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e . pytest
-          python -m pytest -q             tests/filters/test_goal_conditioned_replay_imm_probability_validation.py
+          python -m pytest -q tests/filters/test_goal_conditioned_replay_imm_probability_validation.py
 
       - name: Commit fix and remove one-shot workflow
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git rm .github/workflows/apply-replay-imm-probability-validation.yml
-          git add             src/pyrecest/filters/goal_conditioned_replay_imm_filter.py             tests/filters/test_goal_conditioned_replay_imm_probability_validation.py
+          git add src/pyrecest/filters/goal_conditioned_replay_imm_filter.py tests/filters/test_goal_conditioned_replay_imm_probability_validation.py
           git commit -m 'Reject non-finite replay IMM probabilities'
           git push origin HEAD:agent/reject-nonfinite-replay-imm-probabilities
