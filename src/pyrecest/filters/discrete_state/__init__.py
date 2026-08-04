@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-from scipy.sparse import issparse
+from scipy.sparse import csr_matrix, issparse
 
 _TEXT_TYPES = (str, bytes, bytearray, np.str_, np.bytes_)
 _BOOLEAN_TYPES = (bool, np.bool_)
@@ -295,6 +295,34 @@ def sticky_mode_transition_matrix(n_modes, stickiness):
     return _original_sticky_mode_transition_matrix(n_modes, stickiness)
 
 
+def _normalized_grid_distances(
+    states: np.ndarray,
+    center: np.ndarray,
+    sigma: float,
+) -> np.ndarray:
+    """Return Euclidean distances divided by ``sigma`` without raw overflow."""
+
+    same_sign = np.signbit(states) == np.signbit(center)
+    scaled_differences = np.empty_like(states, dtype=float)
+    with np.errstate(over="ignore", invalid="ignore", divide="ignore"):
+        differences = np.zeros_like(states, dtype=float)
+        np.subtract(states, center, out=differences, where=same_sign)
+        np.divide(
+            np.abs(differences),
+            sigma,
+            out=scaled_differences,
+            where=same_sign,
+        )
+
+        opposite_sign = ~same_sign
+        left = np.zeros_like(states, dtype=float)
+        right = np.zeros_like(states, dtype=float)
+        np.divide(np.abs(states), sigma, out=left, where=opposite_sign)
+        np.divide(np.abs(center), sigma, out=right, where=opposite_sign)
+        np.add(left, right, out=scaled_differences, where=opposite_sign)
+        return np.hypot.reduce(scaled_differences, axis=1)
+
+
 @wraps(_original_sparse_gaussian_transition_matrix)
 def sparse_gaussian_transition_matrix(
     state_vectors,
@@ -310,12 +338,47 @@ def sparse_gaussian_transition_matrix(
         "max_step_sigma",
         allow_infinite=True,
     )
-    return _original_sparse_gaussian_transition_matrix(
-        states,
-        sigma,
-        max_step_sigma=max_step_sigma,
-        valid_state_mask=valid_state_mask,
+
+    if states.ndim == 1:
+        states = states[:, None]
+    n_states = states.shape[0]
+    valid_mask = _module_globals["_coerce_valid_state_mask"](
+        valid_state_mask,
+        n_states,
     )
+    allowed = (
+        np.arange(n_states, dtype=int)
+        if valid_mask is None
+        else np.flatnonzero(valid_mask)
+    )
+
+    rows: list[int] = []
+    cols: list[int] = []
+    data: list[float] = []
+    for source_index, center in enumerate(states):
+        distances = _normalized_grid_distances(states, center, sigma)
+        keep = np.isfinite(distances) & (distances <= max_step_sigma)
+        if valid_mask is not None:
+            keep &= valid_mask
+        if not np.any(keep):
+            nearest_allowed = int(allowed[int(np.argmin(distances[allowed]))])
+            keep[nearest_allowed] = True
+
+        destinations = np.flatnonzero(keep)
+        with np.errstate(over="ignore", under="ignore", invalid="ignore"):
+            weights = np.exp(-0.5 * np.square(distances[destinations]))
+        weight_sum = float(weights.sum())
+        if weight_sum <= 0.0 or not np.isfinite(weight_sum):
+            weights = np.zeros_like(weights)
+            weights[int(np.argmin(distances[destinations]))] = 1.0
+        else:
+            weights /= weight_sum
+
+        rows.extend(int(index) for index in destinations)
+        cols.extend([source_index] * len(destinations))
+        data.extend(float(value) for value in weights)
+
+    return csr_matrix((data, (rows, cols)), shape=(n_states, n_states))
 
 
 _module_globals["scaled_emissions"] = scaled_emissions
