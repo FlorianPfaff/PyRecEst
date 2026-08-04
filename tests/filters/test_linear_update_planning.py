@@ -251,3 +251,21 @@ def test_plan_accepts_semidefinite_component_covariance_when_innovation_is_pd():
 
     assert plan.accepted
     assert np.isclose(plan.nis, 1.0)
+
+
+def test_plan_linear_measurement_update_uses_scale_stable_residual_norm() -> None:
+    residual = np.array([1.0e200, 1.0e200])
+
+    with np.errstate(over="raise", invalid="raise"):
+        plan = plan_linear_measurement_update(
+            mean=np.zeros(2),
+            covariance_matrix=np.zeros((2, 2)),
+            measurement_vector=residual,
+            measurement_covariance=np.eye(2) * 1.0e200,
+            observation_matrix=np.eye(2),
+            max_residual_norm=1.5e200,
+        )
+
+    assert plan.accepted is True
+    assert plan.action == "updated"
+    assert np.isclose(plan.residual_norm, np.sqrt(2.0) * 1.0e200)
