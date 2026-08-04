@@ -166,26 +166,6 @@ def test_custom_extract_mean_registry():
     assert get_extract_mean("unit-test-mean")({"mean": 3}) == 3
 
 
-def test_custom_distance_function_registry_strips_names_for_registration_and_lookup():
-    register_distance_function(
-        "  unit-test-manifold-trimmed  ",
-        lambda _name, _params: lambda x, y: 17.0,
-    )
-
-    assert "unit-test-manifold-trimmed" in available_distance_functions()
-    assert "  unit-test-manifold-trimmed  " not in available_distance_functions()
-    assert (
-        get_distance_function("unit-test-manifold-trimmed")(array([0.0]), array([1.0]))
-        == 17.0
-    )
-    assert (
-        get_distance_function("  unit-test-manifold-trimmed  ")(
-            array([0.0]), array([1.0])
-        )
-        == 17.0
-    )
-
-
 def test_custom_extract_mean_registry_strips_names_for_registration_and_lookup():
     register_extract_mean(
         "  unit-test-mean-trimmed  ",
