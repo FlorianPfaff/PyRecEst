@@ -2,6 +2,7 @@
 
 from numbers import Complex, Integral, Real
 
+import numpy as np
 from pyrecest.backend import (
     all as backend_all,
     asarray,
@@ -60,6 +61,11 @@ def _contains_complex_values(value):
     return False
 
 
+def _reject_masked_values(value, name):
+    if np.ma.is_masked(value):
+        raise ValueError(f"{name} must not contain masked values")
+
+
 def _ensure_finite(value, name):
     try:
         finite = backend_all(isfinite(value))
@@ -74,6 +80,7 @@ def _ensure_finite(value, name):
 
 
 def _as_matrix(value, name):
+    _reject_masked_values(value, name)
     arr = asarray(value)
     if _has_boolean_dtype(arr):
         raise ValueError(f"{name} must contain real numeric values")
@@ -86,6 +93,7 @@ def _as_matrix(value, name):
 
 
 def _as_vector(value, name):
+    _reject_masked_values(value, name)
     arr = asarray(value)
     if _has_boolean_dtype(arr):
         raise ValueError(f"{name} must contain real numeric values")
@@ -105,7 +113,9 @@ def _shape(value):
 
 def _as_positive_integer(value, name):
     message = f"{name} must be a positive integer"
-    if isinstance(value, _INVALID_DIMENSION_SCALAR_TYPES):
+    if np.ma.is_masked(value) or isinstance(
+        value, _INVALID_DIMENSION_SCALAR_TYPES
+    ):
         raise ValueError(message)
     try:
         arr = asarray(value)
@@ -141,6 +151,7 @@ def _as_square(value, name):
 
 
 def _as_identity_noise_covariance(value, dim):
+    _reject_masked_values(value, "noise_cov")
     arr = asarray(value)
     if ndim(arr) == 0:
         if _has_boolean_dtype(arr):
