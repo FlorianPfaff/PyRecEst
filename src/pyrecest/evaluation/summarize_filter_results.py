@@ -8,6 +8,33 @@ from .get_distance_function import get_distance_function
 from .get_extract_mean import get_extract_mean
 
 
+def _validate_summary_filter_counts(
+    filter_configs, errors_mean, errors_std, times_mean, failure_rates
+):
+    try:
+        expected_count = len(filter_configs)
+    except TypeError as exc:
+        raise ValueError("filter_configs must be a sized collection") from exc
+
+    summary_counts = {
+        "error means": int(errors_mean.shape[0]),
+        "error standard deviations": int(errors_std.shape[0]),
+        "runtime means": int(times_mean.shape[0]),
+        "failure rates": int(failure_rates.shape[0]),
+    }
+    mismatched = {
+        name: count for name, count in summary_counts.items() if count != expected_count
+    }
+    if mismatched:
+        details = ", ".join(
+            f"{name}={count}" for name, count in mismatched.items()
+        )
+        raise ValueError(
+            "filter_configs and computed summaries must describe the same number "
+            f"of filters; filter_configs={expected_count}, {details}"
+        )
+
+
 # pylint: disable=too-many-arguments,too-many-locals,too-many-positional-arguments
 def summarize_filter_results(
     scenario_config,
@@ -50,6 +77,14 @@ def summarize_filter_results(
     errors_std = std(errors_all, axis=1)
     times_mean = mean(runtimes, axis=1)
     failure_rates = sum(run_failed, axis=1) / run_failed.shape[1]
+
+    _validate_summary_filter_counts(
+        filter_configs,
+        errors_mean,
+        errors_std,
+        times_mean,
+        failure_rates,
+    )
 
     results_summarized = filter_configs
     for d, err, error_std, time, fail_rate in zip(
