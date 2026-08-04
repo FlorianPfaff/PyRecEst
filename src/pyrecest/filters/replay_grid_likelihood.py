@@ -191,7 +191,12 @@ def update_position_grid_likelihood(
 
     def scaled_likelihood(positions) -> np.ndarray:
         position_log_likelihood = log_likelihood_at(positions)
-        return np.exp(np.clip(position_log_likelihood - max_log, -745.0, 0.0))
+        finite = np.isfinite(position_log_likelihood)
+        scaled = np.zeros_like(position_log_likelihood, dtype=float)
+        scaled[finite] = np.exp(
+            np.clip(position_log_likelihood[finite] - max_log, -745.0, 0.0)
+        )
+        return scaled
 
     if proposal_probability > 0.0:
         if not hasattr(filter_, "update_position_likelihood_with_proposal"):
