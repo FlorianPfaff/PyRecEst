@@ -8,6 +8,15 @@ from pyrecest.distributions import GaussianDistribution
 from .abstract_axial_filter import AbstractAxialFilter
 
 
+def _is_complex_array(value):
+    """Return whether a NumPy/JAX array or PyTorch tensor has complex dtype."""
+    dtype = getattr(value, "dtype", None)
+    if getattr(dtype, "kind", None) == "c":
+        return True
+    is_complex = getattr(value, "is_complex", None)
+    return bool(is_complex()) if callable(is_complex) else False
+
+
 class AxialKalmanFilter(AbstractAxialFilter):
     """Kalman Filter for directional estimation with antipodal symmetry.
 
@@ -65,7 +74,10 @@ class AxialKalmanFilter(AbstractAxialFilter):
             raise ValueError(f"{name} mean shape must match the filter state.")
 
     def _as_measurement(self, z):
-        measurement = asarray(z, dtype=float)
+        measurement = asarray(z)
+        if _is_complex_array(measurement):
+            raise ValueError("measurement must be real-valued.")
+        measurement = asarray(measurement, dtype=float)
         if measurement.shape != self._filter_state.mu.shape:
             raise ValueError(
                 "measurement must have the same shape as the filter state."
