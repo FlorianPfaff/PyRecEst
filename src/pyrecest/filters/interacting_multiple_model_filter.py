@@ -172,10 +172,11 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
                     "model in the IMM."
                 )
             if all(hasattr(curr_state, "filter_state") for curr_state in new_state):
-                self.filter_bank = [
+                candidate_filter_bank = [
                     copy.deepcopy(curr_filter) for curr_filter in new_state
                 ]
-                self._validate_filter_bank()
+                self._validate_filter_bank(candidate_filter_bank)
+                self.filter_bank = candidate_filter_bank
                 return
             if all(
                 isinstance(curr_state, GaussianDistribution) for curr_state in new_state
@@ -494,13 +495,14 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
         """Return the IMM mean estimate."""
         return self.combined_filter_state.mean()
 
-    def _validate_filter_bank(self):
-        if not self.filter_bank:
+    def _validate_filter_bank(self, filter_bank=None):
+        filter_bank = self.filter_bank if filter_bank is None else filter_bank
+        if not filter_bank:
             raise ValueError("filter_bank must contain at least one filter.")
 
         curr_dims = [
             self._as_gaussian(curr_filter.filter_state).dim
-            for curr_filter in self.filter_bank
+            for curr_filter in filter_bank
         ]
         if any(curr_dim != curr_dims[0] for curr_dim in curr_dims[1:]):
             raise ValueError(
