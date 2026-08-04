@@ -1,0 +1,199 @@
+name: Apply NEES/NIS covariance validation
+
+on:
+  push:
+    branches:
+      - agent/validate-nees-nis-covariances
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/validate-nees-nis-covariances
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Apply source and regression patch
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          metrics_path = Path("src/pyrecest/utils/metrics.py")
+          text = metrics_path.read_text()
+          old = '''def _as_covariance_stack(
+              covariances: ArrayLike, n_samples: int, dim: int, name: str
+          ) -> np.ndarray:
+              covariance_array = _as_numeric_array(covariances, name)
+              if covariance_array.ndim == 2:
+                  if covariance_array.shape != (dim, dim):
+                      raise ValueError(f"{name} must have shape ({dim}, {dim})")
+                  return np.broadcast_to(covariance_array, (n_samples, dim, dim))
+              if covariance_array.ndim == 3:
+                  if covariance_array.shape != (n_samples, dim, dim):
+                      raise ValueError(f"{name} must have shape ({n_samples}, {dim}, {dim})")
+                  return covariance_array
+              raise ValueError(f"{name} must have shape (dim, dim) or (n, dim, dim)")
+          '''
+          new = '''def _as_covariance_stack(
+              covariances: ArrayLike, n_samples: int, dim: int, name: str
+          ) -> np.ndarray:
+              covariance_array = _as_numeric_array(covariances, name)
+              if covariance_array.ndim == 2:
+                  if covariance_array.shape != (dim, dim):
+                      raise ValueError(f"{name} must have shape ({dim}, {dim})")
+                  covariance_stack = np.broadcast_to(
+                      covariance_array, (n_samples, dim, dim)
+                  )
+              elif covariance_array.ndim == 3:
+                  if covariance_array.shape != (n_samples, dim, dim):
+                      raise ValueError(f"{name} must have shape ({n_samples}, {dim}, {dim})")
+                  covariance_stack = covariance_array
+              else:
+                  raise ValueError(f"{name} must have shape (dim, dim) or (n, dim, dim)")
+
+              if not np.all(np.isfinite(covariance_stack)):
+                  raise ValueError(f"{name} must contain only finite values")
+              if not np.allclose(
+                  covariance_stack,
+                  np.swapaxes(covariance_stack, -1, -2),
+                  rtol=1e-12,
+                  atol=1e-12,
+              ):
+                  raise ValueError(f"{name} must contain symmetric covariance matrices")
+              try:
+                  np.linalg.cholesky(covariance_stack)
+              except np.linalg.LinAlgError as exc:
+                  raise ValueError(
+                      f"{name} must contain positive-definite covariance matrices"
+                  ) from exc
+              return covariance_stack
+          '''
+          if old not in text:
+              raise SystemExit("expected covariance-stack implementation not found")
+          metrics_path.write_text(text.replace(old, new))
+
+          Path("tests/test_metrics_covariance_validation.py").write_text('''import unittest
+
+          import numpy as np
+          import numpy.testing as npt
+
+          from pyrecest.utils.metrics import nees, nis
+
+
+          class TestConsistencyMetricCovarianceValidation(unittest.TestCase):
+              def test_nees_and_nis_reject_asymmetric_covariances(self):
+                  residual = np.array([1.0, 1.0])
+                  asymmetric_covariance = np.array([[1.0, 10.0], [0.0, 1.0]])
+
+                  with self.assertRaisesRegex(
+                      ValueError,
+                      "uncertainties must contain symmetric covariance matrices",
+                  ):
+                      nees(residual, asymmetric_covariance)
+
+                  with self.assertRaisesRegex(
+                      ValueError,
+                      "innovation_covariances must contain symmetric covariance matrices",
+                  ):
+                      nis(residual, asymmetric_covariance)
+
+              def test_nees_and_nis_reject_non_positive_definite_covariances(self):
+                  residuals = np.array([[1.0, 0.0], [0.0, 1.0]])
+                  covariance_stack = np.array(
+                      [
+                          np.eye(2),
+                          [[1.0, 2.0], [2.0, 1.0]],
+                      ]
+                  )
+
+                  with self.assertRaisesRegex(
+                      ValueError,
+                      "uncertainties must contain positive-definite covariance matrices",
+                  ):
+                      nees(residuals, covariance_stack)
+
+                  with self.assertRaisesRegex(
+                      ValueError,
+                      "innovation_covariances must contain positive-definite covariance matrices",
+                  ):
+                      nis(residuals, covariance_stack)
+
+              def test_valid_covariance_stacks_remain_supported(self):
+                  residuals = np.array([[1.0, 0.0], [0.0, 2.0]])
+                  covariance_stack = np.array(
+                      [
+                          np.eye(2),
+                          [[2.0, 0.0], [0.0, 4.0]],
+                      ]
+                  )
+
+                  npt.assert_allclose(nees(residuals, covariance_stack), [1.0, 1.0])
+                  npt.assert_allclose(nis(residuals, covariance_stack), [1.0, 1.0])
+
+
+          if __name__ == "__main__":
+              unittest.main()
+          '''.replace("          ", ""))
+          PY
+
+      - name: Validate focused regression
+        shell: bash
+        run: |
+          python -m py_compile \
+            src/pyrecest/utils/metrics.py \
+            tests/test_metrics_covariance_validation.py
+          python -m pip install --disable-pip-version-check --quiet numpy scipy shapely
+          python - <<'PY'
+          import importlib.util
+          import sys
+          import types
+          import unittest
+
+          pyrecest = types.ModuleType("pyrecest")
+          pyrecest.__path__ = []
+          utils = types.ModuleType("pyrecest.utils")
+          utils.__path__ = []
+          sys.modules["pyrecest"] = pyrecest
+          sys.modules["pyrecest.utils"] = utils
+
+          spec = importlib.util.spec_from_file_location(
+              "pyrecest.utils.metrics", "src/pyrecest/utils/metrics.py"
+          )
+          metrics = importlib.util.module_from_spec(spec)
+          sys.modules["pyrecest.utils.metrics"] = metrics
+          spec.loader.exec_module(metrics)
+
+          test_spec = importlib.util.spec_from_file_location(
+              "test_metrics_covariance_validation",
+              "tests/test_metrics_covariance_validation.py",
+          )
+          test_module = importlib.util.module_from_spec(test_spec)
+          test_spec.loader.exec_module(test_module)
+          result = unittest.TextTestRunner(verbosity=2).run(
+              unittest.defaultTestLoader.loadTestsFromModule(test_module)
+          )
+          if not result.wasSuccessful():
+              raise SystemExit(1)
+          PY
+
+      - name: Commit patch and remove temporary workflow
+        shell: bash
+        run: |
+          rm .github/workflows/agent-nees-nis-covariance-patch.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/pyrecest/utils/metrics.py \
+            tests/test_metrics_covariance_validation.py \
+            .github/workflows/agent-nees-nis-covariance-patch.yml
+          git diff --cached --check
+          git commit -m "Validate NEES and NIS covariance matrices"
+          git push origin HEAD:agent/validate-nees-nis-covariances
