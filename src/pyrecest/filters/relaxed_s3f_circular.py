@@ -240,10 +240,11 @@ def grid_probability_masses(grid_values: Any) -> Any:
         raise ValueError("grid values must be finite.")
     if not bool(all(values >= 0.0)):
         raise ValueError("grid values must be nonnegative.")
-    total = backend_sum(values)
-    if float(total) <= 0.0:
+    scale = values.max()
+    if float(scale) <= 0.0:
         raise ValueError("grid values must have positive total mass.")
-    return values / total
+    scaled_values = values / scale
+    return scaled_values / backend_sum(scaled_values)
 
 
 def circular_error(angle_a: float, angle_b: float) -> float:
