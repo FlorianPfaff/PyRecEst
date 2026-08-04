@@ -13,6 +13,7 @@ from pyrecest.tracking import shape_from_extent_matrix
     (
         np.diag([4.0, -0.25]),
         np.diag([-1.0, -0.5]),
+        np.diag(np.array([4.0, -1.0e-3], dtype=np.float32)),
     ),
 )
 def test_shape_from_extent_matrix_rejects_indefinite_extent(extent) -> None:
@@ -20,10 +21,19 @@ def test_shape_from_extent_matrix_rejects_indefinite_extent(extent) -> None:
         shape_from_extent_matrix(extent)
 
 
-def test_shape_from_extent_matrix_tolerates_roundoff_negative_eigenvalue() -> None:
-    shape = shape_from_extent_matrix(
-        np.diag([4.0, -1.0e-14]),
-        minimum_axis_length=0.1,
-    )
+@pytest.mark.parametrize(
+    ("dtype", "negative_eigenvalue"),
+    (
+        (np.float64, -1.0e-14),
+        (np.float32, -1.0e-6),
+    ),
+)
+def test_shape_from_extent_matrix_tolerates_roundoff_negative_eigenvalue(
+    dtype,
+    negative_eigenvalue,
+) -> None:
+    extent = np.diag(np.array([4.0, negative_eigenvalue], dtype=dtype))
+
+    shape = shape_from_extent_matrix(extent, minimum_axis_length=0.1)
 
     npt.assert_allclose(np.asarray(shape)[1:], np.array([2.0, 0.1]))
