@@ -2,7 +2,18 @@
 import copy
 
 # pylint: disable=redefined-builtin
-from pyrecest.backend import abs, all, asarray, concatenate, dot, eye, isfinite, linalg
+from pyrecest.backend import (
+    abs,
+    all,
+    allclose,
+    asarray,
+    concatenate,
+    dot,
+    eye,
+    isfinite,
+    linalg,
+    transpose,
+)
 from pyrecest.distributions import GaussianDistribution
 
 from .abstract_axial_filter import AbstractAxialFilter
@@ -65,6 +76,10 @@ class AxialKalmanFilter(AbstractAxialFilter):
             raise ValueError(f"{name} mean must be finite.")
         if not bool(all(isfinite(distribution.C))):
             raise ValueError(f"{name} covariance must be finite.")
+        if not bool(allclose(distribution.C, transpose(distribution.C))):
+            raise ValueError(f"{name} covariance must be symmetric.")
+        if not bool(all(linalg.eigvalsh(distribution.C) > 0.0)):
+            raise ValueError(f"{name} covariance must be positive definite.")
         if not bool(abs(linalg.norm(distribution.mu) - 1.0) < 1e-5):
             raise ValueError(f"{name} mean must be a unit vector.")
 
