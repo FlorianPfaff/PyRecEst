@@ -13,7 +13,8 @@ from . import record_smoother as _record_smoother
 
 # The record smoother implements a real-valued RTS recursion. NumPy's explicit
 # float conversion otherwise accepts native complex arrays by discarding their
-# imaginary parts, which silently changes the supplied state-space model.
+# imaginary parts, and conversion of masked arrays drops their masks. Both cases
+# can silently change the supplied state-space model.
 
 _original_record_arrays = _record_smoother._record_arrays
 
@@ -34,8 +35,45 @@ def _contains_complex_values(value: Any) -> bool:
     )
 
 
+def _contains_masked_values(
+    value: Any,
+    active_ids: set[int] | None = None,
+) -> bool:
+    """Return whether an array-like value contains genuinely masked entries."""
+
+    if value is np.ma.masked or np.ma.is_masked(value):
+        return True
+    if isinstance(value, np.ma.MaskedArray):
+        value = value.data
+
+    if isinstance(value, np.ndarray):
+        if value.dtype != object:
+            return False
+        items = value.flat
+    elif isinstance(value, (list, tuple)):
+        items = value
+    else:
+        return False
+
+    if active_ids is None:
+        active_ids = set()
+    value_id = id(value)
+    if value_id in active_ids:
+        return False
+    active_ids.add(value_id)
+    try:
+        return any(_contains_masked_values(item, active_ids) for item in items)
+    finally:
+        active_ids.remove(value_id)
+
+
 def _reject_complex_values(value: Any, message: str) -> None:
     if _contains_complex_values(value):
+        raise ValueError(message)
+
+
+def _reject_masked_values(value: Any, message: str) -> None:
+    if _contains_masked_values(value):
         raise ValueError(message)
 
 
@@ -47,9 +85,25 @@ def _record_arrays(
     covariance_key: str,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     for record in records:
+        _reject_masked_values(
+            record[time_key],
+            "record times must not contain masked values",
+        )
+        _reject_complex_values(
+            record[time_key],
+            "record times must contain real values",
+        )
+        _reject_masked_values(
+            record[state_key],
+            "record states must not contain masked values",
+        )
         _reject_complex_values(
             record[state_key],
             "record states must contain real values",
+        )
+        _reject_masked_values(
+            record[covariance_key],
+            "record covariances must not contain masked values",
         )
         _reject_complex_values(
             record[covariance_key],
@@ -74,6 +128,7 @@ def _call_model(
     else:
         matrix = _record_smoother._call_model_with_fallback(model, dt, state_dim, name)
 
+    _reject_masked_values(matrix, f"{name} must not return masked values")
     _reject_complex_values(matrix, f"{name} must return real values")
     array = np.asarray(matrix, dtype=float)
     if array.shape != (state_dim, state_dim):
