@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-from scipy.sparse import issparse
+from scipy.sparse import csr_matrix, issparse
 
 _TEXT_TYPES = (str, bytes, bytearray, np.str_, np.bytes_)
 _BOOLEAN_TYPES = (bool, np.bool_)
@@ -310,12 +310,54 @@ def sparse_gaussian_transition_matrix(
         "max_step_sigma",
         allow_infinite=True,
     )
-    return _original_sparse_gaussian_transition_matrix(
-        states,
-        sigma,
-        max_step_sigma=max_step_sigma,
-        valid_state_mask=valid_state_mask,
+
+    if states.ndim == 1:
+        states = states[:, None]
+    elif states.ndim != 2:
+        raise ValueError(
+            "state_vectors must have shape (n_states,) or (n_states, state_dim)"
+        )
+    n_states = states.shape[0]
+    if n_states == 0:
+        raise ValueError("state_vectors must contain at least one state")
+    if states.shape[1] == 0:
+        raise ValueError("state_vectors must contain at least one coordinate per state")
+
+    valid_mask = _module_globals["_coerce_valid_state_mask"](
+        valid_state_mask,
+        n_states,
     )
+    allowed = (
+        np.arange(n_states, dtype=int)
+        if valid_mask is None
+        else np.flatnonzero(valid_mask)
+    )
+
+    rows: list[int] = []
+    cols: list[int] = []
+    data: list[float] = []
+    for src, center in enumerate(states):
+        with np.errstate(over="ignore", divide="ignore", invalid="ignore"):
+            scaled_delta = (states - center[None, :]) / sigma
+            scaled_dist2 = np.sum(scaled_delta * scaled_delta, axis=1)
+        keep = np.sqrt(scaled_dist2) <= max_step_sigma
+        if valid_mask is not None:
+            keep &= valid_mask
+        if not np.any(keep):
+            keep[int(allowed[int(np.argmin(scaled_dist2[allowed]))])] = True
+        dst = np.flatnonzero(keep)
+        weights = np.exp(-0.5 * scaled_dist2[dst])
+        weight_sum = float(weights.sum())
+        if not np.isfinite(weight_sum) or weight_sum <= 0.0:
+            weights = np.zeros_like(weights)
+            weights[int(np.argmin(scaled_dist2[dst]))] = 1.0
+        else:
+            weights /= weight_sum
+        rows.extend(int(index) for index in dst)
+        cols.extend([src] * len(dst))
+        data.extend(float(value) for value in weights)
+
+    return csr_matrix((data, (rows, cols)), shape=(n_states, n_states))
 
 
 _module_globals["scaled_emissions"] = scaled_emissions
