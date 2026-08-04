@@ -1,0 +1,94 @@
+name: Apply Daum-Huang normalization fix
+
+on:
+  push:
+    branches:
+      - agent/stabilize-daum-huang-normalization
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-validate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Apply scale-stable normalization
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("src/pyrecest/filters/daum_huang_particle_filter.py")
+          text = path.read_text(encoding="utf-8")
+
+          old_weights = '''    total = float(np.sum(weights))
+              if not np.isfinite(total) or total <= 0.0:
+                  raise ValueError("weights must have positive finite total mass.")
+              return weights / total
+          '''
+          new_weights = '''    scale = float(np.max(weights))
+              if not np.isfinite(scale) or scale <= 0.0:
+                  raise ValueError("weights must have positive finite total mass.")
+              scaled = weights / scale
+              total = float(np.sum(scaled))
+              if not np.isfinite(total) or total <= 0.0:
+                  raise ValueError("weights must have positive finite total mass.")
+              return scaled / total
+          '''
+          old_schedule = '''    total = float(np.sum(deltas))
+              if not np.isfinite(total) or total <= 0.0:
+                  raise ValueError("step_schedule must have positive finite sum.")
+              return deltas / total
+          '''
+          new_schedule = '''    scale = float(np.max(deltas))
+              if not np.isfinite(scale) or scale <= 0.0:
+                  raise ValueError("step_schedule must have positive finite sum.")
+              scaled = deltas / scale
+              total = float(np.sum(scaled))
+              if not np.isfinite(total) or total <= 0.0:
+                  raise ValueError("step_schedule must have positive finite sum.")
+              return scaled / total
+          '''
+
+          if old_weights not in text:
+              raise SystemExit("weight normalization block not found")
+          if old_schedule not in text:
+              raise SystemExit("step-schedule normalization block not found")
+
+          text = text.replace(old_weights, new_weights, 1)
+          text = text.replace(old_schedule, new_schedule, 1)
+          path.write_text(text, encoding="utf-8")
+          PY
+
+      - name: Install focused test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e . pytest
+
+      - name: Validate fix
+        run: |
+          python -m py_compile \
+            src/pyrecest/filters/daum_huang_particle_filter.py \
+            tests/filters/test_daum_huang_extreme_normalization.py
+          python -m pytest -q tests/filters/test_daum_huang_extreme_normalization.py
+
+      - name: Commit validated patch and remove workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/agent_stabilize_daum_huang_normalization.yml
+          git add src/pyrecest/filters/daum_huang_particle_filter.py
+          git diff --cached --check
+          git commit -m "Stabilize Daum-Huang normalization"
+          git push origin HEAD:${GITHUB_REF_NAME}
