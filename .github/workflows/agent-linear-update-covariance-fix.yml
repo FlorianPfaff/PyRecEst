@@ -1,0 +1,265 @@
+name: Apply linear-update covariance fix
+
+on:
+  push:
+    branches:
+      - agent/reject-invalid-linear-update-covariances-20260804
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/reject-invalid-linear-update-covariances-20260804
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Apply focused fix and regression tests
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          source_path = Path('src/pyrecest/filters/linear_update_planning.py')
+          source = source_path.read_text(encoding='utf-8')
+
+          old_nis = '''    if innovation_covariance.shape != (residual.size, residual.size):
+              raise ValueError(
+                  "innovation_covariance must have shape (residual_dim, residual_dim)"
+              )
+          if _normalized_innovation_squared is not None:
+          '''
+          new_nis = '''    if innovation_covariance.shape != (residual.size, residual.size):
+              raise ValueError(
+                  "innovation_covariance must have shape (residual_dim, residual_dim)"
+              )
+          innovation_covariance = _validate_covariance_matrix(
+              innovation_covariance,
+              "innovation_covariance",
+              require_positive_definite=True,
+          )
+          if _normalized_innovation_squared is not None:
+          '''
+          if source.count(old_nis) != 1:
+              raise RuntimeError('normalized_innovation_squared patch anchor changed')
+          source = source.replace(old_nis, new_nis, 1)
+
+          old_plan = '''    if covariance.shape != (measurement_dim, measurement_dim):
+              raise ValueError(
+                  "measurement_covariance must have shape (measurement_dim, measurement_dim)"
+              )
+
+          resolved_gate_threshold = _resolve_threshold(
+          '''
+          new_plan = '''    if covariance.shape != (measurement_dim, measurement_dim):
+              raise ValueError(
+                  "measurement_covariance must have shape (measurement_dim, measurement_dim)"
+              )
+
+          state_covariance = _validate_covariance_matrix(
+              state_covariance,
+              "covariance_matrix",
+          )
+          covariance = _validate_covariance_matrix(
+              covariance,
+              "measurement_covariance",
+          )
+
+          resolved_gate_threshold = _resolve_threshold(
+          '''
+          if source.count(old_plan) != 1:
+              raise RuntimeError('plan covariance patch anchor changed')
+          source = source.replace(old_plan, new_plan, 1)
+
+          old_helper = '''def _symmetrized(matrix: np.ndarray) -> np.ndarray:
+              return 0.5 * (matrix + matrix.T)
+
+
+          def _contains_values_of_type(value: Any, types: tuple[type, ...]) -> bool:
+          '''
+          new_helper = '''def _symmetrized(matrix: np.ndarray) -> np.ndarray:
+              return 0.5 * (matrix + matrix.T)
+
+
+          def _validate_covariance_matrix(
+              matrix: np.ndarray,
+              name: str,
+              *,
+              require_positive_definite: bool = False,
+          ) -> np.ndarray:
+              qualifier = (
+                  "symmetric positive definite"
+                  if require_positive_definite
+                  else "symmetric positive semidefinite"
+              )
+              if not np.allclose(matrix, matrix.T, rtol=0.0, atol=1.0e-10):
+                  raise ValueError(f"{name} must be {qualifier}")
+
+              symmetric = _symmetrized(matrix)
+              if symmetric.shape[0] == 0:
+                  return symmetric
+
+              if require_positive_definite:
+                  try:
+                      np.linalg.cholesky(symmetric)
+                  except np.linalg.LinAlgError as exc:
+                      raise ValueError(f"{name} must be {qualifier}") from exc
+                  return symmetric
+
+              try:
+                  eigenvalues = np.linalg.eigvalsh(symmetric)
+              except np.linalg.LinAlgError as exc:
+                  raise ValueError(f"{name} must be {qualifier}") from exc
+              scale = max(1.0, float(np.max(np.abs(eigenvalues))))
+              if float(np.min(eigenvalues)) < -1.0e-10 * scale:
+                  raise ValueError(f"{name} must be {qualifier}")
+              return symmetric
+
+
+          def _contains_values_of_type(value: Any, types: tuple[type, ...]) -> bool:
+          '''
+          if source.count(old_helper) != 1:
+              raise RuntimeError('covariance helper patch anchor changed')
+          source = source.replace(old_helper, new_helper, 1)
+          source_path.write_text(source, encoding='utf-8')
+
+          test_path = Path('tests/filters/test_linear_update_planning.py')
+          tests = test_path.read_text(encoding='utf-8')
+          marker = 'def test_normalized_innovation_squared_rejects_nonpositive_definite_covariance():'
+          if marker not in tests:
+              tests += '''
+
+
+def test_normalized_innovation_squared_rejects_nonpositive_definite_covariance():
+              invalid_covariances = (
+                  np.array([[-1.0]]),
+                  np.zeros((1, 1)),
+                  np.array([[1.0, 0.5], [0.0, 1.0]]),
+              )
+
+              for covariance in invalid_covariances:
+                  residual = np.ones(covariance.shape[0])
+                  with pytest.raises(
+                      ValueError,
+                      match="innovation_covariance must be symmetric positive definite",
+                  ):
+                      normalized_innovation_squared(residual, covariance)
+
+
+          @pytest.mark.parametrize(
+              ("field", "invalid_covariance"),
+              [
+                  ("covariance_matrix", np.array([[-2.0]])),
+                  ("measurement_covariance", np.array([[-2.0]])),
+              ],
+          )
+          def test_plan_rejects_indefinite_component_covariances(
+              field, invalid_covariance
+          ):
+              kwargs = {
+                  "mean": np.zeros(1),
+                  "covariance_matrix": np.eye(1),
+                  "measurement_vector": np.ones(1),
+                  "measurement_covariance": np.eye(1),
+                  "observation_matrix": np.eye(1),
+                  "gate_threshold": 1.0,
+              }
+              kwargs[field] = invalid_covariance
+
+              with pytest.raises(
+                  ValueError,
+                  match=rf"{field} must be symmetric positive semidefinite",
+              ):
+                  plan_linear_measurement_update(**kwargs)
+
+
+          def test_plan_accepts_semidefinite_component_covariance_when_innovation_is_pd():
+              plan = plan_linear_measurement_update(
+                  mean=np.zeros(1),
+                  covariance_matrix=np.zeros((1, 1)),
+                  measurement_vector=np.ones(1),
+                  measurement_covariance=np.eye(1),
+                  observation_matrix=np.eye(1),
+              )
+
+              assert plan.accepted
+              assert np.isclose(plan.nis, 1.0)
+          '''
+              test_path.write_text(tests, encoding='utf-8')
+
+          Path('.github/workflows/agent-linear-update-covariance-fix.yml').unlink()
+          PY
+
+      - name: Validate focused behavior
+        shell: bash
+        run: |
+          python -m pip install --disable-pip-version-check numpy scipy
+          python -m py_compile \
+            src/pyrecest/filters/linear_update_planning.py \
+            tests/filters/test_linear_update_planning.py
+          python - <<'PY'
+          import importlib.util
+          import sys
+          from pathlib import Path
+
+          import numpy as np
+
+          path = Path('src/pyrecest/filters/linear_update_planning.py')
+          spec = importlib.util.spec_from_file_location('linear_update_planning_smoke', path)
+          module = importlib.util.module_from_spec(spec)
+          sys.modules[spec.name] = module
+          spec.loader.exec_module(module)
+
+          for covariance in (np.array([[-1.0]]), np.zeros((1, 1))):
+              try:
+                  module.normalized_innovation_squared(np.ones(1), covariance)
+              except ValueError:
+                  pass
+              else:
+                  raise AssertionError('invalid innovation covariance was accepted')
+
+          for field in ('covariance_matrix', 'measurement_covariance'):
+              kwargs = {
+                  'mean': np.zeros(1),
+                  'covariance_matrix': np.eye(1),
+                  'measurement_vector': np.ones(1),
+                  'measurement_covariance': np.eye(1),
+                  'observation_matrix': np.eye(1),
+                  'gate_threshold': 1.0,
+              }
+              kwargs[field] = np.array([[-2.0]])
+              try:
+                  module.plan_linear_measurement_update(**kwargs)
+              except ValueError:
+                  pass
+              else:
+                  raise AssertionError(f'invalid {field} was accepted')
+
+          plan = module.plan_linear_measurement_update(
+              mean=np.zeros(1),
+              covariance_matrix=np.zeros((1, 1)),
+              measurement_vector=np.ones(1),
+              measurement_covariance=np.eye(1),
+              observation_matrix=np.eye(1),
+          )
+          assert plan.accepted and np.isclose(plan.nis, 1.0)
+          PY
+
+      - name: Commit patch
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            src/pyrecest/filters/linear_update_planning.py \
+            tests/filters/test_linear_update_planning.py \
+            .github/workflows/agent-linear-update-covariance-fix.yml
+          git commit -m 'Reject invalid linear update covariances'
+          git push origin HEAD:agent/reject-invalid-linear-update-covariances-20260804
