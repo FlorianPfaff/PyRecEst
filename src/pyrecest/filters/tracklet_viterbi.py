@@ -9,17 +9,72 @@ from typing import Any
 import numpy as np
 
 
+def _contains_masked_value(value: Any) -> bool:
+    """Return whether an array-like input contains a genuinely masked value."""
+
+    if value is np.ma.masked:
+        return True
+    if np.ma.isMaskedArray(value):
+        if bool(np.any(np.ma.getmaskarray(value))):
+            return True
+        value = np.asarray(value.data)
+    if isinstance(value, np.ndarray) and value.dtype == object:
+        return any(_contains_masked_value(item) for item in value.flat)
+    if isinstance(value, (list, tuple)):
+        return any(_contains_masked_value(item) for item in value)
+    return False
+
+
+def _contains_complex_value(value: Any) -> bool:
+    """Return whether an array-like input contains complex-valued data."""
+
+    if isinstance(value, (complex, np.complexfloating)):
+        return True
+    if isinstance(value, np.ndarray):
+        if np.iscomplexobj(value):
+            return True
+        if value.dtype == object:
+            return any(_contains_complex_value(item) for item in value.flat)
+        return False
+    if isinstance(value, (list, tuple)):
+        return any(_contains_complex_value(item) for item in value)
+    return False
+
+
 def _as_scalar_float(value: Any, name: str) -> float:
+    if _contains_masked_value(value):
+        raise ValueError(f"{name} must not contain masked values")
+    if _contains_complex_value(value):
+        raise ValueError(f"{name} must be real")
     value_array = np.asarray(value)
-    if value_array.shape != () or value_array.dtype == np.bool_:
+    if value_array.shape != ():
+        raise ValueError(f"{name} must be a scalar number")
+    scalar_value = value_array.item()
+    if isinstance(scalar_value, (bool, np.bool_)):
         raise ValueError(f"{name} must be a scalar number")
     try:
-        scalar = float(value_array.item())
+        scalar = float(scalar_value)
     except (TypeError, ValueError, OverflowError) as exc:
         raise ValueError(f"{name} must be a scalar number") from exc
     if not np.isfinite(scalar):
         raise ValueError(f"{name} must be finite")
     return scalar
+
+
+def _as_real_finite_vector(value: Any, name: str) -> np.ndarray:
+    """Convert a vector-like input without discarding masks or complex parts."""
+
+    if _contains_masked_value(value):
+        raise ValueError(f"{name} must not contain masked values")
+    if _contains_complex_value(value):
+        raise ValueError(f"{name} must be real")
+    try:
+        vector = np.asarray(value, dtype=float).reshape(-1)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{name} must be a real numeric vector") from exc
+    if not np.all(np.isfinite(vector)):
+        raise ValueError(f"{name} must contain only finite values")
+    return vector
 
 
 def _as_nonnegative_float(value: Any, name: str) -> float:
@@ -77,6 +132,12 @@ class TrackletAssociationCandidate:
             "unary_cost",
             _as_scalar_float(self.unary_cost, "unary_cost"),
         )
+        if self.time_s is not None:
+            object.__setattr__(
+                self,
+                "time_s",
+                _as_scalar_float(self.time_s, "time_s"),
+            )
 
 
 @dataclass(frozen=True)
@@ -688,21 +749,26 @@ def _motion_cost(
 ) -> float:
     if previous.position is None or current.position is None:
         return 0.0
-    previous_position = np.asarray(previous.position, dtype=float).reshape(-1)
-    current_position = np.asarray(current.position, dtype=float).reshape(-1)
+    previous_position = _as_real_finite_vector(
+        previous.position, "previous candidate position"
+    )
+    current_position = _as_real_finite_vector(
+        current.position, "current candidate position"
+    )
     if previous_position.shape != current_position.shape:
         raise ValueError("candidate positions must have matching shapes")
     dt_s = max(_candidate_time(current, 1.0) - _candidate_time(previous, 0.0), 1.0e-9)
     if previous.velocity is None:
         predicted = previous_position
     else:
-        predicted = (
-            previous_position
-            + np.asarray(previous.velocity, dtype=float).reshape(
-                previous_position.shape
-            )
-            * dt_s
+        previous_velocity = _as_real_finite_vector(
+            previous.velocity, "previous candidate velocity"
         )
+        if previous_velocity.shape != previous_position.shape:
+            raise ValueError(
+                "previous candidate velocity must match candidate position shape"
+            )
+        predicted = previous_position + previous_velocity * dt_s
     position_cost = float(
         np.sum(
             ((current_position - predicted) / float(config.transition_position_std))
@@ -719,9 +785,13 @@ def _motion_cost(
             speed_cost = float(config.max_speed_penalty) * speed_excess**2
     velocity_cost = 0.0
     if config.transition_velocity_std is not None and current.velocity is not None:
-        velocity = np.asarray(current.velocity, dtype=float).reshape(
-            displacement_velocity.shape
+        velocity = _as_real_finite_vector(
+            current.velocity, "current candidate velocity"
         )
+        if velocity.shape != displacement_velocity.shape:
+            raise ValueError(
+                "current candidate velocity must match candidate position shape"
+            )
         velocity_cost = float(
             np.sum(
                 (
