@@ -138,10 +138,14 @@ def simulate_rectangle_event_counts(
     )
     activities = activity_profile(contour.normals, velocity)
     point_weights = activities + float(background_activity)
-    point_weight_sum = float(np.sum(point_weights))
+    max_point_weight = float(np.max(point_weights)) if point_weights.size else 0.0
+    if not np.isfinite(max_point_weight) or max_point_weight <= 0.0:
+        raise ValueError("event-generation weights must have positive finite sum")
+    scaled_point_weights = point_weights / max_point_weight
+    point_weight_sum = float(np.sum(scaled_point_weights))
     if not np.isfinite(point_weight_sum) or point_weight_sum <= 0.0:
         raise ValueError("event-generation weights must have positive finite sum")
-    point_probabilities = point_weights / point_weight_sum
+    point_probabilities = scaled_point_weights / point_weight_sum
     rng = np.random.default_rng(seed)
     point_counts = rng.multinomial(total_events, point_probabilities)
 
