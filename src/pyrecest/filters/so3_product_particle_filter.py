@@ -190,10 +190,16 @@ class SO3ProductParticleFilter(HyperhemisphereCartProdParticleFilter):
             raise ValueError("Particle weights must be finite.")
         if not all(weights >= 0.0):
             raise ValueError("Particle weights must be nonnegative.")
-        weight_sum = sum(weights)
-        if weight_sum <= 0.0:
+        if weights.shape[0] == 0:
             raise ValueError("At least one particle weight must be positive.")
-        return weights / weight_sum
+        max_weight = max(weights)
+        if max_weight <= 0.0:
+            raise ValueError("At least one particle weight must be positive.")
+        scaled_weights = weights / max_weight
+        weight_sum = sum(scaled_weights)
+        if not isfinite(weight_sum) or weight_sum <= 0.0:
+            raise ValueError("At least one particle weight must be positive.")
+        return scaled_weights / weight_sum
 
     @staticmethod
     def _normalize_log_weights(log_weights):
