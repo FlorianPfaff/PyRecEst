@@ -4,16 +4,21 @@ on:
   push:
     branches:
       - agent/reject-masked-adaptive-process-noise-controls-20260804
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
 
 jobs:
   patch-and-test:
+    if: github.head_ref == 'agent/reject-masked-adaptive-process-noise-controls-20260804' || github.ref_name == 'agent/reject-masked-adaptive-process-noise-controls-20260804'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: agent/reject-masked-adaptive-process-noise-controls-20260804
           fetch-depth: 0
 
       - uses: actions/setup-python@v5
