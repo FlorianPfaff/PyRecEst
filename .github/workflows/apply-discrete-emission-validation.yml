@@ -1,0 +1,90 @@
+name: Apply discrete emission validation
+
+on:
+  push:
+    branches:
+      - agent/reject-invalid-discrete-emissions
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-test:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Reject invalid non-finite emissions
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('src/pyrecest/filters/discrete_state/__init__.py')
+          source = path.read_text(encoding='utf-8')
+          old = '''@wraps(_original_scaled_emissions)
+          def scaled_emissions(log_likelihood):
+              _reject_complex_values(log_likelihood, "log_likelihood must contain real values")
+              return _original_scaled_emissions(log_likelihood)
+          '''
+          new = '''@wraps(_original_scaled_emissions)
+          def scaled_emissions(log_likelihood):
+              _reject_complex_values(log_likelihood, "log_likelihood must contain real values")
+              try:
+                  values = np.asarray(log_likelihood, dtype=float)
+              except (TypeError, ValueError, OverflowError):
+                  return _original_scaled_emissions(log_likelihood)
+              if np.any(np.isnan(values)) or np.any(np.isposinf(values)):
+                  raise ValueError(
+                      "log_likelihood must contain finite values or -np.inf"
+                  )
+              return _original_scaled_emissions(log_likelihood)
+
+
+          scaled_emissions.__doc__ = _original_scaled_emissions.__doc__.replace(
+              "Non-finite entries are returned as zero in ``scaled``.",
+              "``-np.inf`` entries are returned as zero in ``scaled``; "
+              "NaN and positive infinity are rejected.",
+          )
+          '''
+          if source.count(old) != 1:
+              raise RuntimeError(f'unexpected scaled_emissions anchor count: {source.count(old)}')
+          path.write_text(source.replace(old, new, 1), encoding='utf-8')
+          PY
+
+      - name: Install focused test dependencies
+        run: python -m pip install --upgrade pip && python -m pip install -e . pytest
+
+      - name: Run discrete-state regressions
+        run: |
+          python -m pytest \
+            tests/filters/test_discrete_state.py \
+            tests/filters/test_discrete_state_complex_inputs.py \
+            tests/filters/test_discrete_state_nonfinite_emissions.py \
+            -q
+
+      - name: Check syntax and whitespace
+        run: |
+          python -m compileall -q \
+            src/pyrecest/filters/discrete_state/__init__.py \
+            tests/filters/test_discrete_state_nonfinite_emissions.py
+          git diff --check
+
+      - name: Commit fix and remove one-shot workflow
+        shell: bash
+        run: |
+          rm .github/workflows/apply-discrete-emission-validation.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            src/pyrecest/filters/discrete_state/__init__.py \
+            .github/workflows/apply-discrete-emission-validation.yml
+          git commit -m "Reject invalid discrete-state emissions"
+          git push
