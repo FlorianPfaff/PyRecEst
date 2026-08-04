@@ -351,12 +351,14 @@ def mahalanobis_support_points(
     if directions_array.ndim != 2 or directions_array.shape[1] != centers.shape[1]:
         raise ValueError("directions must have shape (direction_count, dim).")
     if normalize_directions:
-        norms = np.linalg.norm(directions_array, axis=1, keepdims=True)
-        if bool(np.any(norms <= 0.0)):
+        direction_scales = np.max(np.abs(directions_array), axis=1, keepdims=True)
+        if bool(np.any(direction_scales <= 0.0)):
             raise ValueError(
                 "directions must be non-zero when normalize_directions=True."
             )
-        directions_array = directions_array / norms
+        scaled_directions = directions_array / direction_scales
+        norms = np.linalg.norm(scaled_directions, axis=1, keepdims=True)
+        directions_array = scaled_directions / norms
 
     if covariances.shape[1] != centers.shape[1]:
         raise ValueError("mean and covariance dimensions must agree.")
