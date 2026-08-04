@@ -8,7 +8,8 @@ from pyrecest.utils import pairwise_covariance_shape_components
 
 
 def test_shape_components_preserve_extreme_finite_covariances():
-    largest = np.finfo(np.float64).max
+    backend_dtype = np.asarray(array([0.0])).dtype
+    largest = np.finfo(backend_dtype).max
     covariance_along_first_axis = array(
         [
             [[largest], [0.0]],
