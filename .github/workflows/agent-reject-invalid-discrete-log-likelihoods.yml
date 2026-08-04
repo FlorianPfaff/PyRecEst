@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - agent/reject-invalid-discrete-log-likelihoods
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
