@@ -332,7 +332,7 @@ def _session_times(
         raise ValueError(
             "session_times must contain only finite numeric values"
         ) from exc
-    if native_times.dtype.kind in "Mm":
+    if native_times.dtype.kind in "Mmc":
         raise ValueError("session_times must contain only finite numeric values")
     raw_times = np.asarray(session_times, dtype=object)
     if raw_times.shape != (n_sessions,):
@@ -362,7 +362,7 @@ def _validate_missed_value(value: Any) -> float:
         native_value = np.asarray(value)
     except (TypeError, ValueError, RuntimeError) as exc:
         raise ValueError(message) from exc
-    if native_value.dtype.kind in "Mm":
+    if native_value.dtype.kind in "Mmc":
         raise ValueError(message)
     value_array = np.asarray(value, dtype=object)
     if value_array.shape != ():
@@ -378,6 +378,8 @@ def _validate_missed_value(value: Any) -> float:
             bytearray,
             np.str_,
             np.bytes_,
+            complex,
+            np.complexfloating,
             np.datetime64,
             np.timedelta64,
         ),
@@ -401,6 +403,8 @@ def _contains_bool_or_text(values: np.ndarray) -> bool:
         bytearray,
         np.str_,
         np.bytes_,
+        complex,
+        np.complexfloating,
         np.datetime64,
         np.timedelta64,
     )
