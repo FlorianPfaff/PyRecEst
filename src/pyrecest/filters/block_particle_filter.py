@@ -234,14 +234,20 @@ class BlockParticleFilter:
         weights = array(weights, dtype=float)
         if ndim(weights) != 1:
             weights = reshape(weights, (-1,))
+        if weights.shape[0] == 0:
+            raise ValueError("At least one particle weight must be positive.")
         if not all(isfinite(weights)):
             raise ValueError("Particle weights must be finite.")
         if not all(weights >= 0.0):
             raise ValueError("Particle weights must be nonnegative.")
-        weight_sum = sum(weights)
-        if weight_sum <= 0.0:
+        weight_scale = max(weights)
+        if weight_scale <= 0.0:
             raise ValueError("At least one particle weight must be positive.")
-        return weights / weight_sum
+        scaled_weights = weights / weight_scale
+        scaled_sum = sum(scaled_weights)
+        if not isfinite(scaled_sum) or scaled_sum <= 0.0:
+            raise ValueError("At least one particle weight must be positive.")
+        return scaled_weights / scaled_sum
 
     @staticmethod
     def _normalize_log_weights(log_weights):

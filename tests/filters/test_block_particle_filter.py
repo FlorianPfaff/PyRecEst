@@ -2,10 +2,11 @@ import copy
 import unittest
 from types import SimpleNamespace
 
+import numpy as np
 import numpy.testing as npt
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import array, ones
+from pyrecest.backend import array, ones, to_numpy
 from pyrecest.filters import BlockParticleFilter
 
 
@@ -129,6 +130,21 @@ class BlockParticleFilterTest(unittest.TestCase):
                 ValueError
             ):
                 filt.resample_blocks_systematic([invalid_index])
+
+    def test_normalizes_extreme_finite_weights_without_overflow(self):
+        backend_dtype = np.asarray(to_numpy(array([1.0]))).dtype
+        max_float = np.finfo(backend_dtype).max
+        filt = DummyBlockParticleFilter(
+            array([[0.0, 10.0], [1.0, 11.0]]),
+            partition="singleton",
+            weights=array([max_float, max_float / 2.0]),
+        )
+
+        expected = np.array([2.0 / 3.0, 1.0 / 3.0])
+        npt.assert_allclose(to_numpy(filt.weights), expected)
+        npt.assert_allclose(
+            to_numpy(filt.block_weights), np.tile(expected, (2, 1))
+        )
 
     def test_rejects_nonfinite_weights(self):
         for invalid_weight in (float("nan"), float("inf"), -float("inf")):
