@@ -195,3 +195,59 @@ def test_student_t_covariance_scale_rejects_text_degrees_of_freedom():
 def test_student_t_covariance_scale_rejects_nonfinite_dof():
     with pytest.raises(ValueError, match="degrees_of_freedom"):
         student_t_covariance_scale(1.0, measurement_dim=2, degrees_of_freedom=np.nan)
+
+
+def test_normalized_innovation_squared_rejects_nonpositive_definite_covariance():
+    invalid_covariances = (
+        np.array([[-1.0]]),
+        np.zeros((1, 1)),
+        np.array([[1.0, 0.5], [0.0, 1.0]]),
+    )
+
+    for covariance in invalid_covariances:
+        residual = np.ones(covariance.shape[0])
+        with pytest.raises(
+            ValueError,
+            match="innovation_covariance must be symmetric positive definite",
+        ):
+            normalized_innovation_squared(residual, covariance)
+
+
+@pytest.mark.parametrize(
+    ("field", "invalid_covariance"),
+    [
+        ("covariance_matrix", np.array([[-2.0]])),
+        ("measurement_covariance", np.array([[-2.0]])),
+    ],
+)
+def test_plan_rejects_indefinite_component_covariances(
+    field, invalid_covariance
+):
+    kwargs = {
+        "mean": np.zeros(1),
+        "covariance_matrix": np.eye(1),
+        "measurement_vector": np.ones(1),
+        "measurement_covariance": np.eye(1),
+        "observation_matrix": np.eye(1),
+        "gate_threshold": 1.0,
+    }
+    kwargs[field] = invalid_covariance
+
+    with pytest.raises(
+        ValueError,
+        match=rf"{field} must be symmetric positive semidefinite",
+    ):
+        plan_linear_measurement_update(**kwargs)
+
+
+def test_plan_accepts_semidefinite_component_covariance_when_innovation_is_pd():
+    plan = plan_linear_measurement_update(
+        mean=np.zeros(1),
+        covariance_matrix=np.zeros((1, 1)),
+        measurement_vector=np.ones(1),
+        measurement_covariance=np.eye(1),
+        observation_matrix=np.eye(1),
+    )
+
+    assert plan.accepted
+    assert np.isclose(plan.nis, 1.0)

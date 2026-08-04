@@ -115,6 +115,11 @@ def normalized_innovation_squared(
         raise ValueError(
             "innovation_covariance must have shape (residual_dim, residual_dim)"
         )
+    innovation_covariance = _validate_covariance_matrix(
+        innovation_covariance,
+        "innovation_covariance",
+        require_positive_definite=True,
+    )
     if _normalized_innovation_squared is not None:
         return float(
             np.asarray(
@@ -251,6 +256,15 @@ def plan_linear_measurement_update(
         raise ValueError(
             "measurement_covariance must have shape (measurement_dim, measurement_dim)"
         )
+
+    state_covariance = _validate_covariance_matrix(
+        state_covariance,
+        "covariance_matrix",
+    )
+    covariance = _validate_covariance_matrix(
+        covariance,
+        "measurement_covariance",
+    )
 
     resolved_gate_threshold = _resolve_threshold(
         gate_threshold, gate_probability, measurement_dim, "gate"
@@ -402,6 +416,41 @@ def _resolve_threshold(
 
 def _symmetrized(matrix: np.ndarray) -> np.ndarray:
     return 0.5 * (matrix + matrix.T)
+
+
+def _validate_covariance_matrix(
+    matrix: np.ndarray,
+    name: str,
+    *,
+    require_positive_definite: bool = False,
+) -> np.ndarray:
+    qualifier = (
+        "symmetric positive definite"
+        if require_positive_definite
+        else "symmetric positive semidefinite"
+    )
+    if not np.allclose(matrix, matrix.T, rtol=0.0, atol=1.0e-10):
+        raise ValueError(f"{name} must be {qualifier}")
+
+    symmetric = _symmetrized(matrix)
+    if symmetric.shape[0] == 0:
+        return symmetric
+
+    if require_positive_definite:
+        try:
+            np.linalg.cholesky(symmetric)
+        except np.linalg.LinAlgError as exc:
+            raise ValueError(f"{name} must be {qualifier}") from exc
+        return symmetric
+
+    try:
+        eigenvalues = np.linalg.eigvalsh(symmetric)
+    except np.linalg.LinAlgError as exc:
+        raise ValueError(f"{name} must be {qualifier}") from exc
+    scale = max(1.0, float(np.max(np.abs(eigenvalues))))
+    if float(np.min(eigenvalues)) < -1.0e-10 * scale:
+        raise ValueError(f"{name} must be {qualifier}")
+    return symmetric
 
 
 def _contains_values_of_type(value: Any, types: tuple[type, ...]) -> bool:
