@@ -55,12 +55,12 @@ class AbstractHyperhemisphericalDistribution(AbstractHypersphereSubsetDistributi
         proposal_log_pdf: Callable | None = None,
     ):
         # jscpd:ignore-end
+        from .hyperhemispherical_uniform_distribution import (
+            HyperhemisphericalUniformDistribution,
+        )
+
         if proposal is None:
             # For unimodal densities, other proposals may be far better.
-            from .hyperhemispherical_uniform_distribution import (
-                HyperhemisphericalUniformDistribution,
-            )
-
             if pyrecest.backend.__backend_name__ in ("numpy", "pytorch"):
 
                 def proposal_np(_):
