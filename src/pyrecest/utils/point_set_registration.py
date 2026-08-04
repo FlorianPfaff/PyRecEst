@@ -197,6 +197,21 @@ def _validate_effective_weight_support(
         )
 
 
+def _validate_boolean(value, name: str) -> bool:
+    error_message = f"{name} must be a boolean."
+    if isinstance(value, (bool, np.bool_)):
+        return bool(value)
+    if np.ma.isMaskedArray(value) and np.any(np.ma.getmaskarray(value)):
+        raise ValueError(error_message)
+    try:
+        value_array = np.asarray(value)
+    except (TypeError, ValueError, RuntimeError) as exc:
+        raise ValueError(error_message) from exc
+    if value_array.shape == () and value_array.dtype.kind == "b":
+        return bool(value_array.item())
+    raise ValueError(error_message)
+
+
 def _validate_positive_integer(value, name: str, *, minimum: int = 1) -> int:
     error_message = f"{name} must be a scalar integer."
     temporal_types = (np.datetime64, np.timedelta64)
@@ -273,6 +288,7 @@ def estimate_transform(  # pylint: disable=too-many-locals
             "estimate_transform is not supported on the JAX backend."
         )
 
+    allow_reflection = _validate_boolean(allow_reflection, "allow_reflection")
     source, target = _validate_pair(source_points, target_points)
     n_points, dim = source.shape
     min_matches = _minimum_required_matches(model, dim)
@@ -376,6 +392,7 @@ def joint_registration_assignment(  # pylint: disable=too-many-arguments,too-man
             "joint_registration_assignment is not supported on the JAX backend."
         )
 
+    allow_reflection = _validate_boolean(allow_reflection, "allow_reflection")
     max_iterations = _validate_positive_integer(max_iterations, "max_iterations")
 
     reference = _as_point_array(reference_points)
