@@ -1,0 +1,285 @@
+name: Apply DVS complex-input fix
+
+on:
+  push:
+    branches:
+      - agent/reject-complex-dvs-likelihood-inputs
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Apply implementation and regression patch
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          source_path = Path("src/pyrecest/experimental/dvs/event_likelihood.py")
+          source = source_path.read_text(encoding="utf-8")
+
+          old = '''def _validate_finite_array(values: np.ndarray, name: str) -> None:
+              if np.any(~np.isfinite(values)):
+                  raise ValueError(f"{name} must contain only finite values")
+
+
+          @dataclass(frozen=True)
+          '''
+          new = '''def _validate_finite_array(values: np.ndarray, name: str) -> None:
+              if np.any(~np.isfinite(values)):
+                  raise ValueError(f"{name} must contain only finite values")
+
+
+          def _as_real_array(values: np.ndarray, name: str) -> np.ndarray:
+              try:
+                  values_array = np.asarray(values)
+              except (TypeError, ValueError, RuntimeError, OverflowError) as exc:
+                  raise ValueError(f"{name} must contain real numeric values") from exc
+              if np.iscomplexobj(values_array):
+                  raise ValueError(f"{name} must contain only real values")
+              try:
+                  return np.asarray(values_array, dtype=float)
+              except (TypeError, ValueError, RuntimeError, OverflowError) as exc:
+                  raise ValueError(f"{name} must contain real numeric values") from exc
+
+
+          @dataclass(frozen=True)
+          '''
+          if old not in source:
+              raise RuntimeError("validation insertion point not found")
+          source = source.replace(old, new, 1)
+
+          replacements = {
+              "points = np.asarray(self.points, dtype=float)": "points = _as_real_array(self.points, \"points\")",
+              "normals = np.asarray(self.normals, dtype=float)": "normals = _as_real_array(self.normals, \"normals\")",
+              "weights = np.asarray(self.weights, dtype=float)": "weights = _as_real_array(self.weights, \"weights\")",
+              "angles = np.asarray(self.angles, dtype=float)": "angles = _as_real_array(self.angles, \"angles\")",
+              "normals = np.asarray(normals, dtype=float)": "normals = _as_real_array(normals, \"normals\")",
+              "velocity = np.asarray(velocity, dtype=float)": "velocity = _as_real_array(velocity, \"velocity\")",
+              "np.asarray(contour.normals, dtype=float)": "contour.normals",
+              "weights = np.asarray(contour.weights, dtype=float)": "weights = _as_real_array(contour.weights, \"weights\")",
+              "np.asarray(contour.points, dtype=float)": "contour.points",
+              "np.asarray(contour.weights, dtype=float) * activities": "_as_real_array(contour.weights, \"weights\") * activities",
+              "diff = event_xy[:, None, :] - np.asarray(contour_points, dtype=float)[None, :, :]": "contour_points = _as_real_array(contour_points, \"contour_points\")\n    diff = event_xy[:, None, :] - contour_points[None, :, :]",
+              "events = np.asarray(event_xy, dtype=float)": "events = _as_real_array(event_xy, \"event_xy\")",
+          }
+          for before, after in replacements.items():
+              if before not in source:
+                  raise RuntimeError(f"source replacement not found: {before}")
+              source = source.replace(before, after)
+
+          source_path.write_text(source, encoding="utf-8")
+
+          test_path = Path("tests/experimental/test_dvs_event_likelihood.py")
+          tests = test_path.read_text(encoding="utf-8")
+          if "from types import SimpleNamespace\n" not in tests:
+              tests = tests.replace(
+                  "import numpy as np\n",
+                  "from types import SimpleNamespace\n\nimport numpy as np\n",
+                  1,
+              )
+
+          marker = '''@pytest.mark.parametrize(
+              ("keyword", "value"),
+              [
+                  ("spatial_sigma_px", float("nan")),
+          '''
+          addition = '''@pytest.mark.parametrize(
+              ("keyword", "index"),
+              [
+                  ("points", (0, 0)),
+                  ("normals", (0, 0)),
+                  ("weights", (0,)),
+                  ("angles", (0,)),
+              ],
+          )
+          def test_contour_sample_rejects_complex_geometry(keyword, index):
+              kwargs = {
+                  "points": np.array([[0.0, 0.0], [1.0, 0.0]]),
+                  "normals": np.array([[0.0, 1.0], [0.0, 1.0]]),
+                  "weights": np.array([1.0, 2.0]),
+                  "angles": np.array([0.0, np.pi]),
+              }
+              complex_value = kwargs[keyword].astype(complex)
+              complex_value[index] += 1j
+              kwargs[keyword] = complex_value
+
+              with pytest.raises(ValueError, match=f"{keyword} must contain only real values"):
+                  ContourSample(**kwargs)
+
+
+          @pytest.mark.parametrize(
+              ("keyword", "value"),
+              [
+                  ("spatial_sigma_px", float("nan")),
+          '''
+          if marker not in tests:
+              raise RuntimeError("complex geometry test insertion point not found")
+          tests = tests.replace(marker, addition, 1)
+
+          marker = '''@pytest.mark.parametrize(
+              "event_xy",
+              [
+                  np.array([[np.nan, 0.0]]),
+          '''
+          addition = '''def test_normal_flow_activities_rejects_complex_inputs():
+              normals = np.array([[1.0, 0.0]], dtype=float)
+
+              with pytest.raises(ValueError, match="normals must contain only real values"):
+                  normal_flow_activities(
+                      np.array([[1.0 + 2.0j, 0.0]]), np.array([1.0, 0.0])
+                  )
+              with pytest.raises(ValueError, match="velocity must contain only real values"):
+                  normal_flow_activities(normals, np.array([1.0 + 2.0j, 0.0]))
+
+
+          @pytest.mark.parametrize(
+              "event_xy",
+              [
+                  np.array([[np.nan, 0.0]]),
+          '''
+          if marker not in tests:
+              raise RuntimeError("normal-flow complex test insertion point not found")
+          tests = tests.replace(marker, addition, 1)
+
+          marker = '''def test_active_edge_events_have_higher_intensity():
+          '''
+          addition = '''def test_event_likelihood_rejects_complex_event_coordinates():
+              contour = _rectangle_contour(width=1.0, height=2.0)
+              velocity = np.array([1.0, 0.0])
+              event_xy = np.array([[1.0 + 2.0j, 0.0]])
+
+              with pytest.raises(ValueError, match="event_xy must contain only real values"):
+                  contour_event_intensity(event_xy, contour, velocity)
+              with pytest.raises(ValueError, match="event_xy must contain only real values"):
+                  event_batch_log_likelihood(event_xy, contour, velocity)
+
+
+          @pytest.mark.parametrize("attribute", ["points", "normals", "weights"])
+          def test_contour_event_intensity_rejects_complex_contour_like_geometry(attribute):
+              valid = _rectangle_contour(width=1.0, height=2.0)
+              values = {
+                  "points": valid.points.copy(),
+                  "normals": valid.normals.copy(),
+                  "weights": valid.weights.copy(),
+              }
+              complex_value = values[attribute].astype(complex)
+              complex_value.flat[0] += 1j
+              values[attribute] = complex_value
+              contour = SimpleNamespace(**values)
+
+              expected_name = "contour_points" if attribute == "points" else attribute
+              with pytest.raises(ValueError, match=expected_name):
+                  contour_event_intensity(
+                      np.array([[0.0, 0.0]]), contour, np.array([1.0, 0.0])
+                  )
+
+
+          def test_active_edge_events_have_higher_intensity():
+          '''
+          if marker not in tests:
+              raise RuntimeError("runtime complex test insertion point not found")
+          tests = tests.replace(marker, addition, 1)
+          test_path.write_text(tests, encoding="utf-8")
+          PY
+
+      - name: Validate focused behavior
+        shell: bash
+        run: |
+          python -m pip install --disable-pip-version-check "numpy>=2,<2.5" pytest
+          python -m compileall -q \
+            src/pyrecest/experimental/dvs/event_likelihood.py \
+            tests/experimental/test_dvs_event_likelihood.py
+          python - <<'PY'
+          import importlib.util
+          import sys
+          from pathlib import Path
+          from types import SimpleNamespace
+
+          import numpy as np
+
+          path = Path("src/pyrecest/experimental/dvs/event_likelihood.py")
+          spec = importlib.util.spec_from_file_location("dvs_event_likelihood_under_test", path)
+          module = importlib.util.module_from_spec(spec)
+          sys.modules[spec.name] = module
+          spec.loader.exec_module(module)
+
+          def expect_value_error(callback, expected):
+              try:
+                  callback()
+              except ValueError as exc:
+                  assert expected in str(exc), (expected, str(exc))
+              else:
+                  raise AssertionError(f"expected ValueError containing {expected!r}")
+
+          base = {
+              "points": np.array([[0.0, 0.0], [1.0, 0.0]]),
+              "normals": np.array([[0.0, 1.0], [0.0, 1.0]]),
+              "weights": np.array([1.0, 2.0]),
+              "angles": np.array([0.0, np.pi]),
+          }
+          for name in base:
+              kwargs = {key: value.copy() for key, value in base.items()}
+              value = kwargs[name].astype(complex)
+              value.flat[0] += 1j
+              kwargs[name] = value
+              expect_value_error(lambda kwargs=kwargs: module.ContourSample(**kwargs), name)
+
+          contour = module.ContourSample(**base)
+          expect_value_error(
+              lambda: module.normal_flow_activities(
+                  np.array([[1.0 + 1.0j, 0.0]]), np.array([1.0, 0.0])
+              ),
+              "normals",
+          )
+          expect_value_error(
+              lambda: module.normal_flow_activities(
+                  np.array([[1.0, 0.0]]), np.array([1.0 + 1.0j, 0.0])
+              ),
+              "velocity",
+          )
+          expect_value_error(
+              lambda: module.contour_event_intensity(
+                  np.array([[1.0 + 1.0j, 0.0]]), contour, np.array([1.0, 0.0])
+              ),
+              "event_xy",
+          )
+
+          contour_like = SimpleNamespace(
+              points=contour.points,
+              normals=contour.normals,
+              weights=contour.weights.astype(complex),
+          )
+          contour_like.weights[0] += 1j
+          expect_value_error(
+              lambda: module.contour_event_intensity(
+                  np.array([[0.0, 0.0]]), contour_like, np.array([1.0, 0.0])
+              ),
+              "weights",
+          )
+          PY
+
+      - name: Commit patch and remove workflow
+        shell: bash
+        run: |
+          rm .github/workflows/agent-reject-complex-dvs-likelihood-inputs.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            src/pyrecest/experimental/dvs/event_likelihood.py \
+            tests/experimental/test_dvs_event_likelihood.py \
+            .github/workflows/agent-reject-complex-dvs-likelihood-inputs.yml
+          git commit -m "Reject complex DVS likelihood inputs"
+          git push origin HEAD:${{ github.ref_name }}
