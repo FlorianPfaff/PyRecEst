@@ -1,12 +1,24 @@
 import math
 
+import numpy as np
+
 
 def _parameter_sort_key(parameter):
     if parameter is None:
         return (0, "")
+    if np.ma.isMaskedArray(parameter) and bool(
+        np.any(np.ma.getmaskarray(parameter))
+    ):
+        return (3, str(parameter))
     try:
-        numeric_parameter = float(parameter)
-    except (TypeError, ValueError, OverflowError):
+        parameter_array = np.asarray(parameter)
+    except (TypeError, ValueError, RuntimeError, OverflowError):
+        return (3, str(parameter))
+    if parameter_array.shape != ():
+        return (3, str(parameter))
+    try:
+        numeric_parameter = float(parameter_array.item())
+    except (TypeError, ValueError, RuntimeError, OverflowError):
         return (3, str(parameter))
     if math.isnan(numeric_parameter):
         return (2, "")
