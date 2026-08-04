@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - agent/reject-invalid-linear-update-covariances-20260804
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
@@ -26,65 +29,72 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          from textwrap import dedent
 
           source_path = Path('src/pyrecest/filters/linear_update_planning.py')
           source = source_path.read_text(encoding='utf-8')
 
-          old_nis = '''    if innovation_covariance.shape != (residual.size, residual.size):
-              raise ValueError(
-                  "innovation_covariance must have shape (residual_dim, residual_dim)"
-              )
-          if _normalized_innovation_squared is not None:
-          '''
-          new_nis = '''    if innovation_covariance.shape != (residual.size, residual.size):
-              raise ValueError(
-                  "innovation_covariance must have shape (residual_dim, residual_dim)"
-              )
-          innovation_covariance = _validate_covariance_matrix(
-              innovation_covariance,
-              "innovation_covariance",
-              require_positive_definite=True,
+          old_nis = (
+              '    if innovation_covariance.shape != (residual.size, residual.size):\n'
+              '        raise ValueError(\n'
+              '            "innovation_covariance must have shape (residual_dim, residual_dim)"\n'
+              '        )\n'
+              '    if _normalized_innovation_squared is not None:\n'
           )
-          if _normalized_innovation_squared is not None:
-          '''
+          new_nis = (
+              '    if innovation_covariance.shape != (residual.size, residual.size):\n'
+              '        raise ValueError(\n'
+              '            "innovation_covariance must have shape (residual_dim, residual_dim)"\n'
+              '        )\n'
+              '    innovation_covariance = _validate_covariance_matrix(\n'
+              '        innovation_covariance,\n'
+              '        "innovation_covariance",\n'
+              '        require_positive_definite=True,\n'
+              '    )\n'
+              '    if _normalized_innovation_squared is not None:\n'
+          )
           if source.count(old_nis) != 1:
               raise RuntimeError('normalized_innovation_squared patch anchor changed')
           source = source.replace(old_nis, new_nis, 1)
 
-          old_plan = '''    if covariance.shape != (measurement_dim, measurement_dim):
-              raise ValueError(
-                  "measurement_covariance must have shape (measurement_dim, measurement_dim)"
-              )
-
-          resolved_gate_threshold = _resolve_threshold(
-          '''
-          new_plan = '''    if covariance.shape != (measurement_dim, measurement_dim):
-              raise ValueError(
-                  "measurement_covariance must have shape (measurement_dim, measurement_dim)"
-              )
-
-          state_covariance = _validate_covariance_matrix(
-              state_covariance,
-              "covariance_matrix",
+          old_plan = (
+              '    if covariance.shape != (measurement_dim, measurement_dim):\n'
+              '        raise ValueError(\n'
+              '            "measurement_covariance must have shape (measurement_dim, measurement_dim)"\n'
+              '        )\n'
+              '\n'
+              '    resolved_gate_threshold = _resolve_threshold(\n'
           )
-          covariance = _validate_covariance_matrix(
-              covariance,
-              "measurement_covariance",
+          new_plan = (
+              '    if covariance.shape != (measurement_dim, measurement_dim):\n'
+              '        raise ValueError(\n'
+              '            "measurement_covariance must have shape (measurement_dim, measurement_dim)"\n'
+              '        )\n'
+              '\n'
+              '    state_covariance = _validate_covariance_matrix(\n'
+              '        state_covariance,\n'
+              '        "covariance_matrix",\n'
+              '    )\n'
+              '    covariance = _validate_covariance_matrix(\n'
+              '        covariance,\n'
+              '        "measurement_covariance",\n'
+              '    )\n'
+              '\n'
+              '    resolved_gate_threshold = _resolve_threshold(\n'
           )
-
-          resolved_gate_threshold = _resolve_threshold(
-          '''
           if source.count(old_plan) != 1:
               raise RuntimeError('plan covariance patch anchor changed')
           source = source.replace(old_plan, new_plan, 1)
 
-          old_helper = '''def _symmetrized(matrix: np.ndarray) -> np.ndarray:
+          old_helper = dedent('''\
+          def _symmetrized(matrix: np.ndarray) -> np.ndarray:
               return 0.5 * (matrix + matrix.T)
 
 
           def _contains_values_of_type(value: Any, types: tuple[type, ...]) -> bool:
-          '''
-          new_helper = '''def _symmetrized(matrix: np.ndarray) -> np.ndarray:
+          ''')
+          new_helper = dedent('''\
+          def _symmetrized(matrix: np.ndarray) -> np.ndarray:
               return 0.5 * (matrix + matrix.T)
 
 
@@ -124,7 +134,7 @@ jobs:
 
 
           def _contains_values_of_type(value: Any, types: tuple[type, ...]) -> bool:
-          '''
+          ''')
           if source.count(old_helper) != 1:
               raise RuntimeError('covariance helper patch anchor changed')
           source = source.replace(old_helper, new_helper, 1)
@@ -134,64 +144,64 @@ jobs:
           tests = test_path.read_text(encoding='utf-8')
           marker = 'def test_normalized_innovation_squared_rejects_nonpositive_definite_covariance():'
           if marker not in tests:
-              tests += '''
+              tests += dedent('''\
 
 
-def test_normalized_innovation_squared_rejects_nonpositive_definite_covariance():
-              invalid_covariances = (
-                  np.array([[-1.0]]),
-                  np.zeros((1, 1)),
-                  np.array([[1.0, 0.5], [0.0, 1.0]]),
+              def test_normalized_innovation_squared_rejects_nonpositive_definite_covariance():
+                  invalid_covariances = (
+                      np.array([[-1.0]]),
+                      np.zeros((1, 1)),
+                      np.array([[1.0, 0.5], [0.0, 1.0]]),
+                  )
+
+                  for covariance in invalid_covariances:
+                      residual = np.ones(covariance.shape[0])
+                      with pytest.raises(
+                          ValueError,
+                          match="innovation_covariance must be symmetric positive definite",
+                      ):
+                          normalized_innovation_squared(residual, covariance)
+
+
+              @pytest.mark.parametrize(
+                  ("field", "invalid_covariance"),
+                  [
+                      ("covariance_matrix", np.array([[-2.0]])),
+                      ("measurement_covariance", np.array([[-2.0]])),
+                  ],
               )
+              def test_plan_rejects_indefinite_component_covariances(
+                  field, invalid_covariance
+              ):
+                  kwargs = {
+                      "mean": np.zeros(1),
+                      "covariance_matrix": np.eye(1),
+                      "measurement_vector": np.ones(1),
+                      "measurement_covariance": np.eye(1),
+                      "observation_matrix": np.eye(1),
+                      "gate_threshold": 1.0,
+                  }
+                  kwargs[field] = invalid_covariance
 
-              for covariance in invalid_covariances:
-                  residual = np.ones(covariance.shape[0])
                   with pytest.raises(
                       ValueError,
-                      match="innovation_covariance must be symmetric positive definite",
+                      match=rf"{field} must be symmetric positive semidefinite",
                   ):
-                      normalized_innovation_squared(residual, covariance)
+                      plan_linear_measurement_update(**kwargs)
 
 
-          @pytest.mark.parametrize(
-              ("field", "invalid_covariance"),
-              [
-                  ("covariance_matrix", np.array([[-2.0]])),
-                  ("measurement_covariance", np.array([[-2.0]])),
-              ],
-          )
-          def test_plan_rejects_indefinite_component_covariances(
-              field, invalid_covariance
-          ):
-              kwargs = {
-                  "mean": np.zeros(1),
-                  "covariance_matrix": np.eye(1),
-                  "measurement_vector": np.ones(1),
-                  "measurement_covariance": np.eye(1),
-                  "observation_matrix": np.eye(1),
-                  "gate_threshold": 1.0,
-              }
-              kwargs[field] = invalid_covariance
+              def test_plan_accepts_semidefinite_component_covariance_when_innovation_is_pd():
+                  plan = plan_linear_measurement_update(
+                      mean=np.zeros(1),
+                      covariance_matrix=np.zeros((1, 1)),
+                      measurement_vector=np.ones(1),
+                      measurement_covariance=np.eye(1),
+                      observation_matrix=np.eye(1),
+                  )
 
-              with pytest.raises(
-                  ValueError,
-                  match=rf"{field} must be symmetric positive semidefinite",
-              ):
-                  plan_linear_measurement_update(**kwargs)
-
-
-          def test_plan_accepts_semidefinite_component_covariance_when_innovation_is_pd():
-              plan = plan_linear_measurement_update(
-                  mean=np.zeros(1),
-                  covariance_matrix=np.zeros((1, 1)),
-                  measurement_vector=np.ones(1),
-                  measurement_covariance=np.eye(1),
-                  observation_matrix=np.eye(1),
-              )
-
-              assert plan.accepted
-              assert np.isclose(plan.nis, 1.0)
-          '''
+                  assert plan.accepted
+                  assert np.isclose(plan.nis, 1.0)
+              ''')
               test_path.write_text(tests, encoding='utf-8')
 
           Path('.github/workflows/agent-linear-update-covariance-fix.yml').unlink()
