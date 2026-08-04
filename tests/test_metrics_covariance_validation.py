@@ -23,6 +23,21 @@ class TestConsistencyMetricCovarianceValidation(unittest.TestCase):
         ):
             nis(residual, asymmetric_covariance)
 
+    def test_asymmetry_validation_respects_strict_numpy_error_policy(self):
+        maximum_float = np.finfo(float).max
+        asymmetric_covariance = np.array(
+            [[1.0, maximum_float], [-maximum_float, 1.0]]
+        )
+        previous_settings = np.seterr(all="raise")
+        try:
+            with self.assertRaisesRegex(
+                ValueError,
+                "uncertainties must contain symmetric covariance matrices",
+            ):
+                nees(np.array([1.0, 1.0]), asymmetric_covariance)
+        finally:
+            np.seterr(**previous_settings)
+
     def test_nees_and_nis_reject_non_positive_definite_covariances(self):
         residuals = np.array([[1.0, 0.0], [0.0, 1.0]])
         covariance_stack = np.array(
