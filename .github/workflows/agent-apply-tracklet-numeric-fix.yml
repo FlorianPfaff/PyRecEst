@@ -1,0 +1,463 @@
+name: Apply tracklet numeric validation fix
+
+on:
+  push:
+    branches:
+      - agent/reject-invalid-tracklet-numerics
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Patch implementation and add regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          source_path = Path("src/pyrecest/filters/tracklet_viterbi.py")
+          source = source_path.read_text(encoding="utf-8")
+
+          def replace_once(text: str, old: str, new: str) -> str:
+              count = text.count(old)
+              if count != 1:
+                  raise RuntimeError(f"Expected one replacement target, found {count}: {old[:80]!r}")
+              return text.replace(old, new, 1)
+
+          old_scalar = '''import numpy as np
+
+
+def _as_scalar_float(value: Any, name: str) -> float:
+    value_array = np.asarray(value)
+    if value_array.shape != () or value_array.dtype == np.bool_:
+        raise ValueError(f"{name} must be a scalar number")
+    try:
+        scalar = float(value_array.item())
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{name} must be a scalar number") from exc
+    if not np.isfinite(scalar):
+        raise ValueError(f"{name} must be finite")
+    return scalar
+'''
+          new_scalar = '''import numpy as np
+
+
+def _contains_masked_value(value: Any) -> bool:
+    """Return whether an array-like input contains a genuinely masked value."""
+
+    if value is np.ma.masked:
+        return True
+    if np.ma.isMaskedArray(value):
+        if bool(np.any(np.ma.getmaskarray(value))):
+            return True
+        value = np.asarray(value.data)
+    if isinstance(value, np.ndarray) and value.dtype == object:
+        return any(_contains_masked_value(item) for item in value.flat)
+    if isinstance(value, (list, tuple)):
+        return any(_contains_masked_value(item) for item in value)
+    return False
+
+
+def _contains_complex_value(value: Any) -> bool:
+    """Return whether an array-like input contains complex-valued data."""
+
+    if isinstance(value, (complex, np.complexfloating)):
+        return True
+    if isinstance(value, np.ndarray):
+        if np.iscomplexobj(value):
+            return True
+        if value.dtype == object:
+            return any(_contains_complex_value(item) for item in value.flat)
+        return False
+    if isinstance(value, (list, tuple)):
+        return any(_contains_complex_value(item) for item in value)
+    return False
+
+
+def _as_scalar_float(value: Any, name: str) -> float:
+    if _contains_masked_value(value):
+        raise ValueError(f"{name} must not contain masked values")
+    if _contains_complex_value(value):
+        raise ValueError(f"{name} must be real")
+    value_array = np.asarray(value)
+    if value_array.shape != ():
+        raise ValueError(f"{name} must be a scalar number")
+    scalar_value = value_array.item()
+    if isinstance(scalar_value, (bool, np.bool_)):
+        raise ValueError(f"{name} must be a scalar number")
+    try:
+        scalar = float(scalar_value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{name} must be a scalar number") from exc
+    if not np.isfinite(scalar):
+        raise ValueError(f"{name} must be finite")
+    return scalar
+
+
+def _as_real_finite_vector(value: Any, name: str) -> np.ndarray:
+    """Convert a vector-like input without discarding masks or complex parts."""
+
+    if _contains_masked_value(value):
+        raise ValueError(f"{name} must not contain masked values")
+    if _contains_complex_value(value):
+        raise ValueError(f"{name} must be real")
+    try:
+        vector = np.asarray(value, dtype=float).reshape(-1)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{name} must be a real numeric vector") from exc
+    if not np.all(np.isfinite(vector)):
+        raise ValueError(f"{name} must contain only finite values")
+    return vector
+'''
+          source = replace_once(source, old_scalar, new_scalar)
+
+          old_post_init = '''    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "unary_cost",
+            _as_scalar_float(self.unary_cost, "unary_cost"),
+        )
+'''
+          new_post_init = '''    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "unary_cost",
+            _as_scalar_float(self.unary_cost, "unary_cost"),
+        )
+        if self.time_s is not None:
+            object.__setattr__(
+                self,
+                "time_s",
+                _as_scalar_float(self.time_s, "time_s"),
+            )
+'''
+          source = replace_once(source, old_post_init, new_post_init)
+
+          old_motion = '''def _motion_cost(
+    previous: TrackletAssociationCandidate,
+    current: TrackletAssociationCandidate,
+    config: TrackletViterbiConfig,
+) -> float:
+    if previous.position is None or current.position is None:
+        return 0.0
+    previous_position = np.asarray(previous.position, dtype=float).reshape(-1)
+    current_position = np.asarray(current.position, dtype=float).reshape(-1)
+    if previous_position.shape != current_position.shape:
+        raise ValueError("candidate positions must have matching shapes")
+    dt_s = max(_candidate_time(current, 1.0) - _candidate_time(previous, 0.0), 1.0e-9)
+    if previous.velocity is None:
+        predicted = previous_position
+    else:
+        predicted = (
+            previous_position
+            + np.asarray(previous.velocity, dtype=float).reshape(
+                previous_position.shape
+            )
+            * dt_s
+        )
+    position_cost = float(
+        np.sum(
+            ((current_position - predicted) / float(config.transition_position_std))
+            ** 2
+        )
+    )
+    speed_cost = 0.0
+    displacement_velocity = (current_position - previous_position) / dt_s
+    if config.max_speed is not None:
+        speed_excess = max(
+            0.0, float(np.linalg.norm(displacement_velocity)) - float(config.max_speed)
+        )
+        if speed_excess > 0.0:
+            speed_cost = float(config.max_speed_penalty) * speed_excess**2
+    velocity_cost = 0.0
+    if config.transition_velocity_std is not None and current.velocity is not None:
+        velocity = np.asarray(current.velocity, dtype=float).reshape(
+            displacement_velocity.shape
+        )
+        velocity_cost = float(
+            np.sum(
+                (
+                    (velocity - displacement_velocity)
+                    / float(config.transition_velocity_std)
+                )
+                ** 2
+            )
+        )
+    return position_cost + speed_cost + velocity_cost
+'''
+          new_motion = '''def _motion_cost(
+    previous: TrackletAssociationCandidate,
+    current: TrackletAssociationCandidate,
+    config: TrackletViterbiConfig,
+) -> float:
+    if previous.position is None or current.position is None:
+        return 0.0
+    previous_position = _as_real_finite_vector(
+        previous.position, "previous candidate position"
+    )
+    current_position = _as_real_finite_vector(
+        current.position, "current candidate position"
+    )
+    if previous_position.shape != current_position.shape:
+        raise ValueError("candidate positions must have matching shapes")
+    dt_s = max(_candidate_time(current, 1.0) - _candidate_time(previous, 0.0), 1.0e-9)
+    if previous.velocity is None:
+        predicted = previous_position
+    else:
+        previous_velocity = _as_real_finite_vector(
+            previous.velocity, "previous candidate velocity"
+        )
+        if previous_velocity.shape != previous_position.shape:
+            raise ValueError(
+                "previous candidate velocity must match candidate position shape"
+            )
+        predicted = previous_position + previous_velocity * dt_s
+    position_cost = float(
+        np.sum(
+            ((current_position - predicted) / float(config.transition_position_std))
+            ** 2
+        )
+    )
+    speed_cost = 0.0
+    displacement_velocity = (current_position - previous_position) / dt_s
+    if config.max_speed is not None:
+        speed_excess = max(
+            0.0, float(np.linalg.norm(displacement_velocity)) - float(config.max_speed)
+        )
+        if speed_excess > 0.0:
+            speed_cost = float(config.max_speed_penalty) * speed_excess**2
+    velocity_cost = 0.0
+    if config.transition_velocity_std is not None and current.velocity is not None:
+        velocity = _as_real_finite_vector(
+            current.velocity, "current candidate velocity"
+        )
+        if velocity.shape != displacement_velocity.shape:
+            raise ValueError(
+                "current candidate velocity must match candidate position shape"
+            )
+        velocity_cost = float(
+            np.sum(
+                (
+                    (velocity - displacement_velocity)
+                    / float(config.transition_velocity_std)
+                )
+                ** 2
+            )
+        )
+    return position_cost + speed_cost + velocity_cost
+'''
+          source = replace_once(source, old_motion, new_motion)
+          source_path.write_text(source, encoding="utf-8")
+
+          test_path = Path("tests/filters/test_tracklet_viterbi_numeric_inputs.py")
+          test_path.write_text(
+              '''import numpy as np
+import pytest
+from pyrecest.filters.tracklet_viterbi import (
+    TrackletAssociationCandidate,
+    TrackletViterbiConfig,
+    solve_fixed_lag_tracklet_viterbi,
+    solve_tracklet_viterbi,
+)
+
+
+@pytest.mark.parametrize(
+    "time_s",
+    [
+        np.nan,
+        np.inf,
+        -np.inf,
+        np.complex64(1.0 + 2.0j),
+        np.array(1.0 + 0.0j),
+        np.ma.array(1.0, mask=True),
+    ],
+)
+def test_tracklet_candidate_rejects_invalid_timestamps(time_s):
+    with pytest.raises(ValueError, match="time_s"):
+        TrackletAssociationCandidate("invalid-time", time_s=time_s)
+
+
+def test_tracklet_scalar_controls_reject_masked_values():
+    masked = np.ma.array(1.0, mask=True)
+
+    with pytest.raises(ValueError, match="unary_cost"):
+        TrackletAssociationCandidate("masked-cost", unary_cost=masked)
+    with pytest.raises(ValueError, match="motion_weight"):
+        TrackletViterbiConfig(motion_weight=masked)
+    with pytest.raises(ValueError, match="lag_s"):
+        solve_fixed_lag_tracklet_viterbi(
+            [[TrackletAssociationCandidate("candidate")]],
+            lag_s=masked,
+        )
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "expected_name"),
+    [
+        ("previous_position", np.array([0.0 + 1.0j, 0.0]), "previous candidate position"),
+        ("current_position", np.array([1.0 + 2.0j, 0.0]), "current candidate position"),
+        ("previous_velocity", np.array([1.0 + 2.0j, 0.0]), "previous candidate velocity"),
+        ("current_velocity", np.array([1.0 + 2.0j, 0.0]), "current candidate velocity"),
+        ("current_position", np.ma.array([1.0, 0.0], mask=[True, False]), "current candidate position"),
+        ("current_position", np.array([np.nan, 0.0]), "current candidate position"),
+    ],
+)
+def test_tracklet_motion_rejects_invalid_numeric_vectors(field, value, expected_name):
+    previous_position = np.array([0.0, 0.0])
+    current_position = np.array([1.0, 0.0])
+    previous_velocity = np.array([0.0, 0.0])
+    current_velocity = np.array([1.0, 0.0])
+
+    if field == "previous_position":
+        previous_position = value
+    elif field == "current_position":
+        current_position = value
+    elif field == "previous_velocity":
+        previous_velocity = value
+    else:
+        current_velocity = value
+
+    frames = [
+        [
+            TrackletAssociationCandidate(
+                "previous",
+                time_s=0.0,
+                position=previous_position,
+                velocity=previous_velocity,
+            )
+        ],
+        [
+            TrackletAssociationCandidate(
+                "current",
+                time_s=1.0,
+                position=current_position,
+                velocity=current_velocity,
+            )
+        ],
+    ]
+    config = TrackletViterbiConfig(
+        motion_weight=1.0,
+        transition_velocity_std=1.0,
+        missed_detection_cost=100.0,
+    )
+
+    with pytest.raises(ValueError, match=expected_name):
+        solve_tracklet_viterbi(frames, config=config)
+
+
+def test_tracklet_motion_accepts_clear_mask_vectors():
+    previous = TrackletAssociationCandidate(
+        "previous",
+        time_s=np.ma.array(0.0, mask=False),
+        position=np.ma.array([0.0, 0.0], mask=[False, False]),
+        velocity=np.ma.array([1.0, 0.0], mask=[False, False]),
+    )
+    current = TrackletAssociationCandidate(
+        "current",
+        time_s=np.ma.array(1.0, mask=False),
+        position=np.ma.array([1.0, 0.0], mask=[False, False]),
+        velocity=np.ma.array([1.0, 0.0], mask=[False, False]),
+    )
+
+    result = solve_tracklet_viterbi(
+        [[previous], [current]],
+        config=TrackletViterbiConfig(
+            motion_weight=1.0,
+            transition_velocity_std=1.0,
+            missed_detection_cost=100.0,
+        ),
+    )
+
+    assert result.path == [previous, current]
+    assert np.isfinite(result.total_cost)
+''',
+              encoding="utf-8",
+          )
+
+          Path(".github/workflows/agent-apply-tracklet-numeric-fix.yml").unlink()
+          PY
+
+      - name: Validate focused behavior
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m compileall -q \
+            src/pyrecest/filters/tracklet_viterbi.py \
+            tests/filters/test_tracklet_viterbi_numeric_inputs.py
+          python - <<'PY'
+          import importlib.util
+          import sys
+          from pathlib import Path
+
+          import numpy as np
+
+          module_path = Path("src/pyrecest/filters/tracklet_viterbi.py")
+          spec = importlib.util.spec_from_file_location("tracklet_viterbi_validation", module_path)
+          module = importlib.util.module_from_spec(spec)
+          sys.modules[spec.name] = module
+          spec.loader.exec_module(module)
+
+          Candidate = module.TrackletAssociationCandidate
+          Config = module.TrackletViterbiConfig
+
+          for invalid in (
+              np.nan,
+              np.complex64(1.0 + 2.0j),
+              np.ma.array(1.0, mask=True),
+          ):
+              try:
+                  Candidate("invalid", time_s=invalid)
+              except ValueError:
+                  pass
+              else:
+                  raise AssertionError(f"invalid time accepted: {invalid!r}")
+
+          previous = Candidate(
+              "previous",
+              time_s=0.0,
+              position=[0.0, 0.0],
+              velocity=np.array([1.0 + 2.0j, 0.0]),
+          )
+          current = Candidate(
+              "current",
+              time_s=1.0,
+              position=[1.0, 0.0],
+              velocity=[1.0, 0.0],
+          )
+          try:
+              module.default_tracklet_transition_cost(
+                  previous,
+                  current,
+                  0,
+                  Config(motion_weight=1.0, transition_velocity_std=1.0),
+              )
+          except ValueError:
+              pass
+          else:
+              raise AssertionError("complex velocity was silently accepted")
+
+          clear = Candidate("clear", time_s=np.ma.array(1.0, mask=False))
+          assert clear.time_s == 1.0
+          PY
+
+      - name: Commit patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            src/pyrecest/filters/tracklet_viterbi.py \
+            tests/filters/test_tracklet_viterbi_numeric_inputs.py \
+            .github/workflows/agent-apply-tracklet-numeric-fix.yml
+          git commit -m "Reject invalid tracklet numeric inputs"
+          git push origin HEAD
