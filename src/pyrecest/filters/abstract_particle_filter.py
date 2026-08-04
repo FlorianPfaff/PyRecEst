@@ -193,13 +193,21 @@ class AbstractParticleFilter(AbstractFilter):
                 f"Noise distribution dimension {noise_distribution.dim} does not match filter-state dimension {self.filter_state.dim}."
             )
 
+        expected_shape = self.filter_state.d.shape
         if function_is_vectorized:
             d_f_applied = f(self.filter_state.d)
         else:
-            self.filter_state = self.filter_state.apply_function(
+            transformed_state = self.filter_state.apply_function(
                 f, function_is_vectorized=False
             )
-            d_f_applied = self.filter_state.d
+            d_f_applied = transformed_state.d
+
+        transformed_shape = getattr(d_f_applied, "shape", None)
+        if transformed_shape != expected_shape:
+            raise ValueError(
+                "Nonlinear transition returned particles with shape "
+                f"{transformed_shape}, expected {expected_shape}."
+            )
 
         n_particles = self.filter_state.w.shape[0]
         if noise_distribution is None:
@@ -219,6 +227,13 @@ class AbstractParticleFilter(AbstractFilter):
 
             updated_particles = _stack_particle_updates(
                 updated_particles, self.filter_state.d
+            )
+
+        updated_shape = getattr(updated_particles, "shape", None)
+        if updated_shape != expected_shape:
+            raise ValueError(
+                "Nonlinear prediction produced particles with shape "
+                f"{updated_shape}, expected {expected_shape}."
             )
 
         self._filter_state.d = updated_particles
