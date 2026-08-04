@@ -1,0 +1,27 @@
+name: Agent source snapshot
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build source snapshot
+        run: |
+          set -euo pipefail
+          tar -czf pyrecest-source-snapshot.tar.gz \
+            src tests pyproject.toml poetry.lock noxfile.py README.md 2>/dev/null || \
+          tar -czf pyrecest-source-snapshot.tar.gz src tests pyproject.toml README.md
+          python -m compileall -q src/pyrecest
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pyrecest-source-snapshot
+          path: pyrecest-source-snapshot.tar.gz
+          if-no-files-found: error
+          retention-days: 1
