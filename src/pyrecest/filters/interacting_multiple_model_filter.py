@@ -469,6 +469,10 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
                 )
             if pyrecest.backend.any(pyrecest.backend.isnan(log_likelihoods)):
                 raise ValueError("log_likelihoods entries must not be NaN.")
+            if pyrecest.backend.any(log_likelihoods == float("inf")):
+                raise ValueError(
+                    "log_likelihoods entries must not be positive infinity."
+                )
             self.latest_model_likelihoods = exp(log_likelihoods)
 
         prior_probabilities = asarray(self.mode_probabilities, dtype=float).reshape(-1)
