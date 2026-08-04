@@ -38,7 +38,9 @@ from pyrecest.distributions.hypertorus.hypertoroidal_grid_distribution import (
 from pyrecest.distributions.nonperiodic.custom_linear_distribution import (
     CustomLinearDistribution,
 )
-from pyrecest.distributions.nonperiodic.gaussian_distribution import GaussianDistribution
+from pyrecest.distributions.nonperiodic.gaussian_distribution import (
+    GaussianDistribution,
+)
 from pyrecest.distributions.nonperiodic.linear_mixture import LinearMixture
 
 

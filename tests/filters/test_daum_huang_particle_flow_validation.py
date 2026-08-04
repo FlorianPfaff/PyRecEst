@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.backend import array, to_numpy
 from pyrecest.filters.daum_huang_particle_filter import (
     gaussian_bridge_moments,
