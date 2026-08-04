@@ -4,19 +4,27 @@ on:
   push:
     branches:
       - agent/fix-support-direction-overflow-20260805
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
+
+concurrency:
+  group: support-direction-overflow-patch
+  cancel-in-progress: true
 
 jobs:
   patch-and-test:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
-      - name: Check out branch
+      - name: Check out fix branch
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: agent/fix-support-direction-overflow-20260805
 
       - name: Set up Python
         uses: actions/setup-python@v5
