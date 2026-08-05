@@ -2,7 +2,6 @@ import numpy as np
 import pytest
 from pyrecest._backend.numpy import linalg
 
-
 _MATRIX = np.diag([4.0, 9.0])
 
 
@@ -16,9 +15,7 @@ _MATRIX = np.diag([4.0, 9.0])
         np.timedelta64(2, "ns"),
         np.datetime64("1970-01-01T00:00:00.000000002"),
         np.array(np.timedelta64(2, "ns"), dtype=object),
-        np.array(
-            np.datetime64("1970-01-01T00:00:00.000000002"), dtype=object
-        ),
+        np.array(np.datetime64("1970-01-01T00:00:00.000000002"), dtype=object),
         "0.5",
         0.5 + 0.0j,
     ],
