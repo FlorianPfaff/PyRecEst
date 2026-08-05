@@ -97,8 +97,13 @@ def _as_integer_index(value, axis, mode_size):
 
 
 def _conjugate_flipped_centered(dense):
-    axes = tuple(range(dense.ndim))
-    return np.conjugate(np.flip(dense, axis=axes))
+    reflected = np.conjugate(dense)
+    for axis, mode_size in enumerate(dense.shape):
+        negative_frequency_indices = (
+            -np.arange(mode_size, dtype=np.intp) + 2 * (mode_size // 2)
+        ) % mode_size
+        reflected = np.take(reflected, negative_frequency_indices, axis=axis)
+    return reflected
 
 
 class TensorTrain:
