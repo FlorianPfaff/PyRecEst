@@ -50,9 +50,7 @@ def test_wrapped_normal_methods_reject_masked_inputs(method_name, kwargs):
 
 def test_wrapped_normal_from_moment_rejects_masked_moment():
     with pytest.raises(ValueError, match="masked"):
-        WrappedNormalDistribution.from_moment(
-            np.ma.array(0.5 + 0.2j, mask=True)
-        )
+        WrappedNormalDistribution.from_moment(np.ma.array(0.5 + 0.2j, mask=True))
 
 
 def test_wrapped_normal_accepts_fully_unmasked_wrappers():
@@ -66,9 +64,7 @@ def test_wrapped_normal_accepts_fully_unmasked_wrappers():
         np.ma.array([0.2], mask=[False]),
         starting_point=np.ma.array(0.1, mask=False),
     )
-    moment = distribution.trigonometric_moment(
-        np.ma.array(2, mask=False)
-    )
+    moment = distribution.trigonometric_moment(np.ma.array(2, mask=False))
     reconstructed = WrappedNormalDistribution.from_moment(
         np.ma.array(0.5 + 0.2j, mask=False)
     )
