@@ -87,3 +87,17 @@ def test_failed_update_preserves_all_idkf_state():
         node.update_linear(array([2.0]), measurement_models=invalid_models)
 
     _assert_idkf_state_unchanged(node, snapshot)
+
+def test_broadcast_process_covariance_is_rejected_without_mutation():
+    node = IdkfNode.from_local_gaussian(
+        1,
+        (array([1.0, 2.0]), eye(2)),
+        (eye(2),),
+    )
+    snapshot = _snapshot_idkf_state(node)
+
+    with pytest.raises(ValueError, match="sys_noise_cov must have shape"):
+        node.predict_linear(eye(2), array([0.4, 0.2]))
+
+    _assert_idkf_state_unchanged(node, snapshot)
+
