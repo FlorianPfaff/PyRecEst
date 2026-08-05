@@ -1,0 +1,157 @@
+name: One-shot replay grid cKDTree overflow fix
+
+on:
+  push:
+    branches:
+      - agent/fix-replay-grid-ckdtree-overflow-20260806
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/fix-replay-grid-ckdtree-overflow-20260806
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Apply focused source and regression patch
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          source_path = Path("src/pyrecest/filters/replay_grid_likelihood.py")
+          source = source_path.read_text(encoding="utf-8")
+          old_source = '''def _nearest_bin_indices(positions: np.ndarray, bin_tree: cKDTree) -> np.ndarray:
+              _, indices = bin_tree.query(positions, k=1)
+              return np.asarray(indices, dtype=int)
+          '''
+          new_source = '''def _nearest_bin_indices(positions: np.ndarray, bin_tree: cKDTree) -> np.ndarray:
+              distances, indices = bin_tree.query(positions, k=1)
+              distances = np.asarray(distances, dtype=float)
+              indices = np.asarray(indices, dtype=int)
+
+              # cKDTree evaluates squared distances internally. For sufficiently
+              # large finite coordinates, that intermediate can overflow and the
+              # query returns ``inf`` together with the sentinel index ``tree.n``.
+              invalid = (
+                  ~np.isfinite(distances)
+                  | (indices < 0)
+                  | (indices >= bin_tree.n)
+              )
+              if not np.any(invalid):
+                  return indices
+
+              # Recompute only failed rows with hypot accumulation, which avoids
+              # overflow from squaring representable large coordinate differences.
+              centers = np.asarray(bin_tree.data, dtype=float)
+              failed_positions = positions[invalid]
+              pairwise_distances = np.zeros(
+                  (failed_positions.shape[0], centers.shape[0]), dtype=float
+              )
+              for coordinate in range(positions.shape[1]):
+                  pairwise_distances = np.hypot(
+                      pairwise_distances,
+                      failed_positions[:, None, coordinate]
+                      - centers[None, :, coordinate],
+                  )
+              indices[invalid] = np.argmin(pairwise_distances, axis=1)
+              return indices
+          '''
+          if source.count(old_source) != 1:
+              raise RuntimeError("Expected nearest-bin implementation was not found exactly once")
+          source_path.write_text(source.replace(old_source, new_source), encoding="utf-8")
+
+          test_path = Path("tests/filters/test_replay_grid_likelihood.py")
+          tests = test_path.read_text(encoding="utf-8")
+          marker = '''    def test_replay_grid_likelihood_rejects_nonfinite_bin_centers(self):
+          '''
+          regression = '''    def test_nearest_grid_lookup_falls_back_when_ckdtree_overflows(self):
+              bin_centers = np.asarray([[0.0, 0.0], [2.0e155, 0.0]])
+              positions = np.asarray([[1.1e155, 0.0]])
+              values = np.asarray([3.0, 7.0])
+
+              result = replay_grid_log_likelihood_values(
+                  positions,
+                  values,
+                  bin_centers,
+                  interpolation="nearest",
+              )
+              log_posterior = particle_position_log_posterior(
+                  positions,
+                  np.asarray([1.0]),
+                  bin_centers,
+              )
+
+              np.testing.assert_allclose(result, [7.0])
+              np.testing.assert_allclose(np.exp(log_posterior), [0.0, 1.0])
+
+          '''
+          if tests.count(marker) != 1:
+              raise RuntimeError("Expected replay-grid test insertion point was not found exactly once")
+          test_path.write_text(tests.replace(marker, regression + marker), encoding="utf-8")
+          PY
+
+      - name: Install focused numerical dependencies
+        run: python -m pip install --disable-pip-version-check "numpy>=2.0,<2.5" "scipy>=1.14,<1.18"
+
+      - name: Validate the regression path
+        shell: bash
+        run: |
+          python -m py_compile \
+            src/pyrecest/filters/replay_grid_likelihood.py \
+            tests/filters/test_replay_grid_likelihood.py
+          python - <<'PY'
+          import importlib.util
+          import sys
+          from pathlib import Path
+
+          import numpy as np
+
+          module_path = Path("src/pyrecest/filters/replay_grid_likelihood.py")
+          spec = importlib.util.spec_from_file_location(
+              "_replay_grid_likelihood_regression", module_path
+          )
+          module = importlib.util.module_from_spec(spec)
+          sys.modules[spec.name] = module
+          spec.loader.exec_module(module)
+
+          bin_centers = np.asarray([[0.0, 0.0], [2.0e155, 0.0]])
+          positions = np.asarray([[1.1e155, 0.0]])
+          values = np.asarray([3.0, 7.0])
+
+          result = module.replay_grid_log_likelihood_values(
+              positions,
+              values,
+              bin_centers,
+              interpolation="nearest",
+          )
+          posterior = module.particle_position_log_posterior(
+              positions,
+              np.asarray([1.0]),
+              bin_centers,
+          )
+          np.testing.assert_allclose(result, [7.0])
+          np.testing.assert_allclose(np.exp(posterior), [0.0, 1.0])
+          PY
+
+      - name: Commit the validated fix
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/one-shot-fix-replay-grid-ckdtree-overflow.yml
+          git add \
+            src/pyrecest/filters/replay_grid_likelihood.py \
+            tests/filters/test_replay_grid_likelihood.py
+          git commit -m "Handle cKDTree overflow in replay grid lookup"
+          git push origin HEAD:agent/fix-replay-grid-ckdtree-overflow-20260806
