@@ -143,6 +143,39 @@ class TestANEES(unittest.TestCase):
 
         self.assertEqual(direct, integer_like)
 
+    def test_chi_square_bounds_reject_invalid_confidence_controls(self):
+        invalid_values = (
+            "0.95",
+            True,
+            np.nan,
+            np.inf,
+            0.0,
+            1.0,
+            np.array([0.95]),
+            np.array([[0.95]]),
+            np.ma.array(0.95, mask=True),
+            0.95 + 0.0j,
+            np.datetime64("2026-01-01"),
+        )
+
+        for value in invalid_values:
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(
+                    ValueError,
+                    r"confidence must be in the open interval \(0, 1\)",
+                ):
+                    chi_square_confidence_bounds(2, confidence=value)
+
+    def test_chi_square_bounds_accept_scalar_confidence_wrappers(self):
+        direct = chi_square_confidence_bounds(2, confidence=0.95)
+        numpy_scalar = chi_square_confidence_bounds(2, confidence=np.float64(0.95))
+        clear_mask = chi_square_confidence_bounds(
+            2, confidence=np.ma.array(0.95, mask=False)
+        )
+
+        self.assertEqual(direct, numpy_scalar)
+        self.assertEqual(direct, clear_mask)
+
 
 class TestSetDistances(unittest.TestCase):
     def test_ospa_distance(self):
