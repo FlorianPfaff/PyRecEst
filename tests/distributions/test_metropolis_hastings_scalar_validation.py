@@ -1,11 +1,13 @@
 import unittest
 
+import numpy as np
 import pyrecest.backend
 
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import array
 from pyrecest.distributions.abstract_manifold_specific_distribution import (
     AbstractManifoldSpecificDistribution,
+    _validate_integer_sample_parameter,
 )
 
 
@@ -49,6 +51,29 @@ class MetropolisHastingsScalarValidationTest(unittest.TestCase):
                 proposal=proposal,
                 start_point=array([0.0]),
             )
+
+    def test_sample_metropolis_hastings_rejects_masked_chain_controls(self):
+        distribution = VectorLogDensityDistribution()
+        controls = {
+            "n": np.ma.array(1, mask=True),
+            "burn_in": np.ma.array(0, mask=True),
+            "skipping": np.ma.array(1, mask=True),
+        }
+
+        for parameter, masked_value in controls.items():
+            kwargs = {"n": 1, "burn_in": 0, "skipping": 1}
+            kwargs[parameter] = masked_value
+            with self.subTest(parameter=parameter):
+                with self.assertRaisesRegex(ValueError, "integer"):
+                    distribution.sample_metropolis_hastings(**kwargs)
+
+    def test_unmasked_scalar_wrapper_remains_valid(self):
+        self.assertEqual(
+            _validate_integer_sample_parameter(
+                np.ma.array(3, mask=False), "n", minimum=1
+            ),
+            3,
+        )
 
 
 if __name__ == "__main__":
