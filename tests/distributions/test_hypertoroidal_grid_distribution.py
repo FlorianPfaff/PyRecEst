@@ -122,6 +122,19 @@ class HypertoroidalGridDistributionTest(unittest.TestCase):
             array([2.0 * pi - 0.2]),
         )
 
+    def test_custom_one_dimensional_grid_accepts_scalar_queries(self):
+        grid = array([0.0, pi, 2.0 * pi - 0.2])
+        grid_values = array([1.0, 2.0, 3.0]) / (4.0 * pi)
+        hgd = HypertoroidalGridDistribution(grid_values, grid=grid)
+
+        scalar_query = 2.0 * pi - 0.3
+        expected_point = array([2.0 * pi - 0.2])
+        expected_value = array([3.0]) / (4.0 * pi)
+
+        npt.assert_allclose(hgd.get_closest_point(scalar_query), expected_point)
+        npt.assert_allclose(hgd.value_of_closest(scalar_query), expected_value)
+        npt.assert_allclose(hgd.pdf(scalar_query), expected_value)
+
     def test_approx_vmmixture_t2(self):
         dist = HypertoroidalMixture(
             [
