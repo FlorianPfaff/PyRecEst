@@ -52,6 +52,13 @@ def _wrapped_exponential_density(rate, distance):
     return normalization * exp(-rate * distance)
 
 
+def _first_order_moment_factor(rate, signed_order):
+    """Evaluate ``1 / (1 + 1j * signed_order / rate)`` stably."""
+    if bool(all(isfinite(rate))) and bool(all(rate < 1.0)):
+        return rate / (rate + 1j * signed_order)
+    return 1.0 / (1.0 + 1j * signed_order / rate)
+
+
 class WrappedLaplaceDistribution(AbstractCircularDistribution):
     """Wrapped Laplace distribution on the circle.
 
@@ -73,11 +80,13 @@ class WrappedLaplaceDistribution(AbstractCircularDistribution):
         if isinstance(n, bool) or not isinstance(n, Integral):
             raise ValueError("n must be an integer.")
         n = int(n)
-        return (
-            1
-            / (1 - 1j * n / self.lambda_ / self.kappa)
-            / (1 + 1j * n / (self.lambda_ / self.kappa))
-        )
+        if n == 0:
+            return self.lambda_ * 0.0 + 1.0
+        positive_rate = self.lambda_ * self.kappa
+        negative_rate = self.lambda_ / self.kappa
+        return _first_order_moment_factor(
+            positive_rate, -n
+        ) * _first_order_moment_factor(negative_rate, n)
 
     def pdf(self, xs):
         xs = asarray(xs)
