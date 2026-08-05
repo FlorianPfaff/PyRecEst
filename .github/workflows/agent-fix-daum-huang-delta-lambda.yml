@@ -1,0 +1,122 @@
+name: Fix Daum-Huang delta validation
+
+on:
+  push:
+    branches:
+      - agent/fix-daum-huang-delta-lambda-validation
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/fix-daum-huang-delta-lambda-validation
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Apply direct implementation and regression test
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          source_path = Path("src/pyrecest/filters/daum_huang_particle_filter.py")
+          source = source_path.read_text()
+          old_validation = '''    if delta_lambda < 0.0:
+                  raise ValueError("delta_lambda must be nonnegative.")
+          '''
+          new_validation = '''    delta_lambda = _validate_nonnegative_float(
+                  delta_lambda, "delta_lambda"
+              )
+          '''
+          if source.count(old_validation) != 2:
+              raise RuntimeError("expected two Daum-Huang delta validation sites")
+          source_path.write_text(source.replace(old_validation, new_validation))
+
+          test_path = Path("tests/filters/test_daum_huang_particle_filter.py")
+          tests = test_path.read_text()
+          marker = '''    def test_edh_filter_linear_update_matches_bridge_moments(self):
+          '''
+          regression = '''    def test_bridge_helpers_reject_invalid_delta_lambda(self):
+              particles = array([[-1.0], [1.0]])
+              mean, covariance = _mean_and_cov(particles)
+              measurement_matrix = array([[1.0]])
+              measurement = array([0.25])
+              measurement_noise = array([[0.75]])
+              calls = {
+                  "affine_increment": lambda delta: gaussian_flow_affine_increment(
+                      particles,
+                      mean,
+                      covariance,
+                      measurement_matrix,
+                      measurement,
+                      measurement_noise,
+                      delta,
+                      jitter=0.0,
+                  ),
+                  "bridge_moments": lambda delta: gaussian_bridge_moments(
+                      mean,
+                      covariance,
+                      measurement_matrix,
+                      measurement,
+                      measurement_noise,
+                      delta,
+                      jitter=0.0,
+                  ),
+              }
+              invalid_values = (
+                  -1.0,
+                  np.nan,
+                  np.inf,
+                  -np.inf,
+                  True,
+                  np.array([0.5]),
+                  np.ma.array(0.5, mask=True),
+              )
+
+              for name, call in calls.items():
+                  for invalid_value in invalid_values:
+                      with self.subTest(name=name, delta_lambda=invalid_value):
+                          with self.assertRaisesRegex(
+                              ValueError,
+                              "delta_lambda must be finite and nonnegative",
+                          ):
+                              call(invalid_value)
+
+          '''
+          if tests.count(marker) != 1:
+              raise RuntimeError("could not locate Daum-Huang test insertion point")
+          if "test_bridge_helpers_reject_invalid_delta_lambda" in tests:
+              raise RuntimeError("regression test already exists")
+          test_path.write_text(tests.replace(marker, regression + marker))
+          PY
+
+          rm .github/workflows/agent-fix-daum-huang-delta-lambda.yml
+          python -m py_compile \
+            src/pyrecest/filters/daum_huang_particle_filter.py \
+            tests/filters/test_daum_huang_particle_filter.py
+
+      - name: Install package and test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e . pytest
+
+      - name: Run focused regression suite
+        run: python -m pytest -q tests/filters/test_daum_huang_particle_filter.py
+
+      - name: Commit validated fix
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Validate Daum-Huang likelihood increments"
+          git push origin HEAD:agent/fix-daum-huang-delta-lambda-validation
