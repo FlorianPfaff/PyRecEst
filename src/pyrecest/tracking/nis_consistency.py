@@ -295,7 +295,9 @@ def _contains_masked_values(value: Any) -> bool:
 
 def _positive_integer(value: Any, name: str) -> int:
     message = f"{name} must be a positive integer"
-    if isinstance(value, (bool, np.bool_, np.datetime64, np.timedelta64)):
+    if _contains_masked_values(value) or isinstance(
+        value, (bool, np.bool_, np.datetime64, np.timedelta64)
+    ):
         raise ValueError(message)
     try:
         array = np.asarray(value)
@@ -314,7 +316,10 @@ def _positive_integer(value: Any, name: str) -> int:
 
 def _validate_probability(value: Any, name: str) -> float:
     message = f"{name} must be a finite scalar in (0, 1)"
-    if isinstance(value, (bool, np.bool_, str, bytes, bytearray, np.datetime64, np.timedelta64)):
+    if _contains_masked_values(value) or isinstance(
+        value,
+        (bool, np.bool_, str, bytes, bytearray, np.datetime64, np.timedelta64),
+    ):
         raise ValueError(message)
     try:
         array = np.asarray(value)
