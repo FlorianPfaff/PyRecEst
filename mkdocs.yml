@@ -36,9 +36,9 @@ nav:
       - Representation Conversion: representation-conversion.md
       - Model Objects: models.md
       - Public Protocols: protocols.md
-      - Protocol Capability Matrix: protocol-capability-matrix.md
       - Custom Distribution Extensions: custom-distribution.md
       - Custom Filter Extensions: custom-filter.md
+      - Robust Linear-Gaussian MAP Smoothing: robust-linear-gaussian-map-smoothing.md
   - Tutorials:
       - Overview: tutorials/index.md
       - Use a Distribution: tutorials/use-a-distribution.md
