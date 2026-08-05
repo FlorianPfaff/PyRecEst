@@ -55,7 +55,7 @@ class AbstractGridDistribution(AbstractDistributionType):
         self.enforce_pdf_nonnegative = enforce_pdf_nonnegative
         # Overwrite with more descriptive parameterization
         self.grid_density_description = {
-            "n_grid_values": grid_values.shape[0],
+            "n_grid_values": prod(grid_values.shape),
             "grid_type": grid_type,
         }
 
@@ -67,7 +67,7 @@ class AbstractGridDistribution(AbstractDistributionType):
     @property
     def n_grid_points(self):
         # Overwrite if grid_values contains values that are not used as grid values
-        return self.grid_values.shape[0]
+        return prod(self.grid_values.shape)
 
     @abstractmethod
     def get_closest_point(self, xs):
