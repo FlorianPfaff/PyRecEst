@@ -1,5 +1,7 @@
-from numbers import Integral
+import operator
 from typing import Union
+
+import numpy as np
 
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import all as backend_all
@@ -19,6 +21,45 @@ from pyrecest.exceptions import ShapeError, ValidationError
 
 from .abstract_ellipsoidal_ball_distribution import AbstractEllipsoidalBallDistribution
 from .abstract_uniform_distribution import AbstractUniformDistribution
+
+
+def _validate_positive_sample_count(value) -> int:
+    """Return an exact positive scalar integer sample count."""
+    message = "n must be a positive integer."
+    try:
+        if np.ma.is_masked(value):
+            raise ValueError(message)
+    except (TypeError, ValueError):
+        raise ValueError(message) from None
+
+    shape = getattr(value, "shape", None)
+    if shape is not None:
+        try:
+            if tuple(shape) != ():
+                raise ValueError(message)
+        except TypeError as exc:
+            raise ValueError(message) from exc
+
+    dtype = getattr(value, "dtype", None)
+    dtype_kind = getattr(dtype, "kind", None)
+    dtype_name = str(dtype).lower() if dtype is not None else ""
+    if (
+        isinstance(value, (bool, np.bool_))
+        or dtype_kind in {"b", "M", "m"}
+        or "bool" in dtype_name
+        or "datetime" in dtype_name
+        or "timedelta" in dtype_name
+    ):
+        raise ValueError(message)
+
+    try:
+        result = operator.index(value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(message) from exc
+    result = int(result)
+    if result <= 0:
+        raise ValueError(message)
+    return result
 
 
 class EllipsoidalBallUniformDistribution(
@@ -129,15 +170,7 @@ class EllipsoidalBallUniformDistribution(
         :param n: Number of samples to generate.
         :returns: Generated samples.
         """
-        dtype = getattr(n, "dtype", None)
-        if (
-            isinstance(n, bool)
-            or getattr(dtype, "kind", None) in ("M", "m")
-            or not isinstance(n, Integral)
-            or int(n) <= 0
-        ):
-            raise ValueError("n must be a positive integer.")
-        n = int(n)
+        n = _validate_positive_sample_count(n)
         if self.dim == 0:
             return zeros((n, 0))
 
