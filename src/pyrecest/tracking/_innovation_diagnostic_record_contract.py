@@ -8,6 +8,9 @@ from typing import Any
 import numpy as np
 
 from . import innovation_diagnostics as _diagnostics
+from ._hypothesis_replay_stable_norm import (
+    install_hypothesis_replay_stable_norm_contract,
+)
 
 # pylint: disable=protected-access
 
@@ -121,7 +124,9 @@ def diagnostic_from_record(
 
 
 def install_innovation_diagnostic_record_contract() -> None:
-    """Install round-trip-safe record deserialization."""
+    """Install round-trip-safe records and stable replay-vector norms."""
+
+    install_hypothesis_replay_stable_norm_contract()
 
     marker = "_pyrecest_round_trip_record_contract"
     setattr(diagnostic_from_record, marker, True)
