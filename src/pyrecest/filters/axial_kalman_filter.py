@@ -61,7 +61,9 @@ class AxialKalmanFilter(AbstractAxialFilter):
         if not isinstance(distribution, GaussianDistribution):
             raise ValueError(f"{name} must be a GaussianDistribution.")
         if distribution.mu.shape not in ((2,), (4,)):
-            raise ValueError(f"{name} mean must have shape (2,) or (4,).")
+            raise ValueError(
+                f"{name} mean must be a one-dimensional vector of length 2 or 4."
+            )
         if not bool(all(isfinite(distribution.mu))):
             raise ValueError(f"{name} mean must be finite.")
         if not bool(all(isfinite(distribution.C))):
