@@ -1,0 +1,140 @@
+name: Apply chi-square confidence validation fix
+
+on:
+  push:
+    branches:
+      - agent/validate-chi-square-confidence
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.event.head_commit.message != 'Validate chi-square confidence controls'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out patch branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/validate-chi-square-confidence
+          fetch-depth: 0
+
+      - name: Patch confidence validation and regression coverage
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          source_path = Path("src/pyrecest/utils/metrics.py")
+          source_text = source_path.read_text(encoding="utf-8")
+          old_source = '''    n_samples = _as_positive_int(n_samples, "n_samples")
+              if not 0.0 < float(confidence) < 1.0:
+                  raise ValueError("confidence must be in the open interval (0, 1)")
+              alpha = 1.0 - float(confidence)
+          '''
+          # Keep the replacement strings visually aligned with the source file.
+          old_source = old_source.replace("              ", "    ")
+          new_source = '''    n_samples = _as_positive_int(n_samples, "n_samples")
+              confidence_message = "confidence must be in the open interval (0, 1)"
+              if np.ma.isMaskedArray(confidence) and bool(
+                  np.any(np.ma.getmaskarray(confidence))
+              ):
+                  raise ValueError(confidence_message)
+              try:
+                  confidence_array = np.asarray(confidence)
+              except (TypeError, ValueError, OverflowError, RuntimeError) as exc:
+                  raise ValueError(confidence_message) from exc
+              if confidence_array.shape != () or confidence_array.dtype.kind in "bUScmM":
+                  raise ValueError(confidence_message)
+              confidence_scalar = confidence_array.item()
+              if isinstance(
+                  confidence_scalar,
+                  (
+                      bool,
+                      np.bool_,
+                      str,
+                      bytes,
+                      bytearray,
+                      complex,
+                      np.complexfloating,
+                      np.datetime64,
+                      np.timedelta64,
+                  ),
+              ):
+                  raise ValueError(confidence_message)
+              try:
+                  confidence = float(confidence_scalar)
+              except (TypeError, ValueError, OverflowError) as exc:
+                  raise ValueError(confidence_message) from exc
+              if not np.isfinite(confidence) or not 0.0 < confidence < 1.0:
+                  raise ValueError(confidence_message)
+              alpha = 1.0 - confidence
+          '''
+          new_source = new_source.replace("              ", "    ")
+          if source_text.count(old_source) != 1:
+              raise SystemExit("expected chi-square confidence block not found exactly once")
+          source_path.write_text(source_text.replace(old_source, new_source, 1), encoding="utf-8")
+
+          test_path = Path("tests/test_metrics.py")
+          test_text = test_path.read_text(encoding="utf-8")
+          test_anchor = '''    def test_chi_square_bounds_accept_integer_like_scalars(self):
+              direct = chi_square_confidence_bounds(2, n_samples=3)
+              integer_like = chi_square_confidence_bounds(np.array(2.0), n_samples=3.0)
+          
+              self.assertEqual(direct, integer_like)
+          '''
+          test_anchor = test_anchor.replace("              ", "        ")
+          test_replacement = test_anchor + '''
+              def test_chi_square_bounds_reject_invalid_confidence_controls(self):
+                  invalid_values = (
+                      "0.95",
+                      True,
+                      np.nan,
+                      np.inf,
+                      0.0,
+                      1.0,
+                      np.array([0.95]),
+                      np.array([[0.95]]),
+                      np.ma.array(0.95, mask=True),
+                      0.95 + 0.0j,
+                      np.datetime64("2026-01-01"),
+                  )
+          
+                  for value in invalid_values:
+                      with self.subTest(value=value):
+                          with self.assertRaisesRegex(
+                              ValueError,
+                              r"confidence must be in the open interval \\(0, 1\\)",
+                          ):
+                              chi_square_confidence_bounds(2, confidence=value)
+          
+              def test_chi_square_bounds_accept_scalar_confidence_wrappers(self):
+                  direct = chi_square_confidence_bounds(2, confidence=0.95)
+                  numpy_scalar = chi_square_confidence_bounds(
+                      2, confidence=np.float64(0.95)
+                  )
+                  clear_mask = chi_square_confidence_bounds(
+                      2, confidence=np.ma.array(0.95, mask=False)
+                  )
+          
+                  self.assertEqual(direct, numpy_scalar)
+                  self.assertEqual(direct, clear_mask)
+          '''.replace("              ", "    ")
+          if test_text.count(test_anchor) != 1:
+              raise SystemExit("expected chi-square test anchor not found exactly once")
+          test_path.write_text(
+              test_text.replace(test_anchor, test_replacement, 1), encoding="utf-8"
+          )
+          PY
+
+      - name: Validate patch
+        run: |
+          python -m py_compile src/pyrecest/utils/metrics.py tests/test_metrics.py
+          git diff --check
+
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/pyrecest/utils/metrics.py tests/test_metrics.py
+          git commit -m "Validate chi-square confidence controls"
+          git push origin HEAD:agent/validate-chi-square-confidence
