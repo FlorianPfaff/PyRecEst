@@ -14,12 +14,16 @@ from pyrecest.backend import (
     all,
     amax,
     amin,
+    any,
     arange,
     array,
     diag,
+    exp,
     expand_dims,
     int32,
     int64,
+    isfinite,
+    log,
     logical_and,
     maximum,
     minimum,
@@ -35,6 +39,7 @@ from pyrecest.backend import (
     where,
     zeros_like,
 )
+from pyrecest.backend import max as backend_max
 from pyrecest.distributions.abstract_manifold_specific_distribution import (
     AbstractManifoldSpecificDistribution,
 )
@@ -296,13 +301,7 @@ class EuclideanBoxParticleFilter(AbstractParticleFilter, EuclideanFilterMixin):
             likelihood_values = where(ratios > 0, likelihood_values, zeros_like(ratios))
             ratios = ratios * likelihood_values
 
-        new_weights = predicted.w * ratios
-        if bool(sum(new_weights) <= 0):
-            raise ValueError(
-                "All contracted boxes have zero likelihood; check the contractor, "
-                "measurement, or noise bounds."
-            )
-        new_weights = new_weights / sum(new_weights)
+        new_weights = self._normalize_posterior_weights(predicted.w, ratios)
 
         self._filter_state = LinearBoxParticleDistribution(
             safe_lower,
@@ -311,6 +310,43 @@ class EuclideanBoxParticleFilter(AbstractParticleFilter, EuclideanFilterMixin):
         )
         self.resample_if_needed()
         return self
+
+    @staticmethod
+    def _normalize_posterior_weights(prior_weights, likelihood_ratios):
+        """Normalize prior-times-likelihood products without underflow."""
+        likelihood_ratios = array(likelihood_ratios)
+        if likelihood_ratios.shape != prior_weights.shape:
+            raise ValueError("Likelihood must return one value per box.")
+        if not bool(all(isfinite(likelihood_ratios))):
+            raise ValueError("Likelihood ratios must be finite.")
+        if not bool(all(likelihood_ratios >= 0)):
+            raise ValueError("Likelihood ratios must be nonnegative.")
+
+        positive_support = logical_and(prior_weights > 0, likelihood_ratios > 0)
+        if not bool(any(positive_support)):
+            raise ValueError(
+                "All contracted boxes have zero likelihood; check the contractor, "
+                "measurement, or noise bounds."
+            )
+
+        safe_prior_weights = where(
+            positive_support, prior_weights, ones_like(prior_weights)
+        )
+        safe_likelihood_ratios = where(
+            positive_support, likelihood_ratios, ones_like(likelihood_ratios)
+        )
+        log_unnormalized_weights = where(
+            positive_support,
+            log(safe_prior_weights) + log(safe_likelihood_ratios),
+            float("-inf"),
+        )
+        max_log_weight = backend_max(log_unnormalized_weights)
+        scaled_weights = where(
+            positive_support,
+            exp(log_unnormalized_weights - max_log_weight),
+            zeros_like(prior_weights),
+        )
+        return scaled_weights / sum(scaled_weights)
 
     def update_nonlinear_using_likelihood(self, likelihood, measurement=None):
         """Fallback update using a point likelihood at box centers."""
