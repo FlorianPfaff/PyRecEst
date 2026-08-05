@@ -1,4 +1,5 @@
 import unittest
+import warnings
 
 import numpy as np
 
@@ -37,6 +38,14 @@ class TestSE2PWNFromSamplesValidation(unittest.TestCase):
             with self.subTest(dtype=getattr(samples, "dtype", None)):
                 with self.assertRaisesRegex(ValueError, "finite real numeric"):
                     SE2PWNDistribution.from_samples(samples)
+
+    def test_rejects_nested_mask_without_numpy_conversion_warning(self):
+        samples = [[0.0, 0.0, 0.0], [np.ma.masked, 1.0, 1.0]]
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            with self.assertRaisesRegex(ValueError, "finite real numeric"):
+                SE2PWNDistribution.from_samples(samples)
 
     def test_rejects_unidentifiable_zero_resultant_angle_samples(self):
         samples = np.column_stack(
