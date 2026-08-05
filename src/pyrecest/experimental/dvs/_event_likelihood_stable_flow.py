@@ -8,10 +8,12 @@ import numpy as np
 
 from . import event_likelihood as _event_likelihood
 
+# pylint: disable=protected-access
+
 _MARKER = "_pyrecest_overflow_safe_normal_flow_activities"
 
 
-def _stable_euclidean_norm(values: np.ndarray, *, axis=None) -> np.ndarray:
+def _stable_euclidean_norm(values: np.ndarray, *, axis=None):
     """Return Euclidean norms without overflowing intermediate squares."""
 
     return np.hypot.reduce(np.abs(values), axis=axis, initial=0.0)
