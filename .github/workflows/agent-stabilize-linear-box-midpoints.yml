@@ -1,9 +1,13 @@
 name: Apply linear box midpoint stability fix
 
 on:
-  push:
+  pull_request:
     branches:
-      - agent/stabilize-linear-box-midpoints-20260805
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
 
 permissions:
   contents: write
