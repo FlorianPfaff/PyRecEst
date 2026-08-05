@@ -89,4 +89,7 @@ class CircularUniformDistribution(
 
         starting_point = _as_finite_real_scalar(starting_point, "starting_point")
         xa = _as_finite_real_array(xa, "xa")
-        return mod(xa - starting_point, 2.0 * pi) / (2.0 * pi)
+        period = 2.0 * pi
+        wrapped_xa = mod(xa, period)
+        wrapped_starting_point = mod(starting_point, period)
+        return mod(wrapped_xa - wrapped_starting_point, period) / period
