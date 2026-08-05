@@ -72,7 +72,10 @@ def unit_interval_scalar(value: object, *, name: str) -> float:
     """Validate a finite non-boolean scalar in ``[0, 1]``."""
 
     message = f"{name} must be a finite scalar in [0, 1]"
-    if isinstance(value, (bool, np.bool_, str, bytes, bytearray)):
+    if (
+        isinstance(value, (bool, np.bool_, str, bytes, bytearray))
+        or _contains_masked_values(value)
+    ):
         raise ValueError(message)
     try:
         array = np.asarray(value)
@@ -88,6 +91,8 @@ def unit_interval_scalar(value: object, *, name: str) -> float:
 
 def _identity_array(values: object, upper_bound: int, name: str) -> np.ndarray:
     message = f"{name} must be a one-dimensional integer array"
+    if _contains_masked_values(values):
+        raise ValueError(message)
     try:
         array = np.asarray(values)
     except (TypeError, ValueError, OverflowError) as exc:
@@ -111,19 +116,22 @@ def _identity_array(values: object, upper_bound: int, name: str) -> np.ndarray:
 def _similarity_matrix(
     values: object, expected_shape: tuple[int, int], name: str
 ) -> np.ndarray:
+    message = f"{name} must be a finite numeric matrix"
+    if _contains_masked_values(values):
+        raise ValueError(message)
     try:
         raw = np.asarray(values)
     except (TypeError, ValueError, OverflowError) as exc:
-        raise ValueError(f"{name} must be a finite numeric matrix") from exc
+        raise ValueError(message) from exc
     if raw.size == 0 and 0 in expected_shape:
         result = np.zeros(expected_shape, dtype=float)
     else:
         if raw.dtype.kind == "c":
-            raise ValueError(f"{name} must be a finite numeric matrix")
+            raise ValueError(message)
         try:
             result = np.array(values, dtype=float, copy=True)
         except (TypeError, ValueError, OverflowError) as exc:
-            raise ValueError(f"{name} must be a finite numeric matrix") from exc
+            raise ValueError(message) from exc
     if result.shape != expected_shape:
         raise ValueError(f"{name} must have shape {expected_shape}, got {result.shape}")
     if not np.all(np.isfinite(result)) or np.any(result < 0.0) or np.any(result > 1.0):
@@ -134,7 +142,7 @@ def _similarity_matrix(
 
 def _nonnegative_int(value: object, *, name: str) -> int:
     message = f"{name} must be a non-negative integer"
-    if isinstance(value, (bool, np.bool_)):
+    if isinstance(value, (bool, np.bool_)) or _contains_masked_values(value):
         raise ValueError(message)
     try:
         array = np.asarray(value)
@@ -146,3 +154,12 @@ def _nonnegative_int(value: object, *, name: str) -> int:
     if result < 0:
         raise ValueError(message)
     return result
+
+
+def _contains_masked_values(value: object) -> bool:
+    if not np.ma.isMaskedArray(value):
+        return False
+    try:
+        return bool(np.any(np.ma.getmaskarray(value)))
+    except (TypeError, ValueError):
+        return True
