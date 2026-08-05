@@ -33,18 +33,47 @@ class RectangleCountSimulation:
     uniform_probabilities: dict[str, float]
 
 
+def _validated_edge_labels(edge_labels: list[str]) -> np.ndarray:
+    """Return one-dimensional, recognized rectangle edge labels."""
+
+    if np.ma.is_masked(edge_labels):
+        raise ValueError("edge_labels must contain only recognized rectangle edges")
+    try:
+        labels = np.asarray(edge_labels, dtype=object)
+    except (TypeError, ValueError, RuntimeError) as exc:
+        raise ValueError(
+            "edge_labels must contain only recognized rectangle edges"
+        ) from exc
+    if labels.ndim != 1:
+        raise ValueError("edge_labels must be one-dimensional")
+
+    normalized: list[str] = []
+    for label in labels.tolist():
+        if not isinstance(label, (str, np.str_)):
+            raise ValueError(
+                "edge_labels must contain only recognized rectangle edges"
+            )
+        normalized_label = str(label)
+        if normalized_label not in EDGE_ORDER:
+            raise ValueError(
+                "edge_labels must contain only recognized rectangle edges"
+            )
+        normalized.append(normalized_label)
+    return np.asarray(normalized, dtype=str)
+
+
 def summarize_edge_counts(
     edge_labels: list[str], point_counts: np.ndarray
 ) -> dict[str, int]:
     """Aggregate per-contour-sample counts by edge label."""
-    labels = np.array(edge_labels)
+    labels = _validated_edge_labels(edge_labels)
     return {edge: int(np.sum(point_counts[labels == edge])) for edge in EDGE_ORDER}
 
 
 def _edge_probabilities(
     edge_labels: list[str], point_weights: np.ndarray
 ) -> dict[str, float]:
-    labels = np.array(edge_labels)
+    labels = _validated_edge_labels(edge_labels)
     weights = np.asarray(point_weights, dtype=float)
     if weights.shape != labels.shape:
         raise ValueError("point_weights must contain one value per edge label")
