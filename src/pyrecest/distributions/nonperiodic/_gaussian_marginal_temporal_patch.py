@@ -13,6 +13,9 @@ _DIMENSION_ERROR = "dimensions must contain valid zero-based integer indices"
 def _normalize_marginal_dimensions(dimensions):
     """Return validation candidates and an iterable accepted by the core method."""
 
+    if np.ma.isMaskedArray(dimensions) and bool(np.ma.getmaskarray(dimensions).any()):
+        raise ValueError(f"{_DIMENSION_ERROR}; got {dimensions}.")
+
     if isinstance(dimensions, (np.datetime64, np.timedelta64, Integral)):
         return [dimensions], dimensions
 
