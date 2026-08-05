@@ -50,6 +50,34 @@ def _as_positive_integer(value: Any, name: str) -> int:
     return int(scalar)
 
 
+def _scale_safe_mean(values: np.ndarray) -> float:
+    """Return the arithmetic mean without overflowing a representable result."""
+
+    scale = float(np.max(np.abs(values), initial=0.0))
+    if scale == 0.0:
+        return 0.0
+    return float(scale * np.mean(values / scale))
+
+
+def _scale_safe_rmse(values: np.ndarray) -> float:
+    """Return root mean square without squaring unscaled magnitudes."""
+
+    scale = float(np.max(np.abs(values), initial=0.0))
+    if scale == 0.0:
+        return 0.0
+    scaled = values / scale
+    return float(scale * np.sqrt(np.mean(scaled * scaled)))
+
+
+def _scale_safe_percentile(values: np.ndarray, percentile: float) -> float:
+    """Return a percentile after positive scale normalization."""
+
+    scale = float(np.max(np.abs(values), initial=0.0))
+    if scale == 0.0:
+        return 0.0
+    return float(scale * np.percentile(values / scale, percentile))
+
+
 def build_diagnostic_summary(
     records: Sequence[Record],
     *,
@@ -193,8 +221,8 @@ def covariance_inflation_summary(
     return {
         "count": int(len(inflated)),
         "by_source": dict(sorted(by_source.items())),
-        "mean_scale": float(np.mean(scales)),
-        "p95_scale": float(np.percentile(scales, 95)),
+        "mean_scale": _scale_safe_mean(scales),
+        "p95_scale": _scale_safe_percentile(scales, 95),
         "max_scale": float(np.max(scales)),
         "top_scaled_updates": [_json_record(record) for _, record in inflated[:top_n]],
     }
@@ -257,12 +285,12 @@ def worst_time_windows(
                 "time_start_s": float(start),
                 "time_end_s": float(start + window_s),
                 "count": int(errors.size),
-                "rmse": float(np.sqrt(np.mean(errors**2))),
-                "mae": float(np.mean(np.abs(errors))),
-                "p95": float(np.percentile(errors, 95)),
+                "rmse": _scale_safe_rmse(errors),
+                "mae": _scale_safe_mean(np.abs(errors)),
+                "p95": _scale_safe_percentile(errors, 95),
                 "max": float(np.max(errors)),
                 "mean_residual": (
-                    None if residuals.size == 0 else float(np.mean(residuals))
+                    None if residuals.size == 0 else _scale_safe_mean(residuals)
                 ),
                 "covariance_inflation_count": (
                     int(np.sum(scales > 1.0)) if scales.size else 0
