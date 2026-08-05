@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - agent/stabilize-mode-rbpf-covariance-symmetrization-20260805
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: write
