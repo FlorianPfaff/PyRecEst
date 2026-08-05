@@ -40,4 +40,5 @@ def test_fixed_lag_recovery_after_committed_gap_uses_missing_previous_context():
 
     assert full.path == [first, None, recovered]
     assert fixed_lag.path == full.path
+    assert fixed_lag.missed_detection_count == 1
     assert fixed_lag.total_cost == full.total_cost == 1.0
