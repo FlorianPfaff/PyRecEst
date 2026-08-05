@@ -12,9 +12,19 @@ from ..abstract_se2_distribution import AbstractSE2Distribution
 from .partially_wrapped_normal_distribution import PartiallyWrappedNormalDistribution
 
 
+def _contains_masked_values(value):
+    if _np.ma.is_masked(value):
+        return True
+    try:
+        values = _np.asarray(value, dtype=object).reshape(-1)
+    except (TypeError, ValueError, RuntimeError):
+        return False
+    return any(_np.ma.is_masked(item) for item in values)
+
+
 def _as_se2_samples(samples):
     """Return finite real SE(2) samples with shape ``(n, 3)``."""
-    if _np.ma.is_masked(samples):
+    if _contains_masked_values(samples):
         raise ValueError("samples must contain finite real numeric values")
     try:
         sample_array = _np.asarray(samples)
