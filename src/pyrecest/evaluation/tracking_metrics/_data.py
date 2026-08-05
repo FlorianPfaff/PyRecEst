@@ -116,6 +116,8 @@ def _similarity_matrix(
     except (TypeError, ValueError, OverflowError) as exc:
         raise ValueError(f"{name} must be a finite numeric matrix") from exc
     if raw.size == 0 and 0 in expected_shape:
+        if raw.shape not in (expected_shape, (0,)):
+            raise ValueError(f"{name} must have shape {expected_shape}, got {raw.shape}")
         result = np.zeros(expected_shape, dtype=float)
     else:
         if raw.dtype.kind == "c":
