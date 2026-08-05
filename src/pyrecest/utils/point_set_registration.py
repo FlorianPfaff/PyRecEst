@@ -311,6 +311,14 @@ def estimate_transform(  # pylint: disable=too-many-locals
     if model == "affine":
         design_matrix = concatenate([source, ones((n_points, 1))], axis=1)
         weighted_design_matrix = design_matrix * sqrt(normalized_weights)[:, None]
+        design_rank = linalg.matrix_rank(weighted_design_matrix)
+        if hasattr(design_rank, "item"):
+            design_rank = design_rank.item()
+        if int(design_rank) < dim + 1:
+            raise ValueError(
+                "The 'affine' model is underdetermined because the positive-weight "
+                "source points are not affinely independent."
+            )
         weighted_targets = target * sqrt(normalized_weights)[:, None]
         coefficients = linalg.pinv(weighted_design_matrix) @ weighted_targets
         matrix = coefficients[:dim, :].T
