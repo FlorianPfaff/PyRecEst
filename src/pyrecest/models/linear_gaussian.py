@@ -18,6 +18,7 @@ from pyrecest.backend import (
     zeros,
 )
 from pyrecest.distributions import GaussianDistribution
+from pyrecest.numerics import assert_covariance_matrix
 
 _INVALID_DIMENSION_SCALAR_TYPES = (bool, str, bytes, bytearray)
 _NOISE_COV_UNSET = object()
@@ -140,6 +141,12 @@ def _as_square(value, name):
     return arr
 
 
+def _as_covariance(value, name):
+    arr = _as_square(value, name)
+    assert_covariance_matrix(arr, name=name)
+    return arr
+
+
 def _as_identity_noise_covariance(value, dim):
     arr = asarray(value)
     if ndim(arr) == 0:
@@ -198,7 +205,7 @@ class LinearGaussianTransitionModel:
             type(self).__name__,
         )
         self.matrix = backend_copy(_as_matrix(matrix, "matrix"))
-        self.noise_cov = backend_copy(_as_square(noise_cov, "noise_cov"))
+        self.noise_cov = backend_copy(_as_covariance(noise_cov, "noise_cov"))
         self.predicted_dim, self.state_dim = _shape(self.matrix)
         if _shape(self.noise_cov) != (self.predicted_dim, self.predicted_dim):
             raise ValueError("noise_cov has incompatible shape")
@@ -234,7 +241,7 @@ class LinearGaussianTransitionModel:
         return result
 
     def predict_covariance(self, state_covariance):
-        state_covariance = _as_square(state_covariance, "state_covariance")
+        state_covariance = _as_covariance(state_covariance, "state_covariance")
         if _shape(state_covariance) != (self.state_dim, self.state_dim):
             raise ValueError("state_covariance has incompatible shape")
         return (
@@ -294,7 +301,7 @@ class LinearGaussianMeasurementModel:
             type(self).__name__,
         )
         self.matrix = backend_copy(_as_matrix(matrix, "matrix"))
-        self.noise_cov = backend_copy(_as_square(noise_cov, "noise_cov"))
+        self.noise_cov = backend_copy(_as_covariance(noise_cov, "noise_cov"))
         self.measurement_dim, self.state_dim = _shape(self.matrix)
         if _shape(self.noise_cov) != (self.measurement_dim, self.measurement_dim):
             raise ValueError("noise_cov has incompatible shape")
@@ -318,7 +325,7 @@ class LinearGaussianMeasurementModel:
         return matvec(self.matrix, state_mean)
 
     def innovation_covariance(self, state_covariance):
-        state_covariance = _as_square(state_covariance, "state_covariance")
+        state_covariance = _as_covariance(state_covariance, "state_covariance")
         if _shape(state_covariance) != (self.state_dim, self.state_dim):
             raise ValueError("state_covariance has incompatible shape")
         return (
