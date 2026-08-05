@@ -3,6 +3,7 @@ from numbers import Integral
 
 import numpy as np
 from pyrecest.backend import (
+    abs as backend_abs,
     all,
     arctan2,
     array,
@@ -10,10 +11,12 @@ from pyrecest.backend import (
     cos,
     exp,
     isfinite,
+    maximum,
     mod,
     pi,
     sin,
     tanh,
+    where,
 )
 
 from .abstract_circular_distribution import AbstractCircularDistribution
@@ -131,11 +134,20 @@ class WrappedCauchyDistribution(AbstractCircularDistribution):
         # The usual rho = exp(-gamma) expression subtracts rho from one.
         # For tiny positive gamma, rho rounds to one and that form produces
         # 0 / 0 at the mode. The equivalent half-angle representation avoids
-        # this cancellation and is also stable in the large-gamma limit.
+        # that cancellation. Normalize its two denominator components before
+        # squaring so subnormal gamma values do not underflow to a zero norm.
         half_angle = xs_centered / 2.0
         half_gamma_tanh = tanh(self.gamma / 2.0)
-        denominator = sin(half_angle) ** 2 + half_gamma_tanh**2 * cos(half_angle) ** 2
-        return half_gamma_tanh / (2.0 * pi * denominator)
+        sin_component = backend_abs(sin(half_angle))
+        cos_component = half_gamma_tanh * backend_abs(cos(half_angle))
+        scale = maximum(sin_component, cos_component)
+        safe_scale = where(scale > 0.0, scale, 1.0)
+        scaled_squared_norm = (sin_component / safe_scale) ** 2 + (
+            cos_component / safe_scale
+        ) ** 2
+        return (half_gamma_tanh / safe_scale) / (
+            2.0 * pi * safe_scale * scaled_squared_norm
+        )
 
     def cdf(self, xs, starting_point=0.0):
         """
