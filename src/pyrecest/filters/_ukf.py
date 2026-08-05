@@ -116,11 +116,19 @@ class UnscentedKalmanFilter:
 
         x_pred = einsum("i,ij->j", Wm, sigmas_f)
 
-        P_pred = zeros((self._model.dim_x, self._model.dim_x))
+        process_covariance = asarray(self.Q, dtype=float64)
+        expected_process_shape = (self._model.dim_x, self._model.dim_x)
+        if process_covariance.shape != expected_process_shape:
+            raise ValueError(
+                "process noise covariance Q has shape "
+                f"{process_covariance.shape}, expected {expected_process_shape}"
+            )
+
+        P_pred = zeros(expected_process_shape)
         for i in range(n_sigmas):
             d = expand_dims(sigmas_f[i] - x_pred, -1)
             P_pred = P_pred + Wc[i] * (d @ transpose(d))
-        P_pred = P_pred + asarray(self.Q, dtype=float64)
+        P_pred = P_pred + process_covariance
         P_pred = 0.5 * (P_pred + transpose(P_pred))
 
         self.x = x_pred
