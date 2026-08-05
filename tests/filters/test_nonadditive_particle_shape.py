@@ -16,7 +16,7 @@ def test_predict_nonlinear_nonadditive_rejects_changed_particle_shape():
         match="Nonadditive transition returned particles with shape",
     ):
         particle_filter.predict_nonlinear_nonadditive(
-            lambda particle, noise: particle + array([noise[0], noise[0] + 1.0]),
+            lambda particle, noise: particle + noise[0] + array([0.0, 1.0]),
             samples=[[0.0]],
             weights=[1.0],
         )
