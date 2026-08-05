@@ -1,3 +1,6 @@
+from ._euclidean_sampler_extreme_bounds import (
+    install_fibonacci_rejection_extreme_bounds_contract,
+)
 from .abstract_sampler import AbstractSampler
 from .euclidean_sampler import (
     AbstractEuclideanSampler,
@@ -27,6 +30,8 @@ from .support_points import (
     projected_linear_variance_from_axis_offsets,
     support_points_from_axis_offsets,
 )
+
+install_fibonacci_rejection_extreme_bounds_contract()
 
 __all__ = [
     "AbstractSampler",
