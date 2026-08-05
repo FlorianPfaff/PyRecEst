@@ -122,7 +122,9 @@ class SE2PWNDistribution(PartiallyWrappedNormalDistribution, AbstractSE2Distribu
         m1abs = _np.sqrt(mu4[0] ** 2 + mu4[1] ** 2)
         mu[1:] = mu4[2:]
 
-        c4 = _np.cov(big_s.T)
+        # Moment matching uses empirical expectations normalized by n. NumPy's
+        # default n-1 correction would inflate every fitted covariance block.
+        c4 = _np.cov(big_s.T, bias=True)
 
         c = _np.zeros((3, 3))
         c[0, 0] = -2.0 * _np.log(m1abs)
