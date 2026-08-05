@@ -60,6 +60,17 @@ from .record_smoother import (
     rts_smooth_records,
     smooth_records,
 )
+from .robust_linear_gaussian_map import (
+    FixedLagRobustLinearGaussianMapResult,
+    LinearGaussianMeasurementFactor,
+    ROBUST_LINEAR_GAUSSIAN_MAP_LOSSES,
+    RobustLinearGaussianMapConfig,
+    RobustLinearGaussianMapLoss,
+    RobustLinearGaussianMapResult,
+    RobustLinearGaussianMapWindowSummary,
+    fixed_lag_robust_linear_gaussian_map_smooth,
+    robust_linear_gaussian_map_smooth,
+)
 from .sliding_window_manifold_mean_smoother import SlidingWindowManifoldMeanSmoother
 from .so3_chordal_mean_smoother import SO3ChordalMeanSmoother, SO3CMSmoother
 from .so3_tangent_savitzky_golay_smoother import (
@@ -99,6 +110,7 @@ __all__ = [
     "FLGIWRMSmoother",
     "FLRMSmoother",
     "RandomMatrixTrackerState",
+    "FixedLagRobustLinearGaussianMapResult",
     "FixedLagVelocityLockedMEMQKFSmoother",
     "FixedLagVLMEMQKFSmoother",
     "FLVLMEMQKFSmoother",
@@ -110,6 +122,7 @@ __all__ = [
     "HypertoroidalFourierSmoother",
     "HypertoroidalGridBackwardInformationSmoother",
     "HypertoroidalGridSmoother",
+    "LinearGaussianMeasurementFactor",
     "MEMRBPFForwardRecord",
     "MEMRBPF_FFBSiSmoother",
     "MEMRBPFFFBSiSmoother",
@@ -118,7 +131,14 @@ __all__ = [
     "RauchTungStriebelSmoother",
     "RTSSmoother",
     "RecordSmootherConfig",
+    "ROBUST_LINEAR_GAUSSIAN_MAP_LOSSES",
+    "RobustLinearGaussianMapConfig",
+    "RobustLinearGaussianMapLoss",
+    "RobustLinearGaussianMapResult",
+    "RobustLinearGaussianMapWindowSummary",
+    "fixed_lag_robust_linear_gaussian_map_smooth",
     "fixed_lag_smooth_records",
+    "robust_linear_gaussian_map_smooth",
     "rts_smooth_records",
     "smooth_records",
     "SlidingWindowManifoldMeanSmoother",
