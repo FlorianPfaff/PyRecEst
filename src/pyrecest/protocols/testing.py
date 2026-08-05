@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+import operator
 from collections.abc import Callable, Iterable
-from numbers import Integral
 from typing import Any, TypeVar, cast
 
 import numpy as np
@@ -45,16 +45,19 @@ def _shape_of(value: object, value_name: str) -> tuple[int, ...]:
 def _nonnegative_integer(value: object, value_name: str) -> int:
     dtype = getattr(value, "dtype", None)
     if (
-        isinstance(value, bool)
-        or getattr(dtype, "kind", None) in {"M", "m"}
+        np.ma.is_masked(value)
+        or isinstance(value, (bool, np.bool_))
+        or getattr(dtype, "kind", None) in {"b", "M", "m"}
         or isinstance(value, (np.datetime64, np.timedelta64))
-        or not isinstance(value, Integral)
     ):
         raise ProtocolAssertionError(f"{value_name} must be an integer.")
-    int_value = int(value)
+    try:
+        int_value = operator.index(value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ProtocolAssertionError(f"{value_name} must be an integer.") from exc
     if int_value < 0:
         raise ProtocolAssertionError(f"{value_name} must be non-negative.")
-    return int_value
+    return int(int_value)
 
 
 def assert_protocol_instance(
@@ -159,7 +162,7 @@ def assert_supports_ln_pdf(distribution: object, xs: Any) -> Any:
 
 
 def assert_supports_sampling(distribution: object, n: int = 5) -> Any:
-    _nonnegative_integer(n, "n")
+    n = _nonnegative_integer(n, "n")
     return assert_method_returns_non_none(distribution, "sample", n)
 
 
@@ -186,7 +189,7 @@ def assert_supports_log_likelihood(model: object, measurement: Any, state: Any) 
 
 
 def assert_supports_transition_sampling(model: object, state: Any, n: int = 1) -> Any:
-    _nonnegative_integer(n, "n")
+    n = _nonnegative_integer(n, "n")
     return assert_method_returns_non_none(model, "sample_next", state, n)
 
 
