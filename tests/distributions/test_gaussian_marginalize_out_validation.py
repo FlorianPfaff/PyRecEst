@@ -47,8 +47,14 @@ class GaussianMarginalizeOutValidationTest(unittest.TestCase):
         np.testing.assert_allclose(to_numpy(marginal.mu), np.array([2.0]))
         np.testing.assert_allclose(to_numpy(marginal.C), np.array([[0.9]]))
 
-    def test_rejects_zero_dimensional_noninteger_arrays(self):
-        for dimensions in (np.array(0.5), np.array("0")):
+    def test_rejects_zero_dimensional_noninteger_or_masked_arrays(self):
+        invalid_dimensions = (
+            np.array(0.5),
+            np.array("0"),
+            np.ma.array(0, mask=True),
+        )
+
+        for dimensions in invalid_dimensions:
             with self.subTest(dimensions=dimensions):
                 with self.assertRaisesRegex(ValueError, "integer indices"):
                     self.distribution.marginalize_out(dimensions)
