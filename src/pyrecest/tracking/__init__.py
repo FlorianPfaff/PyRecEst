@@ -144,6 +144,26 @@ __all__ += [
     "summarize_nis_consistency",
 ]
 
+from .gaussian_mixture_measurement import (
+    GaussianMixtureMeasurementEvaluation,
+    GaussianMixtureMeasurementFactor,
+    GaussianMixtureMomentMatch,
+    MixtureLoss,
+    balance_mixture_responsibilities,
+    blend_mixture_responsibilities_with_uniform,
+    normalize_mixture_responsibilities,
+)
+
+__all__ += [
+    "GaussianMixtureMeasurementEvaluation",
+    "GaussianMixtureMeasurementFactor",
+    "GaussianMixtureMomentMatch",
+    "MixtureLoss",
+    "balance_mixture_responsibilities",
+    "blend_mixture_responsibilities_with_uniform",
+    "normalize_mixture_responsibilities",
+]
+
 from .residual_hypothesis_mht import (
     ResidualEditCandidate,
     ResidualHypothesis,
