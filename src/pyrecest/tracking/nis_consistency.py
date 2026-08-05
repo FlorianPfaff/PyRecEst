@@ -234,10 +234,18 @@ def estimate_innovation_covariance_scale(
 
 def _as_nis_values(values: Iterable[float]) -> np.ndarray:
     message = "nis_values must contain finite non-negative real numeric values"
-    if isinstance(values, (str, bytes, bytearray)) or _contains_masked_values(values):
+    if isinstance(values, (str, bytes, bytearray)):
         raise ValueError(message)
     try:
-        raw_values = np.asarray(list(values) if not isinstance(values, np.ndarray) else values)
+        materialized_values = (
+            values if isinstance(values, np.ndarray) else list(values)
+        )
+    except (TypeError, ValueError) as exc:
+        raise ValueError(message) from exc
+    if _contains_masked_values(materialized_values):
+        raise ValueError(message)
+    try:
+        raw_values = np.asarray(materialized_values)
     except (TypeError, ValueError) as exc:
         raise ValueError(message) from exc
     if raw_values.ndim == 0:
