@@ -25,7 +25,8 @@ def _stable_euclidean_norm(value: Any) -> float:
 def install_hypothesis_replay_stable_norm_contract() -> None:
     """Prevent finite replay residual vectors from overflowing during scoring."""
 
-    from . import hypothesis_replay as replay_module  # pylint: disable=import-outside-toplevel
+    # pylint: disable-next=import-outside-toplevel
+    from . import hypothesis_replay as replay_module
 
     current = replay_module._finite_record_values
     if getattr(current, _MARKER, False):
