@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - agent/fix-daum-huang-delta-lambda-validation
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
