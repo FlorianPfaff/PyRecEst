@@ -1,8 +1,8 @@
 from math import isfinite
-from numbers import Integral
 from operator import index as _operator_index
 from typing import Union
 
+import numpy as np
 import pyrecest.backend
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
@@ -47,6 +47,30 @@ def _validate_finite_scalar(value, name):
     if not bool(all(backend_isfinite(value))):
         raise ValueError(f"{name} must be finite.")
     return value
+
+
+def _validate_positive_sample_count(n) -> int:
+    """Return ``n`` as a positive Python integer."""
+    message = "n must be a positive integer."
+    if np.ma.is_masked(n) or isinstance(n, bool):
+        raise ValueError(message)
+
+    n_dim = getattr(n, "ndim", None)
+    if n_dim not in (None, 0):
+        raise ValueError(message)
+
+    dtype = getattr(n, "dtype", None)
+    dtype_kind = getattr(dtype, "kind", None)
+    if dtype_kind in {"b", "M", "m"} or str(dtype).lower() == "torch.bool":
+        raise ValueError(message)
+
+    try:
+        count = _operator_index(n)
+    except (OverflowError, TypeError, ValueError) as exc:
+        raise ValueError(message) from exc
+    if count <= 0:
+        raise ValueError(message)
+    return int(count)
 
 
 class WrappedNormalDistribution(
@@ -266,15 +290,7 @@ class WrappedNormalDistribution(
         )
 
     def sample(self, n: Union[int, int32, int64]):
-        dtype_kind = getattr(getattr(n, "dtype", None), "kind", None)
-        if (
-            isinstance(n, bool)
-            or dtype_kind in {"M", "m"}
-            or not isinstance(n, Integral)
-            or int(n) <= 0
-        ):
-            raise ValueError("n must be a positive integer.")
-        n = int(n)
+        n = _validate_positive_sample_count(n)
         return mod(self.scalar_mu + self.sigma * random.normal(size=(n,)), 2.0 * pi)
 
     def to_dirac5(self):
