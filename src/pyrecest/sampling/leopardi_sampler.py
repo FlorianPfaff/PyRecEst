@@ -285,7 +285,7 @@ def get_equal_area_caps(dim, N, symmetric: bool = False):
     if symmetric and (N > 2) and (ideal_angle > 0):
         # Symmetric choice: even number of collars so equator is a cap boundary
         ratio_half = 0.5 * (pi - 2 * c_polar) / ideal_angle
-        n_half = max(array((0.5, round(ratio_half))))
+        n_half = max(array((1, round(ratio_half)), dtype=int32))
         n_collars = int(2 * n_half)
     else:
         # Standard Leopardi choice
@@ -436,7 +436,7 @@ def get_partition_points_cartesian(
         (N/2 points). For asymm, this is not allowed.
     symmetry_type : {'asymm', 'plane', 'antipodal'}
         - 'asymm'   : standard Leopardi EQ partition (no enforced symmetry).
-        - 'plane'   : plane-symmetric w.r.t. the equatorial hyperplane
+        - 'plane'   : plane-symmetric w.r.t. equatorial hyperplane
                       (last Cartesian coordinate flips sign).
         - 'antipodal': point-symmetric w.r.t. the origin (± pairs).
     extra_offset : bool, optional
