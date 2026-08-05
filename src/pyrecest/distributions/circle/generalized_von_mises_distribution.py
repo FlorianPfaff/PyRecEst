@@ -2,6 +2,7 @@
 from pyrecest.backend import all, arange, array, atleast_1d, cos, exp, isfinite, sum
 
 from .abstract_circular_distribution import AbstractCircularDistribution
+from .von_mises_distribution import VonMisesDistribution
 
 
 def _validate_parameters(mu, kappa):
@@ -95,4 +96,7 @@ class GvMDistribution(AbstractCircularDistribution):
         p : array, shape (n,)
             Pdf values.
         """
+        xs = _as_1d_input(xs)
+        if self.kappa.shape[0] == 1:
+            return VonMisesDistribution(self.mu[0], self.kappa[0]).pdf(xs)
         return self.pdf_unnormalized(xs) / self.norm_const
