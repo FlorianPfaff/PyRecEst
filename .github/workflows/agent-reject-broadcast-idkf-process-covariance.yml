@@ -1,0 +1,63 @@
+name: Apply IDKF process covariance fix
+
+on:
+  push:
+    branches:
+      - agent/reject-broadcast-idkf-process-covariance
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Patch implementation and regression
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          source_path = Path(
+              "src/pyrecest/filters/information_form_distributed_kalman_filter.py"
+          )
+          source = source_path.read_text(encoding="utf-8")
+          old = """        A = atleast_2d(system_matrix)\n        Q = atleast_2d(sys_noise_cov)\n        Y_old = self.global_information_state.Y\n"""
+          new = """        A = atleast_2d(system_matrix)\n        Q = atleast_2d(sys_noise_cov)\n        expected_covariance_shape = (self.dim, self.dim)\n        if Q.shape != expected_covariance_shape:\n            raise ValueError(\n                \"sys_noise_cov must have shape \"\n                f\"{expected_covariance_shape}, got {Q.shape}\"\n            )\n        Y_old = self.global_information_state.Y\n"""
+          if source.count(old) != 1:
+              raise SystemExit("expected IDKF prediction source block exactly once")
+          source_path.write_text(source.replace(old, new), encoding="utf-8")
+
+          test_path = Path(
+              "tests/filters/test_information_form_distributed_kalman_filter_atomicity.py"
+          )
+          test_source = test_path.read_text(encoding="utf-8")
+          marker = "def test_broadcast_process_covariance_is_rejected_without_mutation():"
+          if marker in test_source:
+              raise SystemExit("regression test already exists")
+          addition = '''\n\ndef test_broadcast_process_covariance_is_rejected_without_mutation():\n    node = IdkfNode.from_local_gaussian(\n        1,\n        (array([1.0, 2.0]), eye(2)),\n        (eye(2),),\n    )\n    snapshot = _snapshot_idkf_state(node)\n\n    with pytest.raises(ValueError, match=\"sys_noise_cov must have shape\"):\n        node.predict_linear(eye(2), array([0.4, 0.2]))\n\n    _assert_idkf_state_unchanged(node, snapshot)\n'''
+          test_path.write_text(test_source.rstrip() + addition + "\n", encoding="utf-8")
+          PY
+
+      - name: Validate syntax
+        run: |
+          python -m py_compile \
+            src/pyrecest/filters/information_form_distributed_kalman_filter.py \
+            tests/filters/test_information_form_distributed_kalman_filter_atomicity.py
+
+      - name: Commit patched files
+        shell: bash
+        run: |
+          rm .github/workflows/agent-reject-broadcast-idkf-process-covariance.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            src/pyrecest/filters/information_form_distributed_kalman_filter.py \
+            tests/filters/test_information_form_distributed_kalman_filter_atomicity.py \
+            .github/workflows/agent-reject-broadcast-idkf-process-covariance.yml
+          git commit -m "Reject broadcast IDKF process covariance"
+          git push origin HEAD:agent/reject-broadcast-idkf-process-covariance
