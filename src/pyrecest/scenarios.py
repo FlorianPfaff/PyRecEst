@@ -366,7 +366,7 @@ def run_particle_resampling_scenario(path: str | Path) -> ScenarioResult:
         "weight_entropy": float(diagnostics.weight_entropy or 0.0),
         "max_weight": max(weights_py),
         "min_weight": min(weights_py),
-        "sample_mean_norm": math.sqrt(sum(value * value for value in final_estimate)),
+        "sample_mean_norm": math.hypot(*final_estimate),
     }
 
     return ScenarioResult(
