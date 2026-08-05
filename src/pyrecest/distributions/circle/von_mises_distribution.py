@@ -12,6 +12,7 @@ from pyrecest.backend import (
     exp,
     imag,
     log,
+    maximum,
     mod,
     pi,
     real,
@@ -234,7 +235,9 @@ class VonMisesDistribution(AbstractCircularDistribution):
         C = self.kappa * cos(self.mu) + vm2.kappa * cos(vm2.mu)
         S = self.kappa * sin(self.mu) + vm2.kappa * sin(vm2.mu)
         mu_ = mod(arctan2(S, C), 2 * pi)
-        kappa_ = sqrt(C**2 + S**2)
+        scale = maximum(abs(C), abs(S))
+        safe_scale = where(scale > 0.0, scale, 1.0)
+        kappa_ = scale * sqrt((C / safe_scale) ** 2 + (S / safe_scale) ** 2)
         return VonMisesDistribution(mu_, kappa_)
 
     def convolve(self, vm2: "VonMisesDistribution") -> "VonMisesDistribution":
