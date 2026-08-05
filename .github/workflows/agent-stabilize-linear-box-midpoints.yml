@@ -1,0 +1,115 @@
+name: Apply linear box midpoint stability fix
+
+on:
+  push:
+    branches:
+      - agent/stabilize-linear-box-midpoints-20260805
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out patch branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/stabilize-linear-box-midpoints-20260805
+
+      - name: Apply source and regression changes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          source_path = Path(
+              "src/pyrecest/distributions/nonperiodic/linear_box_particle_distribution.py"
+          )
+          source = source_path.read_text(encoding="utf-8")
+          replacements = {
+              "        return 0.5 * (self.lower + self.upper)\n":
+                  "        return 0.5 * self.lower + 0.5 * self.upper\n",
+              "        return 0.5 * self.widths()\n":
+                  "        return 0.5 * self.upper - 0.5 * self.lower\n",
+          }
+          for old, new in replacements.items():
+              if old not in source:
+                  raise RuntimeError(f"Expected source expression not found: {old.strip()}")
+              source = source.replace(old, new, 1)
+          source_path.write_text(source, encoding="utf-8")
+
+          test_path = Path("tests/distributions/test_linear_box_particle_distribution.py")
+          tests = test_path.read_text(encoding="utf-8")
+          marker = "    def test_pdf_of_single_one_dimensional_box(self):\n"
+          insertion = '''    def test_centers_avoid_overflow_for_large_same_sign_bounds(self):
+        backend_dtype = to_numpy(array([1.0])).dtype
+        max_finite = np.finfo(backend_dtype).max
+        lower_value = 0.75 * max_finite
+        upper_value = max_finite
+        dist = LinearBoxParticleDistribution(
+            array([[lower_value]]), array([[upper_value]])
+        )
+
+        with np.errstate(over="raise", invalid="raise"):
+            centers = to_numpy(dist.centers())
+
+        expected = np.array([[0.875 * max_finite]], dtype=backend_dtype)
+        npt.assert_allclose(centers, expected)
+
+    def test_half_widths_avoid_overflow_for_opposite_sign_bounds(self):
+        backend_dtype = to_numpy(array([1.0])).dtype
+        max_finite = np.finfo(backend_dtype).max
+        bound = 0.75 * max_finite
+        dist = LinearBoxParticleDistribution(array([[-bound]]), array([[bound]]))
+
+        with np.errstate(over="raise", invalid="raise"):
+            half_widths = to_numpy(dist.half_widths())
+
+        expected = np.array([[bound]], dtype=backend_dtype)
+        npt.assert_allclose(half_widths, expected)
+
+'''
+          if "test_centers_avoid_overflow_for_large_same_sign_bounds" in tests:
+              raise RuntimeError("Regression tests are already present")
+          if marker not in tests:
+              raise RuntimeError("Test insertion marker not found")
+          tests = tests.replace(marker, insertion + marker, 1)
+          test_path.write_text(tests, encoding="utf-8")
+
+          Path(".github/workflows/agent-stabilize-linear-box-midpoints.yml").unlink()
+          PY
+
+      - name: Validate patch
+        run: |
+          python -m py_compile \
+            src/pyrecest/distributions/nonperiodic/linear_box_particle_distribution.py \
+            tests/distributions/test_linear_box_particle_distribution.py
+          python - <<'PY'
+          import numpy as np
+
+          maximum = np.finfo(np.float64).max
+          lower = np.array([[0.75 * maximum]])
+          upper = np.array([[maximum]])
+          opposite_lower = np.array([[-0.75 * maximum]])
+          opposite_upper = np.array([[0.75 * maximum]])
+
+          with np.errstate(over="raise", invalid="raise"):
+              center = 0.5 * lower + 0.5 * upper
+              half_width = 0.5 * opposite_upper - 0.5 * opposite_lower
+
+          np.testing.assert_allclose(center, [[0.875 * maximum]])
+          np.testing.assert_allclose(half_width, [[0.75 * maximum]])
+          PY
+          git diff --check
+
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            src/pyrecest/distributions/nonperiodic/linear_box_particle_distribution.py \
+            tests/distributions/test_linear_box_particle_distribution.py \
+            .github/workflows/agent-stabilize-linear-box-midpoints.yml
+          git commit -m "Stabilize linear box midpoint calculations"
+          git push
