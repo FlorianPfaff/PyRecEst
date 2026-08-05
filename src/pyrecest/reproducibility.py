@@ -127,18 +127,48 @@ def set_backend_random_state(state: Any) -> None:
     random.set_state(state)
 
 
+def _get_pytorch_cuda_random_state() -> Any | None:
+    """Return all CUDA generator states when the active backend is PyTorch."""
+    try:
+        import pyrecest.backend as backend
+    except ModuleNotFoundError:  # pragma: no cover - source-tree corruption only
+        return None
+    if getattr(backend, "__backend_name__", None) != "pytorch":
+        return None
+    try:
+        import torch
+    except ModuleNotFoundError:  # pragma: no cover - inconsistent optional install
+        return None
+    if not torch.cuda.is_available():
+        return None
+    return copy.deepcopy(torch.cuda.get_rng_state_all())
+
+
+def _set_pytorch_cuda_random_state(state: Any | None) -> None:
+    """Restore CUDA generator states captured by `_get_pytorch_cuda_random_state`."""
+    if state is None:
+        return
+    import torch
+
+    torch.cuda.set_rng_state_all(state)
+
+
 @contextmanager
 def preserve_backend_random_state() -> Iterator[None]:
-    """Temporarily preserve backend and NumPy random state."""
+    """Temporarily preserve backend, PyTorch CUDA, and NumPy random state."""
     state = copy.deepcopy(get_backend_random_state())
     numpy_state = copy.deepcopy(np.random.get_state())
+    pytorch_cuda_state = _get_pytorch_cuda_random_state()
     try:
         yield
     finally:
         try:
             set_backend_random_state(state)
         finally:
-            np.random.set_state(numpy_state)
+            try:
+                _set_pytorch_cuda_random_state(pytorch_cuda_state)
+            finally:
+                np.random.set_state(numpy_state)
 
 
 @contextmanager
