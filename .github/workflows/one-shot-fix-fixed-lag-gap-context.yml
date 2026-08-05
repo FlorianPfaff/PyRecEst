@@ -1,9 +1,6 @@
 name: One-shot fixed-lag gap-context fix
 
 on:
-  push:
-    branches:
-      - agent/fix-fixed-lag-gap-transition-context-20260805
   pull_request:
     branches:
       - main
@@ -33,72 +30,64 @@ jobs:
           source_path = Path("src/pyrecest/filters/tracklet_viterbi.py")
           source = source_path.read_text(encoding="utf-8")
 
-          old_prefix = '''        if prefix_added:
-              if previous_committed is None:
-                  prefix_candidate = TrackletAssociationCandidate(
-                      ("__pyrecest_prefix_context__", frame_index),
-                      unary_cost=0.0,
-                      time_s=start_time,
-                  )
-              else:
-                  prefix_candidate = replace(previous_committed, unary_cost=0.0)
-              window_frames.insert(0, [prefix_candidate])
-              local_transition_cost = _transition_with_prefix_miss_streak(
-                  transition_cost,
-                  prefix_candidate,
-                  previous_committed,
-                  committed_miss_streak,
-                  config,
-              )
-          '''
-          new_prefix = '''        if prefix_added:
-              if committed_miss_streak > 0:
-                  prefix_candidate = TrackletAssociationCandidate(
-                      ("__pyrecest_prefix_context__", frame_index),
-                      unary_cost=0.0,
-                      time_s=start_time,
-                  )
-                  prefix_previous = None
-              else:
-                  prefix_candidate = replace(previous_committed, unary_cost=0.0)
-                  prefix_previous = previous_committed
-              window_frames.insert(0, [prefix_candidate])
-              local_transition_cost = _transition_with_prefix_miss_streak(
-                  transition_cost,
-                  prefix_candidate,
-                  prefix_previous,
-                  committed_miss_streak,
-                  config,
-              )
-          '''
-          old_cost = '''    if previous_committed is None:
-              if committed_miss_streak > 0:
-                  return float(unary_cost + transition(None, selected, committed_miss_streak))
-              if selected is None:
-                  return float(unary_cost + config.missed_detection_cost)
-              return float(unary_cost)
-          return float(
-              unary_cost + transition(previous_committed, selected, committed_miss_streak)
+          prefix_start = source.index("        if prefix_added:\n")
+          prefix_end = source.index(
+              "        local = _solve_tracklet_viterbi(\n",
+              prefix_start,
           )
-          '''
-          new_cost = '''    if committed_miss_streak > 0:
-              return float(unary_cost + transition(None, selected, committed_miss_streak))
-          if previous_committed is None:
-              if selected is None:
-                  return float(unary_cost + config.missed_detection_cost)
-              return float(unary_cost)
-          return float(unary_cost + transition(previous_committed, selected, 0))
-          '''
+          new_prefix = "\n".join(
+              [
+                  "        if prefix_added:",
+                  "            if committed_miss_streak > 0:",
+                  "                prefix_candidate = TrackletAssociationCandidate(",
+                  "                    (\"__pyrecest_prefix_context__\", frame_index),",
+                  "                    unary_cost=0.0,",
+                  "                    time_s=start_time,",
+                  "                )",
+                  "                prefix_previous = None",
+                  "            else:",
+                  "                prefix_candidate = replace(previous_committed, unary_cost=0.0)",
+                  "                prefix_previous = previous_committed",
+                  "            window_frames.insert(0, [prefix_candidate])",
+                  "            local_transition_cost = _transition_with_prefix_miss_streak(",
+                  "                transition_cost,",
+                  "                prefix_candidate,",
+                  "                prefix_previous,",
+                  "                committed_miss_streak,",
+                  "                config,",
+                  "            )",
+                  "",
+              ]
+          )
+          source = source[:prefix_start] + new_prefix + source[prefix_end:]
 
-          if source.count(old_prefix) != 1:
-              raise RuntimeError("fixed-lag prefix block did not match exactly once")
-          if source.count(old_cost) != 1:
-              raise RuntimeError("fixed-lag committed-cost block did not match exactly once")
-          source = source.replace(old_prefix, new_prefix).replace(old_cost, new_cost)
+          function_start = source.index("def _fixed_lag_committed_step_cost(\n")
+          cost_start = source.index(
+              "    if previous_committed is None:\n",
+              function_start,
+          )
+          cost_end = source.index(
+              "\n\n\ndef _summarize_state_tables(\n",
+              cost_start,
+          )
+          new_cost = "\n".join(
+              [
+                  "    if committed_miss_streak > 0:",
+                  "        return float(",
+                  "            unary_cost",
+                  "            + transition(None, selected, committed_miss_streak)",
+                  "        )",
+                  "    if previous_committed is None:",
+                  "        if selected is None:",
+                  "            return float(unary_cost + config.missed_detection_cost)",
+                  "        return float(unary_cost)",
+                  "    return float(unary_cost + transition(previous_committed, selected, 0))",
+              ]
+          )
+          source = source[:cost_start] + new_cost + source[cost_end:]
           source_path.write_text(source, encoding="utf-8")
 
-          test_path = Path("tests/filters/test_tracklet_viterbi_gap_recovery.py")
-          test_path.write_text(
+          Path("tests/filters/test_tracklet_viterbi_gap_recovery.py").write_text(
               '''"""Regression coverage for fixed-lag transition context after a miss."""
 
           from pyrecest.filters.tracklet_viterbi import (
