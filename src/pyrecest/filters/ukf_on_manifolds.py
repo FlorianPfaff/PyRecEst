@@ -10,8 +10,10 @@ Reference Python implementation:
 """
 
 # pylint: disable=no-name-in-module,no-member,redefined-builtin
+from numbers import Real
 from typing import Any, Callable
 
+import numpy as np
 import pyrecest.backend
 from pyrecest.backend import (
     asarray,
@@ -38,6 +40,43 @@ class _Weights:
         self.wj = 1.0 / (2.0 * (d + m))
         self.wm = m / (m + d)
         self.w0 = m / (m + d) + 3.0 - alpha**2
+
+
+def _validated_alpha_values(alpha) -> list[float]:
+    """Return three finite positive scalar sigma-point spread parameters."""
+
+    error_message = (
+        "alpha must be a finite positive real scalar or a length-3 "
+        "array-like of finite positive real values"
+    )
+    if np.ma.is_masked(alpha):
+        raise ValueError(error_message)
+
+    try:
+        alpha_values = list(alpha)
+    except TypeError:
+        alpha_values = [alpha] * 3
+    if len(alpha_values) != 3:
+        raise ValueError(error_message)
+
+    validated = []
+    for value in alpha_values:
+        if np.ma.is_masked(value):
+            raise ValueError(error_message)
+        try:
+            scalar_array = np.asarray(value)
+        except (TypeError, ValueError, OverflowError, RuntimeError) as exc:
+            raise ValueError(error_message) from exc
+        if scalar_array.shape != ():
+            raise ValueError(error_message)
+        scalar = scalar_array.item()
+        if isinstance(scalar, (bool, np.bool_)) or not isinstance(scalar, Real):
+            raise ValueError(error_message)
+        numeric = float(scalar)
+        if not np.isfinite(numeric) or numeric <= 0.0:
+            raise ValueError(error_message)
+        validated.append(numeric)
+    return validated
 
 
 def _as_measurement_vector(value: Any, expected_dim: int, name: str):
@@ -153,14 +192,8 @@ class UKFOnManifolds(AbstractFilter):  # pylint: disable=too-many-instance-attri
         self.meas_dim = R.shape[0]  # measurement dimension
 
         # Sigma-point weights — three sets with potentially different alphas
-        # Handle scalar or length-3 array-like for alpha
-        try:
-            alpha_list = list(alpha)
-            if len(alpha_list) != 3:
-                raise ValueError("alpha must be a scalar or a length-3 array-like")
-        except TypeError:
-            alpha_list = [float(alpha)] * 3
-        alpha_arr = broadcast_to(asarray(alpha_list), (3,))
+        alpha_values = _validated_alpha_values(alpha)
+        alpha_arr = broadcast_to(asarray(alpha_values), (3,))
         self._w_d = _Weights(self.d, float(alpha_arr[0]))  # propagation / state
         self._w_q = _Weights(self.q, float(alpha_arr[1]))  # propagation / noise
         self._w_u = _Weights(self.d, float(alpha_arr[2]))  # update
