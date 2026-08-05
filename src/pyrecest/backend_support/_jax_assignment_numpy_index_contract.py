@@ -33,14 +33,46 @@ def _is_per_axis_tuple_index(indices, np, jnp):
     )
 
 
+def _is_full_coordinate_list(indices, target_ndim, np):
+    """Return whether ``indices`` is a list of full integer coordinates."""
+
+    if not isinstance(indices, list) or not indices:
+        return False
+    try:
+        index_array = np.asarray(indices)
+    except (OverflowError, TypeError, ValueError):
+        return False
+    return (
+        index_array.ndim == 2
+        and index_array.shape[1] == target_ndim
+        and np.issubdtype(index_array.dtype, np.integer)
+        and not np.issubdtype(index_array.dtype, np.bool_)
+    )
+
+
 def _as_per_axis_tuple(indices, jnp):
     """Coerce a tuple of per-axis index arrays to JAX arrays."""
 
     return tuple(jnp.asarray(index_axis) for index_axis in indices)
 
 
+def _as_coordinate_tuple(indices, jnp):
+    """Transpose coordinate rows into JAX per-axis index arrays."""
+
+    return tuple(jnp.asarray(index_axis) for index_axis in zip(*indices))
+
+
+def _apply_indexed_update(target, values, normalized_indices, *, is_sum_helper):
+    """Apply one direct JAX indexed set or accumulation."""
+
+    updater = target.at[normalized_indices]
+    if is_sum_helper:
+        return updater.add(values)
+    return updater.set(values)
+
+
 def _wrap_helper(helper, np, jnp):
-    """Normalize NumPy ndarray indices before delegating to a JAX helper."""
+    """Normalize NumPy-style indices before delegating to a JAX helper."""
 
     if getattr(helper, "_pyrecest_numpy_index_contract", False):
         return helper
@@ -49,13 +81,21 @@ def _wrap_helper(helper, np, jnp):
     is_sum_helper = helper_name == "assignment_by_sum"
 
     def wrapped(x, values, indices, axis=0):
+        target = jnp.asarray(x)
         if _is_per_axis_tuple_index(indices, np, jnp):
-            target = jnp.asarray(x)
-            normalized_indices = _as_per_axis_tuple(indices, jnp)
-            updater = target.at[normalized_indices]
-            if is_sum_helper:
-                return updater.add(values)
-            return updater.set(values)
+            return _apply_indexed_update(
+                target,
+                values,
+                _as_per_axis_tuple(indices, jnp),
+                is_sum_helper=is_sum_helper,
+            )
+        if _is_full_coordinate_list(indices, target.ndim, np):
+            return _apply_indexed_update(
+                target,
+                values,
+                _as_coordinate_tuple(indices, jnp),
+                is_sum_helper=is_sum_helper,
+            )
         return helper(x, values, _normalize_indices(indices, np, jnp), axis=axis)
 
     wrapped.__name__ = helper_name
@@ -113,7 +153,7 @@ def _patch_jax_triangular_vector_helpers_rectangular_contract(
 
 
 def patch_jax_assignment_numpy_index_contract() -> None:
-    """Make JAX assignment helpers accept NumPy ndarray index sequences."""
+    """Make JAX assignment helpers accept NumPy-style index sequences."""
 
     try:
         import jax.numpy as jnp  # pylint: disable=import-outside-toplevel
