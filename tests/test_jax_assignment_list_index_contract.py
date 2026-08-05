@@ -2,19 +2,21 @@ import numpy as np
 import numpy.testing as npt
 import pytest
 
-jnp = pytest.importorskip("jax.numpy")
 
-import pyrecest._backend.jax as jax_backend
-from pyrecest.backend_support._jax_assignment_numpy_index_contract import (
-    patch_jax_assignment_numpy_index_contract,
-)
+def _jax_modules():
+    jnp = pytest.importorskip("jax.numpy")
+    import pyrecest._backend.jax as jax_backend  # pylint: disable=import-outside-toplevel
+    from pyrecest.backend_support._jax_assignment_numpy_index_contract import (  # pylint: disable=import-outside-toplevel
+        patch_jax_assignment_numpy_index_contract,
+    )
 
-
-patch_jax_assignment_numpy_index_contract()
+    patch_jax_assignment_numpy_index_contract()
+    return jnp, jax_backend
 
 
 @pytest.mark.parametrize("helper_name", ["assignment", "assignment_by_sum"])
 def test_jax_assignment_list_indices_select_first_axis(helper_name):
+    jnp, jax_backend = _jax_modules()
     helper = getattr(jax_backend, helper_name)
 
     result = helper(jnp.zeros((2, 3)), 7.0, [0])
@@ -27,6 +29,7 @@ def test_jax_assignment_list_indices_select_first_axis(helper_name):
 
 @pytest.mark.parametrize("helper_name", ["assignment", "assignment_by_sum"])
 def test_jax_assignment_single_coordinate_list_targets_one_entry(helper_name):
+    jnp, jax_backend = _jax_modules()
     helper = getattr(jax_backend, helper_name)
 
     result = helper(jnp.zeros((2, 2, 2)), 5.0, [(0, 1, 1)])
@@ -37,6 +40,8 @@ def test_jax_assignment_single_coordinate_list_targets_one_entry(helper_name):
 
 
 def test_jax_assignment_partial_coordinate_list_vectorizes_along_axis():
+    jnp, jax_backend = _jax_modules()
+
     result = jax_backend.assignment(
         jnp.zeros((2, 3, 4)),
         2.0,
