@@ -114,6 +114,8 @@ class OnlineTimeOffsetEstimator:
 
 
 def _contains_unsupported_numeric_values(value: Any) -> bool:
+    if np.ma.is_masked(value):
+        return True
     if isinstance(value, _UNSUPPORTED_SCALAR_TYPES):
         return True
     if isinstance(value, np.ndarray):
