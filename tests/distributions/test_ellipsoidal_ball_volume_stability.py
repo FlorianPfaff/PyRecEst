@@ -11,7 +11,7 @@ from pyrecest.distributions import EllipsoidalBallUniformDistribution
 
 @unittest.skipIf(
     pyrecest.backend.__backend_name__ != "numpy",
-    reason="The underflow regression requires float64 values below float32 range",
+    reason="The stability regressions require extreme float64 values",
 )
 class TestEllipsoidalBallVolumeStability(unittest.TestCase):
     def test_small_positive_definite_shape_has_nonzero_representable_volume(self):
@@ -33,6 +33,33 @@ class TestEllipsoidalBallVolumeStability(unittest.TestCase):
             1.0 / expected_volume,
             rtol=1e-14,
         )
+
+    def test_balanced_extreme_axes_avoid_intermediate_product_overflow(self):
+        large_variance = np.finfo(float).max / 4.0
+        small_variance = 1.0 / large_variance
+        dist = EllipsoidalBallUniformDistribution(
+            array(np.zeros(6)),
+            diag(
+                array(
+                    [
+                        large_variance,
+                        large_variance,
+                        large_variance,
+                        small_variance,
+                        small_variance,
+                        small_variance,
+                    ]
+                )
+            ),
+        )
+        expected_volume = np.pi**3 / 6.0
+
+        with np.errstate(over="raise", divide="raise", invalid="raise"):
+            volume = dist.get_manifold_size()
+            center_density = dist.pdf(array(np.zeros(6)))
+
+        npt.assert_allclose(volume, expected_volume, rtol=5e-13)
+        npt.assert_allclose(center_density, 1.0 / expected_volume, rtol=5e-13)
 
 
 if __name__ == "__main__":
