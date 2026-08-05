@@ -1,9 +1,13 @@
 name: Apply track completion masked-input fix
 
 on:
-  push:
+  pull_request:
     branches:
-      - agent/reject-masked-track-completion-inputs-20260805
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
 
 permissions:
   contents: write
@@ -15,6 +19,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.head_ref }}
 
       - uses: actions/setup-python@v5
         with:
