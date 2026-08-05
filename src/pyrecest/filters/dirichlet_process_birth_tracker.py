@@ -288,9 +288,21 @@ class DirichletProcessBirthMultiBernoulliTracker(MultiBernoulliTracker):
         birth_mean,
         birth_covariance,
     ):
-        concentration = float(self.tracker_param["dp_concentration"])
-        if not np.isfinite(concentration) or concentration <= 0.0:
-            raise ValueError("dp_concentration must be finite and positive")
+        concentration_message = "dp_concentration must be finite and positive"
+        concentration = _as_finite_real_scalar(
+            self.tracker_param["dp_concentration"],
+            concentration_message,
+        )
+        if concentration <= 0.0:
+            raise ValueError(concentration_message)
+
+        threshold_message = "dp_birth_threshold must be finite and non-negative"
+        birth_threshold = _as_finite_real_scalar(
+            self.tracker_param["dp_birth_threshold"],
+            threshold_message,
+        )
+        if birth_threshold < 0.0:
+            raise ValueError(threshold_message)
 
         base_likelihood = _linear_gaussian_likelihood(
             measurement,
@@ -322,7 +334,7 @@ class DirichletProcessBirthMultiBernoulliTracker(MultiBernoulliTracker):
         )
         birth_odds = birth_cap * best_score / max(clutter_intensity, 1e-300)
         birth_probability = min(birth_cap, birth_odds / (1.0 + birth_odds))
-        if birth_odds < float(self.tracker_param["dp_birth_threshold"]):
+        if birth_odds < birth_threshold:
             return {
                 "action": "clutter",
                 "atom_index": None,
@@ -344,18 +356,35 @@ class DirichletProcessBirthMultiBernoulliTracker(MultiBernoulliTracker):
         }
 
     def _get_birth_clutter_intensity(self):
+        validation_message = (
+            "dp_birth_clutter_intensity must be finite and non-negative"
+        )
         dp_birth_clutter_intensity = self.tracker_param["dp_birth_clutter_intensity"]
         if dp_birth_clutter_intensity is not None:
-            return max(float(dp_birth_clutter_intensity), 1e-300)
+            parsed_intensity = _as_finite_real_scalar(
+                dp_birth_clutter_intensity,
+                validation_message,
+            )
+            if parsed_intensity < 0.0:
+                raise ValueError(validation_message)
+            return max(parsed_intensity, 1e-300)
         try:
-            return max(
-                self._get_clutter_intensity(self.tracker_param["clutter_intensity"]),
-                1e-300,
+            clutter_intensity = self._get_clutter_intensity(
+                self.tracker_param["clutter_intensity"]
             )
         except ValueError as exc:
             raise ValueError(
                 "Set dp_birth_clutter_intensity when clutter_intensity is measurement-dependent."
             ) from exc
+
+        fallback_message = "clutter_intensity must be finite and non-negative"
+        parsed_intensity = _as_finite_real_scalar(
+            clutter_intensity,
+            fallback_message,
+        )
+        if parsed_intensity < 0.0:
+            raise ValueError(fallback_message)
+        return max(parsed_intensity, 1e-300)
 
     def _normalize_birth_atom_survival_probability(self):
         message = "dp_birth_atom_survival_probability must be in [0, 1]"
