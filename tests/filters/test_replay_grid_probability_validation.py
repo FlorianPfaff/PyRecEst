@@ -12,8 +12,10 @@ class TestReplayGridProposalProbabilityValidation(unittest.TestCase):
         cases = (
             ("base_probability", True, None),
             ("base_probability", np.asarray([0.5]), None),
+            ("base_probability", np.ma.array(0.5, mask=True), None),
             ("ess_threshold", 0.5, False),
             ("ess_threshold", 0.5, np.asarray([0.5])),
+            ("ess_threshold", 0.5, np.ma.array(0.5, mask=True)),
         )
 
         for expected_name, base_probability, ess_threshold in cases:
