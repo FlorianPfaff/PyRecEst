@@ -26,6 +26,9 @@ from .abstract_hyperspherical_distribution import AbstractHypersphericalDistribu
 
 
 def _validate_positive_sample_count(n) -> int:
+    if np.ma.is_masked(n):
+        raise ValueError("n must be an integer")
+
     count_array = np.asarray(n)
     if count_array.ndim != 0:
         raise ValueError("n must be a scalar integer")
@@ -33,6 +36,8 @@ def _validate_positive_sample_count(n) -> int:
         raise ValueError("n must be an integer")
 
     count = count_array.item()
+    if np.ma.is_masked(count):
+        raise ValueError("n must be an integer")
     if isinstance(count, (bool, np.bool_)):
         raise ValueError("n must be an integer, not a boolean")
     if isinstance(count, (str, bytes)):
