@@ -82,14 +82,43 @@ def mean_squared_error(
     return np.mean(errors * errors, axis=axis)
 
 
+def _reduction_scale(
+    values: np.ndarray,
+    axis: int | tuple[int, ...] | None,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Return keep-dimension and reduced maximum-absolute scales."""
+    scale_with_axes = np.max(
+        np.abs(values),
+        axis=axis,
+        keepdims=True,
+        initial=0.0,
+    )
+    scale = (
+        np.squeeze(scale_with_axes)
+        if axis is None
+        else np.squeeze(scale_with_axes, axis=axis)
+    )
+    return scale_with_axes, scale
+
+
 def root_mean_squared_error(
     estimates: ArrayLike,
     groundtruths: ArrayLike,
     *,
     axis: int | tuple[int, ...] | None = None,
 ):
-    """Return root mean squared component error."""
-    return np.sqrt(mean_squared_error(estimates, groundtruths, axis=axis))
+    """Return root mean squared component error without avoidable overflow."""
+    errors = error_vectors(estimates, groundtruths)
+    scale_with_axes, scale = _reduction_scale(errors, axis)
+    safe_scale = np.where(
+        np.isfinite(scale_with_axes) & (scale_with_axes > 0.0),
+        scale_with_axes,
+        1.0,
+    )
+    scaled_errors = errors / safe_scale
+    result = scale * np.sqrt(np.mean(scaled_errors * scaled_errors, axis=axis))
+    result = np.where(np.isinf(scale), np.inf, result)
+    return result[()] if np.ndim(result) == 0 else result
 
 
 def mean_absolute_error(
@@ -98,8 +127,17 @@ def mean_absolute_error(
     *,
     axis: int | tuple[int, ...] | None = None,
 ):
-    """Return mean absolute component error."""
-    return np.mean(np.abs(error_vectors(estimates, groundtruths)), axis=axis)
+    """Return mean absolute component error without avoidable overflow."""
+    absolute_errors = np.abs(error_vectors(estimates, groundtruths))
+    scale_with_axes, scale = _reduction_scale(absolute_errors, axis)
+    safe_scale = np.where(
+        np.isfinite(scale_with_axes) & (scale_with_axes > 0.0),
+        scale_with_axes,
+        1.0,
+    )
+    result = scale * np.mean(absolute_errors / safe_scale, axis=axis)
+    result = np.where(np.isinf(scale), np.inf, result)
+    return result[()] if np.ndim(result) == 0 else result
 
 
 mse = mean_squared_error
