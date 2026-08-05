@@ -261,7 +261,14 @@ class AbstractParticleFilter(AbstractFilter):
 
         batched_apply_f = vmap(f)
 
+        expected_shape = self.filter_state.d.shape
         d = batched_apply_f(self.filter_state.d, noise_samples)
+        transformed_shape = getattr(d, "shape", None)
+        if transformed_shape != expected_shape:
+            raise ValueError(
+                "Nonadditive transition returned particles with shape "
+                f"{transformed_shape}, expected {expected_shape}."
+            )
 
         self._filter_state.d = d
 
