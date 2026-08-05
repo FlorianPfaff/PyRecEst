@@ -100,3 +100,40 @@ assert backend.to_numpy(by_mask).tolist() == [[1.0, 0.0, 0.0], [0.0, 2.0, 0.0], 
     )
 
     assert result.returncode == 0, result.stderr
+
+
+@pytest.mark.backend_portable
+def test_jax_assignment_uses_full_coordinates_when_count_is_less_than_rank():
+    if importlib.util.find_spec("jax") is None:
+        pytest.skip("JAX is not installed")
+
+    result = run_backend_code(
+        "jax",
+        """
+import pyrecest.backend as backend
+
+indices = [(0, 1, 2), (1, 2, 3)]
+assigned = backend.assignment(
+    backend.zeros((2, 3, 4)),
+    [5.0, 7.0],
+    indices,
+)
+summed = backend.assignment_by_sum(
+    backend.ones((2, 3, 4)),
+    [5.0, 7.0],
+    indices,
+)
+
+expected_assigned = backend.zeros((2, 3, 4))
+expected_assigned = expected_assigned.at[0, 1, 2].set(5.0)
+expected_assigned = expected_assigned.at[1, 2, 3].set(7.0)
+expected_summed = backend.ones((2, 3, 4))
+expected_summed = expected_summed.at[0, 1, 2].set(6.0)
+expected_summed = expected_summed.at[1, 2, 3].set(8.0)
+
+assert backend.to_numpy(assigned).tolist() == backend.to_numpy(expected_assigned).tolist()
+assert backend.to_numpy(summed).tolist() == backend.to_numpy(expected_summed).tolist()
+""",
+    )
+
+    assert result.returncode == 0, result.stderr
