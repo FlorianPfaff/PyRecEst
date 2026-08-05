@@ -18,7 +18,9 @@ Reference:
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import all as backend_all
 from pyrecest.backend import (
+    abs,
     allclose,
+    amax,
     array,
     asarray,
     column_stack,
@@ -27,6 +29,7 @@ from pyrecest.backend import (
     isfinite,
     linalg,
     mean,
+    sqrt,
     transpose,
     vstack,
     where,
@@ -51,11 +54,19 @@ def _normalize_rotation_columns(rotation_samples, fallback_rotation):
     """Normalize 2-D rotation columns, replacing undefined zero directions."""
     rotation_samples = asarray(rotation_samples)
     fallback_rotation = asarray(fallback_rotation)
-    norms = linalg.norm(rotation_samples, axis=0)
-    zero_norms = isclose(norms, 0.0)
-    safe_norms = where(zero_norms, 1.0, norms)
-    normalized = rotation_samples / safe_norms[None, :]
-    return where(zero_norms[None, :], fallback_rotation[:, None], normalized)
+
+    scales = amax(abs(rotation_samples), axis=0)
+    zero_scales = isclose(scales, 0.0)
+    safe_scales = where(zero_scales, 1.0, scales)
+    scale_roots = sqrt(safe_scales)
+    scaled_samples = (
+        rotation_samples / scale_roots[None, :]
+    ) / scale_roots[None, :]
+
+    scaled_norms = linalg.norm(scaled_samples, axis=0)
+    safe_norms = where(zero_scales, 1.0, scaled_norms)
+    normalized = scaled_samples / safe_norms[None, :]
+    return where(zero_scales[None, :], fallback_rotation[:, None], normalized)
 
 
 def _normalize_rotation_vector(rotation, fallback_rotation):
