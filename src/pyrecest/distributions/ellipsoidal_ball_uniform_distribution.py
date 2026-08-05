@@ -5,6 +5,7 @@ from typing import Union
 from pyrecest.backend import all as backend_all
 from pyrecest.backend import (
     array,
+    eye,
     int32,
     int64,
     is_complex,
@@ -142,7 +143,13 @@ class EllipsoidalBallUniformDistribution(
             return zeros((n, 0))
 
         random_points = random.normal(size=(n, self.dim))
-        random_points /= linalg.norm(random_points, axis=1).reshape(-1, 1)
+        direction_norms = linalg.norm(random_points, axis=1).reshape(-1, 1)
+        safe_direction_norms = where(direction_norms > 0.0, direction_norms, 1.0)
+        random_points = random_points / safe_direction_norms
+        canonical_direction = eye(self.dim)[0].reshape(1, -1)
+        random_points = where(
+            direction_norms > 0.0, random_points, canonical_direction
+        )
 
         random_radii = random.uniform(size=(n, 1))  # So that broadcasting works below
         random_radii = random_radii ** (
