@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from pyrecest.tracking.gaussian_mixture_measurement import (
+from pyrecest.tracking import (
     GaussianMixtureMeasurementFactor,
     balance_mixture_responsibilities,
     blend_mixture_responsibilities_with_uniform,
