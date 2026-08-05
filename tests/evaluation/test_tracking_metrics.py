@@ -181,6 +181,26 @@ def test_tracking_sequence_validates_shapes_and_identity_ranges() -> None:
         )
 
 
+def test_tracking_sequence_rejects_malformed_empty_similarity_shapes() -> None:
+    with pytest.raises(ValueError, match=r"must have shape \(0, 2\), got \(2, 0\)"):
+        TrackingSequence(
+            gt_ids=([],),
+            tracker_ids=([0, 1],),
+            similarity_scores=(np.empty((2, 0)),),
+            num_gt_ids=0,
+            num_tracker_ids=2,
+        )
+
+    shorthand = TrackingSequence(
+        gt_ids=([0],),
+        tracker_ids=([],),
+        similarity_scores=([],),
+        num_gt_ids=1,
+        num_tracker_ids=0,
+    )
+    assert shorthand.similarity_scores[0].shape == (1, 0)
+
+
 def test_metric_thresholds_are_validated() -> None:
     empty = TrackingSequence((), (), (), 0, 0)
 
