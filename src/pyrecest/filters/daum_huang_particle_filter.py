@@ -488,8 +488,7 @@ def _ledh_step_np(X, weights, measurement_model, y, R, delta, jitter):
 def _gaussian_flow_affine_increment_np(
     X, mean, covariance, H, y, R, delta_lambda, *, jitter
 ):
-    if delta_lambda < 0.0:
-        raise ValueError("delta_lambda must be nonnegative.")
+    delta_lambda = _validate_nonnegative_float(delta_lambda, "delta_lambda")
     if delta_lambda == 0.0:
         return X.copy()
     next_mean, next_covariance = _gaussian_bridge_moments_np(
@@ -500,8 +499,7 @@ def _gaussian_flow_affine_increment_np(
 
 
 def _gaussian_bridge_moments_np(mean, covariance, H, y, R, delta_lambda, *, jitter):
-    if delta_lambda < 0.0:
-        raise ValueError("delta_lambda must be nonnegative.")
+    delta_lambda = _validate_nonnegative_float(delta_lambda, "delta_lambda")
     Rinv = np.linalg.inv(R)
     Pinv = np.linalg.inv(covariance)
     precision = Pinv + float(delta_lambda) * (H.T @ Rinv @ H)
