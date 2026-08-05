@@ -91,10 +91,9 @@ def _dt_call_mode(function: Callable[..., Any]) -> str | None:
     parameters = tuple(signature.parameters.values())
     dt_parameter = signature.parameters.get("dt")
     if dt_parameter is not None:
-        if dt_parameter.kind in (
-            inspect.Parameter.POSITIONAL_ONLY,
-            inspect.Parameter.VAR_POSITIONAL,
-        ):
+        if dt_parameter.kind is inspect.Parameter.POSITIONAL_ONLY:
+            return "positional_only"
+        if dt_parameter.kind is inspect.Parameter.VAR_POSITIONAL:
             return "positional"
         return "keyword"
     if any(param.kind == inspect.Parameter.VAR_KEYWORD for param in parameters):
@@ -201,7 +200,7 @@ def _call_transition_function(
         )
 
     dt_mode = _dt_call_mode(function)
-    if dt_mode == "keyword":
+    if dt_mode in ("keyword", "positional_only"):
         call_kwargs["dt"] = dt
         return _call_with_supported_arguments(
             function, (state,), call_kwargs, filter_unsupported=False
@@ -231,7 +230,7 @@ def _call_transition_jacobian(
         )
 
     dt_mode = _dt_call_mode(function)
-    if dt_mode == "keyword":
+    if dt_mode in ("keyword", "positional_only"):
         call_kwargs["dt"] = dt
         return _call_with_supported_arguments(
             function, (state,), call_kwargs, filter_unsupported=True
