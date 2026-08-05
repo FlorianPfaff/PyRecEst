@@ -4,9 +4,11 @@ from pyrecest.backend import (
     allclose,
     array,
     diagonal,
+    exp,
     is_complex,
     isfinite,
     linalg,
+    log,
     pi,
     transpose,
 )
@@ -87,4 +89,5 @@ class AbstractEllipsoidalBallDistribution(AbstractBoundedNonPeriodicDistribution
             c = (pi ** (self.dim / 2)) / gamma((self.dim / 2) + 1)
 
         cholesky_factor = linalg.cholesky(self.shape_matrix)
-        return c * diagonal(cholesky_factor).prod()
+        log_volume = log(array(c)) + log(diagonal(cholesky_factor)).sum()
+        return exp(log_volume)
