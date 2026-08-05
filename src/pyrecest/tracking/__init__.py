@@ -124,6 +124,26 @@ __all__ += [
     "summarize_innovation_diagnostics",
 ]
 
+from .nis_consistency import (
+    DEFAULT_NIS_GATE_PROBABILITIES,
+    INNOVATION_COVARIANCE_SCALE_METHODS,
+    InnovationCovarianceScaleEstimate,
+    NISConsistencySummary,
+    NISCoverageSummary,
+    estimate_innovation_covariance_scale,
+    summarize_nis_consistency,
+)
+
+__all__ += [
+    "DEFAULT_NIS_GATE_PROBABILITIES",
+    "INNOVATION_COVARIANCE_SCALE_METHODS",
+    "InnovationCovarianceScaleEstimate",
+    "NISConsistencySummary",
+    "NISCoverageSummary",
+    "estimate_innovation_covariance_scale",
+    "summarize_nis_consistency",
+]
+
 from .residual_hypothesis_mht import (
     ResidualEditCandidate,
     ResidualHypothesis,
