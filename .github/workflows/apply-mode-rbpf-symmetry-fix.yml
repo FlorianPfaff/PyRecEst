@@ -15,7 +15,7 @@ permissions:
 jobs:
   apply-fix:
     if: github.actor != 'github-actions[bot]'
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -119,14 +119,17 @@ if __name__ == "__main__":
           )
           PY
 
-      - name: Validate focused regression
+      - name: Install package and validate focused regression
         shell: bash
         run: |
           set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+          python -m pip install pytest
           python -m py_compile \
             src/pyrecest/filters/mode_rbpf_manifold_ukf_tracker.py \
             tests/filters/test_mode_rbpf_covariance_symmetrization.py
-          PYTHONPATH=src python -m pytest -q \
+          python -m pytest -q \
             tests/filters/test_mode_rbpf_covariance_symmetrization.py
           git diff --check
 
