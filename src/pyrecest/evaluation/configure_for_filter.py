@@ -43,14 +43,30 @@ def _as_bool_scalar(value: Any, name: str) -> bool:
     raise ValueError(f"{name} must be a boolean scalar")
 
 
-def _gen_next_state_with_noise_is_vectorized(scenario_config) -> bool:
-    snake_case_key = "gen_next_state_with_noise_is_vectorized"
-    camel_case_key = "genNextStateWithNoiseIsVectorized"
+def _transition_is_vectorized(
+    scenario_config, snake_case_key: str, camel_case_key: str
+) -> bool:
     if snake_case_key in scenario_config:
         return _as_bool_scalar(scenario_config[snake_case_key], snake_case_key)
     if camel_case_key in scenario_config:
         return _as_bool_scalar(scenario_config[camel_case_key], camel_case_key)
     return False
+
+
+def _gen_next_state_with_noise_is_vectorized(scenario_config) -> bool:
+    return _transition_is_vectorized(
+        scenario_config,
+        "gen_next_state_with_noise_is_vectorized",
+        "genNextStateWithNoiseIsVectorized",
+    )
+
+
+def _gen_next_state_without_noise_is_vectorized(scenario_config) -> bool:
+    return _transition_is_vectorized(
+        scenario_config,
+        "gen_next_state_without_noise_is_vectorized",
+        "genNextStateWithoutNoiseIsVectorized",
+    )
 
 
 def _require_periodic_particle_prediction_source(scenario_config) -> None:
@@ -174,7 +190,59 @@ def configure_for_filter(filter_config, scenario_config, precalculated_params=No
                 no_particles, scenario_config["initial_prior"].dim
             )
             filter_obj.filter_state = scenario_config["initial_prior"]
-            if scenario_config.get("inputs") is None:
+            has_inputs = scenario_config.get("inputs") is not None
+
+            if "gen_next_state_with_noise" in scenario_config:
+                transition = scenario_config["gen_next_state_with_noise"]
+                transition_is_vectorized = _gen_next_state_with_noise_is_vectorized(
+                    scenario_config
+                )
+                if not has_inputs:
+
+                    def prediction_routine():  # type: ignore[misc]
+                        return filter_obj.predict_nonlinear(
+                            transition,
+                            None,
+                            transition_is_vectorized,
+                        )
+
+                else:
+
+                    def prediction_routine(curr_input):  # type: ignore[misc]
+                        return filter_obj.predict_nonlinear(
+                            lambda state: transition(state, curr_input),
+                            None,
+                            transition_is_vectorized,
+                        )
+
+            elif "gen_next_state_without_noise" in scenario_config:
+                if "sys_noise" not in scenario_config:
+                    raise ValueError(
+                        "gen_next_state_without_noise requires scenario_config['sys_noise']."
+                    )
+                transition = scenario_config["gen_next_state_without_noise"]
+                transition_is_vectorized = (
+                    _gen_next_state_without_noise_is_vectorized(scenario_config)
+                )
+                if not has_inputs:
+
+                    def prediction_routine():  # type: ignore[misc]
+                        return filter_obj.predict_nonlinear(
+                            transition,
+                            scenario_config["sys_noise"],
+                            transition_is_vectorized,
+                        )
+
+                else:
+
+                    def prediction_routine(curr_input):  # type: ignore[misc]
+                        return filter_obj.predict_nonlinear(
+                            lambda state: transition(state, curr_input),
+                            scenario_config["sys_noise"],
+                            transition_is_vectorized,
+                        )
+
+            elif not has_inputs:
 
                 def prediction_routine():  # type: ignore[misc]
                     return filter_obj.predict_identity(scenario_config["sys_noise"])
