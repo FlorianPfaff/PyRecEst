@@ -1,3 +1,5 @@
+import importlib
+
 import numpy as np
 import numpy.testing as npt
 import pytest
@@ -5,12 +7,11 @@ import pytest
 
 def _jax_modules():
     jnp = pytest.importorskip("jax.numpy")
-    import pyrecest._backend.jax as jax_backend  # pylint: disable=import-outside-toplevel
-    from pyrecest.backend_support._jax_assignment_numpy_index_contract import (  # pylint: disable=import-outside-toplevel
-        patch_jax_assignment_numpy_index_contract,
+    jax_backend = importlib.import_module("pyrecest._backend.jax")
+    assignment_contract = importlib.import_module(
+        "pyrecest.backend_support._jax_assignment_numpy_index_contract"
     )
-
-    patch_jax_assignment_numpy_index_contract()
+    assignment_contract.patch_jax_assignment_numpy_index_contract()
     return jnp, jax_backend
 
 
