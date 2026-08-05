@@ -115,7 +115,7 @@ def _similarity_matrix(
         raw = np.asarray(values)
     except (TypeError, ValueError, OverflowError) as exc:
         raise ValueError(f"{name} must be a finite numeric matrix") from exc
-    if raw.size == 0 and 0 in expected_shape:
+    if raw.shape == (0,) and 0 in expected_shape:
         result = np.zeros(expected_shape, dtype=float)
     else:
         if raw.dtype.kind == "c":
