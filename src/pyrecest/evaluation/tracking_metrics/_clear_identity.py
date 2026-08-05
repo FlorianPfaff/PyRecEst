@@ -52,7 +52,8 @@ def evaluate_clear(data: TrackingSequence, *, threshold: float) -> ClearCounts:
             continue
         continuity = tracker_ids[np.newaxis, :] == previous_timestep_id[gt_ids[:, None]]
         score = continuity.astype(float) * 1000.0 + similarity
-        score[similarity < threshold - _EPS] = 0.0
+        eligible = (similarity >= threshold - _EPS) & (similarity > _EPS)
+        score[~eligible] = 0.0
         match_rows, match_cols = linear_sum_assignment(-score)
         valid = score[match_rows, match_cols] > _EPS
         match_rows = match_rows[valid]
