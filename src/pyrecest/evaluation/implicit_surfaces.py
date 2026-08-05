@@ -110,8 +110,21 @@ def _standard_normal_cdf(values: Any) -> Any:
     return ndtr(values)
 
 
+def _contains_masked_values(values: Any) -> bool:
+    """Return whether an input contains a genuinely masked NumPy value."""
+    if np.ma.is_masked(values):
+        return True
+    if isinstance(values, np.ndarray) and values.dtype.kind == "O":
+        return any(_contains_masked_values(item) for item in values.flat)
+    if isinstance(values, (list, tuple)):
+        return any(_contains_masked_values(item) for item in values)
+    return False
+
+
 def _boolean_flag(name: str, value: bool) -> bool:
     message = f"{name} must be a boolean."
+    if _contains_masked_values(value):
+        raise TypeError(message)
     value_array = np.asarray(value)
     if value_array.shape != ():
         raise TypeError(message)
@@ -124,6 +137,8 @@ def _boolean_flag(name: str, value: bool) -> bool:
 
 def _positive_float(name: str, value: float) -> float:
     message = f"{name} must be finite and positive."
+    if _contains_masked_values(value):
+        raise ValueError(message)
     value_array = np.asarray(value)
     if value_array.shape != () or value_array.dtype.kind in _INVALID_NUMERIC_KINDS:
         raise ValueError(message)
@@ -180,6 +195,8 @@ def _nonnegative_finite_numeric_field(values: Any, name: str) -> Any:
 
 
 def _as_numpy_numeric_array(values: Any, name: str) -> np.ndarray:
+    if _contains_masked_values(values):
+        raise ValueError(f"{name} must contain numeric values.")
     try:
         array = np.asarray(values)
     except (TypeError, ValueError, OverflowError) as exc:
