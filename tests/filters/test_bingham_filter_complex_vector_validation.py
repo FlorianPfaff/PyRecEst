@@ -1,3 +1,4 @@
+import math
 import unittest
 
 # pylint: disable=no-name-in-module,no-member
@@ -26,6 +27,20 @@ class TestBinghamFilterComplexVectorValidation(unittest.TestCase):
         )
         self.filter = BinghamFilter()
         self.filter.filter_state = self.state
+
+    def test_filter_state_rejects_complex_orientation_matrix(self):
+        sqrt_two = math.sqrt(2.0)
+        complex_orthogonal_matrix = array(
+            [[sqrt_two, 1.0j], [-1.0j, sqrt_two]],
+            dtype=complex128,
+        )
+        complex_state = BinghamDistribution(
+            array([-5.0, 0.0]),
+            complex_orthogonal_matrix,
+        )
+
+        with self.assertRaisesRegex(ValueError, "filter_state M must be real-valued"):
+            self.filter.filter_state = complex_state
 
     def test_update_rejects_complex_measurement(self):
         measurement = array([1.0 + 0.0j, 0.0 + 0.0j], dtype=complex128)
