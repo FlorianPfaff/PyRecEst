@@ -229,9 +229,40 @@ def chi_square_confidence_bounds(
         "degrees_of_freedom",
     )
     n_samples = _as_positive_int(n_samples, "n_samples")
-    if not 0.0 < float(confidence) < 1.0:
-        raise ValueError("confidence must be in the open interval (0, 1)")
-    alpha = 1.0 - float(confidence)
+    confidence_message = "confidence must be in the open interval (0, 1)"
+    if np.ma.isMaskedArray(confidence) and bool(
+        np.any(np.ma.getmaskarray(confidence))
+    ):
+        raise ValueError(confidence_message)
+    try:
+        confidence_array = np.asarray(confidence)
+    except (TypeError, ValueError, OverflowError, RuntimeError) as exc:
+        raise ValueError(confidence_message) from exc
+    if confidence_array.shape != () or confidence_array.dtype.kind in "bUScmM":
+        raise ValueError(confidence_message)
+    confidence_scalar = confidence_array.item()
+    if isinstance(
+        confidence_scalar,
+        (
+            bool,
+            np.bool_,
+            str,
+            bytes,
+            bytearray,
+            complex,
+            np.complexfloating,
+            np.datetime64,
+            np.timedelta64,
+        ),
+    ):
+        raise ValueError(confidence_message)
+    try:
+        confidence = float(confidence_scalar)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(confidence_message) from exc
+    if not np.isfinite(confidence) or not 0.0 < confidence < 1.0:
+        raise ValueError(confidence_message)
+    alpha = 1.0 - confidence
     aggregate_dof = degrees_of_freedom * n_samples
     lower = chi2.ppf(alpha / 2.0, aggregate_dof) / n_samples
     upper = chi2.ppf(1.0 - alpha / 2.0, aggregate_dof) / n_samples
