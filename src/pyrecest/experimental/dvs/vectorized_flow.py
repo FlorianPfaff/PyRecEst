@@ -28,6 +28,8 @@ def tracker_signed_normal_flows_vectorized(
         return np.empty(0, dtype=float)
     if measurements.ndim != 2 or measurements.shape[1] != 2:
         raise ValueError("event_xy must have shape (n, 2)")
+    if not np.isfinite(measurements).all():
+        raise ValueError("event_xy must contain finite values")
     if measurements.shape[0] == 0:
         return np.empty(0, dtype=float)
 
@@ -67,7 +69,7 @@ def _tracker_signed_normal_flows_vectorized_impl(
     shape_state = np.asarray(tracker.shape_state, dtype=float)
 
     delta = measurements - position[None, :]
-    delta_norm = np.linalg.norm(delta, axis=1)
+    delta_norm = np.hypot(delta[:, 0], delta[:, 1])
     fallback_direction = np.asarray(
         [np.cos(orientation), np.sin(orientation)], dtype=float
     )
@@ -91,7 +93,7 @@ def _tracker_signed_normal_flows_vectorized_impl(
         (-unit[:, 1], unit[:, 0])
     )
     normals = np.column_stack((tangent[:, 1], -tangent[:, 0]))
-    normal_norm = np.linalg.norm(normals, axis=1)
+    normal_norm = np.hypot(normals[:, 0], normals[:, 1])
     normals = np.divide(
         normals,
         normal_norm[:, None],
