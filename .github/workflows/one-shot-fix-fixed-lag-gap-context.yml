@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - agent/fix-fixed-lag-gap-transition-context-20260805
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
