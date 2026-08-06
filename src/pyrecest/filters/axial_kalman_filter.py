@@ -133,7 +133,9 @@ class AxialKalmanFilter(AbstractAxialFilter):
 
         mu_new_norm = linalg.norm(mu_new)
         if not bool(isfinite(mu_new_norm)):
-            raise ValueError("Axial Kalman update produced a non-finite posterior mean.")
+            raise ValueError(
+                "Axial Kalman update produced a non-finite posterior mean."
+            )
         if not bool(mu_new_norm > _MIN_NORMALIZABLE_MEAN_NORM):
             raise ValueError(
                 "Axial Kalman update produced an undefined zero-length posterior mean."
