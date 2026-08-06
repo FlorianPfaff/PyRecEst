@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import numpy as np
 import numpy.testing as npt
-from pyrecest.tracking.ellipse_geometry import symmetrize
+from pyrecest.tracking import project_symmetric_covariance
 
 
-def test_symmetrize_avoids_integer_overflow() -> None:
-    matrix = np.array(
+def test_covariance_projection_avoids_integer_overflow() -> None:
+    covariance = np.array(
         [
             [120, 100],
             [80, 110],
@@ -14,10 +14,10 @@ def test_symmetrize_avoids_integer_overflow() -> None:
         dtype=np.int8,
     )
 
-    result = np.asarray(symmetrize(matrix))
+    projected = np.asarray(project_symmetric_covariance(covariance))
 
     npt.assert_allclose(
-        result,
+        projected,
         np.array(
             [
                 [120.0, 90.0],
@@ -25,4 +25,4 @@ def test_symmetrize_avoids_integer_overflow() -> None:
             ]
         ),
     )
-    assert np.issubdtype(result.dtype, np.floating)
+    assert np.issubdtype(projected.dtype, np.floating)
