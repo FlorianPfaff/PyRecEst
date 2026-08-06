@@ -115,6 +115,9 @@ class HyperhemisphereCartProdParticleFilter(AbstractParticleFilter):
             )
         if not shift_instead_of_add:
             raise ValueError("Only shifting is supported.")
+        if noise_distribution is None:
+            self.filter_state = self.filter_state.apply_function_component_wise(f)
+            return
         for i in range(self.filter_state.n_hemispheres):
             # Apply the function to each hyperhemisphere
             index_arr = range(
