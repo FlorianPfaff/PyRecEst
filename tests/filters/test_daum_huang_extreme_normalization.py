@@ -3,7 +3,6 @@
 import numpy as np
 import numpy.testing as npt
 import pytest
-
 from pyrecest import backend
 from pyrecest.filters.daum_huang_particle_filter import gaussian_particle_flow_update
 

@@ -26,9 +26,7 @@ def _validate_summary_filter_counts(
         name: count for name, count in summary_counts.items() if count != expected_count
     }
     if mismatched:
-        details = ", ".join(
-            f"{name}={count}" for name, count in mismatched.items()
-        )
+        details = ", ".join(f"{name}={count}" for name, count in mismatched.items())
         raise ValueError(
             "filter_configs and computed summaries must describe the same number "
             f"of filters; filter_configs={expected_count}, {details}"
@@ -44,7 +42,7 @@ def summarize_filter_results(
     run_failed,
     last_filter_states=None,
     last_estimates=None,
-    **_
+    **_,
 ):
     if pyrecest.backend.__backend_name__ == "jax":  # pylint: disable=no-member
         raise NotImplementedError("Not supported for the JAX backend.")

@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.backend import asarray, to_numpy
 from pyrecest.sampling import MerweScaledSigmaPoints
 

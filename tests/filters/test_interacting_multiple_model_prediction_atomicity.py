@@ -2,7 +2,6 @@ import copy
 import unittest
 
 import numpy.testing as npt
-
 import pyrecest.backend
 from pyrecest.backend import array, eye
 from pyrecest.distributions import GaussianDistribution
@@ -34,18 +33,14 @@ class _PredictingGaussianFilter:
         covariance = (
             system_matrix @ self.filter_state.C @ system_matrix.T + sys_noise_cov
         )
-        self.filter_state = GaussianDistribution(
-            mean, covariance, check_validity=False
-        )
+        self.filter_state = GaussianDistribution(mean, covariance, check_validity=False)
 
     def predict_nonlinear(self, transition_function, sys_noise_cov, **kwargs):
         if self.fail_on_predict:
             raise RuntimeError("intentional prediction failure")
         mean = transition_function(self.filter_state.mu, **kwargs)
         covariance = self.filter_state.C + sys_noise_cov
-        self.filter_state = GaussianDistribution(
-            mean, covariance, check_validity=False
-        )
+        self.filter_state = GaussianDistribution(mean, covariance, check_validity=False)
 
 
 @unittest.skipIf(
@@ -82,9 +77,7 @@ class InteractingMultipleModelPredictionAtomicityTest(unittest.TestCase):
     def _assert_snapshot_equal(self, imm, snapshot):
         mode_probabilities, means, covariances, mixing = snapshot
         npt.assert_allclose(imm.mode_probabilities, mode_probabilities)
-        for curr_filter, mean, covariance in zip(
-            imm.filter_bank, means, covariances
-        ):
+        for curr_filter, mean, covariance in zip(imm.filter_bank, means, covariances):
             npt.assert_allclose(curr_filter.filter_state.mu, mean)
             npt.assert_allclose(curr_filter.filter_state.C, covariance)
         if mixing is None:
@@ -108,9 +101,7 @@ class InteractingMultipleModelPredictionAtomicityTest(unittest.TestCase):
         for prediction_name, invalid_call in invalid_calls.items():
             with self.subTest(prediction=prediction_name):
                 imm = self._make_imm()
-                imm.latest_mixing_probabilities = array(
-                    [[0.6, 0.4], [0.3, 0.7]]
-                )
+                imm.latest_mixing_probabilities = array([[0.6, 0.4], [0.3, 0.7]])
                 before = self._snapshot(imm)
 
                 with self.assertRaisesRegex(ValueError, "one entry per model"):
@@ -136,9 +127,7 @@ class InteractingMultipleModelPredictionAtomicityTest(unittest.TestCase):
         for prediction_name, failing_call in failing_calls.items():
             with self.subTest(prediction=prediction_name):
                 imm = self._make_imm(fail_second=True)
-                imm.latest_mixing_probabilities = array(
-                    [[0.55, 0.45], [0.35, 0.65]]
-                )
+                imm.latest_mixing_probabilities = array([[0.55, 0.45], [0.35, 0.65]])
                 before = self._snapshot(imm)
 
                 with self.assertRaisesRegex(

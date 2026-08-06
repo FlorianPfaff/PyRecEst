@@ -14,9 +14,7 @@ from pyrecest.filters.von_mises_fisher_filter import VonMisesFisherFilter
 class VonMisesFisherFilterRealInputTest(unittest.TestCase):
     def test_update_rejects_complex_measurement_without_mutating_state(self):
         current_filter = VonMisesFisherFilter()
-        current_filter.filter_state = VonMisesFisherDistribution(
-            array([1.0, 0.0]), 0.7
-        )
+        current_filter.filter_state = VonMisesFisherDistribution(array([1.0, 0.0]), 0.7)
         measurement_noise = VonMisesFisherDistribution(array([0.0, 1.0]), 0.9)
         original_mean = copy.deepcopy(current_filter.filter_state.mu)
         original_kappa = current_filter.filter_state.kappa
