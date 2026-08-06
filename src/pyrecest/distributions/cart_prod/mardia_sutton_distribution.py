@@ -149,7 +149,9 @@ class MardiaSuttonDistribution(AbstractHypercylindricalDistribution):
         vm_part = exp(self.kappa * (cos(circular - self.mu0) - 1.0)) / (
             2.0 * pi * ive(0, self.kappa)
         )
-        gaussian_part = array(norm.pdf(linear, loc=muc, scale=float(sigmac)))
+        gaussian_part = exp(-0.5 * ((linear - muc) / sigmac) ** 2) / (
+            sqrt(2.0 * pi) * sigmac
+        )
 
         return vm_part * gaussian_part
 
