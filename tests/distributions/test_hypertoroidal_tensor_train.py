@@ -13,6 +13,14 @@ class TestHypertoroidalTensorTrain(unittest.TestCase):
         self.assertEqual(tt.shape, (3, 3, 3))
         npt.assert_allclose(tt.entry((1, 2, 0)), tensor[1, 2, 0], atol=1e-12)
 
+    def test_relative_truncation_handles_large_finite_values(self):
+        tensor = np.diag([1e200, 1e200])
+        with np.errstate(over="raise", invalid="raise"):
+            tt = TensorTrain.from_dense(tensor, rtol=1e-12)
+
+        self.assertEqual(tt.ranks, (1, 2, 1))
+        npt.assert_allclose(tt.to_dense() / 1e200, np.eye(2), atol=1e-12)
+
     def test_frobenius_norm(self):
         tensor = np.arange(9, dtype=float).reshape(3, 3) - 2.0
         tt = TensorTrain.from_dense(tensor)
