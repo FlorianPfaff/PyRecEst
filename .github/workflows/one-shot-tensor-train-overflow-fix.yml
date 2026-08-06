@@ -1,15 +1,16 @@
 name: One-shot tensor-train overflow fix
 
 on:
-  push:
+  pull_request:
     branches:
-      - agent/stabilize-tensor-train-relative-truncation
+      - main
 
 permissions:
   contents: write
 
 jobs:
   patch:
+    if: github.head_ref == 'agent/stabilize-tensor-train-relative-truncation'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
