@@ -1,0 +1,148 @@
+name: One-shot tensor-train overflow fix
+
+on:
+  push:
+    branches:
+      - agent/stabilize-tensor-train-relative-truncation
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/stabilize-tensor-train-relative-truncation
+
+      - name: Apply source and regression patches
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          source_path = Path("src/pyrecest/distributions/hypertorus/_tensor_train.py")
+          source = source_path.read_text()
+          old_choose_rank = '''def _choose_rank(singular_values, max_rank, local_tolerance):
+              max_rank = _normalize_max_rank(max_rank)
+              full_rank = singular_values.size
+              if local_tolerance <= 0:
+                  rank = full_rank
+              else:
+                  squared_tail = np.cumsum(singular_values[::-1] ** 2)[::-1]
+                  rank = full_rank
+                  for candidate in range(1, full_rank + 1):
+                      tail = (
+                          0.0 if candidate == full_rank else sqrt(float(squared_tail[candidate]))
+                      )
+                      if tail <= local_tolerance:
+                          rank = candidate
+                          break
+              if max_rank is not None:
+                  rank = min(rank, max_rank)
+              return max(1, rank)
+          '''
+          new_choose_rank = '''def _stable_vector_norm(values):
+              """Return a scale-safe Euclidean norm for finite array values."""
+              magnitudes = np.abs(np.asarray(values))
+              if magnitudes.size == 0:
+                  return 0.0
+              scale = float(np.max(magnitudes))
+              if scale == 0.0 or not np.isfinite(scale):
+                  return scale
+              return scale * sqrt(float(np.sum((magnitudes / scale) ** 2)))
+
+
+          def _choose_rank(singular_values, max_rank, local_tolerance):
+              max_rank = _normalize_max_rank(max_rank)
+              full_rank = singular_values.size
+              if local_tolerance <= 0:
+                  rank = full_rank
+              else:
+                  scale = float(np.max(np.abs(singular_values)))
+                  if scale == 0.0:
+                      rank = 1
+                  else:
+                      scaled_values = singular_values / scale
+                      squared_tail = np.cumsum(scaled_values[::-1] ** 2)[::-1]
+                      scaled_tolerance = local_tolerance / scale
+                      rank = full_rank
+                      for candidate in range(1, full_rank + 1):
+                          tail = (
+                              0.0
+                              if candidate == full_rank
+                              else sqrt(float(squared_tail[candidate]))
+                          )
+                          if tail <= scaled_tolerance:
+                              rank = candidate
+                              break
+              if max_rank is not None:
+                  rank = min(rank, max_rank)
+              return max(1, rank)
+          '''
+          if old_choose_rank not in source:
+              raise SystemExit("expected _choose_rank implementation not found")
+          source = source.replace(old_choose_rank, new_choose_rank, 1)
+
+          old_norm = "        norm = float(np.linalg.norm(array.ravel()))\n"
+          new_norm = "        norm = _stable_vector_norm(array.ravel())\n"
+          if old_norm not in source:
+              raise SystemExit("expected dense norm calculation not found")
+          source = source.replace(old_norm, new_norm, 1)
+          source_path.write_text(source)
+
+          test_path = Path("tests/distributions/test_hypertoroidal_tensor_train.py")
+          tests = test_path.read_text()
+          anchor = '''    def test_frobenius_norm(self):
+          '''
+          regression = '''    def test_relative_truncation_handles_large_finite_values(self):
+              tensor = np.diag([1e200, 1e200])
+              with np.errstate(over="raise", invalid="raise"):
+                  tt = TensorTrain.from_dense(tensor, rtol=1e-12)
+
+              self.assertEqual(tt.ranks, (1, 2, 1))
+              npt.assert_allclose(tt.to_dense() / 1e200, np.eye(2), atol=1e-12)
+
+          '''
+          if anchor not in tests:
+              raise SystemExit("expected tensor-train test anchor not found")
+          tests = tests.replace(anchor, regression + anchor, 1)
+          test_path.write_text(tests)
+
+          Path(".github/workflows/one-shot-tensor-train-overflow-fix.yml").unlink()
+          PY
+
+      - name: Validate focused regression
+        run: |
+          python -m py_compile \
+            src/pyrecest/distributions/hypertorus/_tensor_train.py \
+            tests/distributions/test_hypertoroidal_tensor_train.py
+          python - <<'PY'
+          import importlib.util
+          from pathlib import Path
+
+          import numpy as np
+
+          module_path = Path("src/pyrecest/distributions/hypertorus/_tensor_train.py")
+          spec = importlib.util.spec_from_file_location("tensor_train", module_path)
+          module = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(module)
+
+          tensor = np.diag([1e200, 1e200])
+          with np.errstate(over="raise", invalid="raise"):
+              tt = module.TensorTrain.from_dense(tensor, rtol=1e-12)
+          np.testing.assert_allclose(tt.to_dense() / 1e200, np.eye(2), atol=1e-12)
+          assert tt.ranks == (1, 2, 1)
+          PY
+
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            src/pyrecest/distributions/hypertorus/_tensor_train.py \
+            tests/distributions/test_hypertoroidal_tensor_train.py \
+            .github/workflows/one-shot-tensor-train-overflow-fix.yml
+          git commit -m "Stabilize tensor-train truncation norms"
+          git push origin HEAD:agent/stabilize-tensor-train-relative-truncation
