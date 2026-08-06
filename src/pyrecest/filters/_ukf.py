@@ -92,6 +92,20 @@ class UnscentedKalmanFilter:
         if dt is None:
             dt = self._model.dt
 
+        dim_x = self._model.dim_x
+        process_noise_covariance = asarray(self.Q, dtype=float64)
+        if len(process_noise_covariance.shape) == 0 or (
+            len(process_noise_covariance.shape) == 1
+            and process_noise_covariance.shape[0] == 1
+            and dim_x == 1
+        ):
+            process_noise_covariance = reshape(process_noise_covariance, (1, 1))
+        if process_noise_covariance.shape != (dim_x, dim_x):
+            raise ValueError(
+                "process noise covariance Q has shape "
+                f"{process_noise_covariance.shape}, expected {(dim_x, dim_x)}"
+            )
+
         points = self._model.points
         sigmas = points.sigma_points(self.x, self.P)
         n_sigmas = sigmas.shape[0]
@@ -104,10 +118,10 @@ class UnscentedKalmanFilter:
             for i in range(n_sigmas)
         ]
         for sigma_f in sigma_rows:
-            if sigma_f.shape[0] != self._model.dim_x:
+            if sigma_f.shape[0] != dim_x:
                 raise ValueError(
                     "transition function must return vectors with state dimension "
-                    f"{self._model.dim_x}; got {sigma_f.shape[0]}"
+                    f"{dim_x}; got {sigma_f.shape[0]}"
                 )
         sigmas_f = stack(sigma_rows)
 
@@ -116,11 +130,11 @@ class UnscentedKalmanFilter:
 
         x_pred = einsum("i,ij->j", Wm, sigmas_f)
 
-        P_pred = zeros((self._model.dim_x, self._model.dim_x))
+        P_pred = zeros((dim_x, dim_x))
         for i in range(n_sigmas):
             d = expand_dims(sigmas_f[i] - x_pred, -1)
             P_pred = P_pred + Wc[i] * (d @ transpose(d))
-        P_pred = P_pred + asarray(self.Q, dtype=float64)
+        P_pred = P_pred + process_noise_covariance
         P_pred = 0.5 * (P_pred + transpose(P_pred))
 
         self.x = x_pred
