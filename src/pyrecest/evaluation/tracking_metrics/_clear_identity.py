@@ -62,10 +62,7 @@ def evaluate_clear(data: TrackingSequence, *, threshold: float) -> ClearCounts:
         matched_tracker = tracker_ids[match_cols]
         previous = previous_id[matched_gt]
         switches += int(
-            np.sum(
-                (previous != _UNMATCHED_ID)
-                & (matched_tracker != previous)
-            )
+            np.sum((previous != _UNMATCHED_ID) & (matched_tracker != previous))
         )
         previous_id[matched_gt] = matched_tracker
         previous_timestep_id[:] = _UNMATCHED_ID
