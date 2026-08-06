@@ -11,6 +11,7 @@ from scipy.optimize import linear_sum_assignment
 from ._data import TrackingSequence, unit_interval_scalar
 
 _EPS = np.finfo(float).eps
+_UNMATCHED_ID = -1
 
 
 @dataclass(frozen=True)
@@ -39,8 +40,8 @@ def evaluate_clear(data: TrackingSequence, *, threshold: float) -> ClearCounts:
         return ClearCounts(0, data.num_tracker_detections, 0, 0, 0.0)
     tp = fp = fn = switches = 0
     motp_sum = 0.0
-    previous_id = np.full(data.num_gt_ids, np.nan)
-    previous_timestep_id = np.full(data.num_gt_ids, np.nan)
+    previous_id = np.full(data.num_gt_ids, _UNMATCHED_ID, dtype=int)
+    previous_timestep_id = np.full(data.num_gt_ids, _UNMATCHED_ID, dtype=int)
     for gt_ids, tracker_ids, similarity in zip(
         data.gt_ids, data.tracker_ids, data.similarity_scores, strict=True
     ):
@@ -60,9 +61,14 @@ def evaluate_clear(data: TrackingSequence, *, threshold: float) -> ClearCounts:
         matched_gt = gt_ids[match_rows]
         matched_tracker = tracker_ids[match_cols]
         previous = previous_id[matched_gt]
-        switches += int(np.sum((~np.isnan(previous)) & (matched_tracker != previous)))
+        switches += int(
+            np.sum(
+                (previous != _UNMATCHED_ID)
+                & (matched_tracker != previous)
+            )
+        )
         previous_id[matched_gt] = matched_tracker
-        previous_timestep_id[:] = np.nan
+        previous_timestep_id[:] = _UNMATCHED_ID
         previous_timestep_id[matched_gt] = matched_tracker
         matches = len(match_rows)
         tp += matches
