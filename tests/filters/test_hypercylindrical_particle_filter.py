@@ -1,5 +1,6 @@
 import unittest
 
+import numpy as np
 import numpy.testing as npt
 import pyrecest.backend
 
@@ -30,6 +31,53 @@ class HypercylindricalParticleFilterTest(unittest.TestCase):
         hpf = HypercylindricalParticleFilter(10, self.bound_dim, self.lin_dim)
         self.assertIsNotNone(hpf.filter_state)
         self.assertEqual(hpf.filter_state.d.shape, (10, self.bound_dim + self.lin_dim))
+
+    def test_initialization_accepts_scalar_numpy_integer_counts(self):
+        hpf = HypercylindricalParticleFilter(
+            np.int64(4), np.array(1, dtype=np.int64), np.int64(2)
+        )
+
+        self.assertEqual(hpf.filter_state.d.shape, (4, 3))
+        self.assertEqual(hpf.filter_state.bound_dim, 1)
+        self.assertEqual(hpf.filter_state.lin_dim, 2)
+
+    def test_initialization_rejects_invalid_particle_counts(self):
+        invalid_counts = (
+            0,
+            -1,
+            1.5,
+            True,
+            np.bool_(True),
+            np.array(True),
+            np.array([1]),
+        )
+
+        for n_particles in invalid_counts:
+            with self.subTest(n_particles=n_particles):
+                with self.assertRaisesRegex(ValueError, "positive integer"):
+                    HypercylindricalParticleFilter(
+                        n_particles, self.bound_dim, self.lin_dim
+                    )
+
+    def test_initialization_rejects_invalid_dimension_counts(self):
+        invalid_bound_dims = (True, np.bool_(True), np.array(True), -1, 1.5, [1])
+        for bound_dim in invalid_bound_dims:
+            with self.subTest(bound_dim=bound_dim):
+                with self.assertRaisesRegex(
+                    ValueError, "bound_dim must be a non-negative integer"
+                ):
+                    HypercylindricalParticleFilter(4, bound_dim, self.lin_dim)
+
+        invalid_lin_dims = (False, np.bool_(False), np.array(False), -1, 1.5, [2])
+        for lin_dim in invalid_lin_dims:
+            with self.subTest(lin_dim=lin_dim):
+                with self.assertRaisesRegex(
+                    ValueError, "lin_dim must be a non-negative integer"
+                ):
+                    HypercylindricalParticleFilter(4, self.bound_dim, lin_dim)
+
+        with self.assertRaisesRegex(ValueError, "total dimension must be positive"):
+            HypercylindricalParticleFilter(4, 0, 0)
 
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ == "jax", reason="Backend not supported"
