@@ -2,11 +2,11 @@ import numpy as np
 
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import (
+    array,
     atleast_2d,
     empty_like,
     get_default_dtype,
     reshape,
-    squeeze,
 )
 
 
@@ -21,6 +21,25 @@ def _validate_initial_state_shape(x0, simulation_param):
         return
 
     raise ValueError("Mismatch in number of targets.")
+
+
+def _as_state_noise_vector(noise_sample, state_dim):
+    """Normalize one system-noise draw without coordinate broadcasting."""
+    sample_shape = tuple(np.shape(noise_sample))
+    vector_shape = (state_dim,)
+    batched_shape = (1, state_dim)
+
+    if sample_shape == vector_shape:
+        return noise_sample
+    if sample_shape == batched_shape:
+        return reshape(noise_sample, vector_shape)
+    if state_dim == 1 and sample_shape == ():
+        return reshape(array(noise_sample), vector_shape)
+
+    raise ValueError(
+        "sys_noise.sample(1) must return one state-noise vector with shape "
+        f"{batched_shape} or {vector_shape}; got {sample_shape}."
+    )
 
 
 # pylint: disable=too-many-branches
@@ -55,6 +74,7 @@ def generate_groundtruth(simulation_param, x0=None):
             raise ValueError("Mismatch in number of timesteps.")
 
     groundtruth[0] = atleast_2d(x0)
+    state_dim = groundtruth[0].shape[1]
     state_dtype = groundtruth[0].dtype
     dtype_kind = getattr(state_dtype, "kind", None)
     integer_or_bool_dtype = dtype_kind in ("b", "i", "u")
@@ -103,7 +123,9 @@ def generate_groundtruth(simulation_param, x0=None):
                         )
                     state_to_add_noise_to = previous_state
 
-                sys_noise_sample = squeeze(simulation_param["sys_noise"].sample(1))
+                sys_noise_sample = _as_state_noise_vector(
+                    simulation_param["sys_noise"].sample(1), state_dim
+                )
                 groundtruth[t][target_no, :] = state_to_add_noise_to + sys_noise_sample
             else:
                 raise ValueError("Cannot generate groundtruth.")
