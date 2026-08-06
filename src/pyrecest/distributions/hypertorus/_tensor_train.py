@@ -65,21 +65,40 @@ def _check_dense_validation_size(size, max_entries):
         )
 
 
+def _stable_vector_norm(values):
+    """Return a scale-safe Euclidean norm for finite array values."""
+    magnitudes = np.abs(np.asarray(values))
+    if magnitudes.size == 0:
+        return 0.0
+    scale = float(np.max(magnitudes))
+    if scale == 0.0 or not np.isfinite(scale):
+        return scale
+    return scale * sqrt(float(np.sum((magnitudes / scale) ** 2)))
+
+
 def _choose_rank(singular_values, max_rank, local_tolerance):
     max_rank = _normalize_max_rank(max_rank)
     full_rank = singular_values.size
     if local_tolerance <= 0:
         rank = full_rank
     else:
-        squared_tail = np.cumsum(singular_values[::-1] ** 2)[::-1]
-        rank = full_rank
-        for candidate in range(1, full_rank + 1):
-            tail = (
-                0.0 if candidate == full_rank else sqrt(float(squared_tail[candidate]))
-            )
-            if tail <= local_tolerance:
-                rank = candidate
-                break
+        scale = float(np.max(np.abs(singular_values)))
+        if scale == 0.0:
+            rank = 1
+        else:
+            scaled_values = singular_values / scale
+            squared_tail = np.cumsum(scaled_values[::-1] ** 2)[::-1]
+            scaled_tolerance = local_tolerance / scale
+            rank = full_rank
+            for candidate in range(1, full_rank + 1):
+                tail = (
+                    0.0
+                    if candidate == full_rank
+                    else sqrt(float(squared_tail[candidate]))
+                )
+                if tail <= scaled_tolerance:
+                    rank = candidate
+                    break
     if max_rank is not None:
         rank = min(rank, max_rank)
     return max(1, rank)
@@ -153,7 +172,7 @@ class TensorTrain:
         if array.ndim == 1:
             return cls((array.reshape(1, array.shape[0], 1),))
 
-        norm = float(np.linalg.norm(array.ravel()))
+        norm = _stable_vector_norm(array.ravel())
         global_tolerance = max(atol, rtol * norm)
         local_tolerance = (
             global_tolerance / sqrt(array.ndim - 1) if global_tolerance > 0 else 0.0
