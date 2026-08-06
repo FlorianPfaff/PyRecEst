@@ -82,6 +82,21 @@ def test_identity_switch_reduces_association_metrics() -> None:
     assert finalize_identity(identity_counts)["idf1"] == pytest.approx(0.5)
 
 
+def test_clear_preserves_large_tracker_identity_precision() -> None:
+    large_tracker_id = 2**53 + 1
+    data = _sequence(
+        [[0], [0]],
+        [[large_tracker_id], [large_tracker_id - 1]],
+        [[[1.0]], [[1.0]]],
+        num_gt_ids=1,
+        num_tracker_ids=large_tracker_id + 1,
+    )
+
+    counts = evaluate_clear(data, threshold=0.5)
+
+    assert (counts.tp, counts.fp, counts.fn, counts.id_switches) == (2, 0, 0, 1)
+
+
 def test_hota_uses_multiple_localization_thresholds() -> None:
     data = _sequence(
         [[0]],
