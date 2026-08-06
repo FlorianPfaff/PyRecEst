@@ -20,6 +20,7 @@ from pyrecest.distributions.hypertorus.abstract_hypertoroidal_distribution impor
 )
 from pyrecest.distributions.hypertorus.hypertoroidal_fourier_distribution import (
     HypertoroidalFourierDistribution,
+    _normalize_coefficient_shape,
 )
 
 from .abstract_filter import AbstractFilter
@@ -56,9 +57,11 @@ class HypertoroidalFourierFilter(AbstractFilter, HypertoroidalFilterMixin):
                 "HypertoroidalFourierFilter is not supported on the "
                 f"{pyrecest.backend.__backend_name__} backend."
             )
-        if isinstance(n_coefficients, int):
-            n_coefficients = (n_coefficients,)
-        n_coefficients = tuple(int(n) for n in n_coefficients)
+        n_coefficients = _normalize_coefficient_shape(
+            n_coefficients,
+            "n_coefficients",
+            require_odd=True,
+        )
         dim = len(n_coefficients)
 
         # Build a uniform HFD directly (only the DC component is non-zero)
