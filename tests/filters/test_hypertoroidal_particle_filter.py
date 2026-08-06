@@ -59,6 +59,19 @@ class HypertoroidalParticleFilterTest(unittest.TestCase):
             )
             npt.assert_allclose(np.diff(wrapped_angles), expected_spacing)
 
+    def test_constructor_preserves_requested_particle_count(self):
+        hpf = HypertoroidalParticleFilter(61, 2)
+
+        self.assertEqual(hpf.filter_state.d.shape, (61, 2))
+        self.assertEqual(hpf.filter_state.w.shape, (61,))
+
+    def test_constructor_preserves_singleton_particle_axis(self):
+        hpf = HypertoroidalParticleFilter(1, 3)
+
+        self.assertEqual(hpf.filter_state.d.shape, (1, 3))
+        self.assertEqual(hpf.filter_state.w.shape, (1,))
+        self.assertEqual(hpf.get_point_estimate().shape, (3,))
+
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ == "jax", reason="Backend not supported'"
     )
