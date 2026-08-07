@@ -6,7 +6,6 @@ from collections.abc import Callable, Mapping, Sequence
 from typing import Any
 
 import numpy as np
-
 from pyrecest.numerics import is_positive_semidefinite, is_symmetric
 
 from . import record_smoother as _record_smoother
