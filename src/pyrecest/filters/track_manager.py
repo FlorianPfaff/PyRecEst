@@ -28,6 +28,7 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, cast
 import numpy as np
 from pyrecest.backend import empty, stack
 from pyrecest.distributions import GaussianDistribution
+from pyrecest.numerics import _to_numpy_array  # pylint: disable=protected-access
 from scipy.optimize import linear_sum_assignment
 
 from .abstract_filter import AbstractFilter
@@ -735,7 +736,7 @@ def solve_global_nearest_neighbor(  # pylint: disable=too-many-locals
         non-zero dummy-dummy cost to reproduce their historic gating semantics.
     """
 
-    matrix = np.asarray(cost_matrix, dtype=float)
+    matrix = _to_numpy_array(cost_matrix, name="cost_matrix")
     if matrix.ndim != 2:
         raise ValueError("cost_matrix must be two-dimensional")
 
@@ -1022,11 +1023,11 @@ def _forbidden_assignment_cost(assignment_size: int, *cost_arrays: Any) -> float
 def _coerce_cost_vector(cost: Any, length: int, name: str) -> np.ndarray:
     """Normalize scalar or iterable costs to a length-``length`` vector."""
 
-    cost_array = np.asarray(cost)
+    cost_array = _to_numpy_array(cost, name=name)
     if cost_array.shape == ():
         return np.full(length, float(cost_array.item()))
 
-    vector = np.asarray(cost, dtype=float).reshape(-1)
+    vector = cost_array.reshape(-1)
     if vector.size != length:
         raise ValueError(f"{name} must be scalar or have length {length}")
     return vector
