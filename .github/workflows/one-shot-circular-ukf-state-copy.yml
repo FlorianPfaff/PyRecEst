@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - agent/circular-ukf-state-copy
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
@@ -12,10 +15,11 @@ jobs:
   patch:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository
+      - name: Check out patch branch
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          ref: agent/circular-ukf-state-copy
 
       - name: Set up Python
         uses: actions/setup-python@v7
