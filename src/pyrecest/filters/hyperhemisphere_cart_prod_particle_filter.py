@@ -4,7 +4,7 @@ from numbers import Integral
 from beartype import beartype
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import empty, ones
+from pyrecest.backend import empty, ones, ones_like
 from pyrecest.distributions import AbstractHypersphericalDistribution
 from pyrecest.distributions.cart_prod.hyperhemisphere_cart_prod_dirac_distribution import (
     HyperhemisphereCartProdDiracDistribution,
@@ -157,7 +157,7 @@ class HyperhemisphereCartProdParticleFilter(AbstractParticleFilter):
                 samples[samples[:, -1] < 0] = -samples[samples[:, -1] < 0]
             self._filter_state.d = samples.reshape(self.filter_state.d.shape)
             self._filter_state.w = (
-                ones(self._filter_state.w.shape[0]) / self._filter_state.w.shape[0]
+                ones_like(self._filter_state.w) / self._filter_state.w.shape[0]
             )
         else:
             AbstractParticleFilter.filter_state.fset(self, new_state)
