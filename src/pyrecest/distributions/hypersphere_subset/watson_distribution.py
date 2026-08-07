@@ -155,7 +155,7 @@ class WatsonDistribution(AbstractHypersphericalDistribution):
             raise ValueError(
                 f"xs must have trailing dimension {self.input_dim}, got {xs.shape}."
             )
-        p = self.norm_const * exp(self.kappa * (xs @ self.mu) ** 2)
+        p = exp(self.ln_norm_const + self.kappa * (xs @ self.mu) ** 2)
         return p
 
     def ln_pdf(self, xs):
