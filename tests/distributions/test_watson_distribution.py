@@ -81,6 +81,12 @@ class TestWatsonDistribution(unittest.TestCase):
         pdf_values = w.pdf(self.xs)
         npt.assert_array_almost_equal(pdf_values, expected_pdf_values, decimal=5)
 
+    def test_pdf_stays_finite_for_large_positive_kappa(self):
+        mu = array([1.0, 0.0, 0.0])
+        dist = WatsonDistribution(mu, 1000.0)
+
+        npt.assert_allclose(dist.pdf(mu), 159.07528584318962, rtol=1e-6)
+
     def test_pdf_accepts_list_inputs(self):
         mu = array([1.0, 2.0, 3.0])
         mu = mu / linalg.norm(mu)
