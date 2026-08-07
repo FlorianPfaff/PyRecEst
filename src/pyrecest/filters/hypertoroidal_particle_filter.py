@@ -6,7 +6,6 @@ import numpy as np
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import (
-    arange,
     int32,
     int64,
     linspace,
@@ -65,12 +64,11 @@ class HypertoroidalParticleFilter(AbstractParticleFilter, HypertoroidalFilterMix
     ):
         n_particles = _validate_positive_integer(n_particles, "n_particles")
         dim = _validate_positive_integer(dim, "dim")
+        points_1d = linspace(0.0, 2.0 * pi, num=n_particles, endpoint=False)
         if dim == 1:
-            points = linspace(0.0, 2.0 * pi, num=n_particles, endpoint=False)
+            points = points_1d
         else:
-            points = tile(
-                arange(0.0, 2.0 * pi, 2.0 * pi / n_particles), (dim, 1)
-            ).T.squeeze()
+            points = tile(points_1d, (dim, 1)).T
         filter_state = HypertoroidalDiracDistribution(points, dim=dim)
         HypertoroidalFilterMixin.__init__(self)
         AbstractParticleFilter.__init__(self, filter_state)
