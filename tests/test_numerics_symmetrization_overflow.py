@@ -1,5 +1,4 @@
 import numpy as np
-
 from pyrecest.numerics import (
     jittered_cholesky,
     nearest_symmetric_psd,
@@ -14,9 +13,7 @@ def test_symmetrize_matrix_avoids_finite_overflow_and_tiny_underflow():
     with np.errstate(over="raise", invalid="raise"):
         symmetric = np.asarray(symmetrize_matrix(matrix))
 
-    expected = np.array(
-        [[maximum, maximum * 0.75], [maximum * 0.75, maximum / 2.0]]
-    )
+    expected = np.array([[maximum, maximum * 0.75], [maximum * 0.75, maximum / 2.0]])
     np.testing.assert_array_equal(symmetric, expected)
     np.testing.assert_array_equal(symmetric, symmetric.T)
 

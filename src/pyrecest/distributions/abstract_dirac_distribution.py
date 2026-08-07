@@ -11,14 +11,15 @@ from beartype import beartype
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
 from pyrecest.backend import (
     all,
+)
+from pyrecest.backend import any as backend_any
+from pyrecest.backend import (
     apply_along_axis,
     arange,
     argmax,
     asarray,
 )
-from pyrecest.backend import any as backend_any
 from pyrecest.backend import copy as backend_copy
-from pyrecest.backend import max as backend_max
 from pyrecest.backend import (
     exp,
     int32,
@@ -26,6 +27,9 @@ from pyrecest.backend import (
     isclose,
     isfinite,
     log,
+)
+from pyrecest.backend import max as backend_max
+from pyrecest.backend import (
     ones,
     random,
     reshape,

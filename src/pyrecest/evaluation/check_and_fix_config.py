@@ -1,7 +1,6 @@
 from numbers import Integral, Real
 
 import numpy as np
-
 from pyrecest.distributions import AbstractManifoldSpecificDistribution
 
 
@@ -12,9 +11,9 @@ def _is_integer_count(value):
 
 
 def _validate_probability(value, name):
-    if isinstance(value, (bool, np.bool_, np.datetime64, np.timedelta64)) or not isinstance(
-        value, Real
-    ):
+    if isinstance(
+        value, (bool, np.bool_, np.datetime64, np.timedelta64)
+    ) or not isinstance(value, Real):
         raise TypeError(f"{name} must be a real scalar")
     value = float(value)
     if not np.isfinite(value) or not 0.0 <= value <= 1.0:
