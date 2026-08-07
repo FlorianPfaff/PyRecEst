@@ -19,6 +19,34 @@ from scipy.special import logsumexp
 _TEXT_SCALAR_TYPES = (str, bytes, bytearray, np.str_, np.bytes_)
 
 
+def _contains_masked_value(value: Any) -> bool:
+    """Return whether ``value`` contains genuinely masked NumPy entries."""
+    if np.ma.is_masked(value):
+        return True
+    if isinstance(value, np.ndarray):
+        if value.dtype != object:
+            return False
+        return any(_contains_masked_value(item) for item in value.reshape(-1))
+    if isinstance(value, (list, tuple)):
+        return any(_contains_masked_value(item) for item in value)
+    return False
+
+
+def _contains_complex_value(value: Any) -> bool:
+    """Return whether ``value`` contains any complex-valued entries."""
+    if isinstance(value, (complex, np.complexfloating)):
+        return True
+    if isinstance(value, np.ndarray):
+        if np.issubdtype(value.dtype, np.complexfloating):
+            return True
+        if value.dtype == object:
+            return any(_contains_complex_value(item) for item in value.reshape(-1))
+        return False
+    if isinstance(value, (list, tuple)):
+        return any(_contains_complex_value(item) for item in value)
+    return False
+
+
 @dataclass(frozen=True)
 class ReplayGridLikelihoodLookup:
     """Lookup data for evaluating grid log likelihoods at particle positions.
@@ -256,7 +284,7 @@ def adaptive_position_proposal_probability(
 def grid_proposal_weights(log_likelihood) -> np.ndarray:
     """Convert finite grid log likelihoods to normalized proposal weights."""
 
-    values = np.asarray(log_likelihood, dtype=float)
+    values = _coerce_log_likelihood(log_likelihood)
     finite = np.isfinite(values)
     if not np.any(finite):
         raise ValueError("all grid log-likelihoods are non-finite")
@@ -350,8 +378,17 @@ def _coerce_positions(positions, expected_dim: int, name: str) -> np.ndarray:
     return positions
 
 
+def _coerce_log_likelihood(values) -> np.ndarray:
+    if _contains_masked_value(values) or _contains_complex_value(values):
+        raise ValueError("log_likelihood must contain real unmasked values")
+    try:
+        return np.asarray(values, dtype=float)
+    except (TypeError, ValueError, RuntimeError, OverflowError) as exc:
+        raise ValueError("log_likelihood must contain real unmasked values") from exc
+
+
 def _coerce_grid_values(values, expected_size: int) -> np.ndarray:
-    values = np.asarray(values, dtype=float)
+    values = _coerce_log_likelihood(values)
     if values.shape != (expected_size,):
         raise ValueError(f"log_likelihood must have shape ({expected_size},)")
     return values
