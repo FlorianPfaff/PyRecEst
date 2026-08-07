@@ -81,13 +81,6 @@ class HyperhemisphereCartProdParticleFilter(AbstractParticleFilter):
                 )
             self.filter_state = new_state
             return
-        if not isinstance(new_state, HyperhemisphereCartProdDiracDistribution):
-            new_state = HyperhemisphereCartProdDiracDistribution(
-                new_state.sample(self.filter_state.d.shape[0]),
-                w=ones(self.filter_state.d.shape[0]) / self.filter_state.d.shape[0],
-                dim_hemisphere=self.filter_state.dim_hemisphere,
-                n_hemispheres=self.filter_state.n_hemispheres,
-            )
         self.filter_state = new_state
 
     @beartype
@@ -163,5 +156,8 @@ class HyperhemisphereCartProdParticleFilter(AbstractParticleFilter):
             if isinstance(new_state, AbstractHypersphericalDistribution):
                 samples[samples[:, -1] < 0] = -samples[samples[:, -1] < 0]
             self._filter_state.d = samples.reshape(self.filter_state.d.shape)
+            self._filter_state.w = (
+                ones(self._filter_state.w.shape[0]) / self._filter_state.w.shape[0]
+            )
         else:
             AbstractParticleFilter.filter_state.fset(self, new_state)
