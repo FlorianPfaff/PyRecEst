@@ -3,6 +3,7 @@ from numbers import Integral
 from operator import index as _operator_index
 from typing import Union
 
+import numpy as np
 import pyrecest.backend
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
@@ -40,7 +41,26 @@ from .abstract_circular_distribution import AbstractCircularDistribution
 from .von_mises_distribution import VonMisesDistribution
 
 
+def _contains_masked_value(value) -> bool:
+    """Return whether ``value`` contains a genuinely masked NumPy entry."""
+    if np.ma.is_masked(value):
+        return True
+    if isinstance(value, np.ndarray):
+        if value.dtype != object:
+            return False
+        return any(_contains_masked_value(item) for item in value.reshape(-1))
+    if isinstance(value, (list, tuple)):
+        return any(_contains_masked_value(item) for item in value)
+    return False
+
+
+def _reject_masked_value(value, name: str) -> None:
+    if _contains_masked_value(value):
+        raise ValueError(f"{name} must not contain masked values.")
+
+
 def _validate_finite_scalar(value, name):
+    _reject_masked_value(value, name)
     value = array(value)
     if value.shape not in ((), (1,)):
         raise ValueError(f"{name} must be a scalar.")
@@ -71,6 +91,8 @@ class WrappedNormalDistribution(
         """
         Initialize a wrapped normal distribution with mean mu and standard deviation sigma.
         """
+        _reject_masked_value(mu, "mu")
+        _reject_masked_value(sigma, "sigma")
         mu = array(mu)
         sigma = array(sigma)
         if ndim(mu) > 1 or (ndim(mu) == 1 and mu.shape[0] != 1):
@@ -100,6 +122,7 @@ class WrappedNormalDistribution(
         mu = self.scalar_mu
         if sigma <= 0:
             raise ValueError(f"sigma must be >0, but received {sigma}.")
+        _reject_masked_value(xs, "xs")
         xs = array(xs)
         if ndim(xs) == 0:
             xs = array([xs])
@@ -176,6 +199,7 @@ class WrappedNormalDistribution(
         n_wraps = _validate_series_order(n_wraps)
         mu = self.scalar_mu
         sigma = self.sigma
+        _reject_masked_value(xs, "xs")
         starting_point = _validate_finite_scalar(starting_point, "starting_point")
         starting_point = mod(starting_point, 2 * pi)
         xs = mod(xs, 2 * pi)
@@ -202,6 +226,7 @@ class WrappedNormalDistribution(
         return squeeze(val)
 
     def trigonometric_moment(self, n: Union[int, int32, int64]):
+        _reject_masked_value(n, "n")
         dtype = getattr(n, "dtype", None)
         if isinstance(n, bool) or (
             dtype is not None and str(dtype).lower().endswith("bool")
@@ -296,6 +321,7 @@ class WrappedNormalDistribution(
 
     @staticmethod
     def from_moment(m) -> "WrappedNormalDistribution":
+        _reject_masked_value(m, "m")
         moment = squeeze(array(m))
         if ndim(moment) != 0:
             raise ValueError("First trigonometric moment must be a scalar.")
