@@ -10,6 +10,7 @@ from pyrecest.backend import (
     array,
     clip,
     exp,
+    is_complex,
     isfinite,
     linalg,
     ndim,
@@ -127,7 +128,10 @@ def _as_quaternion_grid(grid):
     if hasattr(grid, "get_grid"):
         grid = grid.get_grid()
 
-    quaternion_grid = array(grid, dtype=float)
+    quaternion_grid = array(grid)
+    if is_complex(quaternion_grid):
+        raise ValueError("grid quaternions must contain real values.")
+    quaternion_grid = array(quaternion_grid, dtype=float)
     if ndim(quaternion_grid) != 2 or quaternion_grid.shape[1] != 4:
         raise ValueError(
             "grid must have shape (n_grid, 4) with scalar-last quaternions."
@@ -143,7 +147,10 @@ def _as_quaternion_grid(grid):
 
 
 def _as_so3_increment(orientation_increment):
-    values = array(orientation_increment, dtype=float)
+    values = array(orientation_increment)
+    if is_complex(values):
+        raise ValueError("orientation_increment must contain real values.")
+    values = array(values, dtype=float)
     if not all(isfinite(values)):
         raise ValueError("orientation_increment must be finite.")
     if ndim(values) == 1:
