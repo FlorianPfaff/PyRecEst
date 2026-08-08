@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import warnings
+
 import numpy as np
 import pytest
 from pyrecest.tracking import (
@@ -116,3 +118,21 @@ def test_rejects_masked_nis_values_but_accepts_clear_masks() -> None:
 
     summary = summarize_nis_consistency(np.ma.array([1.0, 2.0], mask=False), 1)
     assert summary.count == 2
+
+
+def test_rejects_masked_nis_generator_without_emitting_conversion_warning() -> None:
+    values = (value for value in [1.0, np.ma.masked])
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        with pytest.raises(ValueError, match="nis_values"):
+            summarize_nis_consistency(values, 1)
+
+
+def test_accepts_clear_mask_nis_values_from_generator() -> None:
+    values = (value for value in [1.0, np.ma.array(2.0, mask=False)])
+
+    summary = summarize_nis_consistency(values, 1)
+
+    assert summary.count == 2
+    assert summary.nis_mean == pytest.approx(1.5)
