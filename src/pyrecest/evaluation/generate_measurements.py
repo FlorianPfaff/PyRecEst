@@ -3,7 +3,7 @@ import copy
 import numpy as np
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
-from pyrecest.backend import array, dot, get_backend_name, mod, pi, squeeze, tile, zeros
+from pyrecest.backend import array, dot, get_backend_name, mod, pi, reshape, tile, zeros
 from pyrecest.distributions import (
     AbstractHypertoroidalDistribution,
     GaussianDistribution,
@@ -152,6 +152,25 @@ def _empty_measurements_like_groundtruth(groundtruth_at_t):
     return zeros((0, _groundtruth_measurement_dim(groundtruth_at_t)))
 
 
+def _as_mtt_measurement_noise_vector(noise_sample, measurement_dim):
+    """Normalize one MTT noise draw without permitting coordinate broadcasting."""
+    sample_shape = tuple(np.shape(noise_sample))
+    vector_shape = (measurement_dim,)
+    batched_shape = (1, measurement_dim)
+
+    if sample_shape == vector_shape:
+        return noise_sample
+    if sample_shape == batched_shape:
+        return reshape(noise_sample, vector_shape)
+    if measurement_dim == 1 and sample_shape == ():
+        return reshape(array(noise_sample), vector_shape)
+
+    raise ValueError(
+        "meas_noise.sample(1) must return one measurement-noise vector with shape "
+        f"{batched_shape} or {vector_shape}; got {sample_shape}."
+    )
+
+
 # pylint: disable=too-many-branches,too-many-locals,too-many-statements
 def generate_measurements(groundtruth, simulation_config):
     """
@@ -291,10 +310,14 @@ def generate_measurements(groundtruth, simulation_config):
                         target_no,
                         simulation_config["n_targets"],
                     )
+                    noise_sample = _as_mtt_measurement_noise_vector(
+                        simulation_config["meas_noise"].sample(1),
+                        measurement_dim,
+                    )
                     measurements[t][meas_no - 1, :] = dot(
                         simulation_config["meas_matrix_for_each_target"],
                         array(target_state),
-                    ) + squeeze(simulation_config["meas_noise"].sample(1))
+                    ) + noise_sample
                 else:
                     if n_observations[t, target_no] != 0:
                         raise NotImplementedError(
