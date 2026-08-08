@@ -1,4 +1,4 @@
-"""Overflow-safe extreme-range contract for time-offset grids."""
+"""Overflow-safe contracts for time-offset calibration."""
 
 from __future__ import annotations
 
@@ -7,6 +7,9 @@ from functools import wraps
 import numpy as np
 
 from . import time_offset as _time_offset
+from ._time_offset_stable_statistics import (
+    install_time_offset_stable_statistics_contract,
+)
 
 _ORIGINAL_ATTR = "_pyrecest_original_make_offset_grid"
 
@@ -46,8 +49,9 @@ def _extreme_range_grid(
 
 
 def install_time_offset_grid_extreme_range_contract() -> None:
-    """Install overflow-safe handling while preserving ordinary grid results."""
+    """Install overflow-safe grid and statistic handling."""
 
+    install_time_offset_stable_statistics_contract()
     if not hasattr(_time_offset, _ORIGINAL_ATTR):
         setattr(_time_offset, _ORIGINAL_ATTR, _time_offset.make_offset_grid)
     if getattr(_time_offset.make_offset_grid, "_pyrecest_extreme_range_safe", False):
