@@ -1,0 +1,55 @@
+import importlib
+
+import numpy as np
+import numpy.testing as npt
+import pytest
+
+
+def _jax_modules():
+    jnp = pytest.importorskip("jax.numpy")
+    jax_backend = importlib.import_module("pyrecest._backend.jax")
+    assignment_contract = importlib.import_module(
+        "pyrecest.backend_support._jax_assignment_numpy_index_contract"
+    )
+    assignment_contract.patch_jax_assignment_numpy_index_contract()
+    return jnp, jax_backend
+
+
+@pytest.mark.parametrize("helper_name", ["assignment", "assignment_by_sum"])
+def test_jax_assignment_list_indices_select_first_axis(helper_name):
+    jnp, jax_backend = _jax_modules()
+    helper = getattr(jax_backend, helper_name)
+
+    result = helper(jnp.zeros((2, 3)), 7.0, [0])
+
+    npt.assert_allclose(
+        np.asarray(result),
+        np.array([[7.0, 7.0, 7.0], [0.0, 0.0, 0.0]]),
+    )
+
+
+@pytest.mark.parametrize("helper_name", ["assignment", "assignment_by_sum"])
+def test_jax_assignment_single_coordinate_list_targets_one_entry(helper_name):
+    jnp, jax_backend = _jax_modules()
+    helper = getattr(jax_backend, helper_name)
+
+    result = helper(jnp.zeros((2, 2, 2)), 5.0, [(0, 1, 1)])
+
+    expected = np.zeros((2, 2, 2))
+    expected[0, 1, 1] = 5.0
+    npt.assert_allclose(np.asarray(result), expected)
+
+
+def test_jax_assignment_partial_coordinate_list_vectorizes_along_axis():
+    jnp, jax_backend = _jax_modules()
+
+    result = jax_backend.assignment(
+        jnp.zeros((2, 3, 4)),
+        2.0,
+        [(0, 1)],
+        axis=0,
+    )
+
+    expected = np.zeros((2, 3, 4))
+    expected[:, 0, 1] = 2.0
+    npt.assert_allclose(np.asarray(result), expected)
