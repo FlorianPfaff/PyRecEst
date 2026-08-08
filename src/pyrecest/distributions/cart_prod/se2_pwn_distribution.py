@@ -12,6 +12,56 @@ from ..abstract_se2_distribution import AbstractSE2Distribution
 from .partially_wrapped_normal_distribution import PartiallyWrappedNormalDistribution
 
 
+def _contains_masked_values(value):
+    if _np.ma.is_masked(value):
+        return True
+    try:
+        values = _np.asarray(value, dtype=object).reshape(-1)
+    except (TypeError, ValueError, RuntimeError):
+        return False
+    return any(_np.ma.is_masked(item) for item in values)
+
+
+def _as_se2_samples(samples):
+    """Return finite real SE(2) samples with shape ``(n, 3)``."""
+    if _contains_masked_values(samples):
+        raise ValueError("samples must contain finite real numeric values")
+    try:
+        sample_array = _np.asarray(samples)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("samples must have shape (n, 3)") from exc
+    if sample_array.ndim != 2 or sample_array.shape[1] != 3:
+        raise ValueError("samples must have shape (n, 3)")
+    if sample_array.shape[0] < 2:
+        raise ValueError("samples must contain at least two observations")
+    if sample_array.dtype.kind in "bcSUMm":
+        raise ValueError("samples must contain finite real numeric values")
+    if sample_array.dtype == object:
+        rejected_types = (
+            bool,
+            _np.bool_,
+            str,
+            bytes,
+            bytearray,
+            _np.str_,
+            _np.bytes_,
+            complex,
+            _np.complexfloating,
+            _np.datetime64,
+            _np.timedelta64,
+            type(None),
+        )
+        if any(isinstance(value, rejected_types) for value in sample_array.ravel()):
+            raise ValueError("samples must contain finite real numeric values")
+    try:
+        sample_array = sample_array.astype(float, copy=False)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("samples must contain finite real numeric values") from exc
+    if not _np.isfinite(sample_array).all():
+        raise ValueError("samples must contain finite real numeric values")
+    return sample_array
+
+
 class SE2PWNDistribution(PartiallyWrappedNormalDistribution, AbstractSE2Distribution):
     """Partially wrapped normal distribution for SE(2).
 
@@ -90,7 +140,9 @@ class SE2PWNDistribution(PartiallyWrappedNormalDistribution, AbstractSE2Distribu
         array of shape (4, 4)
         """
         s = _np.asarray(self.sample(n_samples))
-        big_s = _np.column_stack([_np.cos(s[:, 0]), _np.sin(s[:, 0]), s[:, 1], s[:, 2]])
+        big_s = _np.column_stack(
+            [_np.cos(s[:, 0]), _np.sin(s[:, 0]), s[:, 1], s[:, 2]]
+        )
         return array(_np.cov(big_s.T))
 
     @staticmethod
@@ -106,7 +158,7 @@ class SE2PWNDistribution(PartiallyWrappedNormalDistribution, AbstractSE2Distribu
         -------
         SE2PWNDistribution
         """
-        samples = _np.asarray(samples)
+        samples = _as_se2_samples(samples)
         big_s = _np.column_stack(
             [
                 _np.cos(samples[:, 0]),
@@ -119,7 +171,12 @@ class SE2PWNDistribution(PartiallyWrappedNormalDistribution, AbstractSE2Distribu
 
         mu = _np.zeros(3)
         mu[0] = _np.mod(_np.arctan2(mu4[1], mu4[0]), 2.0 * _np.pi)
-        m1abs = _np.sqrt(mu4[0] ** 2 + mu4[1] ** 2)
+        m1abs = _np.hypot(mu4[0], mu4[1])
+        if m1abs <= _np.finfo(float).eps:
+            raise ValueError(
+                "sample angles must have a non-zero first trigonometric moment"
+            )
+        m1abs = min(float(m1abs), 1.0)
         mu[1:] = mu4[2:]
 
         c4 = _np.cov(big_s.T)
@@ -127,8 +184,12 @@ class SE2PWNDistribution(PartiallyWrappedNormalDistribution, AbstractSE2Distribu
         c = _np.zeros((3, 3))
         c[0, 0] = -2.0 * _np.log(m1abs)
         factor = _np.exp(0.5 * c[0, 0])
-        c[0, 1] = (-c4[0, 2] * _np.sin(mu[0]) + c4[1, 2] * _np.cos(mu[0])) * factor
-        c[0, 2] = (-c4[0, 3] * _np.sin(mu[0]) + c4[1, 3] * _np.cos(mu[0])) * factor
+        c[0, 1] = (
+            -c4[0, 2] * _np.sin(mu[0]) + c4[1, 2] * _np.cos(mu[0])
+        ) * factor
+        c[0, 2] = (
+            -c4[0, 3] * _np.sin(mu[0]) + c4[1, 3] * _np.cos(mu[0])
+        ) * factor
         c[1, 0] = c[0, 1]
         c[2, 0] = c[0, 2]
         c[1:3, 1:3] = c4[2:4, 2:4]
