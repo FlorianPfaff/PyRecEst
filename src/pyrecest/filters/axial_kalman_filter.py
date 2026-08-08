@@ -4,6 +4,7 @@ import copy
 # pylint: disable=redefined-builtin
 from pyrecest.backend import abs, all, asarray, concatenate, dot, eye, isfinite, linalg
 from pyrecest.distributions import GaussianDistribution
+from pyrecest.numerics import assert_covariance_matrix
 
 from .abstract_axial_filter import AbstractAxialFilter
 
@@ -59,12 +60,19 @@ class AxialKalmanFilter(AbstractAxialFilter):
     def _validate_axial_gaussian(distribution, name):
         if not isinstance(distribution, GaussianDistribution):
             raise ValueError(f"{name} must be a GaussianDistribution.")
-        if distribution.mu.shape[0] not in (2, 4):
-            raise ValueError(f"{name} mean must have length 2 or 4.")
+        if distribution.mu.shape not in ((2,), (4,)):
+            raise ValueError(
+                f"{name} mean must be a one-dimensional vector of length 2 or 4."
+            )
         if not bool(all(isfinite(distribution.mu))):
             raise ValueError(f"{name} mean must be finite.")
         if not bool(all(isfinite(distribution.C))):
             raise ValueError(f"{name} covariance must be finite.")
+        assert_covariance_matrix(
+            distribution.C,
+            name=f"{name} covariance",
+            dim=distribution.mu.shape[0],
+        )
         if not bool(abs(linalg.norm(distribution.mu) - 1.0) < 1e-5):
             raise ValueError(f"{name} mean must be a unit vector.")
 
