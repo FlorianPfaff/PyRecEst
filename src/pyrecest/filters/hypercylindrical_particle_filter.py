@@ -3,11 +3,15 @@ from typing import Union
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
 from pyrecest.backend import concatenate, int32, int64, mod, ones, pi, zeros
+from pyrecest.distributions.cart_prod.abstract_lin_bounded_cart_prod_distribution import (
+    _validate_nonnegative_dimension_count,
+)
 from pyrecest.distributions.cart_prod.hypercylindrical_dirac_distribution import (
     HypercylindricalDiracDistribution,
 )
 
 from .abstract_particle_filter import AbstractParticleFilter
+from .hypertoroidal_particle_filter import _validate_positive_integer
 from .manifold_mixins import HypercylindricalFilterMixin
 
 
@@ -20,6 +24,12 @@ class HypercylindricalParticleFilter(
         bound_dim: Union[int, int32, int64],
         lin_dim: Union[int, int32, int64],
     ):
+        n_particles = _validate_positive_integer(n_particles, "n_particles")
+        bound_dim = _validate_nonnegative_dimension_count(bound_dim, "bound_dim")
+        lin_dim = _validate_nonnegative_dimension_count(lin_dim, "lin_dim")
+        if bound_dim + lin_dim == 0:
+            raise ValueError("total dimension must be positive")
+
         d = zeros((n_particles, bound_dim + lin_dim))
         w = ones(n_particles) / n_particles
         filter_state = HypercylindricalDiracDistribution(bound_dim, d, w)
