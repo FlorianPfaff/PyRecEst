@@ -244,7 +244,21 @@ def _as_cost_matrix(value: Any) -> np.ndarray:
     return matrix
 
 
+def _contains_masked_values(value: Any) -> bool:
+    """Return whether an array-like value contains genuinely masked entries."""
+
+    if np.ma.is_masked(value):
+        return True
+    if isinstance(value, np.ndarray) and value.dtype == object:
+        return any(_contains_masked_values(item) for item in value.flat)
+    if isinstance(value, (list, tuple)):
+        return any(_contains_masked_values(item) for item in value)
+    return False
+
+
 def _contains_invalid_values(value: Any) -> bool:
+    if _contains_masked_values(value):
+        return True
     try:
         raw = np.asarray(value)
     except (TypeError, ValueError, RuntimeError):
