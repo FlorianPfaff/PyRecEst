@@ -1,10 +1,10 @@
 import copy
 from collections.abc import Callable
-from numbers import Integral
 from operator import index as _operator_index
 from typing import Union
 
 import matplotlib.pyplot as plt
+import numpy as np
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
 # pylint: disable=no-name-in-module,no-member
@@ -35,25 +35,30 @@ from ._input_validation import as_shift_vector
 from .abstract_hypertoroidal_distribution import AbstractHypertoroidalDistribution
 
 
-def _validate_moment_order(n) -> int:
-    """Return a scalar integer trigonometric-moment order."""
-    message = "n must be an integer."
-    if isinstance(n, bool):
+def _validate_integer_scalar(value, name: str) -> int:
+    """Return a non-boolean, unmasked scalar integer."""
+    message = f"{name} must be an integer."
+    if np.ma.is_masked(value) or isinstance(value, bool):
         raise ValueError(message)
 
-    ndim = getattr(n, "ndim", None)
+    ndim = getattr(value, "ndim", None)
     if ndim not in (None, 0):
         raise ValueError(message)
 
-    dtype = getattr(n, "dtype", None)
+    dtype = getattr(value, "dtype", None)
     if getattr(dtype, "kind", None) == "b" or str(dtype) == "torch.bool":
         raise ValueError(message)
 
     try:
-        order = _operator_index(n)
+        result = _operator_index(value)
     except (OverflowError, TypeError, ValueError) as exc:
         raise ValueError(message) from exc
-    return int(order)
+    return int(result)
+
+
+def _validate_moment_order(n) -> int:
+    """Return a scalar integer trigonometric-moment order."""
+    return _validate_integer_scalar(n, "n")
 
 
 class HypertoroidalDiracDistribution(
@@ -110,19 +115,17 @@ class HypertoroidalDiracDistribution(
 
     @staticmethod
     def _validate_particle_count(n_particles):
-        if (
-            isinstance(n_particles, bool)
-            or not isinstance(n_particles, Integral)
-            or int(n_particles) <= 0
-        ):
+        try:
+            count = _validate_integer_scalar(n_particles, "n_particles")
+        except ValueError as exc:
+            raise ValueError("n_particles must be a positive integer.") from exc
+        if count <= 0:
             raise ValueError("n_particles must be a positive integer.")
-        return int(n_particles)
+        return count
 
     @staticmethod
     def _validate_dimension_index(dimension, dim: int) -> int:
-        if isinstance(dimension, bool) or not isinstance(dimension, Integral):
-            raise ValueError("dimension must be an integer.")
-        dimension = int(dimension)
+        dimension = _validate_integer_scalar(dimension, "dimension")
         if dimension < 0 or dimension >= dim:
             raise ValueError(f"dimension must be in [0, {dim - 1}].")
         return dimension
@@ -194,22 +197,18 @@ class HypertoroidalDiracDistribution(
     def marginalize_out(self, dimensions: int | list[int]):
         from ..circle.circular_dirac_distribution import CircularDiracDistribution
 
-        if isinstance(dimensions, bool):
-            raise ValueError("dimensions must contain integer indices.")
-        if isinstance(dimensions, Integral):
-            dimensions = [dimensions]
-        else:
+        try:
+            dimensions = [self._validate_dimension_index(dimensions, self.dim)]
+        except ValueError as scalar_error:
             try:
                 dimensions = list(dimensions)
             except TypeError as exc:
-                raise ValueError(
-                    "dimensions must be an integer or an iterable of integers."
-                ) from exc
+                raise scalar_error from exc
+            dimensions = [
+                self._validate_dimension_index(dimension, self.dim)
+                for dimension in dimensions
+            ]
 
-        dimensions = [
-            self._validate_dimension_index(dimension, self.dim)
-            for dimension in dimensions
-        ]
         dimensions_to_remove = set(dimensions)
 
         if len(dimensions) != len(dimensions_to_remove):
