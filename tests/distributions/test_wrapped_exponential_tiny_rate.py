@@ -26,6 +26,16 @@ class WrappedExponentialTinyRateTest(unittest.TestCase):
             atol=0.0,
         )
 
+    def test_trigonometric_moment_preserves_subnormal_rate(self):
+        rate = np.float64(1.0e-320)
+        distribution = WrappedExponentialDistribution(array(rate))
+
+        moment = complex(to_numpy(distribution.trigonometric_moment(1)))
+
+        self.assertTrue(np.isfinite(moment))
+        self.assertEqual(moment.real, 0.0)
+        self.assertEqual(moment.imag, rate)
+
 
 if __name__ == "__main__":
     unittest.main()
