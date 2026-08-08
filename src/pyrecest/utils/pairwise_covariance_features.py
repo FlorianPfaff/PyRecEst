@@ -16,6 +16,8 @@ from __future__ import annotations
 import math
 from typing import Any
 
+import numpy as np
+
 # pylint: disable=no-name-in-module,no-member,redefined-builtin
 from pyrecest.backend import (
     abs,
@@ -186,6 +188,8 @@ def pairwise_covariance_shape_components(
 
 
 def _validate_control_scalar(value: Any, name: str, *, allow_zero: bool) -> float:
+    if np.ma.is_masked(value):
+        raise ValueError(f"{name} must not be masked")
     if isinstance(value, (str, bytes, bytearray)):
         raise ValueError(f"{name} must be numeric")
 
