@@ -113,6 +113,19 @@ def _validate_finite_array(values: np.ndarray, name: str) -> None:
         raise ValueError(f"{name} must contain only finite values")
 
 
+def _as_real_array(values: np.ndarray, name: str) -> np.ndarray:
+    try:
+        values_array = np.asarray(values)
+    except (TypeError, ValueError, RuntimeError, OverflowError) as exc:
+        raise ValueError(f"{name} must contain real numeric values") from exc
+    if np.iscomplexobj(values_array):
+        raise ValueError(f"{name} must contain only real values")
+    try:
+        return np.asarray(values_array, dtype=float)
+    except (TypeError, ValueError, RuntimeError, OverflowError) as exc:
+        raise ValueError(f"{name} must contain real numeric values") from exc
+
+
 @dataclass(frozen=True)
 class ContourSample:
     """Sampled contour geometry used by event-generation likelihoods."""
@@ -123,9 +136,9 @@ class ContourSample:
     angles: np.ndarray | None = None
 
     def __post_init__(self) -> None:
-        points = np.asarray(self.points, dtype=float)
-        normals = np.asarray(self.normals, dtype=float)
-        weights = np.asarray(self.weights, dtype=float)
+        points = _as_real_array(self.points, "points")
+        normals = _as_real_array(self.normals, "normals")
+        weights = _as_real_array(self.weights, "weights")
         angles = None
         if points.ndim != 2 or points.shape[1] != 2:
             raise ValueError("points must have shape (n, 2)")
@@ -139,7 +152,7 @@ class ContourSample:
         if np.any(weights < 0.0):
             raise ValueError("weights must be non-negative")
         if self.angles is not None:
-            angles = np.asarray(self.angles, dtype=float)
+            angles = _as_real_array(self.angles, "angles")
             if angles.shape != (points.shape[0],):
                 raise ValueError("angles must have shape (n,)")
             _validate_finite_array(angles, "angles")
@@ -231,8 +244,8 @@ def normal_flow_activities(
     activity_floor: float = 0.0,
 ) -> np.ndarray:
     """Return normalized normal-flow activity for sampled contour normals."""
-    normals = np.asarray(normals, dtype=float)
-    velocity = np.asarray(velocity, dtype=float)
+    normals = _as_real_array(normals, "normals")
+    velocity = _as_real_array(velocity, "velocity")
     activity_floor = _validate_nonnegative_finite(activity_floor, "activity_floor")
     if normals.ndim != 2 or normals.shape[1] != 2:
         raise ValueError("normals must have shape (n, 2)")
@@ -268,18 +281,18 @@ def contour_event_intensity(
     config = config or EventLikelihoodConfig()
     events = _as_event_xy(event_xy)
     activities = normal_flow_activities(
-        np.asarray(contour.normals, dtype=float),
+        contour.normals,
         velocity,
         activity_floor=config.activity_floor,
     )
-    weights = np.asarray(contour.weights, dtype=float)
+    weights = _as_real_array(contour.weights, "weights")
     weighted_activity = weights * activities
     if events.shape[0] == 0:
         return np.empty(0, dtype=float)
 
     kernel = _gaussian_contour_kernel(
         events,
-        np.asarray(contour.points, dtype=float),
+        contour.points,
         sigma_px=config.spatial_sigma_px,
         normalize=config.normalize_kernel,
     )
@@ -302,14 +315,14 @@ def expected_event_count(
         return 0.0, 0.0
 
     activities = normal_flow_activities(
-        np.asarray(contour.normals, dtype=float),
+        contour.normals,
         velocity,
         activity_floor=config.activity_floor,
     )
     expected_foreground = (
         duration
         * config.foreground_rate
-        * float(np.sum(np.asarray(contour.weights, dtype=float) * activities))
+        * float(np.sum(_as_real_array(contour.weights, "weights") * activities))
     )
     expected_background = 0.0
     if image_area is not None:
@@ -347,7 +360,7 @@ def event_batch_log_likelihood_terms(
         else 0.0
     )
     activities = normal_flow_activities(
-        np.asarray(contour.normals, dtype=float),
+        contour.normals,
         velocity,
         activity_floor=config.activity_floor,
     )
@@ -464,7 +477,8 @@ def _gaussian_contour_kernel(
     sigma_px: float,
     normalize: bool,
 ) -> np.ndarray:
-    diff = event_xy[:, None, :] - np.asarray(contour_points, dtype=float)[None, :, :]
+    contour_points = _as_real_array(contour_points, "contour_points")
+    diff = event_xy[:, None, :] - contour_points[None, :, :]
     squared_distances = np.sum(diff * diff, axis=2)
     kernel = np.exp(-0.5 * squared_distances / (sigma_px * sigma_px))
     if normalize:
@@ -473,7 +487,7 @@ def _gaussian_contour_kernel(
 
 
 def _as_event_xy(event_xy: np.ndarray) -> np.ndarray:
-    events = np.asarray(event_xy, dtype=float)
+    events = _as_real_array(event_xy, "event_xy")
     if events.ndim == 1 and events.size == 0:
         return np.empty((0, 2), dtype=float)
     if events.ndim != 2 or events.shape[1] != 2:
