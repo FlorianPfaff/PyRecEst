@@ -28,6 +28,31 @@ _REJECTED_SCALAR_TYPES = (
 _REJECTED_DTYPE_KINDS = "USbcMm"
 
 
+def _contains_masked_values(
+    value: object, active_ids: set[int] | None = None
+) -> bool:
+    if np.ma.is_masked(value):
+        return True
+    if not isinstance(value, (np.ndarray, list, tuple)):
+        return False
+    if active_ids is None:
+        active_ids = set()
+    value_id = id(value)
+    if value_id in active_ids:
+        return True
+    active_ids.add(value_id)
+    try:
+        if isinstance(value, np.ndarray):
+            if value.dtype.kind != "O":
+                return False
+            items = value.flat
+        else:
+            items = value
+        return any(_contains_masked_values(item, active_ids) for item in items)
+    finally:
+        active_ids.remove(value_id)
+
+
 def _has_rejected_numeric_dtype(value: object) -> bool:
     try:
         return np.asarray(value).dtype.kind in _REJECTED_DTYPE_KINDS
@@ -36,8 +61,10 @@ def _has_rejected_numeric_dtype(value: object) -> bool:
 
 
 def _is_rejected_scalar_payload(value: object) -> bool:
-    return isinstance(value, _REJECTED_SCALAR_TYPES) or _has_rejected_numeric_dtype(
-        value
+    return (
+        _contains_masked_values(value)
+        or isinstance(value, _REJECTED_SCALAR_TYPES)
+        or _has_rejected_numeric_dtype(value)
     )
 
 
@@ -131,7 +158,7 @@ def _normalize_nonnegative_finite_scalar(value: float, name: str) -> float:
 
 def _normalize_finite_real_array(value: object, name: str) -> np.ndarray:
     message = f"{name} must contain only finite real numeric values"
-    if _has_rejected_numeric_dtype(value):
+    if _contains_masked_values(value) or _has_rejected_numeric_dtype(value):
         raise ValueError(message)
     try:
         value_array = np.asarray(value)
@@ -153,6 +180,8 @@ def _normalize_finite_real_array(value: object, name: str) -> np.ndarray:
 
 
 def _normalize_bool_flag(value: bool, name: str) -> bool:
+    if _contains_masked_values(value):
+        raise ValueError(f"{name} must be a boolean")
     if isinstance(value, (bool, np.bool_)):
         return bool(value)
     value_array = np.asarray(value)
