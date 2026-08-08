@@ -64,6 +64,9 @@ def _to_scalar(value):
 
 
 def _validate_integer_sample_parameter(value, name: str, minimum: int) -> int:
+    if np.ma.is_masked(value):
+        raise ValueError(f"{name} must be an integer")
+
     shape = getattr(value, "shape", None)
     if shape is not None:
         try:
