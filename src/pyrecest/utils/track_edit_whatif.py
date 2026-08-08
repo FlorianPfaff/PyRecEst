@@ -382,11 +382,14 @@ def _apply_split_track(matrix: np.ndarray, edit: TrackEdit) -> TrackEditApplicat
     right = output[row_index].copy()
     left[split_session:] = None
     right[:split_session] = None
+    left_has_observation = any(value is not None for value in left)
+    right_has_observation = any(value is not None for value in right)
+    if not left_has_observation or not right_has_observation:
+        return TrackEditApplication(
+            edit, output, False, "reject", "empty_split_side"
+        )
     pieces = [row for index, row in enumerate(output) if index != row_index]
-    if any(value is not None for value in left):
-        pieces.append(left)
-    if any(value is not None for value in right):
-        pieces.append(right)
+    pieces.extend((left, right))
     return TrackEditApplication(
         edit,
         np.vstack(pieces).astype(object, copy=False),
