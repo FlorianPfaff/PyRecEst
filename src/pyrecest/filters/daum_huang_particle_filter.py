@@ -351,6 +351,26 @@ def _contains_masked_value(value) -> bool:
     return False
 
 
+def _as_real_array_np(value, name: str) -> np.ndarray:
+    """Convert an array-like input without discarding imaginary components."""
+    try:
+        values = np.asarray(to_numpy(value))
+    except (TypeError, ValueError, RuntimeError, OverflowError) as exc:
+        raise ValueError(f"{name} must contain real numeric values.") from exc
+
+    contains_complex_objects = values.dtype == object and any(
+        isinstance(item, (complex, np.complexfloating))
+        for item in values.reshape(-1)
+    )
+    if np.iscomplexobj(values) or contains_complex_objects:
+        raise ValueError(f"{name} must contain only real values.")
+
+    try:
+        return np.asarray(values, dtype=float)
+    except (TypeError, ValueError, RuntimeError, OverflowError) as exc:
+        raise ValueError(f"{name} must contain real numeric values.") from exc
+
+
 def _validate_flow_type(flow_type) -> FlowType:
     if flow_type not in {"edh", "ledh"}:
         raise ValueError("flow_type must be 'edh' or 'ledh'.")
@@ -580,7 +600,7 @@ def _try_batch_measurement(function, X):
         values = to_numpy(function(asarray(X)))
     except (TypeError, ValueError, NotImplementedError, IndexError):
         return None
-    values = np.asarray(values, dtype=float)
+    values = _as_real_array_np(values, "measurement value")
     if values.ndim == 1 and X.shape[0] == 1:
         return values.reshape(1, -1)
     if values.ndim == 2 and values.shape[0] == X.shape[0]:
@@ -593,7 +613,7 @@ def _try_batch_jacobian(function, X):
         values = to_numpy(function(asarray(X)))
     except (TypeError, ValueError, NotImplementedError, IndexError):
         return None
-    values = np.asarray(values, dtype=float)
+    values = _as_real_array_np(values, "measurement jacobian")
     if values.ndim == 2 and X.shape[0] == 1:
         return values.reshape(1, values.shape[0], values.shape[1])
     if values.ndim == 3 and values.shape[0] == X.shape[0]:
@@ -652,7 +672,7 @@ def _weighted_mean_np(particles, weights):
 def _as_particle_matrix_np(value):
     if _contains_masked_value(value):
         raise ValueError("particles must not contain masked values.")
-    X = np.asarray(to_numpy(value), dtype=float)
+    X = _as_real_array_np(value, "particles")
     if X.ndim == 1:
         X = X[None, :]
     if X.ndim != 2:
@@ -667,7 +687,7 @@ def _as_particle_matrix_np(value):
 def _as_weights_np(value, n_particles: int):
     if _contains_masked_value(value):
         raise ValueError("weights must not contain masked values.")
-    weights = np.asarray(to_numpy(value), dtype=float).reshape(-1)
+    weights = _as_real_array_np(value, "weights").reshape(-1)
     if weights.shape != (n_particles,):
         raise ValueError("weights must have one entry per particle.")
     if not np.all(np.isfinite(weights)):
@@ -687,7 +707,7 @@ def _as_weights_np(value, n_particles: int):
 def _as_vector_np(value, name):
     if _contains_masked_value(value):
         raise ValueError(f"{name} must not contain masked values.")
-    vector = np.asarray(to_numpy(value), dtype=float)
+    vector = _as_real_array_np(value, name)
     if vector.ndim == 0:
         vector = vector.reshape(1)
     vector = vector.reshape(-1) if vector.ndim == 1 else vector
@@ -701,7 +721,7 @@ def _as_vector_np(value, name):
 def _as_matrix_np(value, name, *, scalar_dim: int | None = None):
     if _contains_masked_value(value):
         raise ValueError(f"{name} must not contain masked values.")
-    matrix = np.asarray(to_numpy(value), dtype=float)
+    matrix = _as_real_array_np(value, name)
     if matrix.ndim == 0 and scalar_dim == 1:
         matrix = matrix.reshape(1, 1)
     if matrix.ndim != 2:
@@ -717,7 +737,7 @@ def _lambda_deltas_np(n_steps, step_schedule):
         return np.full(n_steps, 1.0 / float(n_steps))
     if _contains_masked_value(step_schedule):
         raise ValueError("step_schedule must not contain masked values.")
-    deltas = np.asarray(step_schedule, dtype=float).reshape(-1)
+    deltas = _as_real_array_np(step_schedule, "step_schedule").reshape(-1)
     if deltas.size == 0:
         raise ValueError("step_schedule must not be empty.")
     if np.any(deltas <= 0.0):
