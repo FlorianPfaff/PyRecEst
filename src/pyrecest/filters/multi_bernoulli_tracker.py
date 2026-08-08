@@ -780,12 +780,18 @@ class MultiBernoulliTracker(AbstractMultitargetTracker):
                     ),
                     1e-12,
                 )
-                component.existence_probability = (
+                association_mass = (
                     predicted_existence * current_detection_probability * likelihood
-                ) / (
-                    clutter_intensity
-                    + predicted_existence * current_detection_probability * likelihood
                 )
+                if association_mass >= clutter_intensity:
+                    component.existence_probability = 1.0 / (
+                        1.0 + clutter_intensity / association_mass
+                    )
+                else:
+                    association_odds = association_mass / clutter_intensity
+                    component.existence_probability = association_odds / (
+                        1.0 + association_odds
+                    )
                 assigned_measurements.add(assigned_column)
             else:
                 denominator = 1.0 - predicted_existence * current_detection_probability
