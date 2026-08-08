@@ -77,3 +77,28 @@ class GnnCostMatrixInterfaceTest(unittest.TestCase):
         )
 
         npt.assert_allclose(tracker.get_point_estimate(), prior_estimate)
+
+    def test_pairwise_reward_cannot_bypass_geometric_gate(self):
+        measurements = array([[10.0], [0.0]])
+        pairwise_reward = array([[-100.0]])
+
+        for maximize_cardinality in (False, True):
+            with self.subTest(maximize_cardinality=maximize_cardinality):
+                tracker = _make_tracker(
+                    [[0.0, 0.0]],
+                    association_param={
+                        "gating_distance_threshold": 4.0,
+                        "max_new_tracks": 1,
+                        "maximize_cardinality": maximize_cardinality,
+                    },
+                )
+
+                association = tracker.find_association(
+                    measurements,
+                    eye(2),
+                    eye(2),
+                    warn_on_no_meas_for_track=False,
+                    pairwise_cost_matrix=pairwise_reward,
+                )
+
+                npt.assert_array_equal(association, array([1]))
