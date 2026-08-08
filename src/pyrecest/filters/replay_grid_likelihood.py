@@ -446,6 +446,8 @@ def _nearest_bin_indices(positions: np.ndarray, bin_tree: cKDTree) -> np.ndarray
 
 
 def _validate_probability(probability: float, name: str) -> float:
+    if np.ma.is_masked(probability):
+        raise ValueError(f"{name} must be a scalar probability in [0, 1]")
     probability_array = np.asarray(probability)
     if (
         probability_array.shape != ()
