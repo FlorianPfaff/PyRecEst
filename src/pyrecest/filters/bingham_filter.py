@@ -54,6 +54,10 @@ def _validate_bingham_distribution(distribution, role):
         raise ValueError(f"{role} Z must have shape ({input_dim},).")
     if M.shape != (input_dim, input_dim):
         raise ValueError(f"{role} M must have shape ({input_dim}, {input_dim}).")
+    if _is_complex_array(Z):
+        raise ValueError(f"{role} Z must be real-valued.")
+    if _is_complex_array(M):
+        raise ValueError(f"{role} M must be real-valued.")
     if not _to_python_bool(backend_all(isfinite(Z))):
         raise ValueError(f"{role} Z must be finite.")
     if not _to_python_bool(backend_all(isfinite(M))):
