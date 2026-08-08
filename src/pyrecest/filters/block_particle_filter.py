@@ -17,6 +17,7 @@ from pyrecest.backend import (
     ndim,
     random,
     reshape,
+    sqrt,
     stack,
     sum,
     to_numpy,
@@ -243,7 +244,11 @@ class BlockParticleFilter:
         weight_scale = max(weights)
         if weight_scale <= 0.0:
             raise ValueError("At least one particle weight must be positive.")
-        scaled_weights = weights / weight_scale
+        weight_scale_root = sqrt(weight_scale)
+        # JAX/XLA can lower direct division by a maximum finite float through a
+        # reciprocal that underflows to zero. Two square-root-sized divisions keep
+        # both divisors representable while preserving the original weight ratios.
+        scaled_weights = (weights / weight_scale_root) / weight_scale_root
         scaled_sum = sum(scaled_weights)
         if not isfinite(scaled_sum) or scaled_sum <= 0.0:
             raise ValueError("At least one particle weight must be positive.")
