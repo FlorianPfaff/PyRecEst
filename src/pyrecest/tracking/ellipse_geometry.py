@@ -37,7 +37,7 @@ def symmetrize(matrix):
     """Return the symmetric part of ``matrix``."""
 
     matrix = asarray(matrix)
-    return 0.5 * (matrix + matrix.T)
+    return 0.5 * matrix + 0.5 * matrix.T
 
 
 def project_symmetric_covariance(covariance, minimum_eigenvalue=0.0):
