@@ -222,6 +222,8 @@ def _is_prime(n):
 
 def _validate_integral_argument(value, name: str) -> int:
     """Return a scalar integer argument without silently truncating floats."""
+    if np.ma.is_masked(value):
+        raise ValueError(f"{name} must be an integer")
     try:
         array_value = np.asarray(value)
     except (TypeError, ValueError) as exc:
@@ -243,6 +245,8 @@ def _validate_integral_argument(value, name: str) -> int:
 
 def _validate_positive_finite_scalar_argument(value, name: str) -> float:
     """Return a positive finite scalar float without accepting bools or vectors."""
+    if np.ma.is_masked(value):
+        raise ValueError(f"{name} must be a positive finite scalar")
     try:
         array_value = np.asarray(value)
     except (TypeError, ValueError) as exc:
