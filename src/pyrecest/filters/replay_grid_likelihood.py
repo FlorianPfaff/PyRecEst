@@ -451,10 +451,14 @@ def _validate_probability(probability: float, name: str) -> float:
         probability_array.shape != ()
         or probability_array.dtype == np.bool_
         or probability_array.dtype.kind in "SU"
+        or np.iscomplexobj(probability_array)
     ):
         raise ValueError(f"{name} must be a scalar probability in [0, 1]")
     probability_scalar = probability_array.item()
-    if isinstance(probability_scalar, (bool, np.bool_) + _TEXT_SCALAR_TYPES):
+    if isinstance(
+        probability_scalar,
+        (bool, np.bool_, complex, np.complexfloating) + _TEXT_SCALAR_TYPES,
+    ):
         raise ValueError(f"{name} must be a scalar probability in [0, 1]")
     try:
         value = float(probability_scalar)
