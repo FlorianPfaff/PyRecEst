@@ -364,6 +364,8 @@ def _is_temporal_scalar_array(value_array: np.ndarray) -> bool:
 
 
 def _coerce_candidate_session(value: Any) -> int | None:
+    if np.ma.is_masked(value):
+        return None
     try:
         value_array = np.asarray(value)
     except (TypeError, ValueError):
@@ -450,6 +452,8 @@ def _coerce_candidate(
 
 
 def _normalize_candidate_observation(value: Any) -> int:
+    if np.ma.is_masked(value):
+        raise ValueError("candidate observations must be non-negative integers")
     value_array = np.asarray(value)
     if (
         value_array.shape != ()
@@ -483,6 +487,8 @@ def _normalize_candidate_observation(value: Any) -> int:
 
 def _as_finite_score(value: Any, name: str) -> float:
     message = f"{name} must be a finite real scalar"
+    if np.ma.is_masked(value):
+        raise ValueError(message)
     value_array = np.asarray(value)
     if (
         value_array.shape != ()
@@ -508,8 +514,10 @@ def _as_finite_score(value: Any, name: str) -> float:
 
 
 def _as_positive_int(value: Any, name: str) -> int:
-    value_array = np.asarray(value)
     message = f"{name} must be a positive integer"
+    if np.ma.is_masked(value):
+        raise ValueError(message)
+    value_array = np.asarray(value)
     if (
         value_array.shape != ()
         or value_array.dtype == np.bool_
@@ -537,8 +545,10 @@ def _as_positive_int(value: Any, name: str) -> int:
 
 
 def _as_bool_flag(value: Any, name: str) -> bool:
-    value_array = np.asarray(value)
     message = f"{name} must be a boolean"
+    if np.ma.is_masked(value):
+        raise ValueError(message)
+    value_array = np.asarray(value)
     if value_array.shape != ():
         raise ValueError(message)
 
