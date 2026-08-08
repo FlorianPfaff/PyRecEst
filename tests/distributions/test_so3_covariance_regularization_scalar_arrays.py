@@ -19,3 +19,18 @@ def test_covariance_regularization_rejects_non_numeric_nonfinite_or_nonscalar_va
 ):
     with pytest.raises(ValueError, match="covariance_regularization"):
         _validate_covariance_regularization(value)
+
+
+@pytest.mark.parametrize(
+    "value",
+    [np.ma.array(0.25, mask=True), np.ma.masked],
+)
+def test_covariance_regularization_rejects_masked_scalars(value):
+    with pytest.raises(ValueError, match="covariance_regularization"):
+        _validate_covariance_regularization(value)
+
+
+def test_covariance_regularization_accepts_clear_mask_scalar_wrapper():
+    value = np.ma.array(0.25, mask=False)
+
+    assert _validate_covariance_regularization(value) == pytest.approx(0.25)

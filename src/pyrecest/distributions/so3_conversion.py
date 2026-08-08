@@ -38,6 +38,8 @@ def _validate_particle_count(n_particles):
 
 
 def _validate_covariance_regularization(covariance_regularization):
+    if np.ma.is_masked(covariance_regularization):
+        raise ValueError(_COVARIANCE_REGULARIZATION_ERROR)
     try:
         regularization_array = np.asarray(covariance_regularization)
     except (TypeError, ValueError) as exc:
