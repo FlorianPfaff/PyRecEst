@@ -207,9 +207,8 @@ def constant_velocity_edge_cost(
         dt = max(gap, 1.0e-9)
         left_state = left.end_state[state_slice]
         right_state = right.start_state[state_slice]
-        distance = float(
-            np.linalg.norm(np.asarray(right_state) - np.asarray(left_state))
-        )
+        displacement = np.asarray(right_state) - np.asarray(left_state)
+        distance = float(np.hypot.reduce(displacement, initial=0.0))
         speed = distance / dt
         if max_speed_value is not None and speed > max_speed_value:
             return float("inf")
