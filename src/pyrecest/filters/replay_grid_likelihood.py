@@ -441,8 +441,34 @@ def _nearest_grid_values(
 
 
 def _nearest_bin_indices(positions: np.ndarray, bin_tree: cKDTree) -> np.ndarray:
-    _, indices = bin_tree.query(positions, k=1)
-    return np.asarray(indices, dtype=int)
+    distances, indices = bin_tree.query(positions, k=1)
+    distances = np.asarray(distances, dtype=float)
+    indices = np.asarray(indices, dtype=int)
+
+    # cKDTree evaluates squared distances internally. For sufficiently large
+    # finite coordinates, that intermediate can overflow and the query returns
+    # ``inf`` together with the sentinel index ``tree.n``.
+    invalid = (
+        ~np.isfinite(distances) | (indices < 0) | (indices >= bin_tree.n)
+    )
+    if not np.any(invalid):
+        return indices
+
+    # Recompute only failed rows with hypot accumulation, which avoids overflow
+    # from squaring representable large coordinate differences.
+    centers = np.asarray(bin_tree.data, dtype=float)
+    failed_positions = positions[invalid]
+    pairwise_distances = np.zeros(
+        (failed_positions.shape[0], centers.shape[0]), dtype=float
+    )
+    for coordinate in range(positions.shape[1]):
+        pairwise_distances = np.hypot(
+            pairwise_distances,
+            failed_positions[:, None, coordinate]
+            - centers[None, :, coordinate],
+        )
+    indices[invalid] = np.argmin(pairwise_distances, axis=1)
+    return indices
 
 
 def _validate_probability(probability: float, name: str) -> float:
