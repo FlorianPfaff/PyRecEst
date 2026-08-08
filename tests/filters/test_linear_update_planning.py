@@ -269,3 +269,20 @@ def test_plan_linear_measurement_update_uses_scale_stable_residual_norm() -> Non
     assert plan.accepted is True
     assert plan.action == "updated"
     assert np.isclose(plan.residual_norm, np.sqrt(2.0) * 1.0e200)
+
+
+def test_plan_linear_measurement_update_avoids_symmetrization_overflow() -> None:
+    large_covariance = 0.75 * np.finfo(float).max
+
+    with np.errstate(over="raise", invalid="raise"):
+        plan = plan_linear_measurement_update(
+            mean=np.zeros(1),
+            covariance_matrix=np.array([[large_covariance]]),
+            measurement_vector=np.zeros(1),
+            measurement_covariance=np.zeros((1, 1)),
+            observation_matrix=np.ones((1, 1)),
+        )
+
+    assert plan.accepted is True
+    assert np.isfinite(plan.nominal_innovation_covariance).all()
+    assert plan.nominal_innovation_covariance[0, 0] == large_covariance
