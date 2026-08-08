@@ -26,6 +26,12 @@ __all__ = [
     "records_to_matrix",
 ]
 
+from ._hypothesis_replay_mask_contract import (
+    install_hypothesis_replay_mask_contract,
+)
+
+install_hypothesis_replay_mask_contract()
+
 from .hypothesis_replay import (
     HypothesisReplay,
     HypothesisReplayScore,
