@@ -218,7 +218,10 @@ def run_linear_gaussian_scenario(path: str | Path) -> ScenarioResult:
     """
     config = load_scenario_config(path)
     scenario = _scenario_section(config)
-    if scenario.get("type") != "linear_gaussian":
+    if (
+        not isinstance(scenario.get("type"), str)
+        or scenario["type"].strip() != "linear_gaussian"
+    ):
         raise ValueError(
             "Only scenario.type = 'linear_gaussian' is supported by this runner."
         )
@@ -311,7 +314,10 @@ def run_particle_resampling_scenario(path: str | Path) -> ScenarioResult:
     """
     config = load_scenario_config(path)
     scenario = _scenario_section(config)
-    if scenario.get("type") != "particle_resampling":
+    if (
+        not isinstance(scenario.get("type"), str)
+        or scenario["type"].strip() != "particle_resampling"
+    ):
         raise ValueError(
             "Only scenario.type = 'particle_resampling' is supported by this runner."
         )
