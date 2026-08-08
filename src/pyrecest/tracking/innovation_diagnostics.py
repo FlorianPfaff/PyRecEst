@@ -513,8 +513,21 @@ def _validate_optional_positive_scalar(value: Any, name: str) -> float | None:
     return parsed
 
 
+def _scale_values_for_statistics(values: np.ndarray) -> tuple[np.ndarray, float]:
+    """Scale finite values so reductions do not overflow internally."""
+
+    scale = float(np.max(np.abs(values)))
+    if scale == 0.0:
+        return values, 1.0
+    with np.errstate(under="ignore"):
+        return values / scale, scale
+
+
 def _mean_or_none(values: np.ndarray) -> float | None:
-    return None if values.size == 0 else float(np.mean(values))
+    if values.size == 0:
+        return None
+    scaled_values, scale = _scale_values_for_statistics(values)
+    return float(np.mean(scaled_values) * scale)
 
 
 def _max_or_none(values: np.ndarray) -> float | None:
@@ -522,7 +535,10 @@ def _max_or_none(values: np.ndarray) -> float | None:
 
 
 def _percentile_or_none(values: np.ndarray, percentile: float) -> float | None:
-    return None if values.size == 0 else float(np.percentile(values, percentile))
+    if values.size == 0:
+        return None
+    scaled_values, scale = _scale_values_for_statistics(values)
+    return float(np.percentile(scaled_values, percentile) * scale)
 
 
 __all__ = [
