@@ -234,6 +234,9 @@ def is_single_matrix_pd(mat):
 def _normalize_fractional_matrix_power_exponent(t):
     """Return a finite, non-boolean real scalar exponent."""
 
+    if _onp.ma.is_masked(t):
+        raise TypeError("t must be a real scalar")
+
     exponent_array = _onp.asarray(t)
     if exponent_array.ndim != 0 or exponent_array.dtype.kind in "mM":
         raise TypeError("t must be a real scalar")
