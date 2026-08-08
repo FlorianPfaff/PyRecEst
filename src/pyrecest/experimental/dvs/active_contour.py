@@ -21,6 +21,15 @@ def unit_vector_from_angle(angle: float) -> np.ndarray:
     return np.array([np.cos(angle), np.sin(angle)], dtype=float)
 
 
+def _unit_direction(values: np.ndarray) -> np.ndarray | None:
+    """Return a direction vector without overflowing its raw Euclidean norm."""
+    scale = np.max(np.abs(values), initial=0.0)
+    if scale <= 0.0:
+        return None
+    scaled = values / scale
+    return scaled / np.linalg.norm(scaled)
+
+
 def signed_normal_flow(normal: np.ndarray, velocity: np.ndarray) -> float:
     """Return signed normalized normal flow for one contour normal.
 
@@ -29,11 +38,11 @@ def signed_normal_flow(normal: np.ndarray, velocity: np.ndarray) -> float:
     """
     normal = np.asarray(normal, dtype=float)
     velocity = np.asarray(velocity, dtype=float)
-    velocity_norm = np.linalg.norm(velocity)
-    normal_norm = np.linalg.norm(normal)
-    if velocity_norm <= 0.0 or normal_norm <= 0.0:
+    unit_velocity = _unit_direction(velocity)
+    unit_normal = _unit_direction(normal)
+    if unit_velocity is None or unit_normal is None:
         return 0.0
-    return float((normal / normal_norm) @ velocity / velocity_norm)
+    return float(unit_normal @ unit_velocity)
 
 
 def normal_flow_activity(normal: np.ndarray, velocity: np.ndarray) -> float:
