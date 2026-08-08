@@ -19,7 +19,13 @@ from .hyperspherical_sampler import (
 )
 from .hypertoroidal_sampler import CircularUniformSampler
 from .sigma_points import JulierSigmaPoints, MerweScaledSigmaPoints
-from .support_points import (
+from ._support_points_masked_input_contract import (
+    install_support_points_masked_input_contract,
+)
+
+install_support_points_masked_input_contract()
+
+from .support_points import (  # noqa: E402
     ellipsoid_axis_offsets,
     ellipsoid_axis_support_points,
     ellipsoid_sigma_points,
