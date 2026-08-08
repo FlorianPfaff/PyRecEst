@@ -181,10 +181,83 @@ def test_tracking_sequence_validates_shapes_and_identity_ranges() -> None:
         )
 
 
+def test_tracking_sequence_rejects_masked_values_before_coercion() -> None:
+    invalid_inputs = (
+        (
+            {
+                "gt_ids": (np.ma.array([0], mask=[True]),),
+                "tracker_ids": ([0],),
+                "similarity_scores": ([[1.0]],),
+                "num_gt_ids": 1,
+                "num_tracker_ids": 1,
+            },
+            "gt_ids",
+        ),
+        (
+            {
+                "gt_ids": ([0],),
+                "tracker_ids": (np.ma.array([0], mask=[True]),),
+                "similarity_scores": ([[1.0]],),
+                "num_gt_ids": 1,
+                "num_tracker_ids": 1,
+            },
+            "tracker_ids",
+        ),
+        (
+            {
+                "gt_ids": ([0],),
+                "tracker_ids": ([0],),
+                "similarity_scores": (np.ma.array([[1.0]], mask=[[True]]),),
+                "num_gt_ids": 1,
+                "num_tracker_ids": 1,
+            },
+            "similarity_scores",
+        ),
+        (
+            {
+                "gt_ids": (),
+                "tracker_ids": (),
+                "similarity_scores": (),
+                "num_gt_ids": np.ma.array(1, mask=True),
+                "num_tracker_ids": 0,
+            },
+            "num_gt_ids",
+        ),
+    )
+
+    for kwargs, field_name in invalid_inputs:
+        with pytest.raises(ValueError, match=field_name):
+            TrackingSequence(**kwargs)  # type: ignore[arg-type]
+
+
+def test_tracking_sequence_accepts_clear_mask_wrappers() -> None:
+    data = TrackingSequence(
+        gt_ids=(np.ma.array([0], mask=[False]),),
+        tracker_ids=(np.ma.array([0], mask=[False]),),
+        similarity_scores=(np.ma.array([[1.0]], mask=[[False]]),),
+        num_gt_ids=np.ma.array(1, mask=False),
+        num_tracker_ids=np.ma.array(1, mask=False),
+    )
+
+    assert data.gt_ids[0].tolist() == [0]
+    assert data.tracker_ids[0].tolist() == [0]
+    assert data.similarity_scores[0].tolist() == [[1.0]]
+    assert data.num_gt_ids == 1
+    assert data.num_tracker_ids == 1
+
+
 def test_metric_thresholds_are_validated() -> None:
     empty = TrackingSequence((), (), (), 0, 0)
 
-    for threshold in (-0.1, 1.1, float("nan"), True, "0.5", np.array([0.5])):
+    for threshold in (
+        -0.1,
+        1.1,
+        float("nan"),
+        True,
+        "0.5",
+        np.array([0.5]),
+        np.ma.array(0.5, mask=True),
+    ):
         with pytest.raises(ValueError, match="threshold"):
             evaluate_clear(empty, threshold=threshold)  # type: ignore[arg-type]
         with pytest.raises(ValueError, match="threshold"):
