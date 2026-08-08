@@ -40,3 +40,19 @@ def test_dense_fallback_preserves_large_coordinate_differences(monkeypatch):
     np.testing.assert_allclose(distances, expected_distances)
     np.testing.assert_array_equal(indices, expected_indices)
     assert np.all(distances > 0.0)
+
+
+def test_ckdtree_overflow_falls_back_to_finite_distance():
+    query = np.array([[1.0e155, 0.0]])
+    reference = np.array([[0.0, 0.0]])
+
+    distances, indices = point_set_metrics.nearest_neighbor_distances(
+        query,
+        reference,
+        return_indices=True,
+    )
+
+    expected_distance = np.hypot(query[0, 0], query[0, 1])
+    assert np.isfinite(expected_distance)
+    np.testing.assert_allclose(distances, [expected_distance])
+    np.testing.assert_array_equal(indices, [0])

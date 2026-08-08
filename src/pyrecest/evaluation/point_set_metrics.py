@@ -321,6 +321,16 @@ def _nearest_neighbor_distances_ckdtree(
     for start in range(0, query.shape[0], query_chunk_size):
         chunk = query[start : start + query_chunk_size]
         chunk_distances, chunk_indices = tree.query(chunk, k=1)
+        # cKDTree uses squared distances internally and can overflow for large
+        # finite coordinates. In that case it returns ``inf`` together with the
+        # sentinel index ``len(reference)`` even when the true norm is finite.
+        # Let the stable ``hypot``-based implementation handle the whole query.
+        if (
+            not np.all(np.isfinite(chunk_distances))
+            or np.any(chunk_indices < 0)
+            or np.any(chunk_indices >= reference.shape[0])
+        ):
+            return None
         distances[start : start + chunk.shape[0]] = chunk_distances
         if indices is not None:
             indices[start : start + chunk.shape[0]] = chunk_indices
