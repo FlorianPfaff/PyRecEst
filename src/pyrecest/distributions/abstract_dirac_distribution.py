@@ -41,6 +41,8 @@ from .abstract_distribution_type import AbstractDistributionType
 def _validate_positive_sample_count(n) -> int:
     """Return ``n`` as a positive Python int after scalar-count validation."""
     message = "n must be a positive integer."
+    if np.ma.is_masked(n):
+        raise ValueError(message)
     if isinstance(n, bool):
         raise ValueError(message)
 
