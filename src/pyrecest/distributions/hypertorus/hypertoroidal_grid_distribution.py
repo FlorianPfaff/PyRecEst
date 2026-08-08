@@ -84,6 +84,32 @@ def _validate_hypertoroidal_resolution_entry(value, name: str) -> int:
     return int(value)
 
 
+def _coerce_hypertoroidal_query_points(values, dim: int, name: str):
+    """Normalize scalar, vector, or point-matrix queries to ``(n, dim)``."""
+    values = array(values)
+    values_ndim = ndim(values)
+    if values_ndim == 0:
+        if dim != 1:
+            raise ValueError(
+                f"Expected {name} with shape (n_points, {dim}) or ({dim},), "
+                "got scalar."
+            )
+        values = reshape(values, (1, 1))
+    elif values_ndim == 1:
+        values = reshape(values, (1, -1))
+    elif values_ndim != 2:
+        raise ValueError(
+            f"Expected {name} with shape (n_points, {dim}) or ({dim},), "
+            f"got {values.shape}."
+        )
+
+    if values.shape[1] != dim:
+        raise ValueError(
+            f"Expected {name} with shape (n_points, {dim}), got {values.shape}"
+        )
+    return values
+
+
 class HypertoroidalGridDistribution(
     AbstractGridDistribution, AbstractHypertoroidalDistribution
 ):
@@ -160,13 +186,7 @@ class HypertoroidalGridDistribution(
         ----------
         xs : array_like, shape (dim,) or (n_eval, dim)
         """
-        xs = array(xs)
-        if ndim(xs) == 1:
-            xs = reshape(xs, (1, -1))
-        if xs.shape[1] != self.dim:
-            raise ValueError(
-                f"Expected point of dimension {self.dim}, got {xs.shape[1]}"
-            )
+        xs = _coerce_hypertoroidal_query_points(xs, self.dim, "point")
         if self.grid is None or self.grid.size == 0:
             raise ValueError("Grid is empty; cannot find closest point.")
 
@@ -219,14 +239,7 @@ class HypertoroidalGridDistribution(
         xs : array_like (backend compatible), shape (n_points_eval, dim) or (dim,)
         """
         # 1. Handle shapes using backend functions
-        xs = array(xs)
-        if ndim(xs) == 1:
-            xs = reshape(xs, (1, -1))
-
-        if xs.shape[1] != self.dim:
-            raise ValueError(
-                f"Expected xs with shape (n_points_eval, {self.dim}), got {xs.shape}"
-            )
+        xs = _coerce_hypertoroidal_query_points(xs, self.dim, "xs")
 
         if self.grid_type != "cartesian_prod":
             return self.value_of_closest(xs)
@@ -307,13 +320,7 @@ class HypertoroidalGridDistribution(
         ----------
         xa : array_like, shape (n_eval, dim) or (dim,)
         """
-        xa = array(xa)
-        if ndim(xa) == 1:
-            xa = reshape(xa, (1, -1))
-        if xa.shape[1] != self.dim:
-            raise ValueError(
-                f"Expected xa with shape (n_eval, {self.dim}), got {xa.shape}"
-            )
+        xa = _coerce_hypertoroidal_query_points(xa, self.dim, "xa")
 
         if self.grid is None or self.grid.size == 0:
             raise ValueError("Grid is empty; cannot evaluate value_of_closest.")
