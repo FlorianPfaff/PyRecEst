@@ -2,6 +2,7 @@ import numpy as np
 
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import (
+    asarray,
     atleast_2d,
     empty_like,
     get_default_dtype,
@@ -21,6 +22,22 @@ def _validate_initial_state_shape(x0, simulation_param):
         return
 
     raise ValueError("Mismatch in number of targets.")
+
+
+def _as_transition_state(value, expected_dim, transition_name):
+    """Normalize one callback result without allowing NumPy broadcasting."""
+    state = asarray(value)
+    shape = tuple(state.shape)
+    if shape == (expected_dim,):
+        return state
+    if shape == (1, expected_dim):
+        return reshape(state, (expected_dim,))
+    if expected_dim == 1 and shape == ():
+        return reshape(state, (1,))
+    raise ValueError(
+        f"{transition_name} must return a state vector with shape "
+        f"({expected_dim},); got {shape}."
+    )
 
 
 # pylint: disable=too-many-branches
@@ -72,16 +89,19 @@ def generate_groundtruth(simulation_param, x0=None):
             previous_state = groundtruth[t - 1][target_no, :]
             if "gen_next_state_with_noise" in simulation_param:
                 if not has_inputs:
-                    groundtruth[t][target_no, :] = simulation_param[
-                        "gen_next_state_with_noise"
-                    ](previous_state)
+                    next_state = simulation_param["gen_next_state_with_noise"](
+                        previous_state
+                    )
                 else:
-                    groundtruth[t][target_no, :] = simulation_param[
-                        "gen_next_state_with_noise"
-                    ](
+                    next_state = simulation_param["gen_next_state_with_noise"](
                         previous_state,
                         simulation_param["inputs"][:, t - 1],
                     )
+                groundtruth[t][target_no, :] = _as_transition_state(
+                    next_state,
+                    previous_state.shape[0],
+                    "gen_next_state_with_noise",
+                )
 
             elif "sys_noise" in simulation_param:
                 if "gen_next_state_without_noise" in simulation_param:
@@ -96,6 +116,11 @@ def generate_groundtruth(simulation_param, x0=None):
                             previous_state,
                             simulation_param["inputs"][:, t - 1],
                         )
+                    state_to_add_noise_to = _as_transition_state(
+                        state_to_add_noise_to,
+                        previous_state.shape[0],
+                        "gen_next_state_without_noise",
+                    )
                 else:
                     if has_inputs:
                         raise ValueError(
