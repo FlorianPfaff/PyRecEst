@@ -1,5 +1,6 @@
 from ._mem_rbpf_ffbsi_option_contract import install_mem_rbpf_ffbsi_option_contract
 from ._record_smoother_numeric_contract import install_record_smoother_numeric_contract
+from ._so3_chordal_mask_contract import install_so3_chordal_mask_contract
 from ._urts_transition_call_contract import install_urts_transition_call_contract
 from .abstract_smoother import AbstractSmoother
 from .delayed_output import DelayedStateOutput, DelayedStateOutputMixin
@@ -73,6 +74,7 @@ from .unscented_rauch_tung_striebel_smoother import (
 
 install_mem_rbpf_ffbsi_option_contract()
 install_record_smoother_numeric_contract()
+install_so3_chordal_mask_contract()
 install_urts_transition_call_contract()
 
 __all__ = [
