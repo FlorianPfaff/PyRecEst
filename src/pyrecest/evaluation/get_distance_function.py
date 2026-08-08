@@ -74,20 +74,26 @@ def _without_symmetry_suffix(manifold_name: str) -> str:
     )
 
 
+def _is_unsupported_numeric_config_value(value: Any) -> bool:
+    return numpy.ma.is_masked(value) or isinstance(
+        value, _UNSUPPORTED_NUMERIC_CONFIG_TYPES
+    )
+
+
 def _contains_unsupported_numeric_config_values(value: Any) -> bool:
-    if isinstance(value, _UNSUPPORTED_NUMERIC_CONFIG_TYPES):
+    if _is_unsupported_numeric_config_value(value):
         return True
     try:
         raw_values = numpy.asarray(value, dtype=object).reshape(-1)
     except (TypeError, ValueError, RuntimeError):
         raw_values = ()
-    if any(isinstance(item, _UNSUPPORTED_NUMERIC_CONFIG_TYPES) for item in raw_values):
+    if any(_is_unsupported_numeric_config_value(item) for item in raw_values):
         return True
     try:
         values = numpy.asarray(to_numpy(value), dtype=object).reshape(-1)
     except (TypeError, ValueError, RuntimeError):
         return False
-    return any(isinstance(item, _UNSUPPORTED_NUMERIC_CONFIG_TYPES) for item in values)
+    return any(_is_unsupported_numeric_config_value(item) for item in values)
 
 
 def _as_real_numeric_array(value: Any, name: str) -> numpy.ndarray:
