@@ -82,6 +82,24 @@ def test_quantile_scale_matches_chi_square_quantile() -> None:
     assert estimate.quantile == 0.75
 
 
+def test_rejects_numerically_unresolvable_chi_square_quantiles() -> None:
+    probability = np.nextafter(0.0, 1.0)
+
+    with pytest.raises(ValueError, match="numerically resolvable"):
+        summarize_nis_consistency(
+            [1.0],
+            measurement_dim=1,
+            gate_probabilities=(probability,),
+        )
+    with pytest.raises(ValueError, match="numerically resolvable"):
+        estimate_innovation_covariance_scale(
+            [1.0],
+            measurement_dim=1,
+            method="quantile",
+            quantile=probability,
+        )
+
+
 @pytest.mark.parametrize("measurement_dim", [0, -1, 1.5, True, "2", np.nan])
 def test_rejects_invalid_measurement_dimensions(measurement_dim) -> None:
     with pytest.raises(ValueError, match="measurement_dim"):

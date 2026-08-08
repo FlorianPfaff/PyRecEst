@@ -107,6 +107,10 @@ def summarize_nis_consistency(
     probabilities = tuple(
         _validate_probability(value, "gate probability") for value in gate_probabilities
     )
+    thresholds = tuple(
+        _chi_square_quantile(probability, dim, "gate probability")
+        for probability in probabilities
+    )
 
     count = int(values.size)
     expected_mean = float(dim)
@@ -114,14 +118,14 @@ def summarize_nis_consistency(
         coverage = tuple(
             NISCoverageSummary(
                 probability=probability,
-                threshold=float(chi2.ppf(probability, df=dim)),
+                threshold=threshold,
                 expected_fraction=probability,
                 actual_fraction=None,
                 coverage_gap=None,
                 observed_quantile=None,
                 innovation_covariance_scale=None,
             )
-            for probability in probabilities
+            for probability, threshold in zip(probabilities, thresholds, strict=True)
         )
         return NISConsistencySummary(
             measurement_dim=dim,
@@ -152,8 +156,7 @@ def summarize_nis_consistency(
     )
 
     coverage_items: list[NISCoverageSummary] = []
-    for probability in probabilities:
-        threshold = float(chi2.ppf(probability, df=dim))
+    for probability, threshold in zip(probabilities, thresholds, strict=True):
         actual_fraction = float(np.mean(values <= threshold))
         observed_quantile = float(np.quantile(values, probability))
         coverage_items.append(
@@ -219,7 +222,7 @@ def estimate_innovation_covariance_scale(
     else:
         quantile_value = _validate_probability(quantile, "quantile")
         statistic = float(np.quantile(values, quantile_value))
-        target = float(chi2.ppf(quantile_value, df=dim))
+        target = _chi_square_quantile(quantile_value, dim, "quantile")
 
     return InnovationCovarianceScaleEstimate(
         measurement_dim=dim,
@@ -230,6 +233,16 @@ def estimate_innovation_covariance_scale(
         scale=statistic / target,
         quantile=quantile_value,
     )
+
+
+def _chi_square_quantile(probability: float, measurement_dim: int, name: str) -> float:
+    target = float(chi2.ppf(probability, df=measurement_dim))
+    if not np.isfinite(target) or target <= 0.0:
+        raise ValueError(
+            f"{name} is not numerically resolvable for "
+            f"measurement_dim={measurement_dim}"
+        )
+    return target
 
 
 def _as_nis_values(values: Iterable[float]) -> np.ndarray:
