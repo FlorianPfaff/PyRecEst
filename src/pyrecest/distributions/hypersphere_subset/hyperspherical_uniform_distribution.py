@@ -17,6 +17,7 @@ from pyrecest.backend import (
     sin,
     sqrt,
     stack,
+    where,
 )
 
 from .abstract_hypersphere_subset_uniform_distribution import (
@@ -86,7 +87,12 @@ class HypersphericalUniformDistribution(
             s = stack([r * cos(phi), r * sin(phi), sz], axis=1)
         else:
             samples_unnorm = backend_random.normal(size=(n, self.dim + 1))
-            s = samples_unnorm / linalg.norm(samples_unnorm, axis=1).reshape(-1, 1)
+            sample_norms = linalg.norm(samples_unnorm, axis=1).reshape(-1, 1)
+            zero_norms = sample_norms == 0
+            safe_norms = where(zero_norms, 1.0, sample_norms)
+            normalized_samples = samples_unnorm / safe_norms
+            canonical_direction = array([1.0] + [0.0] * self.dim)
+            s = where(zero_norms, canonical_direction, normalized_samples)
         return s
 
     def get_manifold_size(self):
