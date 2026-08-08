@@ -24,6 +24,22 @@ def test_pdf_remains_finite_and_positive_for_tiny_gamma():
     )
 
 
+@unittest.skipUnless(
+    pyrecest.backend.__backend_name__ == "numpy",
+    reason="Extreme float64 underflow regression uses the NumPy backend",
+)
+def test_pdf_mode_remains_finite_when_half_gamma_square_underflows():
+    gamma = 1.0e-200
+    dist = WrappedCauchyDistribution(0.0, gamma)
+
+    with np.errstate(over="raise", divide="raise", invalid="raise", under="ignore"):
+        value = float(to_numpy(dist.pdf(array([0.0])))[0])
+
+    expected = 1.0 / (2.0 * np.pi * np.tanh(gamma / 2.0))
+    assert np.isfinite(value)
+    npt.assert_allclose(value, expected, rtol=1.0e-15)
+
+
 @unittest.skipIf(
     pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
     reason="Wrapped Cauchy CDF is not supported on this backend",
