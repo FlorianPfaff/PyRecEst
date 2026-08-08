@@ -16,6 +16,7 @@ import pyrecest.backend
 
 # pylint: disable=no-name-in-module,no-member,duplicate-code
 from pyrecest.backend import (
+    any,
     asarray,
     concatenate,
     copy,
@@ -81,6 +82,12 @@ class ThinPlateSplineTransform:
             raise ValueError("weights must have the same shape as control_points.")
         if affine_coefficients.shape != (3, 2):
             raise ValueError("affine_coefficients must have shape (3, 2).")
+        if any(~isfinite(control_points)):
+            raise ValueError("control_points must contain only finite values.")
+        if any(~isfinite(weights)):
+            raise ValueError("weights must contain only finite values.")
+        if any(~isfinite(affine_coefficients)):
+            raise ValueError("affine_coefficients must contain only finite values.")
 
         object.__setattr__(self, "control_points", copy(control_points))
         object.__setattr__(self, "weights", copy(weights))
