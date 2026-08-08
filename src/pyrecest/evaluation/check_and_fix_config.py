@@ -22,6 +22,19 @@ def _validate_probability(value, name):
     return value
 
 
+def _validate_rate(value, name, *, allow_zero):
+    qualifier = "non-negative" if allow_zero else "positive"
+    message = f"{name} must be {qualifier}."
+    if isinstance(value, (bool, np.bool_, np.datetime64, np.timedelta64)) or not isinstance(
+        value, Real
+    ):
+        raise TypeError(message)
+    value = float(value)
+    if not np.isfinite(value) or value < 0.0 or (not allow_zero and value == 0.0):
+        raise ValueError(message)
+    return value
+
+
 def _expand_meas_per_step(simulation_param):
     if "n_meas_at_individual_time_step" in simulation_param:
         return
@@ -76,8 +89,11 @@ def check_and_fix_config(simulation_param):
     if "intensity_lambda" in simulation_param:
         if not (simulation_param["mtt"] or simulation_param["eot"]):
             raise ValueError("Intensity lambda can only be used with MTT or EOT.")
-        if simulation_param["intensity_lambda"] <= 0:
-            raise ValueError("Intensity lambda must be positive.")
+        simulation_param["intensity_lambda"] = _validate_rate(
+            simulation_param["intensity_lambda"],
+            "Intensity lambda",
+            allow_zero=False,
+        )
 
     if simulation_param["mtt"] and simulation_param["eot"]:
         raise ValueError("MTT and EOT cannot be used together at the moment.")
@@ -134,6 +150,11 @@ def check_and_fix_config(simulation_param):
             "detection_probability",
         )
         simulation_param.setdefault("clutter_rate", 0)
+        simulation_param["clutter_rate"] = _validate_rate(
+            simulation_param["clutter_rate"],
+            "clutter_rate",
+            allow_zero=True,
+        )
 
         if (
             "observed_area" not in simulation_param
