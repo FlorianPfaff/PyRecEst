@@ -116,3 +116,49 @@ def test_rejects_masked_nis_values_but_accepts_clear_masks() -> None:
 
     summary = summarize_nis_consistency(np.ma.array([1.0, 2.0], mask=False), 1)
     assert summary.count == 2
+
+
+def test_rejects_masked_scalar_configuration_values() -> None:
+    masked_dim = np.ma.array(2, mask=True)
+    masked_probability = np.ma.array(0.95, mask=True)
+
+    with pytest.raises(ValueError, match="measurement_dim"):
+        summarize_nis_consistency([1.0], masked_dim)
+    with pytest.raises(ValueError, match="measurement_dim"):
+        estimate_innovation_covariance_scale([1.0], masked_dim)
+    with pytest.raises(ValueError, match="gate probability"):
+        summarize_nis_consistency(
+            [1.0],
+            2,
+            gate_probabilities=(masked_probability,),
+        )
+    with pytest.raises(ValueError, match="quantile"):
+        estimate_innovation_covariance_scale(
+            [1.0],
+            2,
+            method="quantile",
+            quantile=masked_probability,
+        )
+
+    summary = summarize_nis_consistency([1.0], 2, gate_probabilities=(0.95,))
+    with pytest.raises(ValueError, match="probability"):
+        summary.coverage_for(masked_probability)
+
+
+def test_accepts_clear_mask_scalar_configuration_wrappers() -> None:
+    summary = summarize_nis_consistency(
+        [1.0],
+        np.ma.array(2, mask=False),
+        gate_probabilities=(np.ma.array(0.95, mask=False),),
+    )
+    estimate = estimate_innovation_covariance_scale(
+        [1.0, 2.0],
+        np.ma.array(2, mask=False),
+        method="quantile",
+        quantile=np.ma.array(0.75, mask=False),
+    )
+
+    assert summary.measurement_dim == 2
+    assert summary.coverage_for(np.ma.array(0.95, mask=False)).probability == 0.95
+    assert estimate.measurement_dim == 2
+    assert estimate.quantile == 0.75
