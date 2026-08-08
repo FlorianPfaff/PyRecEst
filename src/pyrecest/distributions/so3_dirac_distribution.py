@@ -1,8 +1,9 @@
 """Dirac distribution on SO(3)."""
 
 # pylint: disable=no-name-in-module,no-member
-from numbers import Integral
+from operator import index as operator_index
 
+import numpy as np
 from pyrecest.backend import (
     abs,
     all,
@@ -110,12 +111,17 @@ class SO3DiracDistribution(HyperhemisphericalDiracDistribution):
 
     @staticmethod
     def _validate_particle_count(n_particles):
-        if (
-            isinstance(n_particles, bool)
-            or not isinstance(n_particles, Integral)
-            or int(n_particles) <= 0
+        message = "n_particles must be a positive integer"
+        if np.ma.is_masked(n_particles) or isinstance(
+            n_particles, (bool, np.bool_)
         ):
-            raise ValueError("n_particles must be a positive integer")
+            raise ValueError(message)
+        try:
+            n_particles = operator_index(n_particles)
+        except TypeError as exc:
+            raise ValueError(message) from exc
+        if n_particles <= 0:
+            raise ValueError(message)
         return int(n_particles)
 
     def angular_error_mean(self, rotation):
