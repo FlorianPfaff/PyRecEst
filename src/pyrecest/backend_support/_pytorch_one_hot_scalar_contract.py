@@ -146,9 +146,16 @@ def _patch_pytorch_gamma_autograd_contract(
             values,
             torch_module.full_like(values, -0.5),
         )
-        reflected_branch = torch_module.pi / (
-            torch_module.sin(torch_module.pi * reflection_values)
-            * torch_module.exp(torch_module.special.gammaln(1 - reflection_values))
+        reflection_sine = torch_module.sin(torch_module.pi * reflection_values)
+        reflected_log_abs = (
+            torch_module.log(
+                torch_module.full_like(reflection_values, torch_module.pi)
+            )
+            - torch_module.log(torch_module.abs(reflection_sine))
+            - torch_module.special.gammaln(1 - reflection_values)
+        )
+        reflected_branch = torch_module.sign(reflection_sine) * torch_module.exp(
+            reflected_log_abs
         )
         result = torch_module.where(negative_mask, reflected_branch, positive_branch)
 
