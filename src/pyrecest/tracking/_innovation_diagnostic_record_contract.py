@@ -11,6 +11,8 @@ from . import innovation_diagnostics as _diagnostics
 
 # pylint: disable=protected-access
 
+_ORIGINAL_AS_FINITE_REAL_ARRAY = _diagnostics._as_finite_real_array
+
 
 def _record_value(
     record: Mapping[str, Any], preferred_key: str, canonical_key: str
@@ -20,6 +22,32 @@ def _record_value(
     if preferred_key in record:
         return record[preferred_key]
     return record.get(canonical_key)
+
+
+def _contains_masked_value(value: Any) -> bool:
+    """Return whether ``value`` contains genuinely masked NumPy entries."""
+
+    if np.ma.is_masked(value):
+        return True
+    if np.ma.isMaskedArray(value):
+        if bool(np.any(np.ma.getmaskarray(value))):
+            return True
+        value = np.ma.getdata(value)
+    if isinstance(value, np.ndarray):
+        if value.dtype != object:
+            return False
+        return any(_contains_masked_value(item) for item in value.reshape(-1))
+    if isinstance(value, (list, tuple)):
+        return any(_contains_masked_value(item) for item in value)
+    return False
+
+
+def _as_finite_real_array(value: Any, name: str) -> np.ndarray:
+    """Validate finite real arrays without discarding mask metadata."""
+
+    if _contains_masked_value(value):
+        raise ValueError(f"{name} must contain finite real numeric values")
+    return _ORIGINAL_AS_FINITE_REAL_ARRAY(value, name)
 
 
 def _optional_finite_real_array(value: Any, name: str) -> np.ndarray | None:
@@ -121,13 +149,19 @@ def diagnostic_from_record(
 
 
 def install_innovation_diagnostic_record_contract() -> None:
-    """Install round-trip-safe record deserialization."""
+    """Install round-trip-safe record and array validation contracts."""
 
-    marker = "_pyrecest_round_trip_record_contract"
-    setattr(diagnostic_from_record, marker, True)
-    current = _diagnostics.diagnostic_from_record
-    if not getattr(current, marker, False):
+    record_marker = "_pyrecest_round_trip_record_contract"
+    setattr(diagnostic_from_record, record_marker, True)
+    current_record_loader = _diagnostics.diagnostic_from_record
+    if not getattr(current_record_loader, record_marker, False):
         _diagnostics.diagnostic_from_record = diagnostic_from_record
+
+    array_marker = "_pyrecest_mask_preserving_array_contract"
+    setattr(_as_finite_real_array, array_marker, True)
+    current_array_validator = _diagnostics._as_finite_real_array
+    if not getattr(current_array_validator, array_marker, False):
+        _diagnostics._as_finite_real_array = _as_finite_real_array
 
 
 __all__ = ["install_innovation_diagnostic_record_contract"]
