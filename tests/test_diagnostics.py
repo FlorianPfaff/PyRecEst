@@ -75,3 +75,25 @@ def test_particle_diagnostics_rejects_boolean_weights():
     for weights in invalid_cases:
         with pytest.raises(ValueError, match="Particle weights must be numeric"):
             ParticleDiagnostics.from_weights(weights)
+
+
+def test_particle_diagnostics_rejects_complex_weights():
+    invalid_cases = (
+        1.0 + 2.0j,
+        np.complex64(1.0 + 2.0j),
+        np.complex128(1.0 + 0.0j),
+        [np.complex64(1.0 + 2.0j), 1.0],
+        np.array([1.0 + 2.0j, 1.0], dtype=np.complex64),
+        np.array([np.complex64(1.0 + 2.0j), 1.0], dtype=object),
+    )
+    for weights in invalid_cases:
+        with pytest.raises(ValueError, match="Particle weights must be numeric"):
+            ParticleDiagnostics.from_weights(weights)
+
+
+def test_particle_diagnostics_accepts_real_numpy_scalar_weights():
+    diagnostics = ParticleDiagnostics.from_weights(
+        [np.float32(1.0), np.float64(3.0)]
+    )
+
+    assert isclose(diagnostics.effective_sample_size, 1.6)
