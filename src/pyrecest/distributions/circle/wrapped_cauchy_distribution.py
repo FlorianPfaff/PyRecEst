@@ -35,14 +35,14 @@ _INVALID_REAL_DTYPE_KINDS = {"b", "S", "U", "c", "M", "m"}
 
 
 def _contains_invalid_real_value(value) -> bool:
-    """Return whether a value is boolean, textual, complex, or temporal."""
-    if isinstance(value, _INVALID_REAL_SCALAR_TYPES):
+    """Return whether a value is masked, boolean, textual, complex, or temporal."""
+    if np.ma.is_masked(value) or isinstance(value, _INVALID_REAL_SCALAR_TYPES):
         return True
 
     dtype = getattr(value, "dtype", None)
     if dtype is not None:
         try:
-            return np.dtype(dtype).kind in _INVALID_REAL_DTYPE_KINDS
+            dtype_kind = np.dtype(dtype).kind
         except (TypeError, ValueError):
             dtype_name = str(dtype).lower()
             return any(
@@ -56,12 +56,19 @@ def _contains_invalid_real_value(value) -> bool:
                     "timedelta",
                 )
             )
+        if dtype_kind in _INVALID_REAL_DTYPE_KINDS:
+            return True
+        if dtype_kind != "O":
+            return False
 
     try:
         values = np.asarray(value, dtype=object).reshape(-1)
     except (OverflowError, TypeError, ValueError, RuntimeError):
         return False
-    return any(isinstance(item, _INVALID_REAL_SCALAR_TYPES) for item in values)
+    return any(
+        np.ma.is_masked(item) or isinstance(item, _INVALID_REAL_SCALAR_TYPES)
+        for item in values
+    )
 
 
 def _validate_finite_scalar(value, name):
