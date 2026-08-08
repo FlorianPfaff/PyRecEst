@@ -111,19 +111,35 @@ def _identity_array(values: object, upper_bound: int, name: str) -> np.ndarray:
 def _similarity_matrix(
     values: object, expected_shape: tuple[int, int], name: str
 ) -> np.ndarray:
+    message = f"{name} must be a finite numeric matrix"
     try:
         raw = np.asarray(values)
     except (TypeError, ValueError, OverflowError) as exc:
-        raise ValueError(f"{name} must be a finite numeric matrix") from exc
+        raise ValueError(message) from exc
     if raw.size == 0 and 0 in expected_shape:
         result = np.zeros(expected_shape, dtype=float)
     else:
-        if raw.dtype.kind == "c":
-            raise ValueError(f"{name} must be a finite numeric matrix")
+        if raw.dtype.kind in "bMmSUc":
+            raise ValueError(message)
+        if raw.dtype.kind == "O":
+            invalid_types = (
+                bool,
+                np.bool_,
+                str,
+                bytes,
+                bytearray,
+                complex,
+                np.complexfloating,
+                np.datetime64,
+                np.timedelta64,
+                type(None),
+            )
+            if any(isinstance(value, invalid_types) for value in raw.reshape(-1)):
+                raise ValueError(message)
         try:
             result = np.array(values, dtype=float, copy=True)
         except (TypeError, ValueError, OverflowError) as exc:
-            raise ValueError(f"{name} must be a finite numeric matrix") from exc
+            raise ValueError(message) from exc
     if result.shape != expected_shape:
         raise ValueError(f"{name} must have shape {expected_shape}, got {result.shape}")
     if not np.all(np.isfinite(result)) or np.any(result < 0.0) or np.any(result > 1.0):
