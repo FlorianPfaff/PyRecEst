@@ -245,7 +245,7 @@ class CircularUKF(AbstractFilter, CircularFilterMixin):
     @filter_state.setter
     def filter_state(self, new_state):
         new_state = _as_circular_gaussian(new_state, "filter_state")
-        self._filter_state = new_state
+        AbstractFilter.filter_state.fset(self, new_state)
 
     # ------------------------------------------------------------------
     # Prediction
