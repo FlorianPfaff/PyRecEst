@@ -45,6 +45,11 @@ def _contains_masked_value(value):
     return any(_onp.ma.is_masked(item) for item in values)
 
 
+def _reject_masked_value(value, name):
+    if _contains_masked_value(value):
+        raise ValueError(f"{name} must not contain masked values")
+
+
 def _is_temporal_scalar_array(value_array):
     return value_array.ndim == 0 and value_array.dtype.kind in _TEMPORAL_DTYPE_KINDS
 
@@ -84,6 +89,7 @@ def _normalize_size(size):
 
 
 def _validate_uniform_bound(bound, name):
+    _reject_masked_value(bound, name)
     if _contains_boolean_value(bound):
         raise TypeError(f"{name} must be real numeric, not boolean")
     try:
@@ -118,6 +124,7 @@ uniform = _modify_func_default_dtype(
 
 
 def _validate_normal_parameter(value, name):
+    _reject_masked_value(value, name)
     if _contains_boolean_value(value):
         raise TypeError(f"{name} must be real numeric, not boolean")
     try:
@@ -150,6 +157,7 @@ normal = _modify_func_default_dtype(
 
 
 def _validate_multivariate_normal_parameter(value, name):
+    _reject_masked_value(value, name)
     if _contains_boolean_value(value):
         raise TypeError(f"{name} must be real numeric, not boolean")
     try:
@@ -179,6 +187,7 @@ multivariate_normal = _modify_func_default_dtype(
 
 
 def _normalize_choice_axis(axis, ndim):
+    _reject_masked_value(axis, "axis")
     if isinstance(axis, _BOOLEAN_TYPES):
         raise TypeError("axis must be an integer")
     try:
@@ -191,6 +200,7 @@ def _normalize_choice_axis(axis, ndim):
 
 
 def _choice_bool(value, name):
+    _reject_masked_value(value, name)
     if isinstance(value, _BOOLEAN_TYPES):
         return bool(value)
     value_array = _np.asarray(value)
@@ -246,6 +256,7 @@ def _integer_choice_population_size(a_array):
 def _validate_choice_probabilities(p, population_size):
     if p is None:
         return None
+    _reject_masked_value(p, "p")
     if _contains_boolean_value(p):
         raise TypeError("p must be real numeric, not boolean")
     try:
@@ -265,6 +276,7 @@ def choice(a, size=None, replace=True, p=None, axis=0, shuffle=True):
     replace = _choice_bool(replace, "replace")
     shuffle = _choice_bool(shuffle, "shuffle")
     size = _normalize_size(size)
+    _reject_masked_value(a, "a")
     a_array = _np.asarray(a)
     _validate_choice_population(a_array)
     if a_array.ndim == 0:
