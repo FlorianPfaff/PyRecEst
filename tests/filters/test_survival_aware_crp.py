@@ -50,6 +50,58 @@ class SurvivalAwareCRPAssociationPriorTest(unittest.TestCase):
         )
         self.assertAlmostEqual(probabilities.total_probability, 1.0)
 
+    def test_predictive_probabilities_normalize_overflowing_track_products(self):
+        prior = SurvivalAwareCRPAssociationPrior()
+        track_evidences = [
+            SurvivalAwareTrackEvidence(
+                mass=1e200,
+                kinematic_likelihood=1e200,
+            ),
+            SurvivalAwareTrackEvidence(
+                mass=2e200,
+                kinematic_likelihood=1e200,
+            ),
+        ]
+
+        probabilities = prior.predictive_assignment_probabilities(
+            track_evidences,
+            base_birth_weight=0.0,
+            clutter_weight=0.0,
+        )
+
+        npt.assert_allclose(
+            probabilities.as_tuple,
+            (1.0 / 3.0, 2.0 / 3.0, 0.0, 0.0),
+        )
+
+    def test_zero_factor_wins_over_overflowing_track_factors(self):
+        prior = SurvivalAwareCRPAssociationPrior()
+        track_evidence = SurvivalAwareTrackEvidence(
+            mass=1e200,
+            kinematic_likelihood=1e200,
+            appearance_likelihood=0.0,
+        )
+
+        probabilities = prior.predictive_assignment_probabilities(
+            [track_evidence],
+            base_birth_weight=1.0,
+            clutter_weight=0.0,
+        )
+
+        npt.assert_allclose(probabilities.as_tuple, (0.0, 1.0, 0.0))
+
+    def test_predictive_probabilities_normalize_overflowing_birth_product(self):
+        prior = SurvivalAwareCRPAssociationPrior(concentration=2.0)
+        zero_weight_track = SurvivalAwareTrackEvidence(mass=0.0)
+
+        probabilities = prior.predictive_assignment_probabilities(
+            [zero_weight_track],
+            base_birth_weight=1e308,
+            clutter_weight=1e308,
+        )
+
+        npt.assert_allclose(probabilities.as_tuple, (0.0, 2.0 / 3.0, 1.0 / 3.0))
+
     def test_survival_and_compatibility_can_override_raw_track_mass(self):
         prior = SurvivalAwareCRPAssociationPrior(
             concentration=0.5,
