@@ -116,6 +116,8 @@ class AbstractGridDistribution(AbstractDistributionType):
     def get_grid_point(self, indices):
         # To avoid passing all points if only one or few are needed.
         # Overload if .grid should stay empty
+        if self.grid.ndim == 1:
+            return self.grid[indices]
         return self.grid[indices, :]
 
     def multiply(self, other):
