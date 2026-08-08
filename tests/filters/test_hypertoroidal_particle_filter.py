@@ -1,5 +1,6 @@
 import unittest
 
+import numpy as np
 import numpy.testing as npt
 import pyrecest.backend
 
@@ -40,6 +41,36 @@ class HypertoroidalParticleFilterTest(unittest.TestCase):
             with self.subTest(dim=dim):
                 with self.assertRaisesRegex(ValueError, "dim"):
                     HypertoroidalParticleFilter(5, dim)
+
+    def test_multidimensional_constructor_does_not_collapse_to_diagonal(self):
+        n_particles = 32
+        particles = np.asarray(
+            HypertoroidalParticleFilter(n_particles, 3).filter_state.d
+        )
+
+        self.assertEqual(particles.shape, (n_particles, 3))
+        self.assertFalse(np.allclose(particles[:, 0], particles[:, 1]))
+
+        expected_spacing = 2.0 * np.pi / n_particles
+        for dimension in range(particles.shape[1]):
+            sorted_angles = np.sort(particles[:, dimension])
+            wrapped_angles = np.concatenate(
+                (sorted_angles, [sorted_angles[0] + 2.0 * np.pi])
+            )
+            npt.assert_allclose(np.diff(wrapped_angles), expected_spacing)
+
+    def test_constructor_preserves_requested_particle_count(self):
+        hpf = HypertoroidalParticleFilter(61, 2)
+
+        self.assertEqual(hpf.filter_state.d.shape, (61, 2))
+        self.assertEqual(hpf.filter_state.w.shape, (61,))
+
+    def test_constructor_preserves_singleton_particle_axis(self):
+        hpf = HypertoroidalParticleFilter(1, 3)
+
+        self.assertEqual(hpf.filter_state.d.shape, (1, 3))
+        self.assertEqual(hpf.filter_state.w.shape, (1,))
+        self.assertEqual(hpf.get_point_estimate().shape, (3,))
 
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ == "jax", reason="Backend not supported'"
