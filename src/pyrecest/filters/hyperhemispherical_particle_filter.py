@@ -1,4 +1,6 @@
-from numbers import Integral
+import operator
+
+import numpy as np
 
 from pyrecest.backend import empty
 from pyrecest.distributions.hypersphere_subset.abstract_hyperhemispherical_distribution import (
@@ -12,12 +14,25 @@ from .abstract_particle_filter import AbstractParticleFilter
 from .manifold_mixins import HyperhemisphericalFilterMixin
 
 
+def _is_boolean_scalar(value) -> bool:
+    if isinstance(value, (bool, np.bool_)):
+        return True
+    dtype = getattr(value, "dtype", None)
+    if getattr(dtype, "kind", None) == "b":
+        return True
+    return str(dtype).lower() in {"bool", "bool_", "torch.bool"}
+
+
 def _validate_positive_integer(value, name: str) -> int:
-    if isinstance(value, bool) or not isinstance(value, Integral):
-        raise ValueError(f"{name} must be a positive integer.")
-    value = int(value)
+    message = f"{name} must be a positive integer."
+    if np.ma.is_masked(value) or _is_boolean_scalar(value):
+        raise ValueError(message)
+    try:
+        value = int(operator.index(value))
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(message) from exc
     if value <= 0:
-        raise ValueError(f"{name} must be a positive integer.")
+        raise ValueError(message)
     return value
 
 
