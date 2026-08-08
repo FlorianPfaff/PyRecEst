@@ -82,7 +82,10 @@ def test_quantile_scale_matches_chi_square_quantile() -> None:
     assert estimate.quantile == 0.75
 
 
-@pytest.mark.parametrize("measurement_dim", [0, -1, 1.5, True, "2", np.nan])
+@pytest.mark.parametrize(
+    "measurement_dim",
+    [0, -1, 1.5, True, "2", np.nan, 2**53 + 1, np.int64(2**53 + 1)],
+)
 def test_rejects_invalid_measurement_dimensions(measurement_dim) -> None:
     with pytest.raises(ValueError, match="measurement_dim"):
         summarize_nis_consistency([1.0], measurement_dim)
