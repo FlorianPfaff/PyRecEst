@@ -1,6 +1,7 @@
 import math
 import unittest
 
+import numpy as np
 import numpy.testing as npt
 
 # pylint: disable=no-name-in-module,no-member
@@ -69,6 +70,23 @@ class WrappedLaplaceDistributionTest(unittest.TestCase):
         actual = distribution.pdf(array(2.0 * math.pi - distance_from_wrap))
 
         npt.assert_allclose(actual, expected, rtol=1e-6)
+
+    @unittest.skipUnless(
+        pyrecest.backend.__backend_name__ == "numpy",
+        reason="Strict NumPy floating-point handling is backend-specific",
+    )
+    def test_pdf_avoids_overflow_for_extreme_skew(self):
+        distribution = WrappedLaplaceDistribution(1.0, 1.0e200)
+
+        with np.errstate(
+            over="raise",
+            invalid="raise",
+            divide="raise",
+            under="ignore",
+        ):
+            actual = distribution.pdf(array([0.0, 1.0]))
+
+        npt.assert_allclose(actual, 1.0 / (2.0 * math.pi), rtol=1e-12)
 
     def test_pdf_accepts_scalar_and_list_inputs(self):
         npt.assert_allclose(self.wl.pdf(1.0), self.wl.pdf(array(1.0)), rtol=1e-6)
