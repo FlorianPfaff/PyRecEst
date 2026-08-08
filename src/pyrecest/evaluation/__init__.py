@@ -5,6 +5,10 @@ import numpy as _np
 
 from . import get_distance_function as _get_distance_function_module
 from . import model_comparison as _model_comparison
+from . import selection as _selection
+from ._selection_mask_contract import (
+    install_selection_mask_contract as _install_selection_mask_contract,
+)
 from .check_and_fix_config import check_and_fix_config
 from .configure_for_filter import configure_for_filter
 from .determine_all_deviations import determine_all_deviations
@@ -73,6 +77,9 @@ from .selection import (
 )
 from .simulation_database import simulation_database
 from .summarize_filter_results import summarize_filter_results
+
+_install_selection_mask_contract()
+sanitized_score_vector = _selection.sanitized_score_vector
 
 _ORIGINAL_CLASSIFIER_ATTR = "_pyrecest_original_classify_evidence_margin"
 _ORIGINAL_DECISIONS_ATTR = "_pyrecest_original_paired_model_margin_decisions"
