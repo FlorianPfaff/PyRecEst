@@ -71,6 +71,52 @@ class DaumHuangParticleFlowFilterTest(unittest.TestCase):
             to_numpy(actual_covariance), to_numpy(expected_covariance), atol=1e-10
         )
 
+    def test_bridge_helpers_reject_invalid_delta_lambda(self):
+        particles = array([[-1.0], [1.0]])
+        mean, covariance = _mean_and_cov(particles)
+        measurement_matrix = array([[1.0]])
+        measurement = array([0.25])
+        measurement_noise = array([[0.75]])
+        calls = {
+            "affine_increment": lambda delta: gaussian_flow_affine_increment(
+                particles,
+                mean,
+                covariance,
+                measurement_matrix,
+                measurement,
+                measurement_noise,
+                delta,
+                jitter=0.0,
+            ),
+            "bridge_moments": lambda delta: gaussian_bridge_moments(
+                mean,
+                covariance,
+                measurement_matrix,
+                measurement,
+                measurement_noise,
+                delta,
+                jitter=0.0,
+            ),
+        }
+        invalid_values = (
+            -1.0,
+            np.nan,
+            np.inf,
+            -np.inf,
+            True,
+            np.array([0.5]),
+            np.ma.array(0.5, mask=True),
+        )
+
+        for name, call in calls.items():
+            for invalid_value in invalid_values:
+                with self.subTest(name=name, delta_lambda=invalid_value):
+                    with self.assertRaisesRegex(
+                        ValueError,
+                        "delta_lambda must be finite and nonnegative",
+                    ):
+                        call(invalid_value)
+
     def test_edh_filter_linear_update_matches_bridge_moments(self):
         particles = array(
             [
