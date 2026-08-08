@@ -114,6 +114,11 @@ def _as_positive_integer(x, name):
     return x
 
 
+def _symmetrize(matrix):
+    """Return the symmetric part without doubling large diagonal entries."""
+    return 0.5 * matrix + 0.5 * transpose(matrix)
+
+
 def normalized_innovation_squared(innovation, innovation_covariance):
     """Return innovation.T @ inv(innovation_covariance) @ innovation."""
     innovation = _as_vector(innovation, "innovation")
@@ -271,9 +276,7 @@ def linear_gaussian_predict(
     predicted_covariance = (
         system_matrix @ covariance @ transpose(system_matrix) + sys_noise_cov
     )
-    predicted_covariance = 0.5 * (
-        predicted_covariance + transpose(predicted_covariance)
-    )
+    predicted_covariance = _symmetrize(predicted_covariance)
     return predicted_mean, predicted_covariance
 
 
@@ -303,7 +306,7 @@ def linear_gaussian_innovation(
     innovation_cov = (
         measurement_matrix @ covariance @ transpose(measurement_matrix) + meas_noise
     )
-    innovation_cov = 0.5 * (innovation_cov + transpose(innovation_cov))
+    innovation_cov = _symmetrize(innovation_cov)
     return innovation, innovation_cov
 
 
@@ -368,7 +371,7 @@ def linear_gaussian_update(
     updated_covariance = (
         updated_covariance + kalman_gain @ scaled_meas_noise @ transpose(kalman_gain)
     )
-    updated_covariance = 0.5 * (updated_covariance + transpose(updated_covariance))
+    updated_covariance = _symmetrize(updated_covariance)
 
     if return_diagnostics:
         diagnostics = FilterDiagnostics(
