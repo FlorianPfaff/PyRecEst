@@ -87,6 +87,30 @@ class TestSE2PWNDistribution(unittest.TestCase):
         npt.assert_allclose(np.asarray(fitted.mu), np.asarray(self.mu), atol=0.05)
         npt.assert_allclose(np.asarray(fitted.C), np.asarray(self.C), atol=0.1)
 
+    def test_from_samples_matches_empirical_population_covariance(self):
+        """Moment matching must use empirical expectations normalized by n."""
+        rng = np.random.default_rng(1234)
+        source_mu = np.array([0.8, 1.2, -0.7])
+        source_covariance = np.array(
+            [
+                [0.2, 0.05, -0.03],
+                [0.05, 0.6, 0.1],
+                [-0.03, 0.1, 0.4],
+            ]
+        )
+        samples = rng.multivariate_normal(source_mu, source_covariance, size=64)
+        samples[:, 0] %= 2.0 * np.pi
+
+        fitted = SE2PWNDistribution.from_samples(samples)
+        expected_linear_covariance = np.cov(samples[:, 1:].T, bias=True)
+
+        npt.assert_allclose(
+            np.asarray(fitted.C)[1:, 1:],
+            expected_linear_covariance,
+            rtol=1e-12,
+            atol=1e-12,
+        )
+
     def test_sample_shape(self):
         s = self.dist.sample(10)
         self.assertEqual(s.shape, (10, 3))
