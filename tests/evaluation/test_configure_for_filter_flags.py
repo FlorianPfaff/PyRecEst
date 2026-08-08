@@ -21,12 +21,36 @@ class ConfigureForFilterFlagValidationTest(unittest.TestCase):
                 {"genNextStateWithNoiseIsVectorized": np.bool_(False)}
             )
         )
+        self.assertTrue(
+            _gen_next_state_with_noise_is_vectorized(
+                {
+                    "gen_next_state_with_noise_is_vectorized": np.ma.array(
+                        True, mask=False
+                    )
+                }
+            )
+        )
 
     def test_vectorized_flag_rejects_truthy_strings_and_numeric_values(self):
         invalid_configs = (
             {"gen_next_state_with_noise_is_vectorized": "False"},
             {"gen_next_state_with_noise_is_vectorized": 1},
             {"genNextStateWithNoiseIsVectorized": np.array([False])},
+        )
+
+        for config in invalid_configs:
+            with self.subTest(config=config):
+                with self.assertRaisesRegex(ValueError, "must be a boolean scalar"):
+                    _gen_next_state_with_noise_is_vectorized(config)
+
+    def test_vectorized_flag_rejects_masked_boolean_scalars(self):
+        invalid_configs = (
+            {
+                "gen_next_state_with_noise_is_vectorized": np.ma.array(
+                    True, mask=True
+                )
+            },
+            {"genNextStateWithNoiseIsVectorized": np.ma.masked},
         )
 
         for config in invalid_configs:
