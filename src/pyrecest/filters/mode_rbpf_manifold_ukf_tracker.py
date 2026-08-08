@@ -318,7 +318,7 @@ class ModeRBPFManifoldUKFTracker(AbstractExtendedObjectTracker):
     @staticmethod
     def _symmetrize(matrix):
         matrix = np.asarray(matrix, dtype=float)
-        return 0.5 * (matrix + matrix.T)
+        return 0.5 * matrix + 0.5 * matrix.T
 
     @classmethod
     def _as_covariance(cls, value, dim, name, require_pd=True):
@@ -833,13 +833,13 @@ class ModeRBPFManifoldUKFTracker(AbstractExtendedObjectTracker):
         if floor is None:
             floor = self.minimum_covariance_eigenvalue
         covariance = np.asarray(covariance, dtype=float)
-        covariance = 0.5 * (covariance + covariance.T)
+        covariance = self._symmetrize(covariance)
         if covariance.size == 0:
             return covariance
         eigenvalues, eigenvectors = np.linalg.eigh(covariance)
         eigenvalues = np.maximum(eigenvalues, floor)
         stabilized = eigenvectors @ np.diag(eigenvalues) @ eigenvectors.T
-        return 0.5 * (stabilized + stabilized.T)
+        return self._symmetrize(stabilized)
 
     def _validate_mode_scales(self, scales, name):
         scales = np.asarray(scales, dtype=float)
@@ -908,9 +908,7 @@ class ModeRBPFManifoldUKFTracker(AbstractExtendedObjectTracker):
     @staticmethod
     def _gaussian_logpdf(innovation, covariance):
         innovation = np.asarray(innovation, dtype=float)
-        covariance = 0.5 * (
-            np.asarray(covariance, dtype=float) + np.asarray(covariance, dtype=float).T
-        )
+        covariance = ModeRBPFManifoldUKFTracker._symmetrize(covariance)
         sign, logdet = np.linalg.slogdet(covariance)
         if sign <= 0:
             covariance = covariance + 1e-9 * np.eye(covariance.shape[0])
