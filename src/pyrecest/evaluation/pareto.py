@@ -417,6 +417,8 @@ def _coerce_constraint_values(values: pd.Series) -> pd.Series:
 
 def _validate_eps(eps: Any) -> float:
     message = "eps must be a finite non-negative scalar."
+    if np.ma.is_masked(eps):
+        raise ValueError(message)
     value_array = np.asarray(eps)
     if value_array.shape != () or value_array.dtype.kind in "bMm":
         raise ValueError(message)
@@ -437,6 +439,8 @@ def _validate_eps(eps: Any) -> float:
 
 
 def _is_missing(value: Any) -> bool:
+    if np.ma.is_masked(value):
+        return True
     missing = pd.isna(value)
     if isinstance(missing, (bool, np.bool_)):
         return bool(missing)
@@ -464,6 +468,8 @@ def _parse_constraint_spec(spec: ConstraintSpec | Mapping[str, Any]) -> Constrai
 
 def _coerce_constraint_threshold(value: Any, column: str) -> float | bool:
     message = f"Constraint threshold for {column!r} must be a finite scalar."
+    if np.ma.is_masked(value):
+        raise ValueError(message)
     try:
         value_array = np.asarray(value)
     except (TypeError, ValueError, OverflowError) as exc:
