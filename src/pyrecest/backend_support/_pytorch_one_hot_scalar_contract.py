@@ -277,9 +277,7 @@ def _patch_pytorch_array_equal_dtype_contract(
 
         comparison = torch_module.eq(a, b)
         if dtype.is_floating_point or dtype.is_complex:
-            comparison = comparison | (
-                torch_module.isnan(a) & torch_module.isnan(b)
-            )
+            comparison = comparison | (torch_module.isnan(a) & torch_module.isnan(b))
         return bool(torch_module.all(comparison))
 
     array_equal.__name__ = getattr(original_array_equal, "__name__", "array_equal")

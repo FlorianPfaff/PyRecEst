@@ -23,9 +23,7 @@ def test_safe_probs_preserves_extreme_finite_weight_ratios():
 
 def test_smooth_accepts_extreme_finite_particle_weights():
     max_float = np.finfo(float).max
-    axis_covariance = np.repeat(
-        (0.1 * np.eye(2))[np.newaxis, :, :], 2, axis=0
-    )
+    axis_covariance = np.repeat((0.1 * np.eye(2))[np.newaxis, :, :], 2, axis=0)
     record = MEMRBPFForwardRecord(
         kinematic_state=np.array([0.0]),
         covariance=np.array([[1.0]]),
@@ -35,9 +33,9 @@ def test_smooth_accepts_extreme_finite_particle_weights():
         weights=np.array([max_float, max_float / 2.0]),
     )
 
-    result = MEMRBPFFFBSiSmoother(
-        n_trajectories=8, sample_axis=False
-    ).smooth([record], rng=0, full_axis_lengths=False)
+    result = MEMRBPFFFBSiSmoother(n_trajectories=8, sample_axis=False).smooth(
+        [record], rng=0, full_axis_lengths=False
+    )
 
     assert result.index_samples.shape == (8, 1)
     assert np.all(np.isfinite(result.states))

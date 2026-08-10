@@ -2,7 +2,6 @@ import unittest
 
 import numpy as np
 import numpy.testing as npt
-
 from pyrecest.utils.metrics import nees, nis
 
 
@@ -25,9 +24,7 @@ class TestConsistencyMetricCovarianceValidation(unittest.TestCase):
 
     def test_asymmetry_validation_respects_strict_numpy_error_policy(self):
         maximum_float = np.finfo(float).max
-        asymmetric_covariance = np.array(
-            [[1.0, maximum_float], [-maximum_float, 1.0]]
-        )
+        asymmetric_covariance = np.array([[1.0, maximum_float], [-maximum_float, 1.0]])
         previous_settings = np.seterr(all="raise")
         try:
             with self.assertRaisesRegex(

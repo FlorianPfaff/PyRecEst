@@ -2,7 +2,6 @@ import math
 
 import numpy as np
 import numpy.testing as npt
-
 from pyrecest.backend import array
 from pyrecest.utils import pairwise_covariance_shape_components
 
@@ -24,11 +23,9 @@ def test_shape_components_preserve_extreme_finite_covariances():
         ]
     )
 
-    shape_cost, logdet_cost, shape_similarity = (
-        pairwise_covariance_shape_components(
-            covariance_along_first_axis,
-            covariance_along_second_axis,
-        )
+    shape_cost, logdet_cost, shape_similarity = pairwise_covariance_shape_components(
+        covariance_along_first_axis,
+        covariance_along_second_axis,
     )
 
     npt.assert_allclose(shape_cost, array([[1.0]]))

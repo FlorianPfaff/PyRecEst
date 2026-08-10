@@ -877,9 +877,7 @@ class ModeRBPFManifoldUKFTracker(AbstractExtendedObjectTracker):
             )
         scale = float(np.max(probs))
         if scale <= 0.0:
-            raise ValueError(
-                "initial_mode_probs must have positive total probability"
-            )
+            raise ValueError("initial_mode_probs must have positive total probability")
         scaled = probs / scale
         return scaled / np.sum(scaled)
 

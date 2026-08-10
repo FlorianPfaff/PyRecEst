@@ -70,9 +70,7 @@ def _validate_and_classify_multivariate_normal_cov(cov, mean_dim):
         raise ValueError("cov must be positive semidefinite")
 
     scale = _LEGACY._jnp.max(_LEGACY._jnp.abs(eigenvalues))
-    rank_tolerance = (
-        _LEGACY._jnp.finfo(cov_float.dtype).eps * max(mean_dim, 1) * scale
-    )
+    rank_tolerance = _LEGACY._jnp.finfo(cov_float.dtype).eps * max(mean_dim, 1) * scale
     requires_svd = bool(_LEGACY._jnp.any(eigenvalues <= rank_tolerance))
     return cov, requires_svd
 
