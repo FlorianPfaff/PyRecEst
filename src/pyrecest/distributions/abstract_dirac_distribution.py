@@ -197,6 +197,11 @@ class AbstractDiracDistribution(AbstractDistributionType):
         if not bool(backend_any(positive_product)):
             raise ValueError("Dirac weights must have positive finite total mass.")
 
+        if bool(all(w_new == w_new[0])):
+            # A constant likelihood leaves the posterior unchanged. Returning the
+            # copied prior also avoids unnecessary log/exp normalization roundoff.
+            return dist
+
         safe_prior_weights = where(positive_product, dist.w, 1.0)
         safe_update_weights = where(positive_product, w_new, 1.0)
         log_product = log(safe_prior_weights) + log(safe_update_weights)
