@@ -1,0 +1,75 @@
+name: Agent pytest diagnostics
+
+on:
+  push:
+    branches:
+      - agent/stabilize-diagnostic-window-statistics
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  pytest-log:
+    name: ${{ matrix.revision }} NumPy Python 3.11 pytest log
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        revision: [main, pr-head]
+
+    steps:
+      - name: Check out revision
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ matrix.revision == 'main' && 'main' || github.sha }}
+
+      - name: Install system build dependencies
+        run: |
+          sudo rm -f \
+            /etc/apt/sources.list.d/azure-cli.list \
+            /etc/apt/sources.list.d/azure-cli.sources \
+            /etc/apt/sources.list.d/microsoft-prod.list \
+            /etc/apt/sources.list.d/microsoft-prod.sources
+          sudo apt-get update
+          sudo apt-get install -y \
+            gfortran pkg-config ninja-build \
+            libopenblas-dev liblapack-dev \
+            libfftw3-dev libhealpix-cxx-dev
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install poetry
+          poetry env use python
+          poetry install --with dev --extras "healpy_support"
+
+      - name: Capture full pytest output
+        run: |
+          set +e
+          export PYRECEST_BACKEND=numpy
+          export PYTHONPATH=${{ github.workspace }}/src
+          poetry run python -m pytest --rootdir . -vv --strict-config ./tests > pytest.log 2>&1
+          status=$?
+          cat pytest.log
+          printf '%s\n' "$status" > pytest.exit-code
+          exit 0
+
+      - name: Upload pytest diagnostics
+        uses: actions/upload-artifact@v7
+        with:
+          name: pyrecest-${{ matrix.revision }}-numpy-py311-pytest
+          path: |
+            pytest.log
+            pytest.exit-code
+          if-no-files-found: error
+          retention-days: 1
