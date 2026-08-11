@@ -1,4 +1,4 @@
-name: Apply main numerical tolerance fix
+name: Repair main numerical tolerance edit
 
 "on":
   push:
@@ -17,7 +17,7 @@ jobs:
           ref: agent/fix-main-numerical-test-tolerances-20260811
           fetch-depth: 0
 
-      - name: Apply focused assertion fixes
+      - name: Repair focused assertion edit
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -26,36 +26,33 @@ jobs:
               "tests/distributions/test_hypercylindrical_dirac_distribution.py"
           )
           reweight_text = reweight_path.read_text()
-          old_reweight = (
-              "        npt.assert_array_equal(pwd_rew3.w, w_new / sum(w_new))\n"
+          malformed = (
+              "        npt.assert_allclose(\n"
+              "    pwd_rew3.w,\n"
+              "    w_new / sum(w_new),\n"
+              "    rtol=1e-15,\n"
+              "    atol=0.0,\n"
+              ")\n"
           )
-          new_reweight = """        npt.assert_allclose(
-              pwd_rew3.w,
-              w_new / sum(w_new),
-              rtol=1e-15,
-              atol=0.0,
+          corrected = (
+              "        npt.assert_allclose(pwd_rew3.w, w_new / sum(w_new), "
+              "rtol=1e-15, atol=0.0)\n"
           )
-          """
-          if reweight_text.count(old_reweight) != 1:
-              raise RuntimeError("unexpected reweight assertion layout")
-          reweight_path.write_text(reweight_text.replace(old_reweight, new_reweight))
+          if reweight_text.count(malformed) != 1:
+              raise RuntimeError("unexpected malformed reweight assertion layout")
+          reweight_path.write_text(reweight_text.replace(malformed, corrected))
 
           so3_path = Path("tests/distributions/test_so3_product_dirac_distribution.py")
           so3_text = so3_path.read_text()
-          old_so3 = (
-              "        npt.assert_allclose(component_distances[0], "
-              "array([0.0, 0.0]), atol=1e-8)\n"
-          )
-          new_so3 = (
+          expected_so3 = (
               "        npt.assert_allclose(component_distances[0], "
               "array([0.0, 0.0]), atol=1e-7)\n"
           )
-          if so3_text.count(old_so3) != 1:
-              raise RuntimeError("unexpected SO(3) assertion layout")
-          so3_path.write_text(so3_text.replace(old_so3, new_so3))
+          if so3_text.count(expected_so3) != 1:
+              raise RuntimeError("SO(3) tolerance edit is not present exactly once")
           PY
 
-      - name: Commit focused changes
+      - name: Commit corrected changes
         run: |
           if git diff --quiet; then
             exit 0
@@ -63,6 +60,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add tests/distributions/test_hypercylindrical_dirac_distribution.py
-          git add tests/distributions/test_so3_product_dirac_distribution.py
-          git commit -m "test: stabilize backend-sensitive numerical assertions"
+          git commit -m "test: correct numerical tolerance assertion formatting"
           git push origin HEAD:agent/fix-main-numerical-test-tolerances-20260811
