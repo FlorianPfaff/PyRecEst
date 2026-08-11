@@ -17,6 +17,7 @@ DISABLE_LINTERS:
   - REPOSITORY_DEVSKIM
   - REPOSITORY_TRIVY # Reenable as soon as (if?) https://avd.aquasec.com/nvd/2021/cve-2021-29063/ confirms that 1.3.0 is no longer a risk
   - REPOSITORY_OSV_SCANNER # Dependency vulnerability tracking is handled outside this patch PR.
+  - REPOSITORY_TRUFFLEHOG # MegaLinter 10's Lob detector reports false positives inside vendored SciPy/virtualenv wheels; Betterleaks and Secretlint remain enabled.
   - JSON_JSONLINT # Disable because there is only .devcontainer.json, for which it throws an unwanted warning
   - MAKEFILE_CHECKMAKE # Not using a Makefile
   - SPELL_LYCHEE # Takes pretty long
