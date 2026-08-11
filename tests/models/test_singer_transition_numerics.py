@@ -3,9 +3,8 @@
 import numpy as np
 import numpy.testing as npt
 import pytest
-from scipy.linalg import expm
-
 from pyrecest.models import singer_transition_matrix
+from scipy.linalg import expm
 
 
 @pytest.mark.parametrize(

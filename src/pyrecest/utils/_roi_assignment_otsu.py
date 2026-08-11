@@ -56,13 +56,12 @@ def _patch_minimum_similarity_threshold(roi_assignment_module) -> None:
     """Validate histogram inputs before minimum-threshold early returns."""
 
     original_minimum = roi_assignment_module.minimum_similarity_threshold
-    if (
-        getattr(original_minimum, "_pyrecest_positive_nbins_validation", False)
-        and getattr(
-            original_minimum,
-            "_pyrecest_masked_similarity_validation",
-            False,
-        )
+    if getattr(
+        original_minimum, "_pyrecest_positive_nbins_validation", False
+    ) and getattr(
+        original_minimum,
+        "_pyrecest_masked_similarity_validation",
+        False,
     ):
         return
 
