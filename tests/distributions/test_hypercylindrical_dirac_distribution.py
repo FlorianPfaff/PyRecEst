@@ -139,12 +139,7 @@ class TestHypercylindricalDiracDistribution(TestAbstractDiracDistribution):
         assert isinstance(pwd_rew3, HypercylindricalDiracDistribution)
         npt.assert_array_equal(pwd_rew3.d, self.pwd.d)
         w_new = self.pwd.d[:, 0] * self.pwd.w
-        npt.assert_allclose(
-    pwd_rew3.w,
-    w_new / sum(w_new),
-    rtol=1e-15,
-    atol=0.0,
-)
+        npt.assert_allclose(pwd_rew3.w, w_new / sum(w_new), rtol=1e-15, atol=0.0)
 
     def test_sampling(self):
         random.seed(0)
