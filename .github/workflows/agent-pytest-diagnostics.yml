@@ -1,9 +1,7 @@
 name: Agent pytest diagnostics
 
-on:
-  push:
-    branches:
-      - agent/stabilize-diagnostic-window-statistics
+"on":
+  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -22,10 +20,17 @@ jobs:
         revision: [main, pr-head]
 
     steps:
-      - name: Check out revision
+      - name: Check out main
+        if: matrix.revision == 'main'
         uses: actions/checkout@v7
         with:
-          ref: ${{ matrix.revision == 'main' && 'main' || github.sha }}
+          ref: main
+
+      - name: Check out pull-request head
+        if: matrix.revision == 'pr-head'
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Install system build dependencies
         run: |
