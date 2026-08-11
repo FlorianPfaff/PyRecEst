@@ -2,8 +2,8 @@
 
 from numbers import Complex, Integral, Real
 
+from pyrecest.backend import all as backend_all
 from pyrecest.backend import (
-    all as backend_all,
     asarray,
 )
 from pyrecest.backend import copy as backend_copy

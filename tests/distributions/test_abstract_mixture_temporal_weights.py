@@ -1,7 +1,6 @@
 import unittest
 
 import numpy as np
-
 from pyrecest.distributions.abstract_mixture import _validate_mixture_weight_values
 
 
