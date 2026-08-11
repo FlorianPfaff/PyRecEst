@@ -83,9 +83,7 @@ def moment_match_gaussian_hypotheses(
             continue
         probability = float(weight)
         sqrt_probability = np.sqrt(probability)
-        scaled_diff = (
-            sqrt_probability * hypothesis.mean - sqrt_probability * mean
-        )
+        scaled_diff = sqrt_probability * hypothesis.mean - sqrt_probability * mean
         covariance += probability * hypothesis.covariance + np.outer(
             scaled_diff,
             scaled_diff,
