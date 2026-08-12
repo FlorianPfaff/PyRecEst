@@ -234,7 +234,7 @@ class MerweScaledSigmaPoints:
         U = linalg.cholesky(scale * P)  # lower-triangular
 
         positive = [x + U[:, i] for i in range(n)]
-        negative = [2.0 * x - sigma for sigma in positive]
+        negative = [x - U[:, i] for i in range(n)]
         return stack([x, *positive, *negative])
 
 
