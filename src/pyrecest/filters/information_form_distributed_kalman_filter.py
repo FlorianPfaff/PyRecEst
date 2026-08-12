@@ -320,6 +320,12 @@ class IdkfNode(AbstractFilter, EuclideanFilterMixin):
 
         A = atleast_2d(system_matrix)
         Q = atleast_2d(sys_noise_cov)
+        expected_covariance_shape = (self.dim, self.dim)
+        if Q.shape != expected_covariance_shape:
+            raise ValueError(
+                "sys_noise_cov must have shape "
+                f"{expected_covariance_shape}, got {Q.shape}"
+            )
         Y_old = self.global_information_state.Y
         predicted_covariance = A @ linalg.solve(Y_old, A.T) + Q
         operation_hash = _extend_hash(
