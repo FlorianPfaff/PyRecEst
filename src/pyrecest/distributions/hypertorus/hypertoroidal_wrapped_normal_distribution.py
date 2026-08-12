@@ -9,6 +9,7 @@ from pyrecest.backend import (
     allclose,
     arange,
     array,
+    einsum,
     exp,
     int32,
     int64,
@@ -18,10 +19,10 @@ from pyrecest.backend import (
     mod,
     pi,
     random,
+    sqrt,
     stack,
     zeros,
 )
-from scipy.stats import multivariate_normal
 
 from ._input_validation import as_hypertoroidal_points, as_shift_vector
 from .abstract_hypertoroidal_distribution import AbstractHypertoroidalDistribution
@@ -150,12 +151,20 @@ class HypertoroidalWrappedNormalDistribution(AbstractHypertoroidalDistribution):
             -1, self.dim
         )
 
-        # Calculate the PDF values by considering all combinations of offsets
+        # Keep the Gaussian evaluation in the active backend. Delegating to
+        # scipy.stats here detached PyTorch/JAX values and made gradients fail.
+        precision = linalg.inv(self.C)
+        normalization = 1.0 / sqrt(
+            (2.0 * pi) ** self.dim * linalg.det(self.C)
+        )
         pdf_values = zeros(xs.shape[0])
         for offset in offset_combinations:
-            shifted_xa = xs + offset[None, :]
-            pdf_values += multivariate_normal.pdf(
-                shifted_xa, mean=self.mu.flatten(), cov=self.C
+            centered = xs + offset[None, :] - self.mu[None, :]
+            squared_mahalanobis = einsum(
+                "ni,ij,nj->n", centered, precision, centered
+            )
+            pdf_values = pdf_values + normalization * exp(
+                -0.5 * squared_mahalanobis
             )
 
         return pdf_values
