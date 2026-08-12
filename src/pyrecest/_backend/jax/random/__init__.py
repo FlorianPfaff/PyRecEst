@@ -54,9 +54,7 @@ def _validate_multivariate_normal_tol(tol):
     return tol_value
 
 
-def _validate_and_classify_multivariate_normal_cov(
-    cov, mean_dim, *, check_valid, tol
-):
+def _validate_and_classify_multivariate_normal_cov(cov, mean_dim, *, check_valid, tol):
     """Validate a covariance and identify numerically rank-deficient inputs."""
 
     cov = _LEGACY._validate_normal_parameter(cov, "cov")
@@ -77,9 +75,7 @@ def _validate_and_classify_multivariate_normal_cov(
             _warnings.warn(message, RuntimeWarning, stacklevel=3)
 
     scale = _LEGACY._jnp.max(_LEGACY._jnp.abs(eigenvalues))
-    rank_tolerance = (
-        _LEGACY._jnp.finfo(cov_float.dtype).eps * max(mean_dim, 1) * scale
-    )
+    rank_tolerance = _LEGACY._jnp.finfo(cov_float.dtype).eps * max(mean_dim, 1) * scale
     requires_svd = bool(_LEGACY._jnp.any(eigenvalues <= rank_tolerance))
     return cov, requires_svd
 

@@ -1,7 +1,6 @@
 import unittest
 
 import numpy as np
-
 import pyrecest.backend  # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import array  # pylint: disable=no-name-in-module,no-member
 from pyrecest.distributions.cart_prod.hyperhemisphere_cart_prod_dirac_distribution import (

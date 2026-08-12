@@ -1,7 +1,6 @@
 import unittest
 
 import numpy as np
-
 import pyrecest.backend
 from pyrecest.filters.hypertoroidal_fourier_filter import HypertoroidalFourierFilter
 

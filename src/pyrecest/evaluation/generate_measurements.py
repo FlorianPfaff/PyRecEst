@@ -314,10 +314,13 @@ def generate_measurements(groundtruth, simulation_config):
                         simulation_config["meas_noise"].sample(1),
                         measurement_dim,
                     )
-                    measurements[t][meas_no - 1, :] = dot(
-                        simulation_config["meas_matrix_for_each_target"],
-                        array(target_state),
-                    ) + noise_sample
+                    measurements[t][meas_no - 1, :] = (
+                        dot(
+                            simulation_config["meas_matrix_for_each_target"],
+                            array(target_state),
+                        )
+                        + noise_sample
+                    )
                 else:
                     if n_observations[t, target_no] != 0:
                         raise NotImplementedError(
