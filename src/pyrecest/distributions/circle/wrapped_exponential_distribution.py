@@ -169,7 +169,10 @@ class WrappedExponentialDistribution(AbstractCircularDistribution):
 
     def trigonometric_moment(self, n):
         n = _validate_integer(n, "n")
-        return 1.0 / (1.0 - 1j * n / self.lambda_)
+        # Divide by a quantity whose magnitude is at least ``abs(n)`` instead
+        # of forming ``n / lambda_`` first.  The latter overflows for subnormal
+        # positive rates and can erase a representable nonzero moment.
+        return self.lambda_ / (self.lambda_ - 1j * n)
 
     def sample(self, n: Union[int, int32, int64]):
         n = _validate_integer(n, "n", positive=True)
