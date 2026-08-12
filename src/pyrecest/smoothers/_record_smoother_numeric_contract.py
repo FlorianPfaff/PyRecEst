@@ -1,4 +1,4 @@
-"""Real-valued input contract for record-based Kalman smoothers."""
+"""Real-valued and numerically stable contracts for record-based Kalman smoothers."""
 
 from __future__ import annotations
 
@@ -119,11 +119,18 @@ def _call_model(
     return array
 
 
+def _symmetrized(matrix: np.ndarray) -> np.ndarray:
+    """Return the symmetric average without overflowing finite operands."""
+
+    return 0.5 * matrix + 0.5 * matrix.T
+
+
 def install_record_smoother_numeric_contract() -> None:
-    """Install real-value validation on the record smoother implementation."""
+    """Install numeric validation and stable covariance symmetrization."""
 
     setattr(_record_arrays, "_pyrecest_real_numeric_contract", True)
     setattr(_call_model, "_pyrecest_real_numeric_contract", True)
+    setattr(_symmetrized, "_pyrecest_stable_symmetrization", True)
 
     if not getattr(
         _record_smoother._record_arrays,
@@ -137,3 +144,9 @@ def install_record_smoother_numeric_contract() -> None:
         False,
     ):
         _record_smoother._call_model = _call_model
+    if not getattr(
+        _record_smoother._symmetrized,
+        "_pyrecest_stable_symmetrization",
+        False,
+    ):
+        _record_smoother._symmetrized = _symmetrized
