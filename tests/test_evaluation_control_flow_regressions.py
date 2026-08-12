@@ -6,7 +6,7 @@ import pytest
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
 from pyrecest.backend import array, eye, get_backend_name, zeros
-from pyrecest.distributions import GaussianDistribution
+from pyrecest.distributions import GaussianDistribution, LinearDiracDistribution
 from pyrecest.evaluation import (
     check_and_fix_config,
     configure_for_filter,
@@ -111,6 +111,59 @@ class TestEvaluationControlFlowRegressions(unittest.TestCase):
             filter_obj.filter_state.mean(),
             scenario_config["initial_prior"].mean(),
             atol=1.0e-4,
+        )
+
+    def test_configured_euclidean_pf_honors_noise_free_transition(self):
+        particle_count = 4
+
+        def transition(particles):
+            if particles.ndim != 2:
+                raise AssertionError("transition must receive the particle batch")
+            return particles + 2.0
+
+        scenario_config = {
+            "initial_prior": LinearDiracDistribution(zeros((particle_count, 1))),
+            "sys_noise": LinearDiracDistribution(zeros((1, 1))),
+            "inputs": None,
+            "manifold": "euclidean",
+            "gen_next_state_without_noise": transition,
+            "gen_next_state_without_noise_is_vectorized": True,
+        }
+
+        filter_obj, prediction_routine, _, _ = configure_for_filter(
+            {"name": "pf", "parameter": particle_count},
+            scenario_config,
+        )
+
+        prediction_routine()
+
+        npt.assert_allclose(
+            filter_obj.filter_state.d,
+            np.full((particle_count, 1), 2.0),
+        )
+
+    def test_configured_euclidean_pf_honors_input_transition_with_noise(self):
+        particle_count = 4
+        scenario_config = {
+            "initial_prior": LinearDiracDistribution(zeros((particle_count, 1))),
+            "inputs": array([[3.0]]),
+            "manifold": "euclidean",
+            "gen_next_state_with_noise": (
+                lambda particles, curr_input: particles + curr_input
+            ),
+            "gen_next_state_with_noise_is_vectorized": True,
+        }
+
+        filter_obj, prediction_routine, _, _ = configure_for_filter(
+            {"name": "pf", "parameter": particle_count},
+            scenario_config,
+        )
+
+        prediction_routine(array([3.0]))
+
+        npt.assert_allclose(
+            filter_obj.filter_state.d,
+            np.full((particle_count, 1), 3.0),
         )
 
     def test_configure_periodic_particle_filter_rejects_inputs(self):
