@@ -2,17 +2,16 @@ from collections.abc import Callable
 from typing import Union
 
 import numpy as np
+from scipy.stats import qmc
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import (
-    arange,
     int32,
     int64,
     linspace,
     mod,
     pi,
-    tile,
 )
 from pyrecest.distributions import (
     AbstractHypertoroidalDistribution,
@@ -57,6 +56,22 @@ def _validate_positive_integer(value, name: str) -> int:
     return integer
 
 
+def _initial_particle_locations(n_particles: int, dim: int):
+    if dim == 1:
+        return linspace(0.0, 2.0 * pi, num=n_particles, endpoint=False)
+
+    # Tiling one circular grid across dimensions confines every particle to the
+    # diagonal x_1 = ... = x_dim. A deterministic Latin hypercube preserves one
+    # evenly spaced angular sample per marginal bin without imposing that
+    # artificial perfect dependence between coordinates.
+    unit_hypercube_points = qmc.LatinHypercube(
+        d=dim,
+        scramble=False,
+        seed=0,
+    ).random(n=n_particles)
+    return 2.0 * np.pi * unit_hypercube_points
+
+
 class HypertoroidalParticleFilter(AbstractParticleFilter, HypertoroidalFilterMixin):
     def __init__(
         self,
@@ -65,12 +80,7 @@ class HypertoroidalParticleFilter(AbstractParticleFilter, HypertoroidalFilterMix
     ):
         n_particles = _validate_positive_integer(n_particles, "n_particles")
         dim = _validate_positive_integer(dim, "dim")
-        if dim == 1:
-            points = linspace(0.0, 2.0 * pi, num=n_particles, endpoint=False)
-        else:
-            points = tile(
-                arange(0.0, 2.0 * pi, 2.0 * pi / n_particles), (dim, 1)
-            ).T.squeeze()
+        points = _initial_particle_locations(n_particles, dim)
         filter_state = HypertoroidalDiracDistribution(points, dim=dim)
         HypertoroidalFilterMixin.__init__(self)
         AbstractParticleFilter.__init__(self, filter_state)
