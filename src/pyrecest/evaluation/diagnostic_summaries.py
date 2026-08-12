@@ -252,14 +252,24 @@ def worst_time_windows(
             ],
             dtype=float,
         )
+        error_scale = float(np.max(np.abs(errors)))
+        if error_scale == 0.0:
+            rmse = 0.0
+            mae = 0.0
+            p95 = 0.0
+        else:
+            scaled_errors = errors / error_scale
+            rmse = error_scale * float(np.sqrt(np.mean(scaled_errors**2)))
+            mae = error_scale * float(np.mean(np.abs(scaled_errors)))
+            p95 = error_scale * float(np.percentile(scaled_errors, 95))
         rows.append(
             {
                 "time_start_s": float(start),
                 "time_end_s": float(start + window_s),
                 "count": int(errors.size),
-                "rmse": float(np.sqrt(np.mean(errors**2))),
-                "mae": float(np.mean(np.abs(errors))),
-                "p95": float(np.percentile(errors, 95)),
+                "rmse": rmse,
+                "mae": mae,
+                "p95": p95,
                 "max": float(np.max(errors)),
                 "mean_residual": (
                     None if residuals.size == 0 else float(np.mean(residuals))

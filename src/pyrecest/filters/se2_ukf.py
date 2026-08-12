@@ -47,6 +47,15 @@ def _to_python_bool(value):
     return bool(value)
 
 
+def _is_complex_array(value):
+    """Return whether a NumPy/JAX array or PyTorch tensor has complex dtype."""
+    dtype = getattr(value, "dtype", None)
+    if getattr(dtype, "kind", None) == "c":
+        return True
+    is_complex = getattr(value, "is_complex", None)
+    return bool(is_complex()) if callable(is_complex) else False
+
+
 def _normalize_rotation_columns(rotation_samples, fallback_rotation):
     """Normalize 2-D rotation columns, replacing undefined zero directions."""
     rotation_samples = asarray(rotation_samples)
@@ -72,6 +81,10 @@ def _validate_se2_gaussian(distribution, role):
 
     mu = asarray(distribution.mu)
     covariance = asarray(distribution.C)
+    if _is_complex_array(mu):
+        raise ValueError(f"{role} mean must be real-valued.")
+    if _is_complex_array(covariance):
+        raise ValueError(f"{role} covariance must be real-valued.")
     if mu.shape != (4,):
         raise ValueError(f"{role} mean must be a 4-D vector.")
     if covariance.shape != (4, 4):
@@ -95,6 +108,8 @@ def _validate_se2_gaussian(distribution, role):
 
 def _validate_se2_measurement(z):
     measurement = asarray(z)
+    if _is_complex_array(measurement):
+        raise ValueError("measurement z must be real-valued.")
     if measurement.shape != (4,):
         raise ValueError("measurement z must be a 4-D vector.")
     if not _to_python_bool(backend_all(isfinite(measurement))):

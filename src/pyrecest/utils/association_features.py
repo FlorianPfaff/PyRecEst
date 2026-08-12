@@ -403,7 +403,10 @@ def _finite_feature_plane(values: Any, feature_name: str) -> Any:
 
 
 def _flatten_prediction_features(features: Any) -> tuple[Any, tuple[int, ...]]:
-    features = asarray(features, dtype=float64)
+    features = _as_real_numeric_backend_array(
+        features,
+        message="features must contain real numeric values",
+    )
     if features.ndim == 0:
         raise ValueError("features must be at least one-dimensional")
     if features.ndim == 1:
