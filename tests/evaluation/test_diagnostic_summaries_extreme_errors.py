@@ -1,5 +1,4 @@
 import numpy as np
-
 from pyrecest.evaluation.diagnostic_summaries import worst_time_windows
 
 
