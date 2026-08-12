@@ -234,7 +234,7 @@ class GaussVonMisesDistribution(AbstractHypercylindricalDistribution):
         )
 
         if single_point:
-            return float(p[0])
+            return p[0]
         return array(p)
 
     def mode(self):
