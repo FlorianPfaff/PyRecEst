@@ -345,6 +345,13 @@ class GlobalNearestNeighbor(AbstractNearestNeighborTracker):
         if self.association_param.get("square_dist", False):
             dists = dists * dists
 
+        # Apply the geometric gate before auxiliary costs so a negative reward
+        # cannot make an otherwise impossible track/measurement pair eligible.
+        dists = where(
+            dists <= self.association_param["gating_distance_threshold"],
+            dists,
+            float("inf"),
+        )
         dists = self._apply_pairwise_cost_matrix(dists, pairwise_cost_matrix)
 
         if self.association_param.get("maximize_cardinality", False):
