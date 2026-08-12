@@ -77,8 +77,10 @@ class SensorBiasCorrectionModel:
             .reshape(feature_dim)
             .copy()
         )
-        feature_scale = _as_numeric_array(self.feature_scale, "feature_scale").reshape(
-            feature_dim
+        feature_scale = (
+            _as_numeric_array(self.feature_scale, "feature_scale")
+            .reshape(feature_dim)
+            .copy()
         )
         residual_std = (
             _as_numeric_array(self.residual_std, "residual_std")
@@ -88,10 +90,10 @@ class SensorBiasCorrectionModel:
         _require_finite_array(intercept, "intercept")
         _require_finite_array(coefficients, "coefficients")
         _require_finite_array(feature_mean, "feature_mean")
+        _require_finite_array(feature_scale, "feature_scale")
+        if np.any(feature_scale <= 0.0):
+            raise ValueError("feature_scale must contain only positive values")
         _require_finite_array(residual_std, "residual_std")
-        feature_scale = np.where(
-            np.isfinite(feature_scale) & (feature_scale > 0.0), feature_scale, 1.0
-        )
         object.__setattr__(self, "target_dim", target_dim)
         object.__setattr__(self, "feature_dim", feature_dim)
         object.__setattr__(self, "intercept", intercept)
