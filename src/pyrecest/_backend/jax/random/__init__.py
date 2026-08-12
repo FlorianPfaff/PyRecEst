@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util as _importlib_util
 import sys as _sys
+import warnings as _warnings
 from pathlib import Path as _Path
 
 import numpy as _np
@@ -53,7 +54,9 @@ def _validate_multivariate_normal_tol(tol):
     return tol_value
 
 
-def _validate_and_classify_multivariate_normal_cov(cov, mean_dim):
+def _validate_and_classify_multivariate_normal_cov(
+    cov, mean_dim, *, check_valid, tol
+):
     """Validate a covariance and identify numerically rank-deficient inputs."""
 
     cov = _LEGACY._validate_normal_parameter(cov, "cov")
@@ -66,8 +69,12 @@ def _validate_and_classify_multivariate_normal_cov(cov, mean_dim):
 
     cov_float = cov.astype(_LEGACY._jnp.result_type(cov, _LEGACY._jnp.float32))
     eigenvalues = _LEGACY._jnp.linalg.eigvalsh(cov_float)
-    if bool(_LEGACY._jnp.any(eigenvalues < -1.0e-8)):
-        raise ValueError("cov must be positive semidefinite")
+    if bool(_LEGACY._jnp.any(eigenvalues < -tol)):
+        message = "cov must be positive semidefinite"
+        if check_valid == "raise":
+            raise ValueError(message)
+        if check_valid == "warn":
+            _warnings.warn(message, RuntimeWarning, stacklevel=3)
 
     scale = _LEGACY._jnp.max(_LEGACY._jnp.abs(eigenvalues))
     rank_tolerance = (
@@ -82,8 +89,8 @@ def multivariate_normal(mean, cov, size=None, *args, **kwargs):
 
     check_valid = kwargs.pop("check_valid", "warn")
     tol = kwargs.pop("tol", 1e-8)
-    _validate_multivariate_normal_check_valid(check_valid)
-    _validate_multivariate_normal_tol(tol)
+    check_valid = _validate_multivariate_normal_check_valid(check_valid)
+    tol = _validate_multivariate_normal_tol(tol)
 
     state, has_state, kwargs = _LEGACY._get_state(**kwargs)
     state, key = _LEGACY.jax.random.split(state)
@@ -94,7 +101,10 @@ def multivariate_normal(mean, cov, size=None, *args, **kwargs):
     shape = _LEGACY._shape_from_size(size)
     mean = _LEGACY._validate_multivariate_normal_mean(mean)
     cov, requires_svd = _validate_and_classify_multivariate_normal_cov(
-        cov, mean.shape[0]
+        cov,
+        mean.shape[0],
+        check_valid=check_valid,
+        tol=tol,
     )
     dtype = _LEGACY._jnp.result_type(mean, cov, _LEGACY._jnp.float32)
     mean = mean.astype(dtype)
