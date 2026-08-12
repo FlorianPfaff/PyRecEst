@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from heapq import heappop, heappush
+from math import fsum as _fsum
 from math import isfinite as _is_scalar_finite
 from numbers import Integral
 
@@ -253,6 +254,23 @@ def _coerce_non_assignment_costs(costs, size: int, name: str):
     return costs
 
 
+def _stable_cost_sum(costs) -> float:
+    """Sum finite assignment costs without overflowing canceling intermediates."""
+
+    values = _np.asarray(_to_numpy(costs), dtype=float).reshape(-1)
+    with _np.errstate(over="ignore", invalid="ignore"):
+        direct_total = float(values.sum())
+    if values.size == 0 or _np.isfinite(direct_total):
+        return direct_total
+
+    scale = float(_np.max(_np.abs(values)))
+    if scale == 0.0:
+        return direct_total
+    scaled_total = _fsum(float(value / scale) for value in values)
+    with _np.errstate(over="ignore", invalid="ignore"):
+        return float(scale * scaled_total)
+
+
 def _get_large_cost(cost_matrix, row_non_assignment_costs, col_non_assignment_costs):
     finite_costs = cost_matrix[_isfinite(cost_matrix)]
     finite_entries = _concatenate(
@@ -355,7 +373,7 @@ def _solve_subproblem(  # pylint: disable=too-many-locals
         dtype=_int64,
     )
 
-    total_cost = float(augmented_cost_matrix[row_ind, col_ind].sum())
+    total_cost = _stable_cost_sum(augmented_cost_matrix[row_ind, col_ind])
     return {
         "assignment": assignment,
         "unassigned_rows": unassigned_rows,
@@ -522,7 +540,9 @@ def min_cost_max_cardinality_assignment(cost_matrix):
     assigned_rows = _where(assignment >= 0)[0]
     total_cost = 0.0
     if assigned_rows.shape[0] > 0:
-        total_cost = float(_sum(cost_matrix[assigned_rows, assignment[assigned_rows]]))
+        total_cost = _stable_cost_sum(
+            cost_matrix[assigned_rows, assignment[assigned_rows]]
+        )
     return {
         "assignment": assignment,
         "unassigned_rows": solution["unassigned_rows"],

@@ -4,10 +4,22 @@ import warnings
 import numpy as np
 import numpy.testing as npt
 import pyrecest.backend
-from pyrecest.utils import murty_k_best_assignments
+from pyrecest.utils import (
+    min_cost_max_cardinality_assignment,
+    murty_k_best_assignments,
+)
 
 
 class MurtyExtremeCostTest(unittest.TestCase):
+    @staticmethod
+    def _canceling_diagonal_cost_matrix():
+        cost_matrix = np.full((4, 4), np.inf)
+        np.fill_diagonal(
+            cost_matrix,
+            np.array([1.0e308, 1.0e308, -1.0e308, -1.0e308]),
+        )
+        return cost_matrix
+
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ == "jax",  # pylint: disable=no-member
         reason="Not supported on the JAX backend",
@@ -38,3 +50,38 @@ class MurtyExtremeCostTest(unittest.TestCase):
                     solutions[1]["unassigned_cols"], np.array([], dtype=int)
                 )
                 self.assertEqual(solutions[1]["cost"], 1.0e308)
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ == "jax",  # pylint: disable=no-member
+        reason="Not supported on the JAX backend",
+    )
+    def test_murty_preserves_canceling_extreme_total(self):
+        cost_matrix = self._canceling_diagonal_cost_matrix()
+        non_assignment_costs = np.full(4, 1.0e308)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", RuntimeWarning)
+            solutions = murty_k_best_assignments(
+                cost_matrix,
+                k=1,
+                row_non_assignment_costs=non_assignment_costs,
+                col_non_assignment_costs=non_assignment_costs,
+            )
+
+        self.assertEqual(len(solutions), 1)
+        npt.assert_array_equal(solutions[0]["assignment"], np.arange(4))
+        self.assertEqual(solutions[0]["cost"], 0.0)
+
+    @unittest.skipIf(
+        pyrecest.backend.__backend_name__ == "jax",  # pylint: disable=no-member
+        reason="Not supported on the JAX backend",
+    )
+    def test_max_cardinality_preserves_canceling_extreme_total(self):
+        cost_matrix = self._canceling_diagonal_cost_matrix()
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", RuntimeWarning)
+            solution = min_cost_max_cardinality_assignment(cost_matrix)
+
+        npt.assert_array_equal(solution["assignment"], np.arange(4))
+        self.assertEqual(solution["cost"], 0.0)
