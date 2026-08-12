@@ -47,9 +47,11 @@ def evaluate_clear(data: TrackingSequence, *, threshold: float) -> ClearCounts:
     ):
         if len(gt_ids) == 0:
             fp += len(tracker_ids)
+            previous_timestep_id[:] = _UNMATCHED_ID
             continue
         if len(tracker_ids) == 0:
             fn += len(gt_ids)
+            previous_timestep_id[:] = _UNMATCHED_ID
             continue
         continuity = tracker_ids[np.newaxis, :] == previous_timestep_id[gt_ids[:, None]]
         score = continuity.astype(float) * 1000.0 + similarity

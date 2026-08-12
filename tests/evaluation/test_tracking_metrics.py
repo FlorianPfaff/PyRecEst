@@ -97,6 +97,26 @@ def test_clear_preserves_large_tracker_identity_precision() -> None:
     assert (counts.tp, counts.fp, counts.fn, counts.id_switches) == (2, 0, 0, 1)
 
 
+def test_clear_continuity_does_not_cross_unmatched_frames() -> None:
+    data = _sequence(
+        [[0, 1], [0, 1], [0, 1]],
+        [[0, 1], [], [0, 1]],
+        [
+            [[1.0, 0.0], [0.0, 1.0]],
+            [[], []],
+            [[0.6, 0.9], [0.9, 0.6]],
+        ],
+        num_gt_ids=2,
+        num_tracker_ids=2,
+    )
+
+    counts = evaluate_clear(data, threshold=0.5)
+
+    assert (counts.tp, counts.fp, counts.fn) == (4, 0, 2)
+    assert counts.id_switches == 2
+    assert counts.motp_sum == pytest.approx(3.8)
+
+
 def test_hota_uses_multiple_localization_thresholds() -> None:
     data = _sequence(
         [[0]],
