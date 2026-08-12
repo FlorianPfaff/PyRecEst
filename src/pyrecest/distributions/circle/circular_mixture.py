@@ -110,7 +110,16 @@ class CircularMixture(AbstractCircularDistribution, HypertoroidalMixture):
 
         samples = []
         for component_index in component_indices:
-            sample_i = self.dists[int(component_index)].sample(1)
-            samples.append(reshape(atleast_1d(sample_i), (-1,)))
+            sample_i = reshape(
+                atleast_1d(self.dists[int(component_index)].sample(1)),
+                (-1,),
+            )
+            sample_shape = tuple(shape(sample_i))
+            if sample_shape != (1,):
+                raise ValueError(
+                    "Circular mixture component sample output must have shape "
+                    f"(1,), got {sample_shape}"
+                )
+            samples.append(sample_i)
 
         return concatenate(samples, axis=0)
