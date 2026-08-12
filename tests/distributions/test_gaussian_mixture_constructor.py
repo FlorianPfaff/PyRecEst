@@ -36,6 +36,28 @@ class GaussianMixtureConstructorTest(unittest.TestCase):
                 np.testing.assert_allclose(to_numpy(mean), [1.5])
                 np.testing.assert_allclose(to_numpy(covariance), [[3.25]])
 
+    def test_parameter_conversion_accepts_single_covariance_matrix(self):
+        means = array([[1.0, -2.0]])
+        covariance_matrix = array([[4.0, 1.5], [1.5, 9.0]])
+
+        mean, covariance = (
+            GaussianMixture.mixture_parameters_to_gaussian_parameters(
+                means, covariance_matrix, [1.0]
+            )
+        )
+
+        np.testing.assert_allclose(to_numpy(mean), [1.0, -2.0])
+        np.testing.assert_allclose(to_numpy(covariance), to_numpy(covariance_matrix))
+
+    def test_parameter_conversion_rejects_ambiguous_covariance_matrix(self):
+        means = array([[0.0, 0.0], [1.0, 1.0]])
+        covariance_matrix = array([[1.0, 0.0], [0.0, 1.0]])
+
+        with self.assertRaisesRegex(ValueError, "covariance_matrices must have shape"):
+            GaussianMixture.mixture_parameters_to_gaussian_parameters(
+                means, covariance_matrix, [0.5, 0.5]
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -66,8 +66,42 @@ class GaussianMixture(LinearMixture, AbstractLinearDistribution):
     def mixture_parameters_to_gaussian_parameters(
         means, covariance_matrices, weights=None
     ):
+        means = array(means)
+        if means.ndim == 0:
+            means = reshape(means, (1, 1))
+        elif means.ndim == 1:
+            means = reshape(means, (-1, 1))
+        elif means.ndim != 2:
+            raise ValueError(
+                "means must have shape (n_components, dim) or be a scalar/1D "
+                "sequence of one-dimensional component means"
+            )
+
+        n_components, dim = means.shape
+        covariance_matrices = array(covariance_matrices)
+        expected_shape = (dim, dim, n_components)
+
+        if covariance_matrices.ndim == 3:
+            if covariance_matrices.shape != expected_shape:
+                raise ValueError(
+                    "covariance_matrices must have shape "
+                    f"{expected_shape}, got {covariance_matrices.shape}"
+                )
+        elif n_components == 1 and covariance_matrices.shape == (dim, dim):
+            covariance_matrices = reshape(covariance_matrices, expected_shape)
+        elif dim == 1 and covariance_matrices.shape == (n_components,):
+            covariance_matrices = reshape(covariance_matrices, expected_shape)
+        elif dim == 1 and n_components == 1 and covariance_matrices.ndim == 0:
+            covariance_matrices = reshape(covariance_matrices, expected_shape)
+        else:
+            raise ValueError(
+                "covariance_matrices must have shape "
+                f"{expected_shape}; a single ({dim}, {dim}) matrix is only "
+                "accepted for one component"
+            )
+
         if weights is None:
-            weights = ones(means.shape[0]) / means.shape[0]
+            weights = ones(n_components) / n_components
         else:
             weights = array(weights)
             if weights.ndim == 0:
@@ -79,7 +113,9 @@ class GaussianMixture(LinearMixture, AbstractLinearDistribution):
         mu, C_from_means = LinearDiracDistribution.weighted_samples_to_mean_and_cov(
             means, weights
         )
-        C_from_cov = sum(covariance_matrices * reshape(weights, (1, 1, -1)), axis=2)
+        C_from_cov = sum(
+            covariance_matrices * reshape(weights, (1, 1, -1)), axis=2
+        )
         C = C_from_cov + C_from_means
 
         return mu, C
