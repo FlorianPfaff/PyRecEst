@@ -95,7 +95,7 @@ def _extract_mtt_mean(filter_state):
         return _extract_track_collection_mean(filter_state.tracks)
     if hasattr(filter_state, "single_target_filters"):
         return _extract_track_collection_mean(filter_state.single_target_filters)
-    if isinstance(filter_state, (list, tuple)):
+    if isinstance(filter_state, (Mapping, list, tuple)):
         return _extract_track_collection_mean(filter_state)
     return _point_estimate_or_mean(filter_state)
 
