@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from dataclasses import asdict, dataclass
+from operator import index as _operator_index
 from typing import Any
 
 import numpy as np
@@ -303,8 +304,27 @@ def _positive_integer(value: Any, name: str) -> int:
         raise ValueError(message) from exc
     if array.shape != () or array.dtype.kind in "bUSOcmM":
         raise ValueError(message)
+
+    scalar = array.item()
     try:
-        parsed_float = float(array.item())
+        parsed_integer = _operator_index(scalar)
+    except (OverflowError, TypeError, ValueError):
+        parsed_integer = None
+    if parsed_integer is not None:
+        try:
+            parsed_float = float(parsed_integer)
+        except (OverflowError, ValueError) as exc:
+            raise ValueError(message) from exc
+        if (
+            parsed_integer <= 0
+            or not np.isfinite(parsed_float)
+            or int(parsed_float) != parsed_integer
+        ):
+            raise ValueError(message)
+        return int(parsed_integer)
+
+    try:
+        parsed_float = float(scalar)
     except (TypeError, ValueError, OverflowError) as exc:
         raise ValueError(message) from exc
     if not np.isfinite(parsed_float) or not parsed_float.is_integer() or parsed_float <= 0.0:
