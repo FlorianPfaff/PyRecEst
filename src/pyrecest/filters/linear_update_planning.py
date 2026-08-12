@@ -424,7 +424,7 @@ def _resolve_threshold(
 
 
 def _symmetrized(matrix: np.ndarray) -> np.ndarray:
-    return 0.5 * (matrix + matrix.T)
+    return 0.5 * matrix + 0.5 * matrix.T
 
 
 def _validate_covariance_matrix(
