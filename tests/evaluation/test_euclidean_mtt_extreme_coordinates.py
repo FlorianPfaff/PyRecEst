@@ -4,7 +4,6 @@ import unittest
 
 import numpy as np
 import numpy.testing as npt
-
 from pyrecest.evaluation.get_distance_function import get_distance_function
 
 

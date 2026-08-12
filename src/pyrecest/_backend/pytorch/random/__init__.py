@@ -182,9 +182,7 @@ def _sample_array_randint_exactly(low, high, dtype, generator):
     bounds = torch.stack((flat_low, flat_high), dim=1)
     unique_bounds, inverse = torch.unique(bounds, dim=0, return_inverse=True)
     order = torch.argsort(inverse)
-    counts = torch.bincount(
-        inverse, minlength=unique_bounds.shape[0]
-    ).tolist()
+    counts = torch.bincount(inverse, minlength=unique_bounds.shape[0]).tolist()
 
     offset = 0
     for bound_pair, count in zip(unique_bounds, counts):
@@ -234,9 +232,7 @@ def _randint_array_with_wide_arithmetic(low, high, size, *args, **kwargs):
         unexpected = ", ".join(sorted(sampling_kwargs))
         raise TypeError(f"Unexpected keyword argument(s): {unexpected}")
 
-    result = _sample_array_randint_exactly(
-        low, high, requested_dtype, generator
-    )
+    result = _sample_array_randint_exactly(low, high, requested_dtype, generator)
     if out is not None:
         out.copy_(result)
         return out
@@ -284,9 +280,7 @@ def uniform(low=0.0, high=1.0, size=None, dtype=None):
     span = high - low
     if bool(torch.any(~torch.isfinite(span))):
         raise OverflowError(_UNIFORM_RANGE_ERROR)
-    return span * torch.rand(
-        size, dtype=arithmetic_dtype, device=device
-    ) + low
+    return span * torch.rand(size, dtype=arithmetic_dtype, device=device) + low
 
 
 def _singular_multivariate_normal_factor(mean, cov, tol):
@@ -321,15 +315,11 @@ def _singular_multivariate_normal_factor(mean, cov, tol):
         return None
 
     scale = torch.max(torch.abs(eigenvalues))
-    rank_tolerance = (
-        torch.finfo(cov.dtype).eps * max(mean.shape[0], 1) * scale
-    )
+    rank_tolerance = torch.finfo(cov.dtype).eps * max(mean.shape[0], 1) * scale
     if bool(torch.all(eigenvalues > rank_tolerance)):
         return None
 
-    factor = eigenvectors * torch.sqrt(
-        torch.clamp(eigenvalues, min=0.0)
-    ).unsqueeze(0)
+    factor = eigenvectors * torch.sqrt(torch.clamp(eigenvalues, min=0.0)).unsqueeze(0)
     return mean, factor
 
 
@@ -355,21 +345,15 @@ def multivariate_normal(mean, cov, size=None, *args, **kwargs):
     tol = _validate_multivariate_normal_tol(tol)
 
     try:
-        return _LEGACY.multivariate_normal(
-            mean, cov, size=size, *args, **kwargs
-        )
+        return _LEGACY.multivariate_normal(mean, cov, size=size, *args, **kwargs)
     except ValueError:
         if args or kwargs:
             raise
-        singular_parameters = _singular_multivariate_normal_factor(
-            mean, cov, tol
-        )
+        singular_parameters = _singular_multivariate_normal_factor(mean, cov, tol)
         if singular_parameters is None:
             raise
         singular_mean, factor = singular_parameters
-        return _sample_singular_multivariate_normal(
-            singular_mean, factor, size
-        )
+        return _sample_singular_multivariate_normal(singular_mean, factor, size)
 
 
 __all__ = sorted(

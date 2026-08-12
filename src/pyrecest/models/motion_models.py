@@ -375,18 +375,20 @@ def singer_transition_matrix(dt: float, spatial_dim: int = 2, tau: float = 20.0)
     decay = decay_minus_one + 1.0
     velocity_from_acceleration = -decay_minus_one / alpha
     if abs(scaled_time) < 1.0e-4:
-        position_from_acceleration = dt * dt * (
-            0.5
-            - scaled_time / 6.0
-            + scaled_time**2 / 24.0
-            - scaled_time**3 / 120.0
-            + scaled_time**4 / 720.0
-            - scaled_time**5 / 5040.0
+        position_from_acceleration = (
+            dt
+            * dt
+            * (
+                0.5
+                - scaled_time / 6.0
+                + scaled_time**2 / 24.0
+                - scaled_time**3 / 120.0
+                + scaled_time**4 / 720.0
+                - scaled_time**5 / 5040.0
+            )
         )
     else:
-        position_from_acceleration = (
-            scaled_time + decay_minus_one
-        ) / alpha**2
+        position_from_acceleration = (scaled_time + decay_minus_one) / alpha**2
     block = np.array(
         [
             [1.0, dt, position_from_acceleration],
