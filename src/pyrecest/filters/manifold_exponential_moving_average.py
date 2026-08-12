@@ -1,5 +1,6 @@
 """Exponential moving average for states on manifolds."""
 
+import copy
 from typing import Any, Callable
 
 import numpy as np
@@ -107,16 +108,16 @@ class ManifoldExponentialMovingAverage(AbstractFilter):
 
     @filter_state.setter
     def filter_state(self, new_state):
-        self._filter_state = new_state
+        self._filter_state = copy.deepcopy(new_state)
 
     def update(self, sample):
         """Update the moving average with a new manifold-valued sample."""
         if self._filter_state is None:
-            self._filter_state = sample
+            self.filter_state = sample
             return
 
         tangent_update = self.alpha * asarray(self.phi_inv(self._filter_state, sample))
-        self._filter_state = self.phi(self._filter_state, tangent_update)
+        self.filter_state = self.phi(self._filter_state, tangent_update)
 
     def get_point_estimate(self):
         """Return the current manifold estimate."""

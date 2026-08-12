@@ -256,9 +256,14 @@ def nearest_symmetric_psd(matrix, *, min_eigenvalue: float = 0.0):
     _raise_if_not_square_matrix(arr)
     _raise_if_nonfinite_matrix(arr, "matrix")
     sym = _stable_symmetric_average(arr)
-    eigvals, eigvecs = np.linalg.eigh(sym)
-    clipped = np.maximum(eigvals, min_eigenvalue)
-    repaired = (eigvecs * clipped) @ eigvecs.T
+    if sym.size == 0:
+        return _from_numpy_array(sym)
+
+    scale = max(1.0, float(np.max(np.abs(sym))), min_eigenvalue)
+    scaled_sym = sym / scale
+    eigvals, eigvecs = np.linalg.eigh(scaled_sym)
+    clipped = np.maximum(eigvals, min_eigenvalue / scale)
+    repaired = ((eigvecs * clipped) @ eigvecs.T) * scale
     return _from_numpy_array(_stable_symmetric_average(repaired))
 
 

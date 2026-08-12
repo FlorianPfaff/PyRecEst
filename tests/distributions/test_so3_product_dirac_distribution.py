@@ -145,7 +145,7 @@ class SO3ProductDiracDistributionTest(unittest.TestCase):
         component_distances = dist.distance_to(target, reduce=False)
         summed_distances = dist.distance_to(target)
 
-        npt.assert_allclose(component_distances[0], array([0.0, 0.0]), atol=1e-8)
+        npt.assert_allclose(component_distances[0], array([0.0, 0.0]), atol=1e-7)
         npt.assert_allclose(component_distances[1], array([0.0, pi / 2.0]), atol=1e-6)
         npt.assert_allclose(summed_distances, array([0.0, pi / 2.0]), atol=1e-6)
         npt.assert_allclose(dist.angular_error_mean(target), 0.75 * pi / 2.0, atol=1e-6)

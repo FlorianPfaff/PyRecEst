@@ -73,6 +73,17 @@ def test_infer_polarity_contrast_sign_from_batch():
     assert infer_polarity_contrast_sign(signed_flows, polarities, -1.0) == -1.0
 
 
+def test_infer_polarity_contrast_sign_avoids_overflow():
+    largest = np.finfo(float).max
+    signed_flows = largest * np.array([0.75, 0.75, -0.75, -0.9])
+    polarities = np.ones(signed_flows.shape)
+
+    with np.errstate(over="raise", invalid="raise"):
+        inferred = infer_polarity_contrast_sign(signed_flows, polarities, "infer")
+
+    assert inferred == -1.0
+
+
 def test_infer_polarity_contrast_sign_rejects_invalid_batches():
     with pytest.raises(ValueError, match="signed_normal_flows"):
         infer_polarity_contrast_sign([1.0, np.nan], [1.0, 0.0], "infer")

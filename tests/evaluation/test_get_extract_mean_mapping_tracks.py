@@ -41,3 +41,18 @@ def test_mtt_mean_extracts_mapping_values_from_get_tracks():
     assert len(means) == 2
     np.testing.assert_array_equal(means[0], [5.0, 6.0])
     np.testing.assert_array_equal(means[1], [7.0, 8.0])
+
+
+def test_mtt_mean_extracts_mapping_values_from_plain_mapping():
+    extract_mean = get_extract_mean("euclidean", mtt_scenario=True)
+    tracker_state = {
+        "track-a": Track([9.0, 10.0]),
+        "track-b": Track([11.0, 12.0]),
+    }
+
+    means = extract_mean(tracker_state)
+
+    assert isinstance(means, list)
+    assert len(means) == 2
+    np.testing.assert_array_equal(means[0], [9.0, 10.0])
+    np.testing.assert_array_equal(means[1], [11.0, 12.0])
