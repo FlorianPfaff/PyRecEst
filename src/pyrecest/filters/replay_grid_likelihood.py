@@ -295,10 +295,12 @@ def particle_position_log_posterior(
     if not np.any(masses > 0.0):
         raise ValueError("particle posterior has no mass")
 
-    log_posterior = np.full(bin_centers.shape[0], float(log_zero), dtype=float)
     positive = masses > 0.0
-    log_posterior[positive] = np.log(masses[positive])
-    return log_posterior - float(logsumexp(log_posterior))
+    positive_log_posterior = np.log(masses[positive])
+    positive_log_posterior -= float(logsumexp(positive_log_posterior))
+    log_posterior = np.full(bin_centers.shape[0], float(log_zero), dtype=float)
+    log_posterior[positive] = positive_log_posterior
+    return log_posterior
 
 
 def _coerce_particle_weights(weights) -> np.ndarray:
