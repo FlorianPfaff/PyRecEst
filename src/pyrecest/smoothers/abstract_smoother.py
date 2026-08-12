@@ -25,7 +25,7 @@ class AbstractSmoother(ABC):
 
     @staticmethod
     def _symmetrize(matrix):
-        return 0.5 * (matrix + matrix.T)
+        return 0.5 * matrix + 0.5 * matrix.T
 
     @staticmethod
     def _normalize_measurements(measurements) -> list:
