@@ -148,7 +148,7 @@ class ComplexBinghamDistribution(AbstractComplexHypersphericalDistribution):
         Bxs = self.B @ xs  # (d, n)
         vals = real(einsum("ij,ij->j", conj(xs), Bxs))  # shape (n,)
         p = exp(self.log_norm_const + vals)
-        return float(p[0]) if single else p
+        return p[0] if single else p
 
     def sample(self, n):
         """Draw samples from the complex Bingham distribution.
