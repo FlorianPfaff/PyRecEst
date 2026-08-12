@@ -52,6 +52,21 @@ def _wrapped_exponential_density(rate, distance):
     return normalization * exp(-rate * distance)
 
 
+def _mix_skew_components(positive_component, negative_component, kappa):
+    """Combine skew components without squaring a large ``kappa``."""
+    if bool(all(kappa > 1.0)):
+        inverse_kappa = 1.0 / kappa
+        positive_weight = inverse_kappa * inverse_kappa
+        return (positive_weight * positive_component + negative_component) / (
+            positive_weight + 1.0
+        )
+
+    negative_weight = kappa * kappa
+    return (positive_component + negative_weight * negative_component) / (
+        1.0 + negative_weight
+    )
+
+
 class WrappedLaplaceDistribution(AbstractCircularDistribution):
     """Wrapped Laplace distribution on the circle.
 
@@ -86,9 +101,12 @@ class WrappedLaplaceDistribution(AbstractCircularDistribution):
         xs = mod(xs, 2.0 * pi)
         positive_rate = self.lambda_ * self.kappa
         negative_rate = self.lambda_ / self.kappa
-        mixture_normalization = 1.0 + self.kappa**2
-        p = (
-            _wrapped_exponential_density(positive_rate, xs)
-            + self.kappa**2 * _wrapped_exponential_density(negative_rate, 2.0 * pi - xs)
-        ) / mixture_normalization
-        return p
+        positive_component = _wrapped_exponential_density(positive_rate, xs)
+        negative_component = _wrapped_exponential_density(
+            negative_rate, 2.0 * pi - xs
+        )
+        return _mix_skew_components(
+            positive_component,
+            negative_component,
+            self.kappa,
+        )
