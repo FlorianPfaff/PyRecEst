@@ -1,5 +1,4 @@
 import numpy as np
-
 from pyrecest.filters.sparse_second_order_grid import (
     sparse_second_order_grid_evidence,
 )

@@ -1,5 +1,4 @@
 import pytest
-
 from pyrecest.distributions.hypertorus.hypertoroidal_uniform_distribution import (
     HypertoroidalUniformDistribution,
 )

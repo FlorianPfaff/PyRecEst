@@ -4,7 +4,6 @@ import types
 import unittest
 
 import numpy as np
-
 from pyrecest.filters import update_position_grid_likelihood
 
 

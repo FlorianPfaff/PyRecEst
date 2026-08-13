@@ -314,9 +314,7 @@ class BlockParticleFilter:
         normalized_block_weights = None
         if hasattr(self, "_block_weights"):
             if block_weights is not None:
-                normalized_block_weights = self._normalize_block_weights(
-                    block_weights
-                )
+                normalized_block_weights = self._normalize_block_weights(block_weights)
             elif normalized_weights is not None:
                 normalized_block_weights = self._normalize_block_weights(
                     normalized_weights

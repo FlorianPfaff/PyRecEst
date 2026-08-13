@@ -397,9 +397,7 @@ class IdkfNode(AbstractFilter, EuclideanFilterMixin):
             raise ValueError("Cannot update a stale IDKF contribution")
 
         H, R = self._resolve_measurement_model(measurement_matrix, meas_noise)
-        information_vector_increment = H.T @ linalg.solve(
-            R, atleast_1d(measurement)
-        )
+        information_vector_increment = H.T @ linalg.solve(R, atleast_1d(measurement))
 
         all_models = (
             measurement_models
@@ -414,9 +412,7 @@ class IdkfNode(AbstractFilter, EuclideanFilterMixin):
         updated_y = contribution.y + information_vector_increment
         updated_Y = state.Y + information_matrix_increment
         updated_operation_count = state.operation_count + 1
-        updated_operation_hash = _extend_hash(
-            state.operation_hash, "update_linear"
-        )
+        updated_operation_hash = _extend_hash(state.operation_hash, "update_linear")
 
         contribution.y = updated_y
         state.Y = updated_Y

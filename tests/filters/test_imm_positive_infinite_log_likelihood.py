@@ -1,7 +1,6 @@
 import numpy as np
 import numpy.testing as npt
 import pytest
-
 from pyrecest.distributions import GaussianDistribution
 from pyrecest.filters import InteractingMultipleModelFilter
 
@@ -33,9 +32,7 @@ def test_positive_infinite_log_likelihood_is_rejected_atomically():
     expected_log_likelihoods = imm.latest_log_model_likelihoods.copy()
 
     with pytest.raises(ValueError, match="positive infinity"):
-        imm.update_mode_probabilities(
-            log_likelihoods=np.array([float("inf"), 0.0])
-        )
+        imm.update_mode_probabilities(log_likelihoods=np.array([float("inf"), 0.0]))
 
     npt.assert_array_equal(imm.mode_probabilities, expected_probabilities)
     npt.assert_array_equal(imm.latest_model_likelihoods, expected_likelihoods)

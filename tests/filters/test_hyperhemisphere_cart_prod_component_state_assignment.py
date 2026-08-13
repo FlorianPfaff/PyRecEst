@@ -1,7 +1,6 @@
 import unittest
 
 import numpy as np
-
 import pyrecest.backend  # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import array  # pylint: disable=no-name-in-module,no-member
 from pyrecest.distributions.cart_prod.hyperhemisphere_cart_prod_dirac_distribution import (
@@ -43,9 +42,7 @@ class HyperhemisphereCartProdComponentStateAssignmentTest(unittest.TestCase):
 
     @staticmethod
     def _component_distribution():
-        return HyperhemisphericalWatsonDistribution(
-            array([0.0, 0.0, 1.0]), 2.0
-        )
+        return HyperhemisphericalWatsonDistribution(array([0.0, 0.0, 1.0]), 2.0)
 
     def test_set_state_expands_component_distribution_across_product(self):
         particle_filter = self._filter_with_nonuniform_weights()
@@ -56,9 +53,7 @@ class HyperhemisphereCartProdComponentStateAssignmentTest(unittest.TestCase):
         self.assertEqual(
             particle_filter.filter_state.as_component_array().shape, (4, 2, 3)
         )
-        np.testing.assert_allclose(
-            particle_filter.filter_state.w, np.full(4, 0.25)
-        )
+        np.testing.assert_allclose(particle_filter.filter_state.w, np.full(4, 0.25))
         self.assertTrue(
             np.all(
                 np.asarray(particle_filter.filter_state.as_component_array())[..., -1]
@@ -71,9 +66,7 @@ class HyperhemisphereCartProdComponentStateAssignmentTest(unittest.TestCase):
 
         particle_filter.filter_state = self._component_distribution()
 
-        np.testing.assert_allclose(
-            particle_filter.filter_state.w, np.full(4, 0.25)
-        )
+        np.testing.assert_allclose(particle_filter.filter_state.w, np.full(4, 0.25))
 
 
 if __name__ == "__main__":
