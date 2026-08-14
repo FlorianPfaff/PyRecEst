@@ -120,7 +120,25 @@ def normalize_log_weights(log_weights: list[float] | np.ndarray) -> np.ndarray:
     return weights / total
 
 
+def _contains_masked_value(value: Any) -> bool:
+    """Return whether an array-like input contains a genuinely masked value."""
+
+    if value is np.ma.masked:
+        return True
+    if np.ma.isMaskedArray(value):
+        if bool(np.any(np.ma.getmaskarray(value))):
+            return True
+        value = np.asarray(value.data)
+    if isinstance(value, np.ndarray) and value.dtype == object:
+        return any(_contains_masked_value(item) for item in value.flat)
+    if isinstance(value, (list, tuple)):
+        return any(_contains_masked_value(item) for item in value)
+    return False
+
+
 def _as_float_array(value: Any, name: str) -> np.ndarray:
+    if _contains_masked_value(value):
+        raise ValueError(f"{name} must not contain masked values")
     try:
         array = np.asarray(value)
     except (TypeError, ValueError, OverflowError) as exc:
