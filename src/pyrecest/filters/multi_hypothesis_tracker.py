@@ -298,11 +298,15 @@ class MultiHypothesisTracker(AbstractMultitargetTracker):
             return []
         if k is None:
             k = n_hypotheses
+        else:
+            k = _validate_integer(k, "k")
+            if k < 0:
+                raise ValueError("k must be non-negative")
         order = sorted(
             range(n_hypotheses),
             key=lambda index: float(self._global_log_weights[index]),
             reverse=True,
-        )[: int(k)]
+        )[:k]
 
         top_hypotheses = []
         for index in order:
@@ -464,7 +468,11 @@ class MultiHypothesisTracker(AbstractMultitargetTracker):
         else:
             if hypothesis_index is None:
                 hypothesis_index = self.get_best_hypothesis_index()
-            filter_bank = self._global_filter_bank_histories[int(hypothesis_index)][
+            else:
+                hypothesis_index = _validate_integer(
+                    hypothesis_index, "hypothesis_index"
+                )
+            filter_bank = self._global_filter_bank_histories[hypothesis_index][
                 history_index
             ]
             point_estimate = self._point_estimate_from_filter_bank(filter_bank)
@@ -813,11 +821,16 @@ class MultiHypothesisTracker(AbstractMultitargetTracker):
         if lag is not None:
             if time_index is not None:
                 raise ValueError("Specify either time_index or lag, not both")
+            lag = _validate_integer(lag, "lag")
             if lag < 0:
                 raise ValueError("lag must be non-negative")
-            resolved_index = history_length - 1 - int(lag)
+            resolved_index = history_length - 1 - lag
         else:
-            resolved_index = -1 if time_index is None else int(time_index)
+            resolved_index = (
+                -1
+                if time_index is None
+                else _validate_integer(time_index, "time_index")
+            )
             if resolved_index < 0:
                 resolved_index += history_length
 
