@@ -108,6 +108,10 @@ def summarize_nis_consistency(
     probabilities = tuple(
         _validate_probability(value, "gate probability") for value in gate_probabilities
     )
+    thresholds = tuple(
+        _chi_square_quantile(probability, dim, "gate probability")
+        for probability in probabilities
+    )
 
     count = int(values.size)
     expected_mean = float(dim)
@@ -115,14 +119,14 @@ def summarize_nis_consistency(
         coverage = tuple(
             NISCoverageSummary(
                 probability=probability,
-                threshold=float(chi2.ppf(probability, df=dim)),
+                threshold=threshold,
                 expected_fraction=probability,
                 actual_fraction=None,
                 coverage_gap=None,
                 observed_quantile=None,
                 innovation_covariance_scale=None,
             )
-            for probability in probabilities
+            for probability, threshold in zip(probabilities, thresholds, strict=True)
         )
         return NISConsistencySummary(
             measurement_dim=dim,
@@ -140,7 +144,11 @@ def summarize_nis_consistency(
             coverage=coverage,
         )
 
-    nis_mean = float(np.mean(values))
+    statistic_scale, scaled_values = _scaled_nis_values(values)
+    nis_mean = statistic_scale * float(np.mean(scaled_values))
+    percentiles = statistic_scale * np.percentile(
+        scaled_values, (50.0, 90.0, 95.0, 99.0)
+    )
     sorted_values = np.sort(values)
     empirical_cdf_upper = np.arange(1, count + 1, dtype=float) / float(count)
     empirical_cdf_lower = np.arange(count, dtype=float) / float(count)
@@ -153,10 +161,11 @@ def summarize_nis_consistency(
     )
 
     coverage_items: list[NISCoverageSummary] = []
-    for probability in probabilities:
-        threshold = float(chi2.ppf(probability, df=dim))
+    for probability, threshold in zip(probabilities, thresholds, strict=True):
         actual_fraction = float(np.mean(values <= threshold))
-        observed_quantile = float(np.quantile(values, probability))
+        observed_quantile = statistic_scale * float(
+            np.quantile(scaled_values, probability)
+        )
         coverage_items.append(
             NISCoverageSummary(
                 probability=probability,
@@ -173,11 +182,15 @@ def summarize_nis_consistency(
         measurement_dim=dim,
         count=count,
         nis_mean=nis_mean,
-        nis_std=float(np.std(values, ddof=1)) if count > 1 else 0.0,
-        nis_median=float(np.percentile(values, 50.0)),
-        nis_p90=float(np.percentile(values, 90.0)),
-        nis_p95=float(np.percentile(values, 95.0)),
-        nis_p99=float(np.percentile(values, 99.0)),
+        nis_std=(
+            statistic_scale * float(np.std(scaled_values, ddof=1))
+            if count > 1
+            else 0.0
+        ),
+        nis_median=float(percentiles[0]),
+        nis_p90=float(percentiles[1]),
+        nis_p95=float(percentiles[2]),
+        nis_p99=float(percentiles[3]),
         nis_max=float(np.max(values)),
         chi2_mean_expected=expected_mean,
         mean_innovation_covariance_scale=nis_mean / expected_mean,
@@ -213,14 +226,17 @@ def estimate_innovation_covariance_scale(
             f"{INNOVATION_COVARIANCE_SCALE_METHODS}"
         )
 
+    statistic_scale, scaled_values = _scaled_nis_values(values)
     if parsed_method == "mean":
-        statistic = float(np.mean(values))
+        statistic = statistic_scale * float(np.mean(scaled_values))
         target = float(dim)
         quantile_value: float | None = None
     else:
         quantile_value = _validate_probability(quantile, "quantile")
-        statistic = float(np.quantile(values, quantile_value))
-        target = float(chi2.ppf(quantile_value, df=dim))
+        statistic = statistic_scale * float(
+            np.quantile(scaled_values, quantile_value)
+        )
+        target = _chi_square_quantile(quantile_value, dim, "quantile")
 
     return InnovationCovarianceScaleEstimate(
         measurement_dim=dim,
@@ -231,6 +247,27 @@ def estimate_innovation_covariance_scale(
         scale=statistic / target,
         quantile=quantile_value,
     )
+
+
+def _scaled_nis_values(values: np.ndarray) -> tuple[float, np.ndarray]:
+    """Scale nonnegative NIS samples into ``[0, 1]`` for stable reductions."""
+
+    scale = float(np.max(values))
+    if scale == 0.0:
+        return 1.0, values
+    with np.errstate(under="ignore"):
+        scaled_values = values / scale
+    return scale, scaled_values
+
+
+def _chi_square_quantile(probability: float, measurement_dim: int, name: str) -> float:
+    target = float(chi2.ppf(probability, df=measurement_dim))
+    if not np.isfinite(target) or target <= 0.0:
+        raise ValueError(
+            f"{name} is not numerically resolvable for "
+            f"measurement_dim={measurement_dim}"
+        )
+    return target
 
 
 def _as_nis_values(values: Iterable[float]) -> np.ndarray:
