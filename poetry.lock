@@ -1789,24 +1789,26 @@ test-extras = ["pytest-mpl", "pytest-randomly"]
 
 [[package]]
 name = "nox"
-version = "2026.4.10"
+version = "2026.8.10"
 description = "Flexible test automation."
 optional = false
-python-versions = ">=3.9"
+python-versions = ">=3.10"
 groups = ["dev"]
 files = [
-    {file = "nox-2026.4.10-py3-none-any.whl", hash = "sha256:082c117627590d9b90aa21f86df89b310b07c5842539524203bcb3c719f116c1"},
-    {file = "nox-2026.4.10.tar.gz", hash = "sha256:2d0af5374f3f37a295428c927d1b04a8182aa01762897d172446dda2f1ce9692"},
+    {file = "nox-2026.8.10-py3-none-any.whl", hash = "sha256:943f1ebcace1efb35d91ad2034007df1942d2a1bed75fb33e1bf0ed5a0df1cdb"},
+    {file = "nox-2026.8.10.tar.gz", hash = "sha256:13f45e46552eade9f4b60474133e31e1e0bb341234a3cc0c9d6fff17570ce8bb"},
 ]
 
 [package.dependencies]
 argcomplete = ">=1.9.4,<4"
 attrs = ">=24.1"
-colorlog = ">=2.6.1,<7"
+colorlog = ">=6.6,<7"
 dependency-groups = ">=1.1"
 humanize = ">=4"
 packaging = ">=22"
-virtualenv = {version = ">=20.15", markers = "python_version >= \"3.10\""}
+platformdirs = ">=2"
+python-discovery = ">=1"
+virtualenv = {version = ">=20.15", markers = "python_version < \"3.15\""}
 
 [package.extras]
 pbs = ["pbs-installer[all] (>=2025.1.6)"]
