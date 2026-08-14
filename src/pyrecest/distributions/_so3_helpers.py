@@ -49,6 +49,17 @@ def as_batch(values, width, name):
     return values
 
 
+def _stable_vector_norm(values):
+    """Return row-wise Euclidean norms without overflow from intermediate squares."""
+    scales = amax(abs(values), axis=-1)
+    safe_scales = where(scales > 0.0, scales, 1.0)
+    scaled_values = values / reshape(
+        safe_scales,
+        tuple(safe_scales.shape) + (1,),
+    )
+    return scales * linalg.norm(scaled_values, axis=-1)
+
+
 def normalize_quaternions(quaternions):
     """Return canonical scalar-last unit quaternions."""
     quaternions = _as_real_array(quaternions, "SO(3) quaternions")
@@ -144,13 +155,15 @@ def exp_map_identity(tangent_vectors):
         if tangent_vectors.shape[-1] != 3:
             raise ValueError("SO(3) tangent vectors must have length 3.")
 
-    angles = linalg.norm(tangent_vectors, axis=-1)
+    angles = _stable_vector_norm(tangent_vectors)
     angles_col = reshape(angles, tuple(angles.shape) + (1,))
-    safe_angles = where(angles_col > 1e-12, angles_col, 1.0)
+    use_direct = angles_col > 1e-12
+    safe_angles = where(use_direct, angles_col, 1.0)
+    small_angles = where(use_direct, 0.0, angles_col)
     vector_scale = where(
-        angles_col > 1e-12,
+        use_direct,
         sin(0.5 * angles_col) / safe_angles,
-        0.5 - angles_col**2 / 48.0,
+        0.5 - small_angles**2 / 48.0,
     )
     return normalize_quaternions(
         concatenate((tangent_vectors * vector_scale, cos(0.5 * angles_col)), axis=-1)
