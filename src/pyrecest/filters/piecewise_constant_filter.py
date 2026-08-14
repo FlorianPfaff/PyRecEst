@@ -1,6 +1,7 @@
 import warnings
-from numbers import Integral
+from operator import index as operator_index
 
+import numpy as np
 import pyrecest.backend
 
 # pylint: disable=no-name-in-module,no-member
@@ -15,12 +16,18 @@ from .manifold_mixins import CircularFilterMixin
 
 
 def _validate_interval_count(value, name: str) -> int:
-    if isinstance(value, bool) or not isinstance(value, Integral):
-        raise ValueError(f"{name} must be a positive integer.")
-    value = int(value)
+    message = f"{name} must be a positive integer."
+    if np.ma.is_masked(value) or isinstance(value, (bool, np.bool_)):
+        raise ValueError(message)
+    if isinstance(value, np.ma.MaskedArray):
+        value = np.ma.getdata(value)
+    try:
+        value = operator_index(value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(message) from exc
     if value <= 0:
-        raise ValueError(f"{name} must be a positive integer.")
-    return value
+        raise ValueError(message)
+    return int(value)
 
 
 class PiecewiseConstantFilter(AbstractFilter, CircularFilterMixin):
