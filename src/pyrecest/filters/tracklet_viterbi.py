@@ -383,19 +383,21 @@ def solve_fixed_lag_tracklet_viterbi(
         prefix_added = previous_committed is not None or committed_miss_streak > 0
         local_transition_cost = transition_cost
         if prefix_added:
-            if previous_committed is None:
+            if committed_miss_streak > 0:
                 prefix_candidate = TrackletAssociationCandidate(
                     ("__pyrecest_prefix_context__", frame_index),
                     unary_cost=0.0,
                     time_s=start_time,
                 )
+                prefix_previous = None
             else:
                 prefix_candidate = replace(previous_committed, unary_cost=0.0)
+                prefix_previous = previous_committed
             window_frames.insert(0, [prefix_candidate])
             local_transition_cost = _transition_with_prefix_miss_streak(
                 transition_cost,
                 prefix_candidate,
-                previous_committed,
+                prefix_previous,
                 committed_miss_streak,
                 config,
             )
@@ -605,15 +607,16 @@ def _fixed_lag_committed_step_cost(
             config,
         )
     )
+    if committed_miss_streak > 0:
+        return float(
+            unary_cost
+            + transition(None, selected, committed_miss_streak)
+        )
     if previous_committed is None:
-        if committed_miss_streak > 0:
-            return float(unary_cost + transition(None, selected, committed_miss_streak))
         if selected is None:
             return float(unary_cost + config.missed_detection_cost)
         return float(unary_cost)
-    return float(
-        unary_cost + transition(previous_committed, selected, committed_miss_streak)
-    )
+    return float(unary_cost + transition(previous_committed, selected, 0))
 
 
 def _summarize_state_tables(
