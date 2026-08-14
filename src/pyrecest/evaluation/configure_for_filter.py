@@ -221,8 +221,8 @@ def configure_for_filter(filter_config, scenario_config, precalculated_params=No
                         "gen_next_state_without_noise requires scenario_config['sys_noise']."
                     )
                 transition = scenario_config["gen_next_state_without_noise"]
-                transition_is_vectorized = (
-                    _gen_next_state_without_noise_is_vectorized(scenario_config)
+                transition_is_vectorized = _gen_next_state_without_noise_is_vectorized(
+                    scenario_config
                 )
                 if not has_inputs:
 

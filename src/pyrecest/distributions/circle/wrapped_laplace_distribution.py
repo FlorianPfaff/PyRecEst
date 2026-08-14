@@ -111,9 +111,7 @@ class WrappedLaplaceDistribution(AbstractCircularDistribution):
         positive_rate = self.lambda_ * self.kappa
         negative_rate = self.lambda_ / self.kappa
         positive_component = _wrapped_exponential_density(positive_rate, xs)
-        negative_component = _wrapped_exponential_density(
-            negative_rate, 2.0 * pi - xs
-        )
+        negative_component = _wrapped_exponential_density(negative_rate, 2.0 * pi - xs)
         return _mix_skew_components(
             positive_component,
             negative_component,

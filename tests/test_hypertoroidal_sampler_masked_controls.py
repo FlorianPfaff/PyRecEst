@@ -1,7 +1,6 @@
 import unittest
 
 import numpy as np
-
 from pyrecest.sampling.hypertoroidal_sampler import (
     CircularUniformSampler,
     _validate_integral_scalar,

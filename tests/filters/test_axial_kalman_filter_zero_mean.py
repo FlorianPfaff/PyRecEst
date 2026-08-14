@@ -1,7 +1,6 @@
 import unittest
 
 import numpy.testing as npt
-
 import pyrecest.backend
 from pyrecest.backend import array
 from pyrecest.distributions import GaussianDistribution
@@ -24,9 +23,7 @@ class TestAxialKalmanFilterZeroMean(unittest.TestCase):
         )
 
         axial_filter = AxialKalmanFilter()
-        axial_filter.filter_state = GaussianDistribution(
-            array([1.0, 0.0]), state_cov
-        )
+        axial_filter.filter_state = GaussianDistribution(array([1.0, 0.0]), state_cov)
         prior_mu = axial_filter.filter_state.mu.copy()
         prior_cov = axial_filter.filter_state.C.copy()
         noise = GaussianDistribution(array([1.0, 0.0]), noise_cov)

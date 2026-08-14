@@ -154,18 +154,12 @@ class HypertoroidalWrappedNormalDistribution(AbstractHypertoroidalDistribution):
         # Keep the Gaussian evaluation in the active backend. Delegating to
         # scipy.stats here detached PyTorch/JAX values and made gradients fail.
         precision = linalg.inv(self.C)
-        normalization = 1.0 / sqrt(
-            (2.0 * pi) ** self.dim * linalg.det(self.C)
-        )
+        normalization = 1.0 / sqrt((2.0 * pi) ** self.dim * linalg.det(self.C))
         pdf_values = zeros(xs.shape[0])
         for offset in offset_combinations:
             centered = xs + offset[None, :] - self.mu[None, :]
-            squared_mahalanobis = einsum(
-                "ni,ij,nj->n", centered, precision, centered
-            )
-            pdf_values = pdf_values + normalization * exp(
-                -0.5 * squared_mahalanobis
-            )
+            squared_mahalanobis = einsum("ni,ij,nj->n", centered, precision, centered)
+            pdf_values = pdf_values + normalization * exp(-0.5 * squared_mahalanobis)
 
         return pdf_values
 

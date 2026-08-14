@@ -16,7 +16,6 @@ from pyrecest.distributions.so3_tangent_gaussian_distribution import (
     SO3TangentGaussianDistribution,
 )
 
-
 _TEMPORAL_VALUES = (
     np.timedelta64(3, "ns"),
     np.timedelta64(3, "us"),

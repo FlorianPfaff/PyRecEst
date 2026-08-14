@@ -607,9 +607,7 @@ def _as_covariance_stack(
     if covariance_array.ndim == 2:
         if covariance_array.shape != (dim, dim):
             raise ValueError(f"{name} must have shape ({dim}, {dim})")
-        covariance_stack = np.broadcast_to(
-            covariance_array, (n_samples, dim, dim)
-        )
+        covariance_stack = np.broadcast_to(covariance_array, (n_samples, dim, dim))
     elif covariance_array.ndim == 3:
         if covariance_array.shape != (n_samples, dim, dim):
             raise ValueError(f"{name} must have shape ({n_samples}, {dim}, {dim})")
@@ -642,11 +640,7 @@ def _as_covariance_stack(
 
 def _as_positive_int(value: Any, name: str) -> int:
     array = np.asarray(value)
-    if (
-        array.ndim != 0
-        or array.dtype == np.bool_
-        or array.dtype.kind in {"M", "m"}
-    ):
+    if array.ndim != 0 or array.dtype == np.bool_ or array.dtype.kind in {"M", "m"}:
         raise ValueError(f"{name} must be a positive integer")
     scalar = array.item()
     if isinstance(scalar, (int, np.integer)) and not isinstance(scalar, bool):

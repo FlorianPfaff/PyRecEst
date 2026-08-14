@@ -220,9 +220,9 @@ class PartiallyWrappedNormalDistribution(AbstractHypercylindricalDistribution):
         )
 
         # Evaluate the Gaussian factor without leaving the active backend.
-        evals = GaussianDistribution(
-            self.mu, self.C, check_validity=False
-        ).pdf(xs_wrapped)
+        evals = GaussianDistribution(self.mu, self.C, check_validity=False).pdf(
+            xs_wrapped
+        )
 
         # sum evaluations for the wrapped dimensions
         summed_evals = sum(evals.reshape(-1, (2 * m + 1) ** self.bound_dim), axis=1)

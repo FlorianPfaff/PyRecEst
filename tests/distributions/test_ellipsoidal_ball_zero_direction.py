@@ -2,7 +2,6 @@ from unittest.mock import patch
 
 import numpy as np
 import numpy.testing as npt
-
 import pyrecest.distributions.ellipsoidal_ball_uniform_distribution as ellipsoid_module
 from pyrecest.backend import array, eye
 from pyrecest.distributions import EllipsoidalBallUniformDistribution

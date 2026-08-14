@@ -50,14 +50,10 @@ def _validated_edge_labels(edge_labels: list[str]) -> np.ndarray:
     normalized: list[str] = []
     for label in labels.tolist():
         if not isinstance(label, (str, np.str_)):
-            raise ValueError(
-                "edge_labels must contain only recognized rectangle edges"
-            )
+            raise ValueError("edge_labels must contain only recognized rectangle edges")
         normalized_label = str(label)
         if normalized_label not in EDGE_ORDER:
-            raise ValueError(
-                "edge_labels must contain only recognized rectangle edges"
-            )
+            raise ValueError("edge_labels must contain only recognized rectangle edges")
         normalized.append(normalized_label)
     return np.asarray(normalized, dtype=str)
 

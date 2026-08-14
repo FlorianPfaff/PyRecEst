@@ -2,7 +2,6 @@ import unittest
 
 import numpy as np
 import numpy.testing as npt
-
 import pyrecest.backend
 from pyrecest.distributions.circle.wrapped_laplace_distribution import (
     WrappedLaplaceDistribution,
@@ -21,8 +20,8 @@ class WrappedLaplaceExtremeMomentTest(unittest.TestCase):
         negative_rate = lambda_ / kappa
         distribution = WrappedLaplaceDistribution(lambda_, kappa)
 
-        expected = positive_rate / (positive_rate - 1j) * negative_rate / (
-            negative_rate + 1j
+        expected = (
+            positive_rate / (positive_rate - 1j) * negative_rate / (negative_rate + 1j)
         )
         with np.errstate(over="raise", divide="raise", invalid="raise"):
             actual = distribution.trigonometric_moment(1)

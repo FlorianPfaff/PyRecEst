@@ -1,7 +1,6 @@
 """Regression tests for positional-only additive-noise callback arguments."""
 
 import pytest
-
 from pyrecest.models import (
     AdditiveNoiseMeasurementModel,
     AdditiveNoiseTransitionModel,
