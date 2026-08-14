@@ -264,8 +264,8 @@ class StateSpaceSubdivisionFilter(AbstractFilter, HypercylindricalFilterMixin):
             one element (applied to all areas) or a list with as many elements
             as there are grid points.  ``None`` means uniform likelihood.
         """
-        state = self._filter_state
-        n_areas = len(state.linear_distributions)
+        current_state = self._filter_state
+        n_areas = len(current_state.linear_distributions)
 
         # Normalise the likelihoods_linear argument
         if likelihoods_linear is not None and len(likelihoods_linear) == 0:
@@ -289,7 +289,7 @@ class StateSpaceSubdivisionFilter(AbstractFilter, HypercylindricalFilterMixin):
         if likelihood_periodic_grid is not None and hasattr(
             likelihood_periodic_grid, "pdf"
         ):
-            grid = state.gd.get_grid()
+            grid = current_state.gd.get_grid()
             likelihood_periodic_grid = likelihood_periodic_grid.pdf(grid)
 
         # Validate the periodic likelihood before mutating the grid weights.
@@ -303,6 +303,10 @@ class StateSpaceSubdivisionFilter(AbstractFilter, HypercylindricalFilterMixin):
                     "likelihood_periodic_grid must contain one value per grid point."
                 )
 
+        # Perform the complete update on a detached copy. A failed linear update or
+        # normalization must not leave periodic weights or earlier cells modified.
+        state = copy.deepcopy(current_state)
+
         if periodic_likelihood_values is not None:
             state.gd.grid_values = (
                 state.gd.grid_values * periodic_likelihood_values
@@ -310,7 +314,9 @@ class StateSpaceSubdivisionFilter(AbstractFilter, HypercylindricalFilterMixin):
 
         if likelihoods_linear is not None:
             if n_likelihoods == 1:
-                self._update_single_linear_likelihood(likelihoods_linear[0])
+                self._update_single_linear_likelihood(
+                    likelihoods_linear[0], state=state
+                )
             else:
                 # Compute the grid-weight factor for each area i:
                 #   factor_i = N(mu_pred_i; mu_like_j, C_pred_i + C_like_j)
@@ -350,13 +356,15 @@ class StateSpaceSubdivisionFilter(AbstractFilter, HypercylindricalFilterMixin):
                     state.linear_distributions[i].C = C_new
 
         state.gd.normalize_in_place(warn_unnorm=False)
+        self._filter_state = state
 
     def _update_single_linear_likelihood(
-        self, likelihood
+        self, likelihood, *, state=None
     ):  # pylint: disable=too-many-locals
         """Vectorized update for one linear Gaussian likelihood."""
 
-        state = self._filter_state
+        if state is None:
+            state = self._filter_state
         likelihood_mu = asarray(likelihood.mu, dtype=float).reshape(-1)
         likelihood_cov = asarray(likelihood.C, dtype=float)
         means = stack([dist.mu for dist in state.linear_distributions])
