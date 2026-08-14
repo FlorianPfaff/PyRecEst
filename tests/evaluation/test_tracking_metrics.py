@@ -4,7 +4,6 @@ import math
 
 import numpy as np
 import pytest
-
 from pyrecest.evaluation.tracking_metrics import (
     HOTA_ALPHAS,
     TrackingSequence,
@@ -31,7 +30,9 @@ def _sequence(
     return TrackingSequence(
         gt_ids=tuple(np.asarray(values, dtype=int) for values in gt_ids),
         tracker_ids=tuple(np.asarray(values, dtype=int) for values in tracker_ids),
-        similarity_scores=tuple(np.asarray(values, dtype=float) for values in similarities),
+        similarity_scores=tuple(
+            np.asarray(values, dtype=float) for values in similarities
+        ),
         num_gt_ids=num_gt_ids,
         num_tracker_ids=num_tracker_ids,
     )

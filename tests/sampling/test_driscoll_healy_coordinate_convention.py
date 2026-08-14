@@ -4,7 +4,6 @@ from unittest.mock import patch
 
 import numpy as np
 import numpy.testing as npt
-
 from pyrecest.backend import to_numpy
 from pyrecest.sampling.hyperspherical_sampler import DriscollHealySampler
 

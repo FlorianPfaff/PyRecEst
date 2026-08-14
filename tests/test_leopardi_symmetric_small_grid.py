@@ -1,6 +1,6 @@
 import numpy as np
-import pytest
 import pyrecest.backend as backend
+import pytest
 from pyrecest.sampling.leopardi_sampler import (
     get_equal_area_caps,
     get_partition_points_cartesian,

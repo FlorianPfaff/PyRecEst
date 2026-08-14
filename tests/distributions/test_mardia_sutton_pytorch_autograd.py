@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-import pytest
-
 import pyrecest.backend
+import pytest
 from pyrecest.distributions.cart_prod.mardia_sutton_distribution import (
     MardiaSuttonDistribution,
 )

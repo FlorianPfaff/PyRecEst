@@ -1,7 +1,6 @@
 import unittest
 
 import numpy as np
-
 from pyrecest.filters import (
     normalize_active_measurement_mask,
     normalize_measurement_noise_covariances,

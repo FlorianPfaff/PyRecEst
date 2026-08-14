@@ -261,9 +261,7 @@ class DaumHuangParticleFlowFilter(EuclideanParticleFilter):
             self.flow_type if flow_type is None else flow_type
         )
         self.n_steps = _validate_positive_int(n_steps, "n_steps")
-        self.step_schedule = (
-            None if step_schedule is None else tuple(step_schedule)
-        )
+        self.step_schedule = None if step_schedule is None else tuple(step_schedule)
         self.jitter = _validate_nonnegative_float(jitter, "jitter")
 
     def update_identity(self, meas_noise, measurement, **kwargs):
@@ -744,10 +742,7 @@ def _regularize_cov_np(covariance, jitter):
     eigenvalues = np.linalg.eigvalsh(covariance)
     spectral_scale = max(float(np.max(np.abs(eigenvalues))), 1.0)
     tolerance = (
-        10.0
-        * np.finfo(float).eps
-        * max(covariance.shape[0], 1)
-        * spectral_scale
+        10.0 * np.finfo(float).eps * max(covariance.shape[0], 1) * spectral_scale
     )
     min_eigenvalue = float(eigenvalues[0])
     if min_eigenvalue < -tolerance:

@@ -7,7 +7,6 @@ from pyrecest.distributions import GaussianDistribution
 
 from .abstract_axial_filter import AbstractAxialFilter
 
-
 _MIN_NORMALIZABLE_MEAN_NORM = 1e-12
 
 

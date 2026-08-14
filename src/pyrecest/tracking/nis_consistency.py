@@ -209,8 +209,7 @@ def estimate_innovation_covariance_scale(
     parsed_method = str(method).strip().lower()
     if parsed_method not in INNOVATION_COVARIANCE_SCALE_METHODS:
         raise ValueError(
-            "method must be one of "
-            f"{INNOVATION_COVARIANCE_SCALE_METHODS}"
+            "method must be one of " f"{INNOVATION_COVARIANCE_SCALE_METHODS}"
         )
 
     if parsed_method == "mean":
@@ -238,7 +237,9 @@ def _as_nis_values(values: Iterable[float]) -> np.ndarray:
     if isinstance(values, (str, bytes, bytearray)) or _contains_masked_values(values):
         raise ValueError(message)
     try:
-        raw_values = np.asarray(list(values) if not isinstance(values, np.ndarray) else values)
+        raw_values = np.asarray(
+            list(values) if not isinstance(values, np.ndarray) else values
+        )
     except (TypeError, ValueError) as exc:
         raise ValueError(message) from exc
     if raw_values.ndim == 0:
@@ -327,14 +328,20 @@ def _positive_integer(value: Any, name: str) -> int:
         parsed_float = float(scalar)
     except (TypeError, ValueError, OverflowError) as exc:
         raise ValueError(message) from exc
-    if not np.isfinite(parsed_float) or not parsed_float.is_integer() or parsed_float <= 0.0:
+    if (
+        not np.isfinite(parsed_float)
+        or not parsed_float.is_integer()
+        or parsed_float <= 0.0
+    ):
         raise ValueError(message)
     return int(parsed_float)
 
 
 def _validate_probability(value: Any, name: str) -> float:
     message = f"{name} must be a finite scalar in (0, 1)"
-    if isinstance(value, (bool, np.bool_, str, bytes, bytearray, np.datetime64, np.timedelta64)):
+    if isinstance(
+        value, (bool, np.bool_, str, bytes, bytearray, np.datetime64, np.timedelta64)
+    ):
         raise ValueError(message)
     try:
         array = np.asarray(value)

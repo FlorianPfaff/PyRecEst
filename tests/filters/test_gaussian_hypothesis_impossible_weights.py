@@ -2,7 +2,6 @@
 
 import numpy as np
 import pytest
-
 from pyrecest.filters import (
     WeightedGaussianHypothesis,
     moment_match_gaussian_hypotheses,
