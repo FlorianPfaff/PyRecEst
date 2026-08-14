@@ -164,6 +164,28 @@ def _is_finite_matrix(matrix: np.ndarray) -> bool:
     return bool(np.all(np.isfinite(matrix)))
 
 
+def _is_symmetric_finite_matrix(matrix: np.ndarray, *, atol: float) -> bool:
+    """Compare a finite matrix with its transpose without overflow."""
+
+    transpose = matrix.T
+    same_sign = np.signbit(matrix) == np.signbit(transpose)
+    difference = np.empty_like(matrix)
+
+    if np.any(same_sign):
+        difference[same_sign] = np.abs(
+            matrix[same_sign] - transpose[same_sign]
+        )
+
+    opposite_sign = ~same_sign
+    if np.any(opposite_sign):
+        with np.errstate(over="ignore"):
+            difference[opposite_sign] = np.abs(matrix[opposite_sign]) + np.abs(
+                transpose[opposite_sign]
+            )
+
+    return bool(np.all(difference <= atol))
+
+
 def _raise_if_nonfinite_matrix(matrix: np.ndarray, name: str) -> None:
     if not _is_finite_matrix(matrix):
         raise NumericalStabilityError(f"{name} must contain only finite values.")
@@ -220,7 +242,7 @@ def is_symmetric(matrix, *, atol: float = 1e-10) -> bool:
         arr.ndim == 2
         and arr.shape[0] == arr.shape[1]
         and _is_finite_matrix(arr)
-        and np.allclose(arr, arr.T, atol=atol, rtol=0.0)
+        and _is_symmetric_finite_matrix(arr, atol=atol)
     )
 
 
