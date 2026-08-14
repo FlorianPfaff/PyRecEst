@@ -197,6 +197,20 @@ def _validate_effective_weight_support(
         )
 
 
+def _validate_transform_identifiability(
+    geometry_matrix,
+    *,
+    required_rank: int,
+    model: TransformModel,
+    dim: int,
+) -> None:
+    if int(linalg.matrix_rank(geometry_matrix)) < required_rank:
+        raise ValueError(
+            f"Matched point geometry does not uniquely determine the "
+            f"'{model}' transform in {dim}D."
+        )
+
+
 def _validate_positive_integer(value, name: str, *, minimum: int = 1) -> int:
     error_message = f"{name} must be a scalar integer."
     temporal_types = (np.datetime64, np.timedelta64)
@@ -298,6 +312,13 @@ def estimate_transform(  # pylint: disable=too-many-locals
         source_centered = source - source_centroid
         target_centered = target - target_centroid
         covariance = (normalized_weights[:, None] * source_centered).T @ target_centered
+        required_rank = dim if allow_reflection else max(dim - 1, 0)
+        _validate_transform_identifiability(
+            covariance,
+            required_rank=required_rank,
+            model=model,
+            dim=dim,
+        )
         left_singular_vectors, _, right_singular_vectors_transposed = linalg.svd(
             covariance
         )
@@ -311,6 +332,12 @@ def estimate_transform(  # pylint: disable=too-many-locals
     if model == "affine":
         design_matrix = concatenate([source, ones((n_points, 1))], axis=1)
         weighted_design_matrix = design_matrix * sqrt(normalized_weights)[:, None]
+        _validate_transform_identifiability(
+            weighted_design_matrix,
+            required_rank=dim + 1,
+            model=model,
+            dim=dim,
+        )
         weighted_targets = target * sqrt(normalized_weights)[:, None]
         coefficients = linalg.pinv(weighted_design_matrix) @ weighted_targets
         matrix = coefficients[:dim, :].T
