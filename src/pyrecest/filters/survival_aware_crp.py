@@ -10,7 +10,7 @@ factors instead of through an exchangeable historical count alone.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from math import isfinite
+from math import exp, isfinite, log
 from numbers import Integral, Real
 
 
@@ -78,6 +78,49 @@ def _normalize_assignment_weights(weights, minimum_total_weight):
         )
 
     if scale <= minimum_total_weight / scaled_total:
+        raise ValueError(
+            "At least one association alternative must have positive weight."
+        )
+
+    return tuple(weight / scaled_total for weight in scaled_weights)
+
+
+def _log_nonnegative_product(factors):
+    """Return the log of a product without forming overflowing intermediates."""
+
+    log_weight = 0.0
+    for factor in factors:
+        if factor == 0.0:
+            return float("-inf")
+        log_weight += log(factor)
+    return log_weight
+
+
+def _normalize_log_assignment_weights(log_weights, minimum_total_weight):
+    """Normalize nonnegative weights represented by their natural logarithms."""
+
+    log_weights = tuple(log_weights)
+    finite_log_weights = tuple(
+        log_weight for log_weight in log_weights if isfinite(log_weight)
+    )
+    if not finite_log_weights:
+        raise ValueError(
+            "At least one association alternative must have positive weight."
+        )
+
+    max_log_weight = max(finite_log_weights)
+    scaled_weights = tuple(
+        0.0 if log_weight == float("-inf") else exp(log_weight - max_log_weight)
+        for log_weight in log_weights
+    )
+    scaled_total = sum(scaled_weights)
+    if not isfinite(scaled_total) or scaled_total <= 0.0:
+        raise ValueError(
+            "At least one association alternative must have positive weight."
+        )
+
+    log_total_weight = max_log_weight + log(scaled_total)
+    if log_total_weight <= log(minimum_total_weight):
         raise ValueError(
             "At least one association alternative must have positive weight."
         )
@@ -282,8 +325,8 @@ class SurvivalAwareCRPAssociationPrior:
             self.temporal_decay**track_evidence.last_seen_steps
         )
 
-    def existing_track_weight(self, track_evidence):
-        """Return the unnormalized association weight for one existing track."""
+    def _existing_track_weight_factors(self, track_evidence):
+        """Return the nonnegative multiplicative factors for one track weight."""
 
         track_evidence = self._coerce_track_evidence(track_evidence)
         count_weight = max(
@@ -291,13 +334,25 @@ class SurvivalAwareCRPAssociationPrior:
             0.0,
         )
         return (
-            count_weight
-            * track_evidence.existence_probability
-            * track_evidence.survival_probability
-            * track_evidence.visibility_aware_detection_probability
-            * track_evidence.kinematic_likelihood
-            * track_evidence.appearance_likelihood
+            count_weight,
+            track_evidence.existence_probability,
+            track_evidence.survival_probability,
+            track_evidence.visibility_aware_detection_probability,
+            track_evidence.kinematic_likelihood,
+            track_evidence.appearance_likelihood,
         )
+
+    def existing_track_weight(self, track_evidence):
+        """Return the unnormalized association weight for one existing track."""
+
+        factors = self._existing_track_weight_factors(track_evidence)
+        if any(factor == 0.0 for factor in factors):
+            return 0.0
+
+        weight = 1.0
+        for factor in factors:
+            weight *= factor
+        return weight
 
     def existing_track_weights(self, track_evidences):
         """Return unnormalized association weights for existing tracks."""
@@ -354,18 +409,36 @@ class SurvivalAwareCRPAssociationPrior:
     ):
         """Return normalized probabilities for an association decision."""
 
-        existing_weights, birth_weight, clutter_weight = (
-            self.predictive_assignment_weights(
-                track_evidences,
-                base_birth_weight=base_birth_weight,
-                clutter_weight=clutter_weight,
+        track_evidences = tuple(track_evidences)
+        existing_log_weights = tuple(
+            _log_nonnegative_product(
+                self._existing_track_weight_factors(track_evidence)
             )
+            for track_evidence in track_evidences
         )
-        normalized_weights = _normalize_assignment_weights(
-            (*existing_weights, birth_weight, clutter_weight),
+
+        base_birth_weight = _validate_nonnegative(
+            base_birth_weight,
+            "base_birth_weight",
+        )
+        num_existing_tracks = len(existing_log_weights)
+        birth_factor = (
+            1.0
+            if num_existing_tracks == 0
+            else self.concentration + self.discount * num_existing_tracks
+        )
+        birth_log_weight = _log_nonnegative_product(
+            (base_birth_weight, birth_factor)
+        )
+
+        clutter_weight = _validate_nonnegative(clutter_weight, "clutter_weight")
+        clutter_log_weight = _log_nonnegative_product((clutter_weight,))
+
+        normalized_weights = _normalize_log_assignment_weights(
+            (*existing_log_weights, birth_log_weight, clutter_log_weight),
             self.minimum_total_weight,
         )
-        existing_count = len(existing_weights)
+        existing_count = len(existing_log_weights)
 
         return SurvivalAwareAssociationProbabilities(
             existing_track_probabilities=normalized_weights[:existing_count],
