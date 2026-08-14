@@ -6,6 +6,9 @@ extended-object tracking research but are not yet part of PyRecEst's stable API.
 
 from __future__ import annotations
 
+from ._event_likelihood_stable_flow import (
+    install_event_likelihood_stable_flow_contract,
+)
 from .active_contour import (
     RectangleContour,
     activity_profile,
@@ -15,7 +18,10 @@ from .active_contour import (
     signed_normal_flow_profile,
     unit_vector_from_angle,
 )
-from .event_likelihood import (
+
+install_event_likelihood_stable_flow_contract()
+
+from .event_likelihood import (  # noqa: E402
     ContourSample,
     EventLikelihoodConfig,
     EventLikelihoodTerms,
