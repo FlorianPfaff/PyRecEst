@@ -3,6 +3,7 @@ import math
 from typing import Union
 
 # pylint: disable=no-name-in-module,no-member
+import mpmath as mp
 import numpy as np
 import pyrecest.backend
 
@@ -20,7 +21,6 @@ from pyrecest.backend import (
     int32,
     int64,
     isfinite,
-    isnan,
     linalg,
     ndim,
     ones,
@@ -47,6 +47,9 @@ _INVALID_REAL_SCALAR_TYPES = (
     np.datetime64,
     np.timedelta64,
 )
+_BESSEL_FALLBACK_DPS = 50
+_LOG_MAX_FLOAT = math.log(np.finfo(float).max)
+_LOG_MIN_SUBNORMAL_FLOAT = math.log(float(np.nextafter(0.0, 1.0)))
 
 
 def _as_python_bool(value) -> bool:
@@ -100,19 +103,59 @@ def _as_unit_direction(mu, *, name: str = "mu", tolerance: float = 1e-6):
     return mu
 
 
+def _high_precision_log_bessel(order: float, kappa: float) -> float:
+    """Return ``log(I_order(kappa))`` when SciPy underflows."""
+    with mp.workdps(_BESSEL_FALLBACK_DPS):
+        value = mp.besseli(mp.mpf(order), mp.mpf(kappa))
+        result = mp.log(value)
+    result = float(result)
+    if not math.isfinite(result):
+        raise ValueError("Could not compute a finite high-order Bessel logarithm.")
+    return result
+
+
+def _high_precision_bessel_ratio(order: float, kappa: float) -> float:
+    """Return ``I_(order+1)(kappa) / I_order(kappa)`` without underflow."""
+    with mp.workdps(_BESSEL_FALLBACK_DPS):
+        denominator = mp.besseli(mp.mpf(order), mp.mpf(kappa))
+        ratio = mp.besseli(mp.mpf(order + 1.0), mp.mpf(kappa)) / denominator
+    ratio = float(ratio)
+    if not math.isfinite(ratio) or not 0.0 <= ratio <= 1.0:
+        raise ValueError("Could not compute a finite high-order Bessel ratio.")
+    return ratio
+
+
 def _scaled_log_normalization(input_dim: int, kappa: float) -> float:
     """Return ``log(C_d(kappa)) + kappa`` without Bessel overflow."""
     order = input_dim / 2.0 - 1.0
     scaled_bessel = float(ive(order, kappa))
-    if not math.isfinite(scaled_bessel) or scaled_bessel <= 0.0:
-        raise ValueError(
-            "Could not compute a finite positive scaled Bessel value for kappa."
+    if math.isfinite(scaled_bessel) and scaled_bessel > 0.0:
+        return (
+            order * math.log(kappa)
+            - input_dim / 2.0 * math.log(2.0 * math.pi)
+            - math.log(scaled_bessel)
         )
-    return (
+
+    result = (
         order * math.log(kappa)
         - input_dim / 2.0 * math.log(2.0 * math.pi)
-        - math.log(scaled_bessel)
+        - _high_precision_log_bessel(order, kappa)
+        + kappa
     )
+    if not math.isfinite(result):
+        raise ValueError(
+            "Could not compute a finite high-order vMF log normalization."
+        )
+    return result
+
+
+def _exp_from_log(log_value: float) -> float:
+    """Exponentiate while representing unavoidable float overflow by infinity."""
+    if log_value > _LOG_MAX_FLOAT:
+        return math.inf
+    if log_value < _LOG_MIN_SUBNORMAL_FLOAT:
+        return 0.0
+    return math.exp(log_value)
 
 
 class VonMisesFisherDistribution(AbstractHypersphericalDistribution):
@@ -161,7 +204,9 @@ class VonMisesFisherDistribution(AbstractHypersphericalDistribution):
             self._log_scaled_normalization = _scaled_log_normalization(
                 self.input_dim, kappa_scalar
             )
-            self.C = array(math.exp(self._log_scaled_normalization - kappa_scalar))
+            self.C = array(
+                _exp_from_log(self._log_scaled_normalization - kappa_scalar)
+            )
 
     def pdf(self, xs):
         """Evaluate the density at unit vectors.
@@ -373,11 +418,20 @@ class VonMisesFisherDistribution(AbstractHypersphericalDistribution):
         if kappa <= VonMisesFisherDistribution._KAPPA_EPS:
             return array(0.0)
 
-        bessel1 = array(ive(d / 2, kappa))
-        bessel2 = array(ive(d / 2 - 1, kappa))
-        if isnan(bessel1) or isnan(bessel2):
-            print(f"Bessel functions returned NaN for d={d}, kappa={kappa}")
-        return bessel1 / bessel2
+        order = d / 2.0 - 1.0
+        numerator = float(ive(order + 1.0, kappa))
+        denominator = float(ive(order, kappa))
+        if (
+            math.isfinite(numerator)
+            and math.isfinite(denominator)
+            and numerator > 0.0
+            and denominator > 0.0
+        ):
+            ratio = numerator / denominator
+            if math.isfinite(ratio) and 0.0 <= ratio <= 1.0:
+                return array(ratio)
+
+        return array(_high_precision_bessel_ratio(order, float(kappa)))
 
     @staticmethod
     def a_d_inverse(d: Union[int, int32, int64], x: float):
