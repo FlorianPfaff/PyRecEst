@@ -339,7 +339,11 @@ def mahalanobis_support_points(
     radius: float = 1.0,
     normalize_directions: bool = True,
 ) -> np.ndarray:
-    """Intersect world-frame direction rays with a covariance ellipsoid."""
+    """Intersect world-frame direction rays with a covariance ellipsoid.
+
+    For a singular covariance, a direction with a component outside the
+    covariance support has no nonzero ray intersection and maps to the mean.
+    """
 
     radius = _as_finite_nonnegative_scalar("radius", radius)
     normalize_directions = _as_bool_scalar("normalize_directions", normalize_directions)
@@ -392,6 +396,12 @@ def mahalanobis_support_points(
     supported_components = np.where(
         positive_eigenvalues[:, None, :], direction_components, 0.0
     )
+    unsupported_components = np.where(
+        positive_eigenvalues[:, None, :], 0.0, direction_components
+    )
+    component_scale = np.max(np.abs(direction_components), axis=2)
+    unsupported_scale = np.max(np.abs(unsupported_components), axis=2)
+    directions_within_support = unsupported_scale <= 1e-12 * component_scale
     supported_directions = np.einsum(
         "bmj,bij->bmi", supported_components, eigenvectors
     )
@@ -414,7 +424,7 @@ def mahalanobis_support_points(
         radius,
         np.sqrt(squared_mahalanobis_norms),
         out=ray_scales,
-        where=squared_mahalanobis_norms > 0.0,
+        where=(squared_mahalanobis_norms > 0.0) & directions_within_support,
     )
     mapped_offsets = supported_directions * ray_scales[:, :, None]
     points = centers[:, None, :] + mapped_offsets
