@@ -8,6 +8,9 @@ from pyrecest.distributions import GaussianDistribution
 from .abstract_axial_filter import AbstractAxialFilter
 
 
+_MIN_NORMALIZABLE_MEAN_NORM = 1e-12
+
+
 def _is_complex_array(value):
     """Return whether a NumPy/JAX array or PyTorch tensor has complex dtype."""
     dtype = getattr(value, "dtype", None)
@@ -128,7 +131,16 @@ class AxialKalmanFilter(AbstractAxialFilter):
         mu_new = self._filter_state.mu + K @ (z - self._filter_state.mu)
         C_new = (eye(d) - K) @ self._filter_state.C
 
-        mu_new = mu_new / linalg.norm(mu_new)  # enforce unit vector
+        mu_new_norm = linalg.norm(mu_new)
+        if not bool(isfinite(mu_new_norm)):
+            raise ValueError(
+                "Axial Kalman update produced a non-finite posterior mean."
+            )
+        if not bool(mu_new_norm > _MIN_NORMALIZABLE_MEAN_NORM):
+            raise ValueError(
+                "Axial Kalman update produced an undefined zero-length posterior mean."
+            )
+        mu_new = mu_new / mu_new_norm  # enforce unit vector
         self._filter_state = GaussianDistribution(mu_new, C_new, check_validity=False)
 
     def get_point_estimate(self):
