@@ -2,8 +2,8 @@
 from numbers import Integral
 
 import numpy as np
+from pyrecest.backend import abs as backend_abs
 from pyrecest.backend import (
-    abs as backend_abs,
     all,
     arctan2,
     array,

@@ -2,7 +2,6 @@ import unittest
 import warnings
 
 import numpy as np
-
 from pyrecest.distributions.cart_prod.se2_pwn_distribution import SE2PWNDistribution
 
 

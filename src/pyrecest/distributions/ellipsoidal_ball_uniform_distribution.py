@@ -147,9 +147,7 @@ class EllipsoidalBallUniformDistribution(
         safe_direction_norms = where(direction_norms > 0.0, direction_norms, 1.0)
         random_points = random_points / safe_direction_norms
         canonical_direction = eye(self.dim)[0].reshape(1, -1)
-        random_points = where(
-            direction_norms > 0.0, random_points, canonical_direction
-        )
+        random_points = where(direction_norms > 0.0, random_points, canonical_direction)
 
         random_radii = random.uniform(size=(n, 1))  # So that broadcasting works below
         random_radii = random_radii ** (

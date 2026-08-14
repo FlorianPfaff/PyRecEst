@@ -33,7 +33,6 @@ from scipy.special import ive
 
 from .abstract_hyperspherical_distribution import AbstractHypersphericalDistribution
 
-
 _INVALID_REAL_SCALAR_TYPES = (
     bool,
     np.bool_,
@@ -143,9 +142,7 @@ def _scaled_log_normalization(input_dim: int, kappa: float) -> float:
         + kappa
     )
     if not math.isfinite(result):
-        raise ValueError(
-            "Could not compute a finite high-order vMF log normalization."
-        )
+        raise ValueError("Could not compute a finite high-order vMF log normalization.")
     return result
 
 
@@ -204,9 +201,7 @@ class VonMisesFisherDistribution(AbstractHypersphericalDistribution):
             self._log_scaled_normalization = _scaled_log_normalization(
                 self.input_dim, kappa_scalar
             )
-            self.C = array(
-                _exp_from_log(self._log_scaled_normalization - kappa_scalar)
-            )
+            self.C = array(_exp_from_log(self._log_scaled_normalization - kappa_scalar))
 
     def pdf(self, xs):
         """Evaluate the density at unit vectors.

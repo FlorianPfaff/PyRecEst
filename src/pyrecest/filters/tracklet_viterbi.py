@@ -608,10 +608,7 @@ def _fixed_lag_committed_step_cost(
         )
     )
     if committed_miss_streak > 0:
-        return float(
-            unary_cost
-            + transition(None, selected, committed_miss_streak)
-        )
+        return float(unary_cost + transition(None, selected, committed_miss_streak))
     if previous_committed is None:
         if selected is None:
             return float(unary_cost + config.missed_detection_cost)

@@ -1,5 +1,4 @@
 import numpy as np
-
 from pyrecest.filters import particle_position_log_posterior
 
 

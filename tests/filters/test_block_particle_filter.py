@@ -142,9 +142,7 @@ class BlockParticleFilterTest(unittest.TestCase):
 
         expected = np.array([2.0 / 3.0, 1.0 / 3.0])
         npt.assert_allclose(to_numpy(filt.weights), expected)
-        npt.assert_allclose(
-            to_numpy(filt.block_weights), np.tile(expected, (2, 1))
-        )
+        npt.assert_allclose(to_numpy(filt.block_weights), np.tile(expected, (2, 1)))
 
     def test_rejects_nonfinite_weights(self):
         for invalid_weight in (float("nan"), float("inf"), -float("inf")):

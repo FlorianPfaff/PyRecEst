@@ -1,9 +1,8 @@
 """Regression tests for axial Kalman covariance validation."""
 
 import numpy.testing as npt
-import pytest
-
 import pyrecest.backend
+import pytest
 from pyrecest.backend import array
 from pyrecest.backend import copy as backend_copy
 from pyrecest.distributions import GaussianDistribution
@@ -51,9 +50,7 @@ def test_prediction_rejects_invalid_noise_covariance_before_state_change():
     original_covariance = backend_copy(axial_filter.filter_state.C)
 
     with pytest.raises(ValueError, match="system noise covariance.*symmetric"):
-        axial_filter.predict_identity(
-            _unchecked_gaussian([[0.25, 0.1], [0.0, 0.25]])
-        )
+        axial_filter.predict_identity(_unchecked_gaussian([[0.25, 0.1], [0.0, 0.25]]))
 
     npt.assert_array_equal(axial_filter.filter_state.mu, original_mu)
     npt.assert_array_equal(axial_filter.filter_state.C, original_covariance)

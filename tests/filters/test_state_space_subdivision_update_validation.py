@@ -2,7 +2,6 @@ import unittest
 
 import numpy as np
 import numpy.testing as npt
-
 from pyrecest.backend import array, eye
 from pyrecest.distributions.cart_prod.state_space_subdivision_gaussian_distribution import (
     StateSpaceSubdivisionGaussianDistribution,
@@ -69,9 +68,7 @@ class TestStateSpaceSubdivisionUpdateValidation(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "1 or n_areas"):
             filter_instance.update(
-                likelihood_periodic_grid=array(
-                    np.linspace(1.0, 2.0, n_grid_points)
-                ),
+                likelihood_periodic_grid=array(np.linspace(1.0, 2.0, n_grid_points)),
                 likelihoods_linear=invalid_linear_likelihoods,
             )
 

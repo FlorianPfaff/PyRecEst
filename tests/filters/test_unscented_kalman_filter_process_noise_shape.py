@@ -30,9 +30,7 @@ class UnscentedKalmanFilterProcessNoiseShapeTest(unittest.TestCase):
         npt.assert_allclose(ukf.filter_state.covariance(), initial_covariance)
 
     def test_predict_accepts_length_one_process_noise_for_one_dimensional_state(self):
-        ukf = UnscentedKalmanFilter(
-            GaussianDistribution(array([0.5]), array([[1.25]]))
-        )
+        ukf = UnscentedKalmanFilter(GaussianDistribution(array([0.5]), array([[1.25]])))
 
         ukf.predict_identity(array([0.5]))
 

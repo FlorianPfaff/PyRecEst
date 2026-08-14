@@ -183,9 +183,7 @@ def summarize_nis_consistency(
         count=count,
         nis_mean=nis_mean,
         nis_std=(
-            statistic_scale * float(np.std(scaled_values, ddof=1))
-            if count > 1
-            else 0.0
+            statistic_scale * float(np.std(scaled_values, ddof=1)) if count > 1 else 0.0
         ),
         nis_median=float(percentiles[0]),
         nis_p90=float(percentiles[1]),
@@ -222,8 +220,7 @@ def estimate_innovation_covariance_scale(
     parsed_method = str(method).strip().lower()
     if parsed_method not in INNOVATION_COVARIANCE_SCALE_METHODS:
         raise ValueError(
-            "method must be one of "
-            f"{INNOVATION_COVARIANCE_SCALE_METHODS}"
+            "method must be one of " f"{INNOVATION_COVARIANCE_SCALE_METHODS}"
         )
 
     statistic_scale, scaled_values = _scaled_nis_values(values)
@@ -233,9 +230,7 @@ def estimate_innovation_covariance_scale(
         quantile_value: float | None = None
     else:
         quantile_value = _validate_probability(quantile, "quantile")
-        statistic = statistic_scale * float(
-            np.quantile(scaled_values, quantile_value)
-        )
+        statistic = statistic_scale * float(np.quantile(scaled_values, quantile_value))
         target = _chi_square_quantile(quantile_value, dim, "quantile")
 
     return InnovationCovarianceScaleEstimate(
@@ -275,7 +270,9 @@ def _as_nis_values(values: Iterable[float]) -> np.ndarray:
     if isinstance(values, (str, bytes, bytearray)) or _contains_masked_values(values):
         raise ValueError(message)
     try:
-        raw_values = np.asarray(list(values) if not isinstance(values, np.ndarray) else values)
+        raw_values = np.asarray(
+            list(values) if not isinstance(values, np.ndarray) else values
+        )
     except (TypeError, ValueError) as exc:
         raise ValueError(message) from exc
     if raw_values.ndim == 0:
@@ -364,14 +361,20 @@ def _positive_integer(value: Any, name: str) -> int:
         parsed_float = float(scalar)
     except (TypeError, ValueError, OverflowError) as exc:
         raise ValueError(message) from exc
-    if not np.isfinite(parsed_float) or not parsed_float.is_integer() or parsed_float <= 0.0:
+    if (
+        not np.isfinite(parsed_float)
+        or not parsed_float.is_integer()
+        or parsed_float <= 0.0
+    ):
         raise ValueError(message)
     return int(parsed_float)
 
 
 def _validate_probability(value: Any, name: str) -> float:
     message = f"{name} must be a finite scalar in (0, 1)"
-    if isinstance(value, (bool, np.bool_, str, bytes, bytearray, np.datetime64, np.timedelta64)):
+    if isinstance(
+        value, (bool, np.bool_, str, bytes, bytearray, np.datetime64, np.timedelta64)
+    ):
         raise ValueError(message)
     try:
         array = np.asarray(value)

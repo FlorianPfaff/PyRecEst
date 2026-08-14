@@ -355,9 +355,7 @@ def mahalanobis_support_points(
     if directions_array.ndim != 2 or directions_array.shape[1] != centers.shape[1]:
         raise ValueError("directions must have shape (direction_count, dim).")
     if normalize_directions:
-        direction_scales = np.max(
-            np.abs(directions_array), axis=1, keepdims=True
-        )
+        direction_scales = np.max(np.abs(directions_array), axis=1, keepdims=True)
         if bool(np.any(direction_scales <= 0.0)):
             raise ValueError(
                 "directions must be non-zero when normalize_directions=True."
@@ -390,9 +388,7 @@ def mahalanobis_support_points(
     eigenvalues, eigenvectors = np.linalg.eigh(covariances)
     eigenvalues = np.clip(eigenvalues, 0.0, None)
     positive_eigenvalues = eigenvalues > 0.0
-    direction_components = np.einsum(
-        "mi,bij->bmj", directions_array, eigenvectors
-    )
+    direction_components = np.einsum("mi,bij->bmj", directions_array, eigenvectors)
     supported_components = np.where(
         positive_eigenvalues[:, None, :], direction_components, 0.0
     )
@@ -402,9 +398,7 @@ def mahalanobis_support_points(
     component_scale = np.max(np.abs(direction_components), axis=2)
     unsupported_scale = np.max(np.abs(unsupported_components), axis=2)
     directions_within_support = unsupported_scale <= 1e-12 * component_scale
-    supported_directions = np.einsum(
-        "bmj,bij->bmi", supported_components, eigenvectors
-    )
+    supported_directions = np.einsum("bmj,bij->bmi", supported_components, eigenvectors)
 
     inverse_eigenvalues = np.zeros_like(eigenvalues)
     np.divide(

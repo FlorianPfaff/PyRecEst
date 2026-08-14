@@ -450,9 +450,7 @@ def _nearest_bin_indices(positions: np.ndarray, bin_tree: cKDTree) -> np.ndarray
     # cKDTree evaluates squared distances internally. For sufficiently large
     # finite coordinates, that intermediate can overflow and the query returns
     # ``inf`` together with the sentinel index ``tree.n``.
-    invalid = (
-        ~np.isfinite(distances) | (indices < 0) | (indices >= bin_tree.n)
-    )
+    invalid = ~np.isfinite(distances) | (indices < 0) | (indices >= bin_tree.n)
     if not np.any(invalid):
         return indices
 
@@ -466,8 +464,7 @@ def _nearest_bin_indices(positions: np.ndarray, bin_tree: cKDTree) -> np.ndarray
     for coordinate in range(positions.shape[1]):
         pairwise_distances = np.hypot(
             pairwise_distances,
-            failed_positions[:, None, coordinate]
-            - centers[None, :, coordinate],
+            failed_positions[:, None, coordinate] - centers[None, :, coordinate],
         )
     indices[invalid] = np.argmin(pairwise_distances, axis=1)
     return indices
