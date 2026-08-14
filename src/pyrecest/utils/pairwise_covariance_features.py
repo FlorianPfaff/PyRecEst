@@ -35,6 +35,7 @@ from pyrecest.backend import (
     reshape,
     sqrt,
 )
+from pyrecest.backend import max as backend_max
 from pyrecest.backend import sum as backend_sum
 from pyrecest.backend import (
     transpose,
@@ -248,6 +249,15 @@ def _validate_covariance_stack(name: str, covariances: Any) -> Any:
         raise ValueError(f"{name} must have shape (dim, dim, n_items)")
     if not bool(backend_all(isfinite(covariances))):
         raise ValueError(f"{name} must contain only finite values")
+
+    if covariances.shape[0] > 0 and covariances.shape[2] > 0:
+        eigenvalues = linalg.eigvalsh(_symmetrized_covariance_batch(covariances))
+        eigenvalue_scale = maximum(backend_max(abs(eigenvalues), axis=-1), 1.0)
+        tolerance = 1.0e-10 * eigenvalue_scale
+        if not bool(backend_all(eigenvalues >= -tolerance[:, None])):
+            raise ValueError(
+                f"{name} must contain positive-semidefinite covariance matrices"
+            )
     return covariances
 
 
