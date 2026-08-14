@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-import pytest
-
 import pyrecest.backend
+import pytest
 from pyrecest.distributions import ComplexBinghamDistribution
 
 torch = pytest.importorskip("torch")

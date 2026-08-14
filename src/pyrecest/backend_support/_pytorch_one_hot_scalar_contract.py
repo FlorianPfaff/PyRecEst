@@ -148,9 +148,7 @@ def _patch_pytorch_gamma_autograd_contract(
         )
         reflection_sine = torch_module.sin(torch_module.pi * reflection_values)
         reflected_log_abs = (
-            torch_module.log(
-                torch_module.full_like(reflection_values, torch_module.pi)
-            )
+            torch_module.log(torch_module.full_like(reflection_values, torch_module.pi))
             - torch_module.log(torch_module.abs(reflection_sine))
             - torch_module.special.gammaln(1 - reflection_values)
         )
@@ -284,9 +282,7 @@ def _patch_pytorch_array_equal_dtype_contract(
 
         comparison = torch_module.eq(a, b)
         if dtype.is_floating_point or dtype.is_complex:
-            comparison = comparison | (
-                torch_module.isnan(a) & torch_module.isnan(b)
-            )
+            comparison = comparison | (torch_module.isnan(a) & torch_module.isnan(b))
         return bool(torch_module.all(comparison))
 
     array_equal.__name__ = getattr(original_array_equal, "__name__", "array_equal")

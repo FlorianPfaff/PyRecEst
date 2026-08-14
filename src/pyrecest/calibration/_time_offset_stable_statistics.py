@@ -24,8 +24,7 @@ def _scaled_weighted_average(values: np.ndarray, weights: np.ndarray) -> float:
     weight_scale = float(np.max(weights, initial=0.0))
     normalized_weights = weights / weight_scale
     return float(
-        value_scale
-        * np.average(values / value_scale, weights=normalized_weights)
+        value_scale * np.average(values / value_scale, weights=normalized_weights)
     )
 
 
@@ -87,9 +86,7 @@ def _stable_aggregate_summary_metric(
         normalized_weights = weights / np.max(weights)
         return float(
             scale
-            * np.sqrt(
-                np.average((values / scale) ** 2, weights=normalized_weights)
-            )
+            * np.sqrt(np.average((values / scale) ** 2, weights=normalized_weights))
         )
     return _scaled_weighted_average(values, weights)
 

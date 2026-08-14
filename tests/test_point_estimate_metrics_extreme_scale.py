@@ -2,7 +2,6 @@
 
 import numpy as np
 import numpy.testing as npt
-
 from pyrecest.utils.metrics import mae, rmse
 
 

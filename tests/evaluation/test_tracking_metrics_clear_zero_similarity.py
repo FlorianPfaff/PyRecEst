@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import numpy as np
-
 from pyrecest.evaluation.tracking_metrics import TrackingSequence, evaluate_clear
 
 

@@ -1,5 +1,4 @@
 import numpy as np
-
 from pyrecest.numerics import nearest_symmetric_psd
 
 

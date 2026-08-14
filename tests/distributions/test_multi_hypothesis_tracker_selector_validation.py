@@ -39,9 +39,7 @@ class MultiHypothesisTrackerSelectorValidationTest(unittest.TestCase):
         invalid_calls = {
             "fractional k": lambda: self.tracker.get_top_hypotheses(k=1.5),
             "boolean k": lambda: self.tracker.get_top_hypotheses(k=True),
-            "fractional lag": lambda: self.tracker.get_assignment_distribution(
-                lag=0.5
-            ),
+            "fractional lag": lambda: self.tracker.get_assignment_distribution(lag=0.5),
             "boolean lag": lambda: self.tracker.get_assignment_distribution(lag=True),
             "fractional time index": lambda: self.tracker.get_assignment_distribution(
                 time_index=0.5

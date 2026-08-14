@@ -172,9 +172,7 @@ def _is_symmetric_finite_matrix(matrix: np.ndarray, *, atol: float) -> bool:
     difference = np.empty_like(matrix)
 
     if np.any(same_sign):
-        difference[same_sign] = np.abs(
-            matrix[same_sign] - transpose[same_sign]
-        )
+        difference[same_sign] = np.abs(matrix[same_sign] - transpose[same_sign])
 
     opposite_sign = ~same_sign
     if np.any(opposite_sign):
@@ -211,16 +209,12 @@ def _stable_symmetric_average(matrix: np.ndarray) -> np.ndarray:
 
     opposite_sign = finite & ~same_sign
     if np.any(opposite_sign):
-        result[opposite_sign] = 0.5 * (
-            matrix[opposite_sign] + transpose[opposite_sign]
-        )
+        result[opposite_sign] = 0.5 * (matrix[opposite_sign] + transpose[opposite_sign])
 
     nonfinite = ~finite
     if np.any(nonfinite):
         with np.errstate(invalid="ignore", over="ignore"):
-            result[nonfinite] = 0.5 * (
-                matrix[nonfinite] + transpose[nonfinite]
-            )
+            result[nonfinite] = 0.5 * (matrix[nonfinite] + transpose[nonfinite])
     return result
 
 

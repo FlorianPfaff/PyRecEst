@@ -6,13 +6,9 @@ from pyrecest.utils.nonrigid_point_set_registration import ThinPlateSplineTransf
 
 class TestThinPlateSplineTransformFiniteValidation(unittest.TestCase):
     def test_rejects_nonfinite_transform_parameters(self):
-        valid_control_points = array(
-            [[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]]
-        )
+        valid_control_points = array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
         valid_weights = zeros((3, 2))
-        valid_affine_coefficients = array(
-            [[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]]
-        )
+        valid_affine_coefficients = array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
 
         invalid_parameters = (
             (
@@ -42,7 +38,9 @@ class TestThinPlateSplineTransformFiniteValidation(unittest.TestCase):
         )
 
         for parameter_name, invalid_value in invalid_parameters:
-            with self.subTest(parameter_name=parameter_name, invalid_value=invalid_value):
+            with self.subTest(
+                parameter_name=parameter_name, invalid_value=invalid_value
+            ):
                 parameters = {
                     "control_points": valid_control_points,
                     "weights": valid_weights,
