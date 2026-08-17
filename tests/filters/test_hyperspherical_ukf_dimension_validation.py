@@ -12,15 +12,26 @@ pytestmark = pytest.mark.skipif(
 
 
 @pytest.mark.parametrize(
-    "dim", [0, -1, True, np.bool_(True), 1.5, "2", np.array([2]), np.array(2.0)]
+    "invalid_dim",
+    [
+        0,
+        -1,
+        True,
+        np.bool_(True),
+        1.5,
+        "2",
+        np.array([2]),
+        np.array(2.0),
+    ],
 )
-def test_constructor_rejects_invalid_embedding_dimensions(dim):
+def test_constructor_rejects_invalid_embedding_dimensions(invalid_dim):
     with pytest.raises(ValueError, match="dim must be a positive integer"):
-        HypersphericalUKF(dim=dim)
+        HypersphericalUKF(dim=invalid_dim)
 
 
 def test_constructor_accepts_integer_scalar_wrappers():
-    for dim in (np.int64(3), np.array(3, dtype=np.int64)):
-        filter_ = HypersphericalUKF(dim=dim)
+    for dimension in (np.int64(3), np.array(3, dtype=np.int64)):
+        filter_ = HypersphericalUKF(dim=dimension)
+
         assert filter_.filter_state.dim == 3
         assert filter_.get_point_estimate().shape == (3,)
