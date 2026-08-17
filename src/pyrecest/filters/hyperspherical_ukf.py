@@ -11,6 +11,7 @@ Ported from the MATLAB libDirectional library:
 """
 
 # pylint: disable=no-name-in-module,no-member,duplicate-code
+from operator import index as _operator_index
 from typing import Callable
 
 import pyrecest.backend
@@ -45,6 +46,30 @@ def _assert_supported_backend(*unsupported_backends):
         )
 
 
+def _validate_embedding_dimension(dim) -> int:
+    """Return a positive scalar integer embedding dimension."""
+
+    error_message = "dim must be a positive integer."
+    if isinstance(dim, bool):
+        raise ValueError(error_message)
+
+    value_ndim = getattr(dim, "ndim", None)
+    if value_ndim not in (None, 0):
+        raise ValueError(error_message)
+
+    dtype = getattr(dim, "dtype", None)
+    if getattr(dtype, "kind", None) == "b" or str(dtype) == "torch.bool":
+        raise ValueError(error_message)
+
+    try:
+        dimension = _operator_index(dim)
+    except (OverflowError, TypeError, ValueError) as exc:
+        raise ValueError(error_message) from exc
+    if dimension <= 0:
+        raise ValueError(error_message)
+    return int(dimension)
+
+
 class HypersphericalUKF(AbstractFilter, HypersphericalFilterMixin):
     """
     Unscented Kalman filter on the unit hypersphere S^(d-1).
@@ -69,6 +94,7 @@ class HypersphericalUKF(AbstractFilter, HypersphericalFilterMixin):
         kappa: float = 0.0,
     ):
         _assert_supported_backend("jax")
+        dim = _validate_embedding_dimension(dim)
         self._alpha = alpha
         self._beta = beta
         self._kappa = kappa
@@ -325,8 +351,8 @@ class HypersphericalUKF(AbstractFilter, HypersphericalFilterMixin):
         Parameters
         ----------
         gauss_meas:
-            Distribution of additive measurement noise. It must have zero mean;
-            only the covariance is applied.
+            Distribution of additive measurement noise. It must have zero mean; only
+            the covariance is applied.
         z:
             Measurement vector on S^(d-1).
         """
