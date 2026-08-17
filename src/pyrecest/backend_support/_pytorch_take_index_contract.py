@@ -4,6 +4,10 @@ from __future__ import annotations
 
 import numpy as np
 
+from pyrecest.backend_support._pytorch_assignment_index_contract import (
+    patch_pytorch_assignment_index_contract as _patch_pytorch_assignment_index_contract,
+)
+
 _TAKE_INDEX_TYPE_MESSAGE = (
     "indices must be integers or boolean values when supplied as an array"
 )
@@ -28,6 +32,8 @@ def _validate_take_indices(indices, torch_module):
 
 def patch_pytorch_take_index_contract() -> None:
     """Make public and raw PyTorch ``take`` reject invalid index arrays."""
+
+    _patch_pytorch_assignment_index_contract()
 
     try:
         import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
