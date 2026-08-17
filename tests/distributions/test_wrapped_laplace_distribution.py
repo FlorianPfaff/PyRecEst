@@ -96,6 +96,24 @@ class WrappedLaplaceDistributionTest(unittest.TestCase):
             rtol=1e-6,
         )
 
+    def test_pdf_rejects_invalid_evaluation_points(self):
+        invalid_inputs = (
+            1.0 + 2.0j,
+            np.array([1.0 + 2.0j], dtype=object),
+            [0.0, float("inf")],
+            [float("nan")],
+            True,
+            "1.0",
+            np.ma.array([0.0, 1.0], mask=[False, True]),
+        )
+
+        for xs in invalid_inputs:
+            with self.subTest(xs=xs):
+                with self.assertRaisesRegex(
+                    ValueError, "xs must contain only finite real values"
+                ):
+                    self.wl.pdf(xs)
+
     def test_rejects_invalid_lambda(self):
         for lambda_ in (0.0, -0.5, float("inf"), array([1.0, 2.0])):
             with self.subTest(lambda_=lambda_):
