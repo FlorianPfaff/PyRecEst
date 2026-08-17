@@ -351,8 +351,8 @@ class HypersphericalUKF(AbstractFilter, HypersphericalFilterMixin):
         Parameters
         ----------
         gauss_meas:
-            Distribution of additive measurement noise. It must have zero mean; only
-            the covariance is applied.
+            Distribution of additive measurement noise. It must have zero mean;
+            only the covariance is applied.
         z:
             Measurement vector on S^(d-1).
         """
