@@ -4,7 +4,6 @@ import unittest
 
 import numpy as np
 import numpy.testing as npt
-
 import pyrecest.backend
 from pyrecest.backend import array, to_numpy
 from pyrecest.distributions import so3_helpers

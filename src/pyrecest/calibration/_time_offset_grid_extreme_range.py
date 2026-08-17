@@ -14,9 +14,7 @@ from ._time_offset_stable_statistics import (
 _ORIGINAL_ATTR = "_pyrecest_original_make_offset_grid"
 
 
-def _extreme_range_grid(
-    min_s: float, max_s: float, step_s: float
-) -> np.ndarray:
+def _extreme_range_grid(min_s: float, max_s: float, step_s: float) -> np.ndarray:
     original = getattr(_time_offset, _ORIGINAL_ATTR)
     min_s = _time_offset._as_finite_float(min_s, "min_s")
     max_s = _time_offset._as_finite_float(max_s, "max_s")

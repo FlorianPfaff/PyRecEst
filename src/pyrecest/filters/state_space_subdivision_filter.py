@@ -308,9 +308,7 @@ class StateSpaceSubdivisionFilter(AbstractFilter, HypercylindricalFilterMixin):
         state = copy.deepcopy(current_state)
 
         if periodic_likelihood_values is not None:
-            state.gd.grid_values = (
-                state.gd.grid_values * periodic_likelihood_values
-            )
+            state.gd.grid_values = state.gd.grid_values * periodic_likelihood_values
 
         if likelihoods_linear is not None:
             if n_likelihoods == 1:

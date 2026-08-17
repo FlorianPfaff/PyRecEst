@@ -17,9 +17,7 @@ class TestPointSetRegistrationRmseStability(unittest.TestCase):
 
     def test_rmse_preserves_zero_and_empty_contract(self):
         self.assertEqual(compute_rmse(array([0.0], dtype=float64)), 0.0)
-        self.assertTrue(
-            math.isinf(compute_rmse(array([], dtype=float64)))
-        )
+        self.assertTrue(math.isinf(compute_rmse(array([], dtype=float64))))
 
 
 if __name__ == "__main__":

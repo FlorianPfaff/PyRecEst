@@ -37,9 +37,7 @@ class TestGenerateGroundtruthTransitionShape(unittest.TestCase):
         self,
     ):
         simulation_param = self._base_simulation_param()
-        simulation_param["gen_next_state_without_noise"] = lambda _state: array(
-            [5.0]
-        )
+        simulation_param["gen_next_state_without_noise"] = lambda _state: array([5.0])
         simulation_param["sys_noise"] = Mock()
         simulation_param["sys_noise"].sample.return_value = zeros(2)
 

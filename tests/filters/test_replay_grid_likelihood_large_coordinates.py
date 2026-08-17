@@ -1,5 +1,4 @@
 import numpy as np
-
 from pyrecest.filters.replay_grid_likelihood import (
     particle_position_log_posterior,
     replay_grid_log_likelihood_values,

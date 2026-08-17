@@ -21,9 +21,7 @@ class TestPointSetRegistrationIdentifiability(unittest.TestCase):
             estimate_transform(source, target, model="affine")
 
     def test_rigid_fit_rejects_collinear_3d_correspondences(self):
-        source = array(
-            [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [2.0, 0.0, 0.0]]
-        )
+        source = array([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [2.0, 0.0, 0.0]])
         target = source + array([2.0, -1.0, 0.5])
 
         with self.assertRaisesRegex(ValueError, "does not uniquely determine"):
@@ -42,12 +40,8 @@ class TestPointSetRegistrationIdentifiability(unittest.TestCase):
             )
 
     def test_proper_3d_rigid_fit_accepts_noncollinear_planar_points(self):
-        source = array(
-            [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]
-        )
-        rotation = array(
-            [[0.0, -1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0]]
-        )
+        source = array([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
+        rotation = array([[0.0, -1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0]])
         offset = array([2.0, -3.0, 0.5])
         target = (rotation @ source.T).T + offset
 

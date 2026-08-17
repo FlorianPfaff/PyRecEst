@@ -18,9 +18,7 @@ def test_extreme_finite_quaternions_normalize_without_overflow():
             initial_particles=particles,
         )
 
-    expected = np.array(
-        [1.0 / np.sqrt(2.0), 1.0 / np.sqrt(2.0), 0.0, 0.0]
-    )
+    expected = np.array([1.0 / np.sqrt(2.0), 1.0 / np.sqrt(2.0), 0.0, 0.0])
     actual = to_numpy(filt.particles[0, 0])
     npt.assert_allclose(actual, expected, rtol=1e-6, atol=0.0)
     npt.assert_allclose(np.linalg.norm(actual), 1.0, rtol=1e-6)

@@ -8,7 +8,6 @@ from pyrecest.numerics import assert_covariance_matrix
 
 from .abstract_axial_filter import AbstractAxialFilter
 
-
 _MIN_NORMALIZABLE_MEAN_NORM = 1e-12
 
 

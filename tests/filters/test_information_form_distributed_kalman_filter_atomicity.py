@@ -37,10 +37,11 @@ def _assert_idkf_state_unchanged(node, snapshot):
         assert allclose(actual_contribution.y, expected_contribution.y)
         assert actual_contribution.epoch == expected_contribution.epoch
         assert (
-            actual_contribution.operation_count
-            == expected_contribution.operation_count
+            actual_contribution.operation_count == expected_contribution.operation_count
         )
-        assert actual_contribution.operation_hash == expected_contribution.operation_hash
+        assert (
+            actual_contribution.operation_hash == expected_contribution.operation_hash
+        )
     assert node.seen_contribution_ids == expected_seen_ids
 
 

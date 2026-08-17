@@ -1,11 +1,9 @@
 import numpy as np
 import numpy.testing as npt
-import pytest
-
 import pyrecest.backend
+import pytest
 from pyrecest.backend import array, to_numpy
 from pyrecest.filters.kernel_sme_filter import KernelSMEFilter
-
 
 pytestmark = pytest.mark.skipif(
     pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
@@ -68,9 +66,7 @@ def test_clutter_only_covariance_does_not_double_count_clutter_products():
                 np.zeros(2),
                 clutter_kernel_covariance,
             )
-            expected_sigma[i, j] = (
-                false_alarm_rate * kernel_between * clutter_mid_pdf
-            )
+            expected_sigma[i, j] = false_alarm_rate * kernel_between * clutter_mid_pdf
 
     npt.assert_allclose(to_numpy(mu_s), expected_mu, rtol=1e-7, atol=1e-10)
     npt.assert_allclose(to_numpy(sigma_s), expected_sigma, rtol=1e-7, atol=1e-10)

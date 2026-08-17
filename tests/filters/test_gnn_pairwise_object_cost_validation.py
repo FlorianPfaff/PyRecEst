@@ -78,12 +78,10 @@ class GlobalNearestNeighborPairwiseObjectCostValidationTest(unittest.TestCase):
                     )
 
     def test_accepts_real_numeric_values(self):
-        pairwise_cost_matrix = (
-            GlobalNearestNeighbor._validate_pairwise_cost_matrix(
-                [[1, 2.5]],
-                1,
-                2,
-            )
+        pairwise_cost_matrix = GlobalNearestNeighbor._validate_pairwise_cost_matrix(
+            [[1, 2.5]],
+            1,
+            2,
         )
 
         np.testing.assert_allclose(pairwise_cost_matrix, [[1.0, 2.5]])

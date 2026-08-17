@@ -57,9 +57,7 @@ class GaussianHypothesisMaskedInputTest(unittest.TestCase):
             np.ma.array([[1.0]], mask=[[False]]),
             log_weight=np.ma.array(0.0, mask=False),
         )
-        weights = normalize_log_weights(
-            np.ma.array([0.0, 0.0], mask=[False, False])
-        )
+        weights = normalize_log_weights(np.ma.array([0.0, 0.0], mask=[False, False]))
 
         np.testing.assert_array_equal(hypothesis.mean, np.array([0.0]))
         np.testing.assert_array_equal(hypothesis.covariance, np.array([[1.0]]))

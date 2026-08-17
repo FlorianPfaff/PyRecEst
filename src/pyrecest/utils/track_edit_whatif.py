@@ -385,9 +385,7 @@ def _apply_split_track(matrix: np.ndarray, edit: TrackEdit) -> TrackEditApplicat
     left_has_observation = any(value is not None for value in left)
     right_has_observation = any(value is not None for value in right)
     if not left_has_observation or not right_has_observation:
-        return TrackEditApplication(
-            edit, output, False, "reject", "empty_split_side"
-        )
+        return TrackEditApplication(edit, output, False, "reject", "empty_split_side")
     pieces = [row for index, row in enumerate(output) if index != row_index]
     pieces.extend((left, right))
     return TrackEditApplication(

@@ -171,9 +171,7 @@ class DirichletProcessBirthMultiBernoulliTracker(MultiBernoulliTracker):
         """Predict targets and decay DP birth-atom counts."""
         survival_probability = self._normalize_birth_atom_survival_probability()
         pruning_threshold = self._normalize_birth_atom_pruning_threshold()
-        maximum_number_of_birth_atoms = (
-            self._normalize_maximum_number_of_birth_atoms()
-        )
+        maximum_number_of_birth_atoms = self._normalize_maximum_number_of_birth_atoms()
 
         super().predict_linear(
             system_matrices,

@@ -1,8 +1,9 @@
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import abs as backend_abs
-from pyrecest.backend import column_stack, cos, sin, sqrt, sum
+from pyrecest.backend import column_stack, cos
 from pyrecest.backend import max as backend_max
+from pyrecest.backend import sin, sqrt, sum
 
 from .abstract_toroidal_distribution import AbstractToroidalDistribution
 from .hypertoroidal_dirac_distribution import HypertoroidalDiracDistribution

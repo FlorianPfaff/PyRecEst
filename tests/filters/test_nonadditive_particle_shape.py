@@ -1,6 +1,5 @@
 import numpy.testing as npt
 import pytest
-
 from pyrecest.backend import array
 from pyrecest.distributions import LinearDiracDistribution
 from pyrecest.filters.euclidean_particle_filter import EuclideanParticleFilter
