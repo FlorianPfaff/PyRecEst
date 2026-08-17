@@ -26,6 +26,18 @@ class VMFFilterTest(unittest.TestCase):
         self.assertTrue(allclose(self.vmf.mu, vmf_result.mu))
         self.assertEqual(self.vmf.kappa, vmf_result.kappa)
 
+    def test_setting_state_does_not_alias_input_distribution(self):
+        self.filter.filter_state = self.vmf
+        assigned_mu = copy.deepcopy(self.filter.filter_state.mu)
+        assigned_kappa = self.filter.filter_state.kappa
+
+        self.assertIsNot(self.filter.filter_state, self.vmf)
+        self.vmf.mu = array([1.0, 0.0])
+        self.vmf.kappa = 2.0
+
+        npt.assert_allclose(self.filter.filter_state.mu, assigned_mu)
+        self.assertEqual(self.filter.filter_state.kappa, assigned_kappa)
+
     def test_set_state_validation_errors_are_explicit(self):
         with self.assertRaisesRegex(ValueError, "VonMisesFisherDistribution"):
             self.filter.filter_state = object()
