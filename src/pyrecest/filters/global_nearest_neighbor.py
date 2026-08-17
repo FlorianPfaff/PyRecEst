@@ -71,6 +71,7 @@ class GlobalNearestNeighbor(AbstractNearestNeighborTracker):
             "pairwise_cost_weight": 1.0,
             "maximize_cardinality": False,
         }
+        user_association_param = association_param
         if association_param is None:
             association_param = default_association_param
         else:
@@ -78,6 +79,17 @@ class GlobalNearestNeighbor(AbstractNearestNeighborTracker):
                 **default_association_param,
                 **association_param,
             }
+
+        # A chi-square quantile thresholds the squared Mahalanobis distance. If
+        # callers request unsquared distances without overriding the gate, use
+        # the corresponding Mahalanobis-distance threshold instead.
+        if not association_param["square_dist"] and (
+            user_association_param is None
+            or "gating_distance_threshold" not in user_association_param
+        ):
+            association_param["gating_distance_threshold"] = float(
+                np.sqrt(association_param["gating_distance_threshold"])
+            )
 
         super().__init__(
             initial_prior,
