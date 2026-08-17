@@ -24,7 +24,11 @@ class AbstractGridDistribution(AbstractDistributionType):
     ):
         if grid_type == "custom" and grid is None:
             raise ValueError("Custom grids require grid coordinates.")
-        if grid is not None and grid.shape != ():
+        if grid is not None:
+            if grid.ndim not in (1, 2):
+                raise ValueError(
+                    "Grid coordinates must be a one- or two-dimensional array."
+                )
             # Use builtin prod because .shape is a tuple of ints
             expected_grid_points = prod(grid_values.shape)
             if grid.shape[0] != expected_grid_points:
@@ -35,12 +39,8 @@ class AbstractGridDistribution(AbstractDistributionType):
                 )
             if grid.ndim == 1:
                 actual_dim = 1
-            elif grid.ndim == 2:
-                actual_dim = grid.shape[1]
             else:
-                raise ValueError(
-                    "Grid coordinates must be a one- or two-dimensional array."
-                )
+                actual_dim = grid.shape[1]
             if dim is not None and actual_dim != dim:
                 raise ValueError(
                     f"Grid coordinates must have dimension {dim}, got " f"{actual_dim}."
