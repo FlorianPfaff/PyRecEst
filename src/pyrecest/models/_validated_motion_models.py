@@ -7,11 +7,16 @@ from typing import Any
 import numpy as np
 
 from . import motion_models as _motion_models
+from .validation import validate_noise_covariance
 
+_coordinated_turn_model_impl = _motion_models.coordinated_turn_model
+_nearly_constant_speed_model_impl = _motion_models.nearly_constant_speed_model
 _nearly_coordinated_turn_model_impl = _motion_models.nearly_coordinated_turn_model
 _continuous_to_discrete_lti_impl = _motion_models.continuous_to_discrete_lti
 _coordinated_turn_transition_impl = _motion_models.coordinated_turn_transition
+_se2_unicycle_model_impl = _motion_models.se2_unicycle_model
 _se2_unicycle_transition_impl = _motion_models.se2_unicycle_transition
+_se3_pose_twist_model_impl = _motion_models.se3_pose_twist_model
 
 
 def _contains_complex_values(value: Any, seen: set[int] | None = None) -> bool:
@@ -55,6 +60,17 @@ def _reject_complex_matrix(value: Any, name: str) -> None:
         raise ValueError(f"{name} must contain real values")
 
 
+def _validated_motion_noise_covariance(value: Any, *, dim: int) -> Any:
+    """Validate a real, finite, symmetric covariance for a fixed-size model."""
+    _reject_complex_matrix(value, "noise_covariance")
+    return validate_noise_covariance(
+        value,
+        name="noise_covariance",
+        dim=dim,
+        check_symmetric=True,
+    )
+
+
 def continuous_to_discrete_lti(
     continuous_matrix: Any,
     noise_input_matrix: Any | None = None,
@@ -95,21 +111,17 @@ def coordinated_turn_transition(
     )
 
 
-def se2_unicycle_transition(
-    state: Any, dt: float = 1.0, turn_threshold: float = 1e-8
+def coordinated_turn_model(
+    dt: float = 1.0, noise_covariance: Any | None = None
 ) -> Any:
-    """Propagate an SE(2) unicycle state with a valid branch threshold."""
-    turn_threshold = (
-        _motion_models._as_positive_float(  # pylint: disable=protected-access
-            turn_threshold,
-            "turn_threshold",
-        )
+    """Return a coordinated-turn model with validated process-noise covariance."""
+    dt = _motion_models._as_scalar_float(  # pylint: disable=protected-access
+        dt,
+        "dt",
     )
-    return _se2_unicycle_transition_impl(
-        state,
-        dt=dt,
-        turn_threshold=turn_threshold,
-    )
+    if noise_covariance is not None:
+        noise_covariance = _validated_motion_noise_covariance(noise_covariance, dim=5)
+    return _coordinated_turn_model_impl(dt=dt, noise_covariance=noise_covariance)
 
 
 def nearly_coordinated_turn_model(
@@ -135,15 +147,82 @@ def nearly_coordinated_turn_model(
     )
 
 
+def nearly_constant_speed_model(
+    dt: float = 1.0, noise_covariance: Any | None = None
+) -> Any:
+    """Return a nearly-constant-speed model with validated process noise."""
+    dt = _motion_models._as_scalar_float(  # pylint: disable=protected-access
+        dt,
+        "dt",
+    )
+    if noise_covariance is not None:
+        noise_covariance = _validated_motion_noise_covariance(noise_covariance, dim=4)
+    return _nearly_constant_speed_model_impl(
+        dt=dt,
+        noise_covariance=noise_covariance,
+    )
+
+
+def se2_unicycle_transition(
+    state: Any, dt: float = 1.0, turn_threshold: float = 1e-8
+) -> Any:
+    """Propagate an SE(2) unicycle state with a valid branch threshold."""
+    turn_threshold = (
+        _motion_models._as_positive_float(  # pylint: disable=protected-access
+            turn_threshold,
+            "turn_threshold",
+        )
+    )
+    return _se2_unicycle_transition_impl(
+        state,
+        dt=dt,
+        turn_threshold=turn_threshold,
+    )
+
+
+def se2_unicycle_model(
+    dt: float = 1.0, noise_covariance: Any | None = None
+) -> Any:
+    """Return an SE(2) unicycle model with validated process noise."""
+    dt = _motion_models._as_scalar_float(  # pylint: disable=protected-access
+        dt,
+        "dt",
+    )
+    if noise_covariance is not None:
+        noise_covariance = _validated_motion_noise_covariance(noise_covariance, dim=5)
+    return _se2_unicycle_model_impl(dt=dt, noise_covariance=noise_covariance)
+
+
+def se3_pose_twist_model(
+    dt: float = 1.0, noise_covariance: Any | None = None
+) -> Any:
+    """Return an SE(3) pose/twist model with validated process noise."""
+    dt = _motion_models._as_scalar_float(  # pylint: disable=protected-access
+        dt,
+        "dt",
+    )
+    if noise_covariance is not None:
+        noise_covariance = _validated_motion_noise_covariance(noise_covariance, dim=12)
+    return _se3_pose_twist_model_impl(dt=dt, noise_covariance=noise_covariance)
+
+
 _motion_models.continuous_to_discrete_lti = continuous_to_discrete_lti
+_motion_models.coordinated_turn_model = coordinated_turn_model
 _motion_models.coordinated_turn_transition = coordinated_turn_transition
+_motion_models.nearly_constant_speed_model = nearly_constant_speed_model
 _motion_models.nearly_coordinated_turn_model = nearly_coordinated_turn_model
+_motion_models.se2_unicycle_model = se2_unicycle_model
 _motion_models.se2_unicycle_transition = se2_unicycle_transition
+_motion_models.se3_pose_twist_model = se3_pose_twist_model
 
 
 __all__ = [
     "continuous_to_discrete_lti",
+    "coordinated_turn_model",
     "coordinated_turn_transition",
+    "nearly_constant_speed_model",
     "nearly_coordinated_turn_model",
+    "se2_unicycle_model",
     "se2_unicycle_transition",
+    "se3_pose_twist_model",
 ]
