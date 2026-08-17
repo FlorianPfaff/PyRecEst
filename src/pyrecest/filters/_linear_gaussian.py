@@ -2,6 +2,7 @@
 """Backend-native linear-Gaussian predict/update primitives."""
 
 import math
+from numbers import Complex, Real
 
 import numpy as np
 from pyrecest.backend import (
@@ -34,9 +35,32 @@ def _contains_boolean_value(x):
     return False
 
 
+def _contains_complex_value(x):
+    dtype = getattr(x, "dtype", None)
+    if dtype is not None and "complex" in str(dtype).lower():
+        return True
+    try:
+        values = np.asarray(x)
+    except Exception:  # pragma: no cover - backend-specific conversion errors
+        return False
+    if values.dtype.kind == "c":
+        return True
+    if values.dtype == object:
+        for item in values.reshape(-1):
+            try:
+                scalar = item.item()
+            except AttributeError:
+                scalar = item
+            if isinstance(scalar, Complex) and not isinstance(scalar, Real):
+                return True
+    return False
+
+
 def _as_vector(x, name):
     if _contains_boolean_value(x):
         raise ValueError(f"{name} must contain numeric values, not booleans")
+    if _contains_complex_value(x):
+        raise ValueError(f"{name} must contain real-valued numeric values")
     x = atleast_1d(asarray(x, dtype=float64))
     if len(x.shape) != 1:
         raise ValueError(f"{name} must be one-dimensional after coercion")
@@ -46,6 +70,8 @@ def _as_vector(x, name):
 def _as_matrix(x, name):
     if _contains_boolean_value(x):
         raise ValueError(f"{name} must contain numeric values, not booleans")
+    if _contains_complex_value(x):
+        raise ValueError(f"{name} must contain real-valued numeric values")
     x = atleast_2d(asarray(x, dtype=float64))
     if len(x.shape) != 2:
         raise ValueError(f"{name} must be two-dimensional after coercion")
@@ -90,7 +116,7 @@ def _as_nonnegative_float(x, name):
 
 
 def _as_nonnegative_nis(x, name="normalized_innovation_squared"):
-    if _contains_boolean_value(x):
+    if _contains_boolean_value(x) or _contains_complex_value(x):
         raise ValueError(f"{name} must be finite and nonnegative")
     nis = asarray(x, dtype=float64)
     try:
