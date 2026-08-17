@@ -1,10 +1,8 @@
 import numpy as np
 import pytest
-
 from pyrecest.backend import array, eye, get_backend_name
 from pyrecest.distributions import GaussianDistribution
 from pyrecest.evaluation import generate_measurements
-
 
 pytestmark = pytest.mark.skipif(
     get_backend_name() == "jax",

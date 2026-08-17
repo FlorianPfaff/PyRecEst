@@ -4,7 +4,6 @@ import warnings
 
 import numpy as np
 import pytest
-
 from pyrecest.backend import eye, zeros
 from pyrecest.filters.ukf_on_manifolds import UKFOnManifolds
 
@@ -57,7 +56,9 @@ def test_masked_alpha_is_rejected_without_conversion_warning():
     with warnings.catch_warnings():
         warnings.simplefilter("error")
         for alpha in (masked_scalar, masked_vector):
-            with pytest.raises(ValueError, match="alpha must be a finite positive real"):
+            with pytest.raises(
+                ValueError, match="alpha must be a finite positive real"
+            ):
                 _make_filter(alpha)
 
 

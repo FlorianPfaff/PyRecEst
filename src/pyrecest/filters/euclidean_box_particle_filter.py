@@ -25,6 +25,9 @@ from pyrecest.backend import (
     isfinite,
     log,
     logical_and,
+)
+from pyrecest.backend import max as backend_max
+from pyrecest.backend import (
     maximum,
     minimum,
     ones,
@@ -39,7 +42,6 @@ from pyrecest.backend import (
     where,
     zeros_like,
 )
-from pyrecest.backend import max as backend_max
 from pyrecest.distributions.abstract_manifold_specific_distribution import (
     AbstractManifoldSpecificDistribution,
 )

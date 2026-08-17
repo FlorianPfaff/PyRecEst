@@ -49,9 +49,7 @@ def test_rejects_nonreal_or_masked_sample_counts(invalid_count):
         0.5 + 0.0j,
     ],
 )
-def test_constructor_rejects_nonreal_or_masked_scalars(
-    parameter_name, invalid_value
-):
+def test_constructor_rejects_nonreal_or_masked_scalars(parameter_name, invalid_value):
     with pytest.raises(ValueError, match=parameter_name):
         _make_distribution(**{parameter_name: invalid_value})
 

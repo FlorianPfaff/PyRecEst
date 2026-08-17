@@ -24,9 +24,7 @@ class TrackingSequence:
 
     def __post_init__(self) -> None:
         num_gt_ids = _nonnegative_int(self.num_gt_ids, name="num_gt_ids")
-        num_tracker_ids = _nonnegative_int(
-            self.num_tracker_ids, name="num_tracker_ids"
-        )
+        num_tracker_ids = _nonnegative_int(self.num_tracker_ids, name="num_tracker_ids")
         gt_frames = tuple(
             _identity_array(values, num_gt_ids, f"gt_ids[{index}]")
             for index, values in enumerate(self.gt_ids)
@@ -36,7 +34,9 @@ class TrackingSequence:
             for index, values in enumerate(self.tracker_ids)
         )
         if len(gt_frames) != len(tracker_frames):
-            raise ValueError("gt_ids and tracker_ids must contain the same number of frames")
+            raise ValueError(
+                "gt_ids and tracker_ids must contain the same number of frames"
+            )
         if len(self.similarity_scores) != len(gt_frames):
             raise ValueError("similarity_scores must contain one matrix per frame")
         similarities = tuple(

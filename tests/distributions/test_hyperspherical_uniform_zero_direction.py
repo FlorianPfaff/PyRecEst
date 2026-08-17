@@ -1,5 +1,4 @@
 import numpy as np
-
 from pyrecest.distributions import HypersphericalUniformDistribution
 from pyrecest.distributions.hypersphere_subset import (
     hyperspherical_uniform_distribution as hyperspherical_uniform_module,

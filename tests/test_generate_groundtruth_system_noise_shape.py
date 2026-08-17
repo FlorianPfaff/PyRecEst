@@ -6,7 +6,6 @@ from pyrecest.backend import array, eye
 from pyrecest.distributions import GaussianDistribution
 from pyrecest.evaluation import generate_groundtruth
 
-
 pytestmark = pytest.mark.skipif(
     pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
     reason="Groundtruth generation is unsupported on this backend.",

@@ -20,12 +20,8 @@ class TestGoalConditionedReplayIMMProbabilityValidation(unittest.TestCase):
 
     def test_rejects_nonfinite_transition_matrix_entries(self):
         invalid_matrices = {
-            "goal_transition_matrix": array(
-                [[1.0, 0.0], [float("nan"), 1.0]]
-            ),
-            "mode_transition_matrix": array(
-                [[1.0, 0.0], [float("nan"), 1.0]]
-            ),
+            "goal_transition_matrix": array([[1.0, 0.0], [float("nan"), 1.0]]),
+            "mode_transition_matrix": array([[1.0, 0.0], [float("nan"), 1.0]]),
         }
 
         for name, matrix in invalid_matrices.items():

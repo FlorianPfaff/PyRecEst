@@ -1,5 +1,4 @@
 import numpy as np
-
 from pyrecest.distributions.abstract_grid_distribution import AbstractGridDistribution
 
 

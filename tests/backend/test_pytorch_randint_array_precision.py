@@ -2,7 +2,6 @@
 
 import pytest
 
-
 torch = pytest.importorskip("torch")
 
 from pyrecest._backend.pytorch import random  # noqa: E402

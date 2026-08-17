@@ -360,9 +360,8 @@ def _validate_integer(value: object, name: str) -> int:
         raise ValueError(message) from exc
     if value_array.ndim != 0 or value_array.dtype == np.bool_:
         raise ValueError(message)
-    if (
-        value_array.dtype.kind in {"S", "U", "c"}
-        or _is_temporal_scalar_array(value_array)
+    if value_array.dtype.kind in {"S", "U", "c"} or _is_temporal_scalar_array(
+        value_array
     ):
         raise ValueError(message)
 

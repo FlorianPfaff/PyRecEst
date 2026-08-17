@@ -1,7 +1,6 @@
 """Regression tests for scale-safe sparse Gaussian grid transitions."""
 
 import numpy as np
-
 from pyrecest.filters.discrete_state import sparse_gaussian_transition_matrix
 
 

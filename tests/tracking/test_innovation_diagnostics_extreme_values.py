@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.tracking.innovation_diagnostics import (
     InnovationDiagnostic,
     summarize_innovation_diagnostics,
