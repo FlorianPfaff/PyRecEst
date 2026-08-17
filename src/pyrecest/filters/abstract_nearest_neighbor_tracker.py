@@ -31,7 +31,7 @@ class AbstractNearestNeighborTracker(AbstractMultitargetTracker):
         if initial_prior is not None:
             self.filter_state = initial_prior
         else:
-            self._filter_state = None
+            self.filter_bank = []
 
     @staticmethod
     def _ensure_numpy_backend():
