@@ -276,7 +276,7 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
         shared across all models or be provided as lists/tuples with one entry per
         model.
         """
-        system_matrices = self._broadcast_model_argument(
+        system_matrices = self._broadcast_matrix_argument(
             system_matrices, "system_matrices"
         )
         sys_noise_covs = self._broadcast_model_argument(
@@ -360,7 +360,7 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
         ``measurement_matrices`` and ``meas_noises`` can either be shared across all
         models or be provided as lists/tuples with one entry per model.
         """
-        measurement_matrices = self._broadcast_model_argument(
+        measurement_matrices = self._broadcast_matrix_argument(
             measurement_matrices, "measurement_matrices"
         )
         meas_noises = self._broadcast_model_argument(meas_noises, "meas_noises")
@@ -606,6 +606,17 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
                     UserWarning,
                 )
         return array(mode_probabilities)
+
+    def _broadcast_matrix_argument(self, value, name):
+        """Broadcast one array-like matrix while preserving per-model matrix lists."""
+        if isinstance(value, (list, tuple)):
+            try:
+                matrix = asarray(value)
+            except (TypeError, ValueError, RuntimeError):
+                matrix = None
+            if matrix is not None and matrix.ndim == 2:
+                return [matrix] * self.n_models
+        return self._broadcast_model_argument(value, name)
 
     def _broadcast_model_argument(self, value, name):
         if isinstance(value, (list, tuple)):
