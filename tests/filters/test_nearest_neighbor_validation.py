@@ -21,6 +21,15 @@ class NearestNeighborValidationTest(unittest.TestCase):
         tracker.filter_state = [KalmanFilter(GaussianDistribution(zeros(4), eye(4)))]
         return tracker
 
+    def test_uninitialized_tracker_represents_zero_targets(self):
+        tracker = GlobalNearestNeighbor()
+
+        self.assertEqual(tracker.get_number_of_targets(), 0)
+        with self.assertWarnsRegex(UserWarning, "zero targets"):
+            self.assertIsNone(tracker.filter_state)
+        with self.assertWarnsRegex(UserWarning, "zero targets"):
+            tracker.predict_linear(eye(4), eye(4))
+
     def test_duplicate_filter_handles_raise_value_error(self):
         shared_filter = KalmanFilter(GaussianDistribution(zeros(4), eye(4)))
         tracker = GlobalNearestNeighbor()
