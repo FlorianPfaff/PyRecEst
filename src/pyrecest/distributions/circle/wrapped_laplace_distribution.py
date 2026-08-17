@@ -11,7 +11,6 @@ from pyrecest.backend import (
     exp,
     isfinite,
     mod,
-    ndim,
     pi,
     to_numpy,
 )
@@ -37,6 +36,22 @@ def _validate_positive_scalar(value, name):
     if not bool(all(value > 0.0)):
         raise ValueError(f"{name} must be positive.")
     return value
+
+
+def _validate_pdf_points(value):
+    message = "xs must contain only finite real values."
+    if np.ma.is_masked(value):
+        raise ValueError(message)
+    try:
+        backend_value = asarray(value)
+        numpy_value = np.asarray(to_numpy(backend_value))
+    except (TypeError, ValueError, RuntimeError, OverflowError) as exc:
+        raise ValueError(message) from exc
+    if numpy_value.ndim > 1:
+        raise ValueError("xs must be a scalar or one-dimensional array.")
+    if numpy_value.dtype.kind not in "iuf" or not np.all(np.isfinite(numpy_value)):
+        raise ValueError(message)
+    return backend_value
 
 
 def _wrapped_exponential_density(rate, distance):
@@ -104,9 +119,7 @@ class WrappedLaplaceDistribution(AbstractCircularDistribution):
         ) * _first_order_moment_factor(negative_rate, n)
 
     def pdf(self, xs):
-        xs = asarray(xs)
-        if ndim(xs) > 1:
-            raise ValueError("xs must be a scalar or one-dimensional array.")
+        xs = _validate_pdf_points(xs)
         xs = mod(xs, 2.0 * pi)
         positive_rate = self.lambda_ * self.kappa
         negative_rate = self.lambda_ / self.kappa
