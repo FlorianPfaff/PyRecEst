@@ -355,12 +355,9 @@ class GlobalNearestNeighbor(AbstractNearestNeighborTracker):
         dists = self._apply_pairwise_cost_matrix(dists, pairwise_cost_matrix)
 
         if self.association_param.get("maximize_cardinality", False):
-            gated_dists = where(
-                dists <= self.association_param["gating_distance_threshold"],
-                dists,
-                float("inf"),
-            )
-            assignment_result = min_cost_max_cardinality_assignment(gated_dists)
+            # Geometric feasibility was fixed by the gate above. Auxiliary finite
+            # costs rank feasible edges but must not remove them from the graph.
+            assignment_result = min_cost_max_cardinality_assignment(dists)
             association = assignment_result["assignment"]
             association = where(association < 0, n_meas, association)
         else:
