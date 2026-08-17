@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import numpy as np
-
 from pyrecest.backend_support._pytorch_assignment_index_contract import (
     patch_pytorch_assignment_index_contract as _patch_pytorch_assignment_index_contract,
 )
