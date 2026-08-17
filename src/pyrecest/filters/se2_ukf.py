@@ -16,9 +16,11 @@ Reference:
 """
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import all as backend_all
 from pyrecest.backend import (
     abs,
+)
+from pyrecest.backend import all as backend_all
+from pyrecest.backend import (
     allclose,
     amax,
     array,
@@ -68,9 +70,7 @@ def _normalize_rotation_columns(rotation_samples, fallback_rotation):
     zero_scales = isclose(scales, 0.0)
     safe_scales = where(zero_scales, 1.0, scales)
     scale_roots = sqrt(safe_scales)
-    scaled_samples = (
-        rotation_samples / scale_roots[None, :]
-    ) / scale_roots[None, :]
+    scaled_samples = (rotation_samples / scale_roots[None, :]) / scale_roots[None, :]
 
     scaled_norms = linalg.norm(scaled_samples, axis=0)
     safe_norms = where(zero_scales, 1.0, scaled_norms)

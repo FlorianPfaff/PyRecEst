@@ -40,10 +40,8 @@ class GaussianMixtureConstructorTest(unittest.TestCase):
         means = array([[1.0, -2.0]])
         covariance_matrix = array([[4.0, 1.5], [1.5, 9.0]])
 
-        mean, covariance = (
-            GaussianMixture.mixture_parameters_to_gaussian_parameters(
-                means, covariance_matrix, [1.0]
-            )
+        mean, covariance = GaussianMixture.mixture_parameters_to_gaussian_parameters(
+            means, covariance_matrix, [1.0]
         )
 
         np.testing.assert_allclose(to_numpy(mean), [1.0, -2.0])

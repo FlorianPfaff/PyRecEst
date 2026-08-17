@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.distributions.circle.piecewise_constant_distribution import (
     PiecewiseConstantDistribution,
 )

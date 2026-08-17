@@ -206,7 +206,9 @@ class GaussianMixtureMeasurementFactor:
             raise ValueError("state must contain only finite values")
 
         predicted = (
-            state if self.observation_matrix is None else self.observation_matrix @ state
+            state
+            if self.observation_matrix is None
+            else self.observation_matrix @ state
         ) + self.offset
         residuals = self.means - predicted
         whitened = np.linalg.solve(self._cholesky, residuals[..., None])[..., 0]
@@ -238,7 +240,9 @@ class GaussianMixtureMeasurementFactor:
             dominant_index=int(np.argmax(responsibilities)),
         )
 
-    def moment_match(self, responsibilities: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def moment_match(
+        self, responsibilities: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray]:
         """Return mixture mean and covariance for caller-supplied responsibilities."""
 
         weights = _probabilities(responsibilities, self.component_count)

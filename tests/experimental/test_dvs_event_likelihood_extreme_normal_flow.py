@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import numpy as np
 import numpy.testing as npt
-
 import pyrecest.experimental.dvs.event_likelihood as event_likelihood_module
 from pyrecest.experimental.dvs import normal_flow_activities
 

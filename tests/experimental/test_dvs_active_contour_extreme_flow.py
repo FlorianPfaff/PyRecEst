@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import numpy as np
 import numpy.testing as npt
-
 from pyrecest.experimental.dvs.active_contour import signed_normal_flow
 
 

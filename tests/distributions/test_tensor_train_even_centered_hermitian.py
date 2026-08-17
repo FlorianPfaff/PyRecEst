@@ -25,9 +25,7 @@ class TestTensorTrainEvenCenteredHermitian(unittest.TestCase):
                 broken = coefficients.copy()
                 broken[self_conjugate_index] += 0.3j
                 self.assertFalse(
-                    TensorTrain.from_dense(broken).is_centered_hermitian(
-                        atol=1e-12
-                    )
+                    TensorTrain.from_dense(broken).is_centered_hermitian(atol=1e-12)
                 )
 
     def test_even_grid_repair_averages_true_negative_frequencies(self):
@@ -37,8 +35,7 @@ class TestTensorTrainEvenCenteredHermitian(unittest.TestCase):
         )
         negative_frequency_indices = np.array([0, 3, 2, 1])
         expected = 0.5 * (
-            coefficients
-            + np.conjugate(coefficients[negative_frequency_indices])
+            coefficients + np.conjugate(coefficients[negative_frequency_indices])
         )
 
         repaired = TensorTrain.from_dense(coefficients).centered_hermitianized()

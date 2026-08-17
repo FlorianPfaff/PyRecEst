@@ -427,9 +427,7 @@ class SurvivalAwareCRPAssociationPrior:
             if num_existing_tracks == 0
             else self.concentration + self.discount * num_existing_tracks
         )
-        birth_log_weight = _log_nonnegative_product(
-            (base_birth_weight, birth_factor)
-        )
+        birth_log_weight = _log_nonnegative_product((base_birth_weight, birth_factor))
 
         clutter_weight = _validate_nonnegative(clutter_weight, "clutter_weight")
         clutter_log_weight = _log_nonnegative_product((clutter_weight,))

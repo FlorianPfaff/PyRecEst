@@ -191,16 +191,12 @@ def infer_polarity_contrast_sign(
     for signed_flow, event_polarity in zip(flows, polarities, strict=True):
         if signed_scalar_sign(signed_flow, zero_tolerance=tolerance) == 0.0:
             continue
-        contributions.append(
-            event_polarity_sign(event_polarity) * float(signed_flow)
-        )
+        contributions.append(event_polarity_sign(event_polarity) * float(signed_flow))
     if not contributions:
         return 1.0
 
     scale = max(abs(contribution) for contribution in contributions)
-    scaled_score = math.fsum(
-        contribution / scale for contribution in contributions
-    )
+    scaled_score = math.fsum(contribution / scale for contribution in contributions)
     if abs(scaled_score) <= tolerance / scale:
         return 1.0
     return 1.0 if scaled_score > 0.0 else -1.0

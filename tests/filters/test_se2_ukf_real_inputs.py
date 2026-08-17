@@ -34,9 +34,7 @@ class TestSE2UKFRealInputs(unittest.TestCase):
                 array([1.0 + 0.0j, 0.0, 1.0j, 0.0]),
             )
 
-        npt.assert_allclose(
-            to_numpy(current_filter.filter_state.mu), original_mean
-        )
+        npt.assert_allclose(to_numpy(current_filter.filter_state.mu), original_mean)
         npt.assert_allclose(
             to_numpy(current_filter.filter_state.C), original_covariance
         )

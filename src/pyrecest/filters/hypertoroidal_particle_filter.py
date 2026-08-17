@@ -2,7 +2,6 @@ from collections.abc import Callable
 from typing import Union
 
 import numpy as np
-from scipy.stats import qmc
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
 # pylint: disable=no-name-in-module,no-member
@@ -17,6 +16,7 @@ from pyrecest.distributions import (
     AbstractHypertoroidalDistribution,
     HypertoroidalDiracDistribution,
 )
+from scipy.stats import qmc
 
 from .abstract_particle_filter import AbstractParticleFilter
 from .manifold_mixins import HypertoroidalFilterMixin
