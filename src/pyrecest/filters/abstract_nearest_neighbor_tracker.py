@@ -145,11 +145,32 @@ class AbstractNearestNeighborTracker(AbstractMultitargetTracker):
                 raise ValueError("Gaussian process noise must have zero mean.")
             sys_noises = sys_noises.C
 
+        num_targets = self.get_number_of_targets()
+        if ndim(system_matrices) == 3 and system_matrices.shape[2] != num_targets:
+            raise ValueError(
+                f"Expected one system matrix per target ({num_targets}), "
+                f"got {system_matrices.shape[2]}."
+            )
+        if (
+            sys_noises is not None
+            and ndim(sys_noises) == 3
+            and sys_noises.shape[2] != num_targets
+        ):
+            raise ValueError(
+                f"Expected one system-noise matrix per target ({num_targets}), "
+                f"got {sys_noises.shape[2]}."
+            )
+        if inputs is not None and ndim(inputs) == 2 and inputs.shape[1] != num_targets:
+            raise ValueError(
+                f"Expected one input vector per target ({num_targets}), "
+                f"got {inputs.shape[1]}."
+            )
+
         curr_sys_matrix = system_matrices
         curr_sys_noise = sys_noises
         curr_input = inputs
 
-        for i in range(self.get_number_of_targets()):
+        for i in range(num_targets):
             if system_matrices is not None and ndim(system_matrices) == 3:
                 curr_sys_matrix = system_matrices[:, :, i]
             if sys_noises is not None and ndim(sys_noises) == 3:
