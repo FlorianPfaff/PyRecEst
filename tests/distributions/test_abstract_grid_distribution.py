@@ -51,6 +51,10 @@ class AbstractGridDistributionTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "dimension 2"):
             DummyGridDistribution(array([1.0, 1.0]), grid=array([0.0, 1.0]), dim=2)
 
+    def test_constructor_rejects_scalar_grid_coordinates(self):
+        with self.assertRaisesRegex(ValueError, "one- or two-dimensional"):
+            DummyGridDistribution(array([1.0]), grid=array(0.0))
+
     def test_constructor_rejects_higher_rank_grid_coordinates(self):
         with self.assertRaisesRegex(ValueError, "one- or two-dimensional"):
             DummyGridDistribution(array([1.0, 1.0]), grid=array([[[0.0]], [[1.0]]]))
