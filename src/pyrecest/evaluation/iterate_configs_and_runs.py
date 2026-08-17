@@ -70,6 +70,7 @@ def iterate_configs_and_runs(
                 if not evaluation_config["tolerate_failure"]:
                     raise err
                 run_failed[config_no, run] = True
+                run_times[config_no, run] = float("nan")
                 if evaluation_config["auto_warning_on_off"]:
                     warnings.warn(
                         f"Filter {config_no} config {filter_config['parameter']} run {run} FAILED: {str(err)}"
