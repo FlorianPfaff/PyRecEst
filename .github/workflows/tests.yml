@@ -338,12 +338,14 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}/src
 
       - name: Upload test result artifact
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.backend }}-${{ matrix.python-version }}-test-results
           path: junit_test_results_${{ matrix.backend }}.xml
 
       - name: Upload coverage artifact
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.backend }}-${{ matrix.python-version }}-coverage
@@ -443,6 +445,7 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}/src
 
       - name: Upload test result artifact
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: full-${{ matrix.backend }}-${{ matrix.python-version }}-test-results
