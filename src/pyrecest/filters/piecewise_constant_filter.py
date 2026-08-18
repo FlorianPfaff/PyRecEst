@@ -70,7 +70,7 @@ class PiecewiseConstantFilter(AbstractFilter, CircularFilterMixin):
         it is converted by numerically integrating the pdf over each interval.
         """
         if isinstance(new_state, PiecewiseConstantDistribution):
-            self._filter_state = new_state
+            AbstractFilter.filter_state.fset(self, new_state)
         elif isinstance(new_state, AbstractCircularDistribution):
             warnings.warn(
                 "new_state is not a PiecewiseConstantDistribution. "
