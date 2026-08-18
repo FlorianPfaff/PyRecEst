@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import warnings
 
+import numpy as np
 import pyrecest.backend
 from pyrecest.backend import array, column_stack, pi, reshape, stack, tile, zeros
 from pyrecest.distributions.hypertorus.abstract_hypertoroidal_distribution import (
@@ -12,6 +13,7 @@ from pyrecest.distributions.hypertorus.abstract_hypertoroidal_distribution impor
 )
 from pyrecest.distributions.hypertorus.fejer import (
     _validate_integer_control,
+    _validate_nonnegative_real_scalar,
     normalize_coefficient_shape,
     normalize_kernel_name,
 )
@@ -24,6 +26,14 @@ from pyrecest.distributions.hypertorus.hypertoroidal_fourier_distribution import
 from pyrecest.filters.abstract_filter import AbstractFilter
 from pyrecest.filters.manifold_mixins import HypertoroidalFilterMixin
 from scipy import signal
+
+
+def _validate_boolean_control(value, name: str) -> bool:
+    """Return a boolean control without truthiness coercion."""
+
+    if not isinstance(value, (bool, np.bool_)):
+        raise ValueError(f"{name} must be a boolean.")
+    return bool(value)
 
 
 class FejerIdentityFilter(AbstractFilter, HypertoroidalFilterMixin):
@@ -64,8 +74,12 @@ class FejerIdentityFilter(AbstractFilter, HypertoroidalFilterMixin):
         dim = len(n_coefficients)
 
         self.reduction_kernel = normalize_kernel_name(reduction_kernel)
-        self.adaptive_reduction = bool(adaptive_reduction)
-        self.min_value_tolerance = float(min_value_tolerance)
+        self.adaptive_reduction = _validate_boolean_control(
+            adaptive_reduction, "adaptive_reduction"
+        )
+        self.min_value_tolerance = _validate_nonnegative_real_scalar(
+            min_value_tolerance, "min_value_tolerance"
+        )
         self.oversampling_factor = _validate_integer_control(
             oversampling_factor, "oversampling_factor", minimum=1
         )
