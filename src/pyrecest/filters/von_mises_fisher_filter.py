@@ -1,4 +1,5 @@
 # pylint: disable=no-name-in-module,no-member
+import copy
 from math import isfinite as python_isfinite
 
 from pyrecest.backend import all as backend_all
@@ -111,7 +112,7 @@ class VonMisesFisherFilter(AbstractFilter, HypersphericalFilterMixin):
     @filter_state.setter
     def filter_state(self, filter_state):
         _validate_vmf_distribution(filter_state, "filter_state")
-        self._filter_state = filter_state
+        self._filter_state = copy.deepcopy(filter_state)
 
     def set_state(self, state):
         """Set the filter state."""
