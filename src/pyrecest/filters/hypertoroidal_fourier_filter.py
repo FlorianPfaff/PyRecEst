@@ -1,3 +1,4 @@
+import copy
 import warnings
 
 import pyrecest.backend
@@ -122,7 +123,7 @@ class HypertoroidalFourierFilter(AbstractFilter, HypertoroidalFilterMixin):
                     "of coefficients.",
                     RuntimeWarning,
                 )
-        self._filter_state = new_state
+        self._filter_state = copy.deepcopy(new_state)
 
     def predict_identity(self, d_sys):
         """
