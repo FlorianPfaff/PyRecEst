@@ -30,6 +30,27 @@ def test_filter_initializes_uniform_identity_state():
     npt.assert_allclose(integral, 1.0, atol=1e-4)
 
 
+def test_filter_state_assignment_does_not_alias_caller_state():
+    backend = _optional_module(PACKAGE + ".backend")
+    if backend.__backend_name__ in ("jax", "pytorch"):
+        pytest.skip("not supported on this backend")
+
+    from pyrecest.distributions import FejerHypertoroidalFourierDistribution
+    from pyrecest.filters import FejerIdentityFilter
+
+    filt = FejerIdentityFilter((11,))
+    assigned = FejerHypertoroidalFourierDistribution(
+        filt.filter_state.coeff_mat.copy(), **filt.reduction_options
+    )
+
+    filt.filter_state = assigned
+    expected_coefficients = filt.filter_state.coeff_mat.copy()
+    assert filt.filter_state is not assigned
+
+    assigned.coeff_mat[0] += 1.0
+    npt.assert_allclose(filt.filter_state.coeff_mat, expected_coefficients)
+
+
 @pytest.mark.parametrize(
     ("keyword", "value"),
     [
