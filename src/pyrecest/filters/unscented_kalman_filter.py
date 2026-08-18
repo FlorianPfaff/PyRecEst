@@ -4,6 +4,7 @@ from typing import Callable
 
 import pyrecest.backend
 from pyrecest.backend import atleast_1d, zeros
+from pyrecest.backend import copy as backend_copy
 from pyrecest.distributions import GaussianDistribution
 from pyrecest.models import AdditiveNoiseMeasurementModel, AdditiveNoiseTransitionModel
 from pyrecest.sampling.sigma_points import MerweScaledSigmaPoints
@@ -55,9 +56,9 @@ class UnscentedKalmanFilter(AbstractFilter, EuclideanFilterMixin):
         )
         AbstractFilter.__init__(self, bfukf)
 
-        # Set initial state
-        self._filter_state.x = initial_state.mu
-        self._filter_state.P = initial_state.C
+        # Set initial state without retaining caller-owned array storage.
+        self._filter_state.x = backend_copy(initial_state.mu)
+        self._filter_state.P = backend_copy(initial_state.C)
         # Track whether predict() has been called before update()
         self._predicted = False
 
@@ -70,8 +71,8 @@ class UnscentedKalmanFilter(AbstractFilter, EuclideanFilterMixin):
     @filter_state.setter
     def filter_state(self, new_state: "GaussianDistribution | tuple"):
         new_state = _coerce_gaussian_state(new_state, "new_state")
-        self._filter_state.x = new_state.mu
-        self._filter_state.P = new_state.C
+        self._filter_state.x = backend_copy(new_state.mu)
+        self._filter_state.P = backend_copy(new_state.C)
         self._predicted = False
 
     def _ensure_predicted(self):
