@@ -40,80 +40,138 @@ jobs:
     outputs:
       package_name: ${{ steps.meta.outputs.package_name }}
       version: ${{ steps.meta.outputs.version }}
-      release_tag: ${{ steps.release.outputs.release_tag }}
+      release_tag: ${{ steps.meta.outputs.release_tag }}
       target_index: ${{ steps.target.outputs.target_index }}
       environment_name: ${{ steps.target.outputs.environment_name }}
       publish_allowed: ${{ steps.gate.outputs.publish_allowed }}
     steps:
-      - name: Resolve manual release tag
-        id: manual_release
-        if: ${{ github.event_name == 'workflow_dispatch' }}
+      - name: Resolve release metadata
+        id: meta
         uses: actions/github-script@v9
         env:
           RELEASE_TAG_INPUT: ${{ github.event.inputs.release_tag }}
         with:
           script: |
-            const input = (process.env.RELEASE_TAG_INPUT || "").trim();
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
 
-            if (input) {
-              core.setOutput("release_tag", input);
-              return;
+            const resolveTagCommit = async (tag) => {
+              const response = await github.rest.git.getRef({
+                owner,
+                repo,
+                ref: `tags/${tag}`,
+              });
+              let object = response.data.object;
+
+              for (let depth = 0; depth < 5; depth += 1) {
+                if (object.type === "commit") {
+                  return object.sha;
+                }
+                if (object.type !== "tag") {
+                  break;
+                }
+
+                const tagResponse = await github.rest.git.getTag({
+                  owner,
+                  repo,
+                  tag_sha: object.sha,
+                });
+                object = tagResponse.data.object;
+              }
+
+              throw new Error(`Tag ${tag} does not resolve to a commit.`);
+            };
+
+            const readPoetryMetadata = async (ref) => {
+              const response = await github.rest.repos.getContent({
+                owner,
+                repo,
+                path: "pyproject.toml",
+                ref,
+              });
+              const file = response.data;
+
+              if (Array.isArray(file) || file.type !== "file" || !file.content) {
+                throw new Error(`pyproject.toml at ${ref} is not a readable file.`);
+              }
+
+              const source = Buffer.from(
+                file.content,
+                file.encoding || "base64",
+              ).toString("utf8");
+              const sectionHeader = /^\[tool\.poetry\][ \t\r]*$/m;
+              const sectionMatch = sectionHeader.exec(source);
+
+              if (!sectionMatch) {
+                throw new Error(`pyproject.toml at ${ref} has no [tool.poetry] section.`);
+              }
+
+              const sectionStart = source.indexOf("\n", sectionMatch.index) + 1;
+              const remainder = source.slice(sectionStart);
+              const nextSection = remainder.search(/^\[/m);
+              const section = nextSection === -1
+                ? remainder
+                : remainder.slice(0, nextSection);
+
+              const readString = (key) => {
+                const pattern = new RegExp(
+                  `^${key}[ \\t]*=[ \\t]*\"([^\"\\r\\n]+)\"[ \\t\\r]*$`,
+                  "m",
+                );
+                const match = pattern.exec(section);
+                if (!match) {
+                  throw new Error(
+                    `pyproject.toml at ${ref} has no quoted ${key} in [tool.poetry].`,
+                  );
+                }
+                return match[1];
+              };
+
+              return {
+                packageName: readString("name"),
+                version: readString("version"),
+              };
+            };
+
+            let metadataRef;
+            let releaseTag;
+
+            if (context.eventName === "workflow_dispatch") {
+              const input = (process.env.RELEASE_TAG_INPUT || "").trim();
+              let release;
+
+              if (input) {
+                const response = await github.rest.repos.getReleaseByTag({
+                  owner,
+                  repo,
+                  tag: input,
+                });
+                release = response.data;
+              } else {
+                const response = await github.rest.repos.getLatestRelease({
+                  owner,
+                  repo,
+                });
+                release = response.data;
+              }
+
+              if (release.draft) {
+                throw new Error(`Release ${release.tag_name} is still a draft.`);
+              }
+
+              releaseTag = release.tag_name;
+              metadataRef = await resolveTagCommit(releaseTag);
+              core.info(`Using metadata from published release ${releaseTag}.`);
+            } else {
+              metadataRef = context.payload.workflow_run.head_sha;
             }
 
-            const response = await github.rest.repos.getLatestRelease({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-            });
-            const releaseTag = response.data.tag_name;
+            const metadata = await readPoetryMetadata(metadataRef);
+            releaseTag ||= metadata.version;
 
-            core.info(`No release tag input; using latest release ${releaseTag}.`);
+            core.setOutput("package_name", metadata.packageName);
+            core.setOutput("version", metadata.version);
             core.setOutput("release_tag", releaseTag);
-
-      - name: Check out source
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event_name == 'workflow_dispatch' && steps.manual_release.outputs.release_tag || github.event.workflow_run.head_sha }}
-
-      - name: Set up Python
-        uses: actions/setup-python@v7
-        with:
-          python-version: "3.13"
-
-      - name: Read package metadata
-        id: meta
-        shell: bash
-        run: |
-          python - <<'PY' >> "$GITHUB_OUTPUT"
-          import pathlib
-          import tomllib
-
-          data = tomllib.loads(pathlib.Path("pyproject.toml").read_text(encoding="utf-8"))
-          poetry = data["tool"]["poetry"]
-
-          print(f"package_name={poetry['name']}")
-          print(f"version={poetry['version']}")
-          PY
-
-      - name: Resolve release tag
-        id: release
-        shell: bash
-        env:
-          MANUAL_RELEASE_TAG: ${{ steps.manual_release.outputs.release_tag }}
-          PACKAGE_VERSION: ${{ steps.meta.outputs.version }}
-        run: |
-          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
-            RELEASE_TAG="${MANUAL_RELEASE_TAG}"
-          else
-            RELEASE_TAG="${PACKAGE_VERSION}"
-          fi
-
-          if [ -z "${RELEASE_TAG}" ]; then
-            echo "::error::Could not resolve GitHub Release tag to publish."
-            exit 1
-          fi
-
-          echo "release_tag=${RELEASE_TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Resolve target index
         id: target
