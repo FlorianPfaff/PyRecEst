@@ -63,7 +63,12 @@ class GvMDistribution(AbstractCircularDistribution):
 
     def pdf_unnormalized(self, xs):
         """
-        Evaluate the unnormalized pdf at each point in xs.
+        Evaluate an unnormalized pdf at each point in xs.
+
+        The density is multiplied by the constant ``exp(-sum(kappa))`` relative
+        to the conventional expression.  This leaves the normalized density
+        unchanged while ensuring that the exponent is never positive, avoiding
+        overflow for large concentration parameters.
 
         Parameters
         ----------
@@ -80,7 +85,11 @@ class GvMDistribution(AbstractCircularDistribution):
         j = arange(1, self.mu.shape[0] + 1, dtype=float)
         # Broadcast: (k, 1) * ((1, n) - (k, 1)) → (k, n)
         arg = j[:, None] * (xs[None, :] - self.mu[:, None])
-        return exp(sum(self.kappa[:, None] * cos(arg), axis=0))
+        shifted_log_density = sum(
+            self.kappa[:, None] * (cos(arg) - 1.0),
+            axis=0,
+        )
+        return exp(shifted_log_density)
 
     def pdf(self, xs):
         """
