@@ -175,6 +175,20 @@ class HypertoroidalDiracDistribution(
     def apply_function(self, f: Callable, function_is_vectorized: bool = True):
         dist = super().apply_function(f, function_is_vectorized)
         dist.d = mod(dist.d, 2.0 * pi)
+
+        if dist.d.ndim == 1:
+            transformed_dim = 1
+        elif dist.d.ndim == 2 and dist.d.shape[1] > 0:
+            transformed_dim = int(dist.d.shape[1])
+        else:
+            raise ValueError(
+                "Function output must have shape (n,) or (n, dim) with dim > 0."
+            )
+
+        if transformed_dim != self.dim:
+            return HypertoroidalDiracDistribution(
+                dist.d, dist.w, dim=transformed_dim
+            )
         return dist
 
     def to_toroidal_wd(self):
