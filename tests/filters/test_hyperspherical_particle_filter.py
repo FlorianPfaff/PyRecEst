@@ -27,6 +27,20 @@ class HypersphericalParticleFilterTest(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "dim"):
                     HypersphericalParticleFilter(5, dim)
 
+    def test_filter_state_assignment_does_not_alias_input(self):
+        hpf = HypersphericalParticleFilter(2, 3)
+        original_particles = array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
+        original_weights = array([0.5, 0.5])
+        state = HypersphericalDiracDistribution(original_particles, original_weights)
+
+        hpf.filter_state = state
+
+        self.assertIsNot(hpf.filter_state, state)
+        state.d = array([[0.0, 0.0, 1.0], [0.0, 0.0, -1.0]])
+        state.w = array([0.9, 0.1])
+        npt.assert_allclose(hpf.filter_state.d, original_particles)
+        npt.assert_allclose(hpf.filter_state.w, original_weights)
+
     @unittest.skipIf(
         pyrecest.backend.__backend_name__ in ("pytorch", "jax"),
         reason="Not supported on this backend",
