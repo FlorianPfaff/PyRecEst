@@ -113,13 +113,10 @@ class CircularFourierFilter(AbstractCircularFilter):
             # convolution.  The inverse FFT returns the discrete circular sum;
             # multiplying by the grid spacing approximates the convolution
             # integral over [0, 2*pi).
-            predicted_values = (
-                fft.irfft(
-                    fft.rfft(density_values) * fft.rfft(d_sys),
-                    n=no_coefficients,
-                )
-                * (2.0 * pi / no_coefficients)
-            )
+            predicted_values = fft.irfft(
+                fft.rfft(density_values) * fft.rfft(d_sys),
+                n=no_coefficients,
+            ) * (2.0 * pi / no_coefficients)
             # Round-off in the FFT can produce tiny negative values although a
             # convolution of nonnegative densities is nonnegative.
             predicted_values = maximum(predicted_values, 0.0)

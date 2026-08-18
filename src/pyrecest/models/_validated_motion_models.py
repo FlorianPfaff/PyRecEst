@@ -111,9 +111,7 @@ def coordinated_turn_transition(
     )
 
 
-def coordinated_turn_model(
-    dt: float = 1.0, noise_covariance: Any | None = None
-) -> Any:
+def coordinated_turn_model(dt: float = 1.0, noise_covariance: Any | None = None) -> Any:
     """Return a coordinated-turn model with validated process-noise covariance."""
     dt = _motion_models._as_scalar_float(  # pylint: disable=protected-access
         dt,
@@ -180,9 +178,7 @@ def se2_unicycle_transition(
     )
 
 
-def se2_unicycle_model(
-    dt: float = 1.0, noise_covariance: Any | None = None
-) -> Any:
+def se2_unicycle_model(dt: float = 1.0, noise_covariance: Any | None = None) -> Any:
     """Return an SE(2) unicycle model with validated process noise."""
     dt = _motion_models._as_scalar_float(  # pylint: disable=protected-access
         dt,
@@ -193,9 +189,7 @@ def se2_unicycle_model(
     return _se2_unicycle_model_impl(dt=dt, noise_covariance=noise_covariance)
 
 
-def se3_pose_twist_model(
-    dt: float = 1.0, noise_covariance: Any | None = None
-) -> Any:
+def se3_pose_twist_model(dt: float = 1.0, noise_covariance: Any | None = None) -> Any:
     """Return an SE(3) pose/twist model with validated process noise."""
     dt = _motion_models._as_scalar_float(  # pylint: disable=protected-access
         dt,
