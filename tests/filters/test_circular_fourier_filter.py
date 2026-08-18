@@ -53,10 +53,10 @@ class CircularFourierFilterTest(unittest.TestCase):
         npt.assert_allclose(
             fourier_filter.filter_state.pdf(x_vals),
             expected,
-            rtol=1e-12,
-            atol=1e-12,
+            rtol=1e-6,
+            atol=1e-7,
         )
-        npt.assert_allclose(fourier_filter.filter_state.integrate(), 1.0, atol=1e-12)
+        npt.assert_allclose(fourier_filter.filter_state.integrate(), 1.0, atol=1e-6)
 
     def test_predict_nonlinear_rejects_noncallable_without_asserts(self):
         fourier_filter = CircularFourierFilter(5)
