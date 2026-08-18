@@ -6,6 +6,7 @@ from pyrecest.models.validation import (
     validate_covariance_matrix,
     validate_state_vector,
 )
+from pyrecest.numerics import assert_covariance_matrix
 
 from ._linear_gaussian import (
     linear_gaussian_innovation,
@@ -81,6 +82,11 @@ class KalmanFilter(AbstractFilter, EuclideanFilterMixin):
                 allow_scalar=True,
                 check_symmetric=True,
             )
+            covariance = assert_covariance_matrix(
+                covariance,
+                name="state.covariance",
+                dim=mean.shape[0],
+            )
             return GaussianDistribution(mean, covariance, check_validity=False)
         if isinstance(state, tuple) and len(state) == 2:
             mean, covariance = state
@@ -95,6 +101,11 @@ class KalmanFilter(AbstractFilter, EuclideanFilterMixin):
                 dim=mean.shape[0],
                 allow_scalar=True,
                 check_symmetric=True,
+            )
+            covariance = assert_covariance_matrix(
+                covariance,
+                name="state.covariance",
+                dim=mean.shape[0],
             )
             return GaussianDistribution(mean, covariance, check_validity=False)
         raise ValueError(
