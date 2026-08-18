@@ -32,6 +32,7 @@ from scipy.optimize import linear_sum_assignment
 
 from .abstract_filter import AbstractFilter
 from .abstract_multitarget_tracker import AbstractMultitargetTracker
+from .abstract_tracker_with_logging import _coerce_bool_flag
 from .kalman_filter import KalmanFilter
 
 PredictorFn = Callable[..., None]
@@ -182,12 +183,15 @@ class TrackManager(
         self.associator = associator
         self.n_init = n_init
         self.max_misses = max_misses
-        self.allow_births = bool(allow_births)
+        self.allow_births = _coerce_bool_flag(allow_births, "allow_births")
         self.confirm_condition = confirm_condition
         self.delete_condition = delete_condition
         self.track_metadata_initializer = track_metadata_initializer
-        self.extract_confirmed_only = bool(extract_confirmed_only)
-        self.keep_history = bool(keep_history)
+        self.extract_confirmed_only = _coerce_bool_flag(
+            extract_confirmed_only,
+            "extract_confirmed_only",
+        )
+        self.keep_history = _coerce_bool_flag(keep_history, "keep_history")
 
         self.tracks: List[Track] = []
         self._next_track_id = 0
