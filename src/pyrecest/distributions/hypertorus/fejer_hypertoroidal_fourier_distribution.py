@@ -16,12 +16,22 @@ from pyrecest.distributions.hypertorus.hypertoroidal_fourier_distribution import
 )
 
 from .fejer import (
+    _validate_integer_control,
+    _validate_nonnegative_real_scalar,
     adaptive_kernel_reduce_coefficients,
     centered_coefficients,
     normalize_coefficient_shape,
     normalize_kernel_name,
     reduce_coefficients,
 )
+
+
+def _validate_boolean_control(value, name: str) -> bool:
+    """Return a boolean control without truthiness coercion."""
+
+    if not isinstance(value, (bool, np.bool_)):
+        raise ValueError(f"{name} must be a boolean.")
+    return bool(value)
 
 
 class FejerHypertoroidalFourierDistribution(HypertoroidalFourierDistribution):
@@ -46,10 +56,18 @@ class FejerHypertoroidalFourierDistribution(HypertoroidalFourierDistribution):
         exponent_search_steps: int = 24,
     ):
         self.reduction_kernel = normalize_kernel_name(reduction_kernel)
-        self.adaptive_reduction = bool(adaptive_reduction)
-        self.min_value_tolerance = float(min_value_tolerance)
-        self.oversampling_factor = int(oversampling_factor)
-        self.exponent_search_steps = int(exponent_search_steps)
+        self.adaptive_reduction = _validate_boolean_control(
+            adaptive_reduction, "adaptive_reduction"
+        )
+        self.min_value_tolerance = _validate_nonnegative_real_scalar(
+            min_value_tolerance, "min_value_tolerance"
+        )
+        self.oversampling_factor = _validate_integer_control(
+            oversampling_factor, "oversampling_factor", minimum=1
+        )
+        self.exponent_search_steps = _validate_integer_control(
+            exponent_search_steps, "exponent_search_steps", minimum=0
+        )
         self.last_reduction_exponent: float | None = None
         self.last_used_prior_smoothing_fallback = False
         super().__init__(coeff_mat, transformation="identity")
@@ -97,6 +115,7 @@ class FejerHypertoroidalFourierDistribution(HypertoroidalFourierDistribution):
             raise ValueError(
                 "FejerHypertoroidalFourierDistribution requires identity coefficients."
             )
+        apply_fejer = _validate_boolean_control(apply_fejer, "apply_fejer")
 
         if n_coefficients is None:
             n_coefficients = distribution.coeff_mat.shape
