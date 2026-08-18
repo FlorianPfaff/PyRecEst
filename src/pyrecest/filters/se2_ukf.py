@@ -219,7 +219,7 @@ class SE2UKF(AbstractFilter, SE2FilterMixin):
     @filter_state.setter
     def filter_state(self, new_state: GaussianDistribution):
         _validate_se2_gaussian(new_state, "filter_state")
-        self._filter_state = new_state
+        AbstractFilter.filter_state.fset(self, new_state)
 
     # ------------------------------------------------------------------
     # Prediction
