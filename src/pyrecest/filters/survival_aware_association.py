@@ -30,6 +30,18 @@ from .track_manager import AssociationResult
 
 FactorSpec = float | Callable[..., float]
 
+_INVALID_SCALAR_TYPES = (
+    bool,
+    np.bool_,
+    str,
+    bytes,
+    bytearray,
+    np.str_,
+    np.bytes_,
+    np.datetime64,
+    np.timedelta64,
+)
+
 
 @dataclass(frozen=True)
 class SurvivalAwareAssociationConfig:
@@ -481,9 +493,9 @@ def _resolve_value(
     *,
     measurement_index: int | None,
     step: int | None,
-) -> float:
+) -> Any:
     if not callable(spec):
-        return float(_as_numpy_array(spec).item())
+        return spec
 
     call_candidates = (
         (
@@ -509,7 +521,7 @@ def _resolve_value(
             signature.bind(*args, **kwargs)
         except TypeError:
             continue
-        return float(_as_numpy_array(spec(*args, **kwargs)).item())
+        return spec(*args, **kwargs)
 
     raise TypeError(
         "Callable factors must accept keyword arguments, "
@@ -521,11 +533,11 @@ def _resolve_value(
 def _resolve_uninspectable_callable(
     spec: Callable[..., float],
     call_candidates: tuple[tuple[tuple[Any, ...], dict[str, Any]], ...],
-) -> float:
+) -> Any:
     last_error: TypeError | None = None
     for args, kwargs in call_candidates:
         try:
-            return float(_as_numpy_array(spec(*args, **kwargs)).item())
+            return spec(*args, **kwargs)
         except TypeError as exc:
             last_error = exc
     raise TypeError(
@@ -560,11 +572,27 @@ def _validate_nonnegative_likelihood_spec(spec: FactorSpec, name: str) -> None:
     _validate_nonnegative_likelihood(spec, name)
 
 
+def _as_real_scalar(value: Any, name: str, scalar_kind: str) -> float:
+    message = f"{name} must be a scalar {scalar_kind}"
+    if np.ma.is_masked(value):
+        raise ValueError(message)
+    try:
+        value_array = _as_numpy_array(value, dtype=None)
+    except (TypeError, ValueError, OverflowError, RuntimeError) as exc:
+        raise ValueError(message) from exc
+    if value_array.shape != () or value_array.dtype.kind in {"M", "m"}:
+        raise ValueError(message)
+    scalar = value_array.item()
+    if isinstance(scalar, _INVALID_SCALAR_TYPES):
+        raise ValueError(message)
+    try:
+        return float(scalar)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(message) from exc
+
+
 def _validate_probability(value: Any, name: str, *, allow_zero: bool) -> float:
-    value_array = _as_numpy_array(value)
-    if value_array.shape != () or value_array.dtype == np.bool_:
-        raise ValueError(f"{name} must be a scalar probability")
-    probability = float(value_array.item())
+    probability = _as_real_scalar(value, name, "probability")
     lower_ok = probability >= 0.0 if allow_zero else probability > 0.0
     if not lower_ok or probability > 1.0 or not np.isfinite(probability):
         interval = "[0, 1]" if allow_zero else "(0, 1]"
@@ -573,20 +601,14 @@ def _validate_probability(value: Any, name: str, *, allow_zero: bool) -> float:
 
 
 def _validate_nonnegative_finite(value: Any, name: str) -> float:
-    value_array = _as_numpy_array(value)
-    if value_array.shape != () or value_array.dtype == np.bool_:
-        raise ValueError(f"{name} must be a scalar number")
-    scalar = float(value_array.item())
+    scalar = _as_real_scalar(value, name, "number")
     if scalar < 0.0 or not np.isfinite(scalar):
         raise ValueError(f"{name} must be finite and nonnegative")
     return scalar
 
 
 def _validate_nonnegative_likelihood(value: Any, name: str) -> float:
-    value_array = _as_numpy_array(value)
-    if value_array.shape != () or value_array.dtype == np.bool_:
-        raise ValueError(f"{name} must be a scalar likelihood")
-    likelihood = float(value_array.item())
+    likelihood = _as_real_scalar(value, name, "likelihood")
     if likelihood < 0.0 or not np.isfinite(likelihood):
         raise ValueError(f"{name} must be finite and nonnegative")
     return likelihood
