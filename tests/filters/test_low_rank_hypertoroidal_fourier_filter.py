@@ -6,6 +6,9 @@ import pyrecest.backend
 from pyrecest.distributions.hypertorus.hypertoroidal_fourier_distribution import (
     HypertoroidalFourierDistribution,
 )
+from pyrecest.distributions.hypertorus.low_rank_hypertoroidal_fourier_distribution import (
+    LowRankHypertoroidalFourierDistribution,
+)
 from pyrecest.filters.hypertoroidal_fourier_filter import HypertoroidalFourierFilter
 from pyrecest.filters.low_rank_hypertoroidal_fourier_filter import (
     LowRankHypertoroidalFourierFilter,
@@ -62,6 +65,22 @@ class TestLowRankHypertoroidalFourierFilter(unittest.TestCase):
         self.assertEqual(low_rank_filter.max_rank, 2)
         self.assertEqual(low_rank_filter.rtol, 1e-8)
         self.assertEqual(low_rank_filter.atol, 1e-12)
+
+    def test_filter_state_assignment_does_not_alias_low_rank_input(self):
+        low_rank_filter = LowRankHypertoroidalFourierFilter((5,), "identity")
+        dense_state = HypertoroidalFourierDistribution(
+            _identity_coefficients_1d(), "identity"
+        )
+        state = LowRankHypertoroidalFourierDistribution.from_dense(dense_state)
+        expected = state.to_dense().copy()
+
+        low_rank_filter.filter_state = state
+
+        self.assertIsNot(low_rank_filter.filter_state, state)
+        state.coefficients = LowRankHypertoroidalFourierDistribution.uniform(
+            (5,), "identity"
+        ).coefficients
+        npt.assert_allclose(low_rank_filter.filter_state.to_dense(), expected, atol=1e-12)
 
     def test_predict_identity_matches_dense_1d(self):
         dense_filter = HypertoroidalFourierFilter((5,), "identity")
