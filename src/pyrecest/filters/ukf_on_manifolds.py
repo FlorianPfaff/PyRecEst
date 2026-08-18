@@ -10,6 +10,7 @@ Reference Python implementation:
 """
 
 # pylint: disable=no-name-in-module,no-member,redefined-builtin
+from copy import deepcopy
 from numbers import Real
 from typing import Any, Callable
 
@@ -198,7 +199,7 @@ class UKFOnManifolds(AbstractFilter):  # pylint: disable=too-many-instance-attri
         self._w_q = _Weights(self.q, float(alpha_arr[1]))  # propagation / noise
         self._w_u = _Weights(self.d, float(alpha_arr[2]))  # update
 
-        self._state = state0
+        self._state = deepcopy(state0)
         self._P = copy(P0)
 
         # AbstractFilter stores the filter state; we use a tuple (state, P)
@@ -216,8 +217,9 @@ class UKFOnManifolds(AbstractFilter):  # pylint: disable=too-many-instance-attri
     @filter_state.setter
     def filter_state(self, new_state):
         if isinstance(new_state, tuple) and len(new_state) == 2:
-            self._state, P = new_state
-            self._P = asarray(P)
+            state, P = new_state
+            self._state = deepcopy(state)
+            self._P = copy(asarray(P))
         else:
             raise ValueError("filter_state must be a (state, covariance) tuple")
         # Keep AbstractFilter's internal reference consistent
