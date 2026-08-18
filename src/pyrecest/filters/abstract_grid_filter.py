@@ -1,3 +1,4 @@
+import copy
 import warnings
 
 from beartype import beartype
@@ -38,7 +39,7 @@ class AbstractGridFilter(AbstractFilter):
                 "New grid has a different number of grid points.", RuntimeWarning
             )
 
-        self._filter_state = new_state
+        self._filter_state = copy.deepcopy(new_state)
 
     def _grid_likelihood_values(self, likelihood, z):
         likelihood_values = array(likelihood(z, self.filter_state.get_grid()))
