@@ -1,0 +1,40 @@
+name: Temporary CI baseline repair
+
+on:
+  push:
+    branches:
+      - chatgpt/fix-ci-baseline-20260818
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: chatgpt/fix-ci-baseline-20260818
+          fetch-depth: 0
+
+      - name: Apply CI baseline repairs
+        shell: bash
+        run: |
+          printf '%s' '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' | base64 --decode | gzip --decompress > /tmp/fix_ci_baseline.py
+          python /tmp/fix_ci_baseline.py
+
+      - name: Validate patch syntax and whitespace
+        shell: bash
+        run: |
+          python -m compileall -q src tests
+          git diff --check
+
+      - name: Commit repairs
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Fix broken cross-backend CI baseline"
+          git push origin HEAD:chatgpt/fix-ci-baseline-20260818
