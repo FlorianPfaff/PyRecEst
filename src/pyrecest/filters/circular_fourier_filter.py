@@ -9,9 +9,9 @@ from pyrecest.backend import (
     fft,
     is_array,
     linspace,
+    maximum,
     pi,
     reshape,
-    signal,
     size,
     sqrt,
     zeros,
@@ -105,15 +105,24 @@ class CircularFourierFilter(AbstractCircularFilter):
                     "d_sys must provide exactly one grid value per Fourier "
                     f"coefficient: expected {no_coefficients}, got {grid_size}."
                 )
+            d_sys = reshape(d_sys, (no_coefficients,))
             density_values = (
                 fft.irfft(self.filter_state.get_c(), n=no_coefficients) ** 2
             )
+            # The state and noise live on a circle, so prediction is a periodic
+            # convolution.  The inverse FFT returns the discrete circular sum;
+            # multiplying by the grid spacing approximates the convolution
+            # integral over [0, 2*pi).
             predicted_values = (
-                signal.fftconvolve(density_values, d_sys, mode="same")
-                * no_coefficients
-                * 2
-                * pi
+                fft.irfft(
+                    fft.rfft(density_values) * fft.rfft(d_sys),
+                    n=no_coefficients,
+                )
+                * (2.0 * pi / no_coefficients)
             )
+            # Round-off in the FFT can produce tiny negative values although a
+            # convolution of nonnegative densities is nonnegative.
+            predicted_values = maximum(predicted_values, 0.0)
             self.filter_state = CircularFourierDistribution.from_function_values(
                 sqrt(predicted_values), self.filter_state.transformation
             )
