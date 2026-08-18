@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - chatgpt/fix-ci-baseline-20260818
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
