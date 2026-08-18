@@ -35,6 +35,29 @@ class CircularFourierFilterTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "expected 5, got 4"):
             fourier_filter.predict_identity(array([1.0, 1.0, 1.0, 1.0]))
 
+    def test_array_predict_identity_uses_circular_convolution(self):
+        no_coefficients = 5
+        fourier_filter = CircularFourierFilter(no_coefficients, "sqrt")
+
+        # A normalized, deliberately asymmetric circular noise density.  A
+        # uniform prior convolved with any normalized circular density must
+        # remain uniform.  Linear mode="same" convolution violates this at the
+        # wrap boundary.
+        noise_values = array([4.0, 1.0, 0.5, 0.25, 0.125])
+        noise_values = noise_values / (5.875 * (2.0 * pi / no_coefficients))
+
+        fourier_filter.predict_identity(noise_values)
+
+        x_vals = linspace(0.0, 2.0 * pi, no_coefficients, endpoint=False)
+        expected = [1.0 / (2.0 * pi)] * no_coefficients
+        npt.assert_allclose(
+            fourier_filter.filter_state.pdf(x_vals),
+            expected,
+            rtol=1e-12,
+            atol=1e-12,
+        )
+        npt.assert_allclose(fourier_filter.filter_state.integrate(), 1.0, atol=1e-12)
+
     def test_predict_nonlinear_rejects_noncallable_without_asserts(self):
         fourier_filter = CircularFourierFilter(5)
 
