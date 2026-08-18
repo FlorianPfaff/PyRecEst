@@ -125,9 +125,10 @@ class AxialKalmanFilter(AbstractAxialFilter):
         self._validate_noise(gauss_v, "measurement noise")
         z = self._as_measurement(z)
 
-        # Conjugate of noise mean: negate all but the first component
+        # For z = x ⊕ v, remove the noise mean by right-composing its inverse.
+        # This order matters for noncommutative quaternion multiplication.
         mu_v_conj = concatenate([gauss_v.mu[:1], -gauss_v.mu[1:]])
-        z = self.composition_operator(mu_v_conj, z)
+        z = self.composition_operator(z, mu_v_conj)
 
         if dot(z, self._filter_state.mu) < 0:
             z = -z
