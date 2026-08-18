@@ -124,8 +124,12 @@ class FibonacciRejectionSampler(AbstractEuclideanSampler):
     @staticmethod
     def _map_to_bounding_box(unit_samples, bounding_box):
         lower = bounding_box[:, 0]
-        width = bounding_box[:, 1] - bounding_box[:, 0]
-        return unit_samples * width + lower
+        upper = bounding_box[:, 1]
+        with np.errstate(over="ignore", invalid="ignore"):
+            width = upper - lower
+        if np.all(np.isfinite(width)):
+            return unit_samples * width + lower
+        return (1.0 - unit_samples) * lower + unit_samples * upper
 
     @staticmethod
     def _evaluate_pdf(pdf, samples, n_candidates):
