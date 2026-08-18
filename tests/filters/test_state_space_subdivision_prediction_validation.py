@@ -14,7 +14,9 @@ from pyrecest.distributions.circle.circular_uniform_distribution import (
 from pyrecest.distributions.hypertorus.hypertoroidal_grid_distribution import (
     HypertoroidalGridDistribution,
 )
-from pyrecest.distributions.nonperiodic.gaussian_distribution import GaussianDistribution
+from pyrecest.distributions.nonperiodic.gaussian_distribution import (
+    GaussianDistribution,
+)
 from pyrecest.filters.state_space_subdivision_filter import StateSpaceSubdivisionFilter
 
 
