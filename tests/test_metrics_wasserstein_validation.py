@@ -35,6 +35,25 @@ class TestWassersteinCovarianceValidation(unittest.TestCase):
         ):
             extent_wasserstein_distance(valid, indefinite)
 
+    def test_gaussian_wasserstein_rejects_nonsymmetric_covariances(self):
+        mean = np.zeros(2)
+        valid = np.eye(2)
+        nonsymmetric = np.array([[2.0, 1.0], [0.0, 2.0]])
+
+        with self.assertRaisesRegex(ValueError, "covariance1 must be symmetric"):
+            gaussian_wasserstein_distance(mean, nonsymmetric, mean, valid)
+        with self.assertRaisesRegex(ValueError, "covariance2 must be symmetric"):
+            gaussian_wasserstein_distance(mean, valid, mean, nonsymmetric)
+
+    def test_extent_wasserstein_rejects_nonsymmetric_extents(self):
+        valid = np.eye(2)
+        nonsymmetric = np.array([[2.0, 1.0], [0.0, 2.0]])
+
+        with self.assertRaisesRegex(ValueError, "estimated_extent must be symmetric"):
+            extent_wasserstein_distance(nonsymmetric, valid)
+        with self.assertRaisesRegex(ValueError, "reference_extent must be symmetric"):
+            extent_wasserstein_distance(valid, nonsymmetric)
+
 
 if __name__ == "__main__":
     unittest.main()
