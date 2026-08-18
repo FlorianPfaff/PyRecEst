@@ -99,6 +99,23 @@ class TestVonMisesFilter(unittest.TestCase):
                 VonMisesDistribution(0.0, 1.3), float("nan")
             )
 
+        invalid_measurements = (
+            True,
+            False,
+            1.0 + 0.0j,
+            "1.1",
+            b"1.1",
+            [True],
+            array(True),
+            array(1.0 + 0.0j),
+        )
+        for measurement in invalid_measurements:
+            with self.subTest(measurement=measurement):
+                with self.assertRaisesRegex(ValueError, "real numeric"):
+                    self.curr_filter.update_identity(
+                        VonMisesDistribution(0.0, 1.3), measurement
+                    )
+
 
 if __name__ == "__main__":
     unittest.main()
