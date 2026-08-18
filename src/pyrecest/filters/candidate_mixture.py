@@ -99,6 +99,17 @@ class GaussianMixtureMeasurementFactor:
             covariances = covariances.copy()
         if not np.all(np.isfinite(covariances)):
             raise ValueError("covariances must contain only finite values")
+        covariance_transposes = np.swapaxes(covariances, -1, -2)
+        covariance_scale = np.maximum(
+            np.maximum(np.abs(covariances), np.abs(covariance_transposes)), 1.0
+        )
+        with np.errstate(over="ignore", under="ignore", invalid="ignore"):
+            relative_asymmetry = np.abs(
+                covariances / covariance_scale
+                - covariance_transposes / covariance_scale
+            )
+        if np.any(relative_asymmetry > 1e-12):
+            raise ValueError("covariances must be symmetric")
         covariances = np.stack([_symmetrize(value) for value in covariances])
         try:
             cholesky = np.linalg.cholesky(covariances)
