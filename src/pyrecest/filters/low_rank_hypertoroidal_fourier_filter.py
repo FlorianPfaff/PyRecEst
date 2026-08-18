@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import warnings
 
 import pyrecest.backend
@@ -78,7 +79,7 @@ class LowRankHypertoroidalFourierFilter(AbstractFilter, HypertoroidalFilterMixin
             raise NotImplementedError(
                 "Only identity-transformed low-rank states are supported."
             )
-        self._filter_state = new_state
+        self._filter_state = copy.deepcopy(new_state)
 
     def _convert_noise(self, distribution):
         if isinstance(distribution, LowRankHypertoroidalFourierDistribution):
