@@ -1,6 +1,6 @@
 from numbers import Integral
 
-from pyrecest.backend import empty
+from pyrecest.backend import eye, tile
 from pyrecest.distributions.hypersphere_subset.abstract_hyperhemispherical_distribution import (
     AbstractHyperhemisphericalDistribution,
 )
@@ -34,9 +34,8 @@ class HyperhemisphericalParticleFilter(
         """
         n_particles = _validate_positive_integer(n_particles, "n_particles")
         dim = _validate_positive_integer(dim, "dim")
-        initial_filter_state = HyperhemisphericalDiracDistribution(
-            empty((n_particles, dim + 1))
-        )
+        initial_particles = tile(eye(dim + 1)[-1], (n_particles, 1))
+        initial_filter_state = HyperhemisphericalDiracDistribution(initial_particles)
         HyperhemisphericalFilterMixin.__init__(self)
         AbstractParticleFilter.__init__(self, initial_filter_state=initial_filter_state)
 
