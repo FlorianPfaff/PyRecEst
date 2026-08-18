@@ -770,6 +770,19 @@ def _validate_positive_semidefinite(matrix: np.ndarray, name: str) -> None:
 def _as_covariance_matrix(value: ArrayLike, name: str) -> np.ndarray:
     matrix = _as_numeric_array(value, name)
     _validate_square_matrix(matrix, name)
+    if not np.all(np.isfinite(matrix)):
+        raise ValueError(f"{name} must contain only finite values")
+    matrix_transpose = matrix.T
+    matrix_scale = np.maximum(
+        np.maximum(np.abs(matrix), np.abs(matrix_transpose)),
+        1.0,
+    )
+    with np.errstate(over="ignore", under="ignore", invalid="ignore"):
+        relative_asymmetry = np.abs(
+            matrix / matrix_scale - matrix_transpose / matrix_scale
+        )
+    if np.any(relative_asymmetry > 1e-12):
+        raise ValueError(f"{name} must be symmetric")
     matrix = _symmetrize(matrix)
     _validate_positive_semidefinite(matrix, name)
     return matrix
