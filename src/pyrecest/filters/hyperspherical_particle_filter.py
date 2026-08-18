@@ -46,7 +46,7 @@ class HypersphericalParticleFilter(AbstractParticleFilter, HypersphericalFilterM
             new_state = HypersphericalDiracDistribution(
                 new_state.sample(self._filter_state.d.shape[0])
             )
-        self._filter_state = new_state
+        AbstractParticleFilter.filter_state.fset(self, new_state)
 
     def predict_identity(self, noise_distribution):
         self.predict_nonlinear(lambda x: x, noise_distribution)
