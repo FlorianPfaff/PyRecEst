@@ -4,7 +4,7 @@ import unittest
 import pyrecest.backend
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
-from pyrecest.backend import array, linalg, random
+from pyrecest.backend import allclose, array, hstack, linalg, ones, random, zeros
 from pyrecest.distributions import HyperhemisphericalWatsonDistribution
 from pyrecest.distributions.hypersphere_subset.hyperhemispherical_dirac_distribution import (
     HyperhemisphericalDiracDistribution,
@@ -32,6 +32,13 @@ class HyperhemisphericalParticleFilterTest(unittest.TestCase):
         hpf = HyperhemisphericalParticleFilter(self.n_particles, 3)
         self.assertEqual(hpf.filter_state.w.shape, (self.n_particles,))
         self.assertEqual(hpf.filter_state.d.shape, (self.n_particles, 4))
+        expected_particles = hstack(
+            (
+                zeros((self.n_particles, 3)),
+                ones((self.n_particles, 1)),
+            )
+        )
+        self.assertTrue(bool(allclose(hpf.filter_state.d, expected_particles)))
 
     def test_constructor_rejects_invalid_particle_count(self):
         for n_particles in (True, 0, -1, 1.5):
