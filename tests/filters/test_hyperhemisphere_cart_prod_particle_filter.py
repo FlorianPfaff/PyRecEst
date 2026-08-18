@@ -3,8 +3,12 @@ import unittest
 import pyrecest.backend  # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import (  # pylint: disable=no-name-in-module,no-member,redefined-builtin
     abs,
+    allclose,
     array,
+    hstack,
+    ones,
     sum,
+    zeros,
 )
 from pyrecest.distributions import VonMisesFisherDistribution
 from pyrecest.distributions.cart_prod.hyperhemisphere_cart_prod_dirac_distribution import (
@@ -27,6 +31,14 @@ class HyperHemisphereCartProdParticleFilterTest(unittest.TestCase):
             pf.filter_state.d.shape,
             (n_particles, (dim_hemisphere + 1) * n_hemispheres),
         )
+        expected_component = hstack(
+            (
+                zeros((n_particles, dim_hemisphere)),
+                ones((n_particles, 1)),
+            )
+        )
+        expected_particles = hstack([expected_component] * n_hemispheres)
+        self.assertTrue(bool(allclose(pf.filter_state.d, expected_particles)))
 
     def test_constructor_rejects_invalid_particle_count(self):
         for n_particles in (True, 0, -1, 1.5):
