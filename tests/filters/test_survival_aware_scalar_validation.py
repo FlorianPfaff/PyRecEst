@@ -23,9 +23,17 @@ def test_config_rejects_non_real_probability_scalars(invalid):
 @pytest.mark.parametrize(
     ("field", "invalid", "message"),
     [
-        ("appearance_likelihood", True, "appearance_likelihood must be a scalar likelihood"),
+        (
+            "appearance_likelihood",
+            True,
+            "appearance_likelihood must be a scalar likelihood",
+        ),
         ("mass_power", "1.0", "mass_power must be a scalar number"),
-        ("birth_weight", np.array(1.0 + 0.25j), "birth_weight must be a scalar number"),
+        (
+            "birth_weight",
+            np.array(1.0 + 0.25j),
+            "birth_weight must be a scalar number",
+        ),
     ],
 )
 def test_config_rejects_non_real_nonnegative_scalars(field, invalid, message):
@@ -36,7 +44,11 @@ def test_config_rejects_non_real_nonnegative_scalars(field, invalid, message):
 @pytest.mark.parametrize(
     ("field", "invalid", "message"),
     [
-        ("survival_probability", True, "survival_probability must be a scalar probability"),
+        (
+            "survival_probability",
+            True,
+            "survival_probability must be a scalar probability",
+        ),
         (
             "appearance_likelihood",
             np.array(0.8 + 0.1j),
