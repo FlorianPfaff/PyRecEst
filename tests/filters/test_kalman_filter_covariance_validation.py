@@ -41,3 +41,14 @@ def test_kalman_accepts_singular_positive_semidefinite_covariance():
     kf = KalmanFilter((backend.array([0.0, 0.0]), covariance))
 
     assert bool(backend.allclose(kf.filter_state.C, covariance))
+
+
+def test_kalman_covariance_validation_does_not_require_host_conversion(monkeypatch):
+    def fail_to_numpy(*_args, **_kwargs):
+        raise AssertionError("Kalman state validation should stay backend-native")
+
+    monkeypatch.setattr(backend, "to_numpy", fail_to_numpy)
+    covariance = backend.array([[2.0, 0.5], [0.5, 1.0]])
+    kf = KalmanFilter((backend.array([0.0, 0.0]), covariance))
+
+    assert bool(backend.allclose(kf.filter_state.C, covariance))
