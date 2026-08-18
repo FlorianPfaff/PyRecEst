@@ -31,9 +31,9 @@ class CircularDiracDistribution(
         if self.d.shape != self.w.shape:
             raise ValueError("The shapes of d and w should match.")
 
-    @staticmethod
+    @classmethod
     def from_distribution(
-        distribution: AbstractCircularDistribution, n_particles: int | None = None
+        cls, distribution: AbstractCircularDistribution, n_particles: int | None = None
     ):
         """Create a circular Dirac approximation from a circular distribution."""
         if not isinstance(distribution, AbstractCircularDistribution):
@@ -54,14 +54,12 @@ class CircularDiracDistribution(
                 if bool(weight_scale > 0.0):
                     weights = weights / weight_scale
                     weights = weights / backend_sum(weights)
-            return CircularDiracDistribution(get_grid(), weights)
+            return cls(get_grid(), weights)
 
         if n_particles is None:
             raise ValueError("n_particles is required for sampling-based conversion.")
-        n_particles = HypertoroidalDiracDistribution._validate_particle_count(
-            n_particles
-        )
-        return CircularDiracDistribution(
+        n_particles = cls._validate_particle_count(n_particles)
+        return cls(
             distribution.sample(n_particles), ones(n_particles) / n_particles
         )
 

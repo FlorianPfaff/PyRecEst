@@ -74,8 +74,8 @@ class SE2DiracDistribution(HypercylindricalDiracDistribution, AbstractSE2Distrib
         """
         return self.hybrid_mean()
 
-    @staticmethod
-    def from_distribution(distribution, n_particles):
+    @classmethod
+    def from_distribution(cls, distribution, n_particles):
         """Create an SE2DiracDistribution by sampling from a given distribution.
 
         Parameters
@@ -100,9 +100,9 @@ class SE2DiracDistribution(HypercylindricalDiracDistribution, AbstractSE2Distrib
             )
         if distribution.bound_dim != 1 or distribution.lin_dim != 2:
             raise ValueError("distribution must have bound_dim=1 and lin_dim=2")
-        n_particles = SE2DiracDistribution._validate_particle_count(n_particles)
+        n_particles = cls._validate_particle_count(n_particles)
 
-        return SE2DiracDistribution(
+        return cls(
             distribution.sample(n_particles),
             ones(n_particles) / n_particles,
         )

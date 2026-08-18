@@ -34,16 +34,16 @@ class SE3DiracDistribution(
         m = self.hybrid_mean()
         return m
 
-    @staticmethod
-    def from_distribution(distribution, n_particles):
+    @classmethod
+    def from_distribution(cls, distribution, n_particles):
         if not isinstance(distribution, AbstractSE3Distribution):
             raise TypeError(
                 "distribution must be an instance of AbstractSE3Distribution"
             )
 
-        n_particles = SE3DiracDistribution._validate_particle_count(n_particles)
+        n_particles = cls._validate_particle_count(n_particles)
 
-        ddist = SE3DiracDistribution(
+        ddist = cls(
             distribution.sample(n_particles),
             1 / n_particles * ones(n_particles),
         )
