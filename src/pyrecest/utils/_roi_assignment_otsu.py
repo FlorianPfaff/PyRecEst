@@ -31,9 +31,9 @@ def _reject_masked_value(value, name: str) -> None:
 
 
 def _as_positive_nbins(roi_assignment_module, nbins) -> int:
-    """Reject temporal and masked scalars before backend integer coercion."""
+    """Validate threshold histogram bin counts before backend integer coercion."""
 
-    message = "nbins must be a positive integer."
+    message = "nbins must be an integer greater than or equal to 2."
     if _contains_masked_value(nbins):
         raise ValueError(message)
     try:
@@ -49,7 +49,10 @@ def _as_positive_nbins(roi_assignment_module, nbins) -> int:
         ):
             raise ValueError(message)
 
-    return roi_assignment_module._as_positive_integer(nbins, "nbins")
+    nbins = roi_assignment_module._as_positive_integer(nbins, "nbins")
+    if nbins < 2:
+        raise ValueError(message)
+    return nbins
 
 
 def _patch_minimum_similarity_threshold(roi_assignment_module) -> None:
