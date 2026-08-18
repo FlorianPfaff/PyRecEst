@@ -3,6 +3,7 @@
 import copy
 from abc import ABC, abstractmethod
 
+from pyrecest.backend import atleast_1d
 from pyrecest.utils.history_recorder import HistoryRecorder
 
 
@@ -33,8 +34,8 @@ class AbstractFilter(ABC):
         self._filter_state = copy.deepcopy(new_state)
 
     def get_point_estimate(self):
-        """Get a point estimate"""
-        return self.filter_state.mean()
+        """Get a point estimate as a one-dimensional state vector."""
+        return atleast_1d(self.filter_state.mean())
 
     @property
     def dim(self) -> int:
