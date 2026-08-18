@@ -3,7 +3,9 @@
 import unittest
 
 import numpy as np
+from pyrecest.distributions import VonMisesDistribution
 from pyrecest.filters.track_manager import TrackManager
+from pyrecest.filters.von_mises_filter import VonMisesFilter
 
 
 class TrackManagerAtomicFilterStateTest(unittest.TestCase):
@@ -32,3 +34,19 @@ class TrackManagerAtomicFilterStateTest(unittest.TestCase):
             manager.tracks[0].get_point_estimate(),
             np.array([1.0]),
         )
+
+    def test_scalar_filter_point_estimate_stacks_as_one_dimensional_state(self):
+        circular_filter = VonMisesFilter()
+        circular_filter.filter_state = VonMisesDistribution(0.25, 2.0)
+        manager = TrackManager(
+            extract_confirmed_only=False,
+            keep_history=False,
+            log_prior_estimates=False,
+            log_posterior_estimates=False,
+        )
+        manager.initialize_from_states([circular_filter], confirmed=True)
+
+        point_estimate = manager.get_point_estimate()
+
+        self.assertEqual(point_estimate.shape, (1, 1))
+        np.testing.assert_allclose(point_estimate, np.array([[0.25]]))
