@@ -1,12 +1,12 @@
 # pylint: disable=no-name-in-module,no-member
 
-from pyrecest.backend import eye
+from pyrecest.backend import all as backend_all
+from pyrecest.backend import eye, linalg
 from pyrecest.distributions import GaussianDistribution
 from pyrecest.models.validation import (
     validate_covariance_matrix,
     validate_state_vector,
 )
-from pyrecest.numerics import assert_covariance_matrix
 
 from ._linear_gaussian import (
     linear_gaussian_innovation,
@@ -19,6 +19,7 @@ from .abstract_filter import AbstractFilter
 from .manifold_mixins import EuclideanFilterMixin
 
 _MODEL_ATTRIBUTE_SENTINEL = object()
+_STATE_COVARIANCE_EIGENVALUE_ATOL = 1e-10
 
 
 def _get_required_model_attribute(model, *names):
@@ -43,6 +44,23 @@ def _get_optional_model_attribute(model, *names):
             return value
 
     return None
+
+
+def _validate_kalman_state_covariance(covariance, dim):
+    """Validate a Kalman covariance without leaving the active backend."""
+    covariance = validate_covariance_matrix(
+        covariance,
+        name="state.covariance",
+        dim=dim,
+        allow_scalar=True,
+        check_symmetric=True,
+    )
+    eigenvalues = linalg.eigvalsh(covariance)
+    if not bool(
+        backend_all(eigenvalues >= -_STATE_COVARIANCE_EIGENVALUE_ATOL)
+    ):
+        raise ValueError("state.covariance must be positive semidefinite.")
+    return covariance
 
 
 class KalmanFilter(AbstractFilter, EuclideanFilterMixin):
@@ -75,17 +93,9 @@ class KalmanFilter(AbstractFilter, EuclideanFilterMixin):
                 name="state.mean",
                 allow_scalar=True,
             )
-            covariance = validate_covariance_matrix(
+            covariance = _validate_kalman_state_covariance(
                 state.C,
-                name="state.covariance",
-                dim=mean.shape[0],
-                allow_scalar=True,
-                check_symmetric=True,
-            )
-            covariance = assert_covariance_matrix(
-                covariance,
-                name="state.covariance",
-                dim=mean.shape[0],
+                mean.shape[0],
             )
             return GaussianDistribution(mean, covariance, check_validity=False)
         if isinstance(state, tuple) and len(state) == 2:
@@ -95,17 +105,9 @@ class KalmanFilter(AbstractFilter, EuclideanFilterMixin):
                 name="state.mean",
                 allow_scalar=True,
             )
-            covariance = validate_covariance_matrix(
+            covariance = _validate_kalman_state_covariance(
                 covariance,
-                name="state.covariance",
-                dim=mean.shape[0],
-                allow_scalar=True,
-                check_symmetric=True,
-            )
-            covariance = assert_covariance_matrix(
-                covariance,
-                name="state.covariance",
-                dim=mean.shape[0],
+                mean.shape[0],
             )
             return GaussianDistribution(mean, covariance, check_validity=False)
         raise ValueError(
