@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import warnings
 
 import pyrecest.backend
@@ -121,7 +122,7 @@ class FejerIdentityFilter(AbstractFilter, HypertoroidalFilterMixin):
                         **self.reduction_options,
                     )
                 )
-            self._filter_state = new_state
+            self._filter_state = copy.deepcopy(new_state)
             return
 
         if isinstance(new_state, HypertoroidalFourierDistribution):
