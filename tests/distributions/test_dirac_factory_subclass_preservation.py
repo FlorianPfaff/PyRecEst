@@ -5,6 +5,10 @@ from pyrecest.backend import array
 from pyrecest.distributions.circle.circular_dirac_distribution import (
     CircularDiracDistribution,
 )
+from pyrecest.distributions.circle.circular_grid_distribution import (
+    CircularGridDistribution,
+)
+from pyrecest.distributions.circle.von_mises_distribution import VonMisesDistribution
 from pyrecest.distributions.conversion import convert_distribution
 from pyrecest.distributions.nonperiodic.linear_dirac_distribution import (
     LinearDiracDistribution,
@@ -18,6 +22,10 @@ class _LinearDiracSubclass(LinearDiracDistribution):
 
 
 class _CircularDiracSubclass(CircularDiracDistribution):
+    pass
+
+
+class _CircularGridSubclass(CircularGridDistribution):
     pass
 
 
@@ -47,6 +55,15 @@ class DiracFactorySubclassPreservationTest(unittest.TestCase):
         )
 
         self.assertIsInstance(converted, _CircularDiracSubclass)
+
+    def test_circular_grid_conversion_factory_preserves_requested_subclass(self):
+        source = VonMisesDistribution(0.3, 2.0)
+
+        converted = convert_distribution(
+            source, _CircularGridSubclass, no_of_gridpoints=9
+        )
+
+        self.assertIsInstance(converted, _CircularGridSubclass)
 
     def test_se2_conversion_factory_preserves_requested_subclass(self):
         source = SE2DiracDistribution(array([[0.0, 1.0, 2.0]]))
