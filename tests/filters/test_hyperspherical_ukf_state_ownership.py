@@ -1,11 +1,9 @@
 import numpy.testing as npt
 import pyrecest.backend
 import pytest
-
 from pyrecest.backend import array, eye, to_numpy
 from pyrecest.distributions import GaussianDistribution
 from pyrecest.filters.hyperspherical_ukf import HypersphericalUKF
-
 
 pytestmark = pytest.mark.skipif(
     pyrecest.backend.__backend_name__ == "jax",

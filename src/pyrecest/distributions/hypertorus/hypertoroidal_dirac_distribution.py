@@ -186,9 +186,7 @@ class HypertoroidalDiracDistribution(
             )
 
         if transformed_dim != self.dim:
-            return HypertoroidalDiracDistribution(
-                dist.d, dist.w, dim=transformed_dim
-            )
+            return HypertoroidalDiracDistribution(dist.d, dist.w, dim=transformed_dim)
         return dist
 
     def to_toroidal_wd(self):

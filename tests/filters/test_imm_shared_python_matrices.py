@@ -25,9 +25,7 @@ class _LinearGaussianFilter:
         covariance = (
             system_matrix @ self.filter_state.C @ system_matrix.T + sys_noise_cov
         )
-        self.filter_state = GaussianDistribution(
-            mean, covariance, check_validity=False
-        )
+        self.filter_state = GaussianDistribution(mean, covariance, check_validity=False)
 
 
 @unittest.skipIf(

@@ -1,9 +1,7 @@
 import numpy as np
 import pyrecest.backend
 import pytest
-
 from pyrecest.filters.hyperspherical_ukf import HypersphericalUKF
-
 
 pytestmark = pytest.mark.skipif(
     pyrecest.backend.__backend_name__ == "jax",
