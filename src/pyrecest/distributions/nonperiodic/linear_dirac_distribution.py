@@ -122,18 +122,18 @@ class LinearDiracDistribution(AbstractDiracDistribution, AbstractLinearDistribut
             raise ValueError("Plotting not supported for this dimension")
         plt.show()
 
-    @staticmethod
-    def from_distribution(distribution, n_particles=None, n_samples=None, n=None):
-        particle_count = LinearDiracDistribution._resolve_particle_count(
+    @classmethod
+    def from_distribution(cls, distribution, n_particles=None, n_samples=None, n=None):
+        particle_count = cls._resolve_particle_count(
             n_particles=n_particles,
             n_samples=n_samples,
             n=n,
         )
         samples = distribution.sample(particle_count)
-        return LinearDiracDistribution(samples, ones(particle_count) / particle_count)
+        return cls(samples, ones(particle_count) / particle_count)
 
-    @staticmethod
-    def _resolve_particle_count(n_particles=None, n_samples=None, n=None):
+    @classmethod
+    def _resolve_particle_count(cls, n_particles=None, n_samples=None, n=None):
         from ..conversion import ConversionError
 
         specified_counts = [
@@ -146,8 +146,7 @@ class LinearDiracDistribution(AbstractDiracDistribution, AbstractLinearDistribut
             )
 
         particle_counts = [
-            LinearDiracDistribution._validate_particle_count(value)
-            for value in specified_counts
+            cls._validate_particle_count(value) for value in specified_counts
         ]
         if len(set(particle_counts)) != 1:
             raise ConversionError(

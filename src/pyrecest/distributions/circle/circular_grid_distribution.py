@@ -140,17 +140,17 @@ class CircularGridDistribution(AbstractCircularDistribution, AbstractGridDistrib
             return self._pdf_via_sinc(xs, sinc_repetitions)
         return self._pdf_via_fourier(xs)
 
-    @staticmethod
-    def from_distribution(distribution, no_of_gridpoints, enforce_pdf_nonnegative=True):
-        return CircularGridDistribution.from_function(
+    @classmethod
+    def from_distribution(cls, distribution, no_of_gridpoints, enforce_pdf_nonnegative=True):
+        return cls.from_function(
             distribution.pdf,
             no_of_gridpoints,
             enforce_pdf_nonnegative,
         )
 
-    @staticmethod
-    def from_function(fun, no_of_gridpoints, enforce_pdf_nonnegative=True):
+    @classmethod
+    def from_function(cls, fun, no_of_gridpoints, enforce_pdf_nonnegative=True):
         no_of_gridpoints = _validate_no_of_gridpoints(no_of_gridpoints)
         grid_points = linspace(0.0, 2.0 * pi, no_of_gridpoints, endpoint=False)
         grid_values = array(fun(grid_points))
-        return CircularGridDistribution(grid_values, enforce_pdf_nonnegative)
+        return cls(grid_values, enforce_pdf_nonnegative)
