@@ -116,7 +116,7 @@ class HypersphericalUKF(AbstractFilter, HypersphericalFilterMixin):
     def filter_state(self, new_state):
         if not isinstance(new_state, GaussianDistribution):
             new_state = GaussianDistribution.from_distribution(new_state)
-        self._filter_state = new_state
+        AbstractFilter.filter_state.fset(self, new_state)
 
     # ------------------------------------------------------------------
     # Internal helpers
