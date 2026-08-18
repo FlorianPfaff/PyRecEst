@@ -28,6 +28,25 @@ def _to_python_float(value, name):
         raise ValueError(f"{name} must be scalar.") from exc
 
 
+def _has_invalid_real_numeric_value(value):
+    """Return whether ``value`` is not an unambiguous real numeric input."""
+    if isinstance(value, (bool, str, bytes, bytearray, complex)):
+        return True
+
+    dtype = getattr(value, "dtype", None)
+    dtype_kind = getattr(dtype, "kind", None)
+    if dtype_kind in {"b", "c", "S", "U"}:
+        return True
+
+    dtype_name = str(dtype).lower() if dtype is not None else ""
+    if "bool" in dtype_name or "complex" in dtype_name:
+        return True
+
+    if isinstance(value, (list, tuple)):
+        return any(_has_invalid_real_numeric_value(item) for item in value)
+    return False
+
+
 def _validate_von_mises_distribution(distribution, role):
     if not isinstance(distribution, VonMisesDistribution):
         raise ValueError(f"{role} must be a VonMisesDistribution.")
@@ -43,7 +62,12 @@ def _validate_von_mises_distribution(distribution, role):
 
 
 def _validate_circular_measurement(z):
-    measurement = array(z)
+    if _has_invalid_real_numeric_value(z):
+        raise ValueError("measurement z must be a real numeric scalar.")
+    try:
+        measurement = array(z)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("measurement z must be a real numeric scalar.") from exc
     if measurement.shape not in ((), (1,)):
         raise ValueError("measurement z must be scalar.")
     measurement = measurement[0] if measurement.shape == (1,) else measurement
