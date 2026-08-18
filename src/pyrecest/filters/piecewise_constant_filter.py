@@ -5,7 +5,7 @@ import numpy as np
 import pyrecest.backend
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import array, dot, floor, pi, zeros
+from pyrecest.backend import array, dot, floor, mod, pi, zeros
 from pyrecest.distributions import AbstractCircularDistribution
 from pyrecest.distributions.circle.piecewise_constant_distribution import (
     PiecewiseConstantDistribution,
@@ -194,7 +194,7 @@ class PiecewiseConstantFilter(AbstractFilter, CircularFilterMixin):
                 r2 = PiecewiseConstantDistribution.right_border(j + 1, L)
 
                 def integrand(x, w, _l2=l2, _r2=r2):
-                    ax = a(x, w)
+                    ax = mod(a(x, w), 2.0 * pi)
                     in_interval = 1.0 if _l2 <= ax < _r2 else 0.0
                     return float(noise_distribution.pdf(array([w]))) * in_interval
 
@@ -249,7 +249,7 @@ class PiecewiseConstantFilter(AbstractFilter, CircularFilterMixin):
                 r2 = PiecewiseConstantDistribution.right_border(j + 1, L)
 
                 def integrand(x, v, _l1=l1, _r1=r1):
-                    hx = h(x, v)
+                    hx = mod(h(x, v), 2.0 * pi)
                     in_interval = 1.0 if _l1 <= hx < _r1 else 0.0
                     return float(noise_distribution.pdf(array([v]))) * in_interval
 
