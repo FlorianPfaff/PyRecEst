@@ -1,3 +1,4 @@
+import copy
 import warnings
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
@@ -82,7 +83,7 @@ class HyperhemisphericalGridFilter(AbstractGridFilter, HyperhemisphericalFilterM
                     "setState:gridDiffers: New density is defined on a different grid.",
                     RuntimeWarning,
                 )
-            self._filter_state = new_state
+            self._filter_state = copy.deepcopy(new_state)
         elif isinstance(new_state, HypersphericalGridDistribution):
             warnings.warn(
                 "setState:fullSphere: Called set_state with a GridDistribution on the "
@@ -100,7 +101,7 @@ class HyperhemisphericalGridFilter(AbstractGridFilter, HyperhemisphericalFilterM
                     "setState:gridDiffers: New density is defined on a different grid.",
                     RuntimeWarning,
                 )
-            self._filter_state = new_hemi
+            self._filter_state = copy.deepcopy(new_hemi)
         else:
             warnings.warn(
                 "setState:nonGrid: new_state is not a "
@@ -113,7 +114,7 @@ class HyperhemisphericalGridFilter(AbstractGridFilter, HyperhemisphericalFilterM
                 self._filter_state.grid_values.shape[0],
                 self._filter_state.grid_type,
             )
-            self._filter_state = new_state
+            self._filter_state = copy.deepcopy(new_state)
 
     # ------------------------------------------------------------------
     # Prediction
