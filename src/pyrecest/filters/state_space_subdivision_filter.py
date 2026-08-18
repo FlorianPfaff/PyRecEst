@@ -125,6 +125,41 @@ class StateSpaceSubdivisionFilter(AbstractFilter, HypercylindricalFilterMixin):
             )
             return
 
+        linear_dim = state.linear_distributions[0].dim
+
+        def _validated_matrix_argument(values, name):
+            if values is None:
+                return None
+            values = asarray(values)
+            shared_shape = (linear_dim, linear_dim)
+            per_area_shape = (linear_dim, linear_dim, n_areas)
+            if values.shape not in (shared_shape, per_area_shape):
+                raise ValueError(
+                    f"{name} must have shape {shared_shape} or {per_area_shape}."
+                )
+            return values
+
+        def _validated_input_argument(values):
+            if values is None:
+                return None
+            values = asarray(values)
+            shared_shape = (linear_dim,)
+            per_area_shape = (linear_dim, n_areas)
+            if values.shape not in (shared_shape, per_area_shape):
+                raise ValueError(
+                    "linear_input_vectors must have shape "
+                    f"{shared_shape} or {per_area_shape}."
+                )
+            return values
+
+        system_matrices = _validated_matrix_argument(
+            system_matrices, "system_matrices"
+        )
+        covariance_matrices = _validated_matrix_argument(
+            covariance_matrices, "covariance_matrices"
+        )
+        linear_input_vectors = _validated_input_argument(linear_input_vectors)
+
         if transition_density is None:
             # ----------------------------------------------------------
             # Case 2: No uncertainty in the periodic domain.
