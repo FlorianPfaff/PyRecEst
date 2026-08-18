@@ -1,5 +1,6 @@
 import copy
 import warnings
+from math import isfinite as python_isfinite
 
 from pyrecest.backend import (  # pylint: disable=redefined-builtin
     abs,
@@ -21,6 +22,15 @@ from pyrecest.distributions.hypersphere_subset.spherical_harmonics_distribution_
 
 from .abstract_filter import AbstractFilter
 from .manifold_mixins import HypersphericalFilterMixin
+
+
+def _is_complex_array(value):
+    """Return whether a NumPy/JAX array or PyTorch tensor has complex dtype."""
+    dtype = getattr(value, "dtype", None)
+    if getattr(dtype, "kind", None) == "c":
+        return True
+    is_complex = getattr(value, "is_complex", None)
+    return bool(is_complex()) if callable(is_complex) else False
 
 
 class SphericalHarmonicsFilter(AbstractFilter, HypersphericalFilterMixin):
@@ -153,12 +163,24 @@ class SphericalHarmonicsFilter(AbstractFilter, HypersphericalFilterMixin):
             raise TypeError(
                 "meas_noise must be a SphericalHarmonicsDistributionComplex."
             )
-        z = array(z, dtype=float).ravel()
-        z_norm = linalg.norm(z)
+        z = array(z)
+        if z.shape != (3,):
+            raise ValueError(f"measurement z must have shape (3,), got {z.shape}.")
+        if _is_complex_array(z):
+            raise ValueError("measurement z must be real-valued.")
+        try:
+            z = array(z, dtype=float)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("measurement z must be real-valued.") from exc
+        z_norm = float(linalg.norm(z))
+        if not python_isfinite(z_norm):
+            raise ValueError("measurement z must be finite.")
+        if abs(z_norm - 1.0) > 1e-6:
+            raise ValueError("measurement z must be a unit vector.")
         not_near_north_pole = (
             abs(z[0]) > 1e-6 or abs(z[1]) > 1e-6 or abs(z[2] - 1.0) > 1e-6
         )
-        if z_norm > 1e-6 and not_near_north_pole:
+        if not_near_north_pole:
             warnings.warn(
                 "SphericalHarmonicsFilter:rotationRequired: "
                 "Performance may be low for z != [0, 0, 1]. "
