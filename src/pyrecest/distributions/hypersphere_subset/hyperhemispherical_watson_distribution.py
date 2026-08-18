@@ -2,12 +2,31 @@ import copy
 from typing import Union
 
 # pylint: disable=no-name-in-module,no-member
-from pyrecest.backend import allclose, array, concatenate, int32, int64, where, zeros
+from pyrecest.backend import (
+    allclose,
+    array,
+    concatenate,
+    int32,
+    int64,
+    linalg,
+    where,
+    zeros,
+)
 
 from .abstract_hyperhemispherical_distribution import (
     AbstractHyperhemisphericalDistribution,
 )
 from .watson_distribution import WatsonDistribution
+
+
+def _orthogonal_unit_vector(direction):
+    """Return a deterministic unit vector orthogonal to ``direction``."""
+    axis_index = 0 if abs(float(direction[0])) < 0.9 else 1
+    canonical_axis = [0.0] * len(direction)
+    canonical_axis[axis_index] = 1.0
+    candidate = array(canonical_axis)
+    orthogonal = candidate - (candidate @ direction) * direction
+    return orthogonal / linalg.norm(orthogonal)
 
 
 class HyperhemisphericalWatsonDistribution(AbstractHyperhemisphericalDistribution):
@@ -26,6 +45,11 @@ class HyperhemisphericalWatsonDistribution(AbstractHyperhemisphericalDistributio
         return 2.0 * self.dist_full_sphere.pdf(xs)
 
     def set_mode(self, mu) -> "HyperhemisphericalWatsonDistribution":
+        if self.kappa < 0:
+            raise ValueError(
+                "set_mode is ambiguous for kappa < 0 because Watson modes form "
+                "the subsphere orthogonal to mu."
+            )
         mu = array(mu)
         if mu.shape != self.mu.shape:
             raise ValueError("mu must have the same shape as the current mode")
@@ -58,7 +82,11 @@ class HyperhemisphericalWatsonDistribution(AbstractHyperhemisphericalDistributio
         self.dist_full_sphere.kappa = kappa
 
     def mode(self):
-        return self.mu
+        if self.kappa >= 0:
+            return self.mu
+
+        mode = _orthogonal_unit_vector(self.mu)
+        return where(mode[-1] < 0, -mode, mode)
 
     def shift(self, shift_by) -> "HyperhemisphericalWatsonDistribution":
         canonical_mu = concatenate((zeros(self.input_dim - 1), array([1.0])))
