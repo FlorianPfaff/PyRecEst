@@ -357,8 +357,9 @@ class CircularFourierDistribution(AbstractCircularDistribution):
         full_c = concatenate([neg_c, self.c])  # Concatenate arrays to get full spectrum
         return full_c
 
-    @staticmethod
+    @classmethod
     def from_distribution(
+        cls,
         distribution: AbstractCircularDistribution,
         n: Union[int, int32, int64],
         transformation: str = "sqrt",
@@ -379,7 +380,7 @@ class CircularFourierDistribution(AbstractCircularDistribution):
                     for k in range(int(n) // 2 + 1)
                 ]
             )
-            fd = CircularFourierDistribution(
+            fd = cls(
                 c=coeffs,
                 n=int(n),
                 transformation=transformation,
@@ -398,14 +399,15 @@ class CircularFourierDistribution(AbstractCircularDistribution):
                 fvals = sqrt(fvals)
             else:
                 raise NotImplementedError("Transformation not supported.")
-            fd = CircularFourierDistribution.from_function_values(
+            fd = cls.from_function_values(
                 fvals, transformation, store_values_multiplied_by_n
             )
 
         return fd
 
-    @staticmethod
+    @classmethod
     def from_function_values(
+        cls,
         fvals,
         transformation: str = "sqrt",
         store_values_multiplied_by_n: bool = True,
@@ -416,7 +418,7 @@ class CircularFourierDistribution(AbstractCircularDistribution):
         if not store_values_multiplied_by_n:
             c = c * (1.0 / n_values)
 
-        fd = CircularFourierDistribution(
+        fd = cls(
             c=c,
             transformation=transformation,
             n=n_values,
