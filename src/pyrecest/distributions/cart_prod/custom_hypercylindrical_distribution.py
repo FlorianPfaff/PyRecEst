@@ -28,8 +28,8 @@ class CustomHypercylindricalDistribution(
             self, f, bound_dim, lin_dim
         )
 
-    @staticmethod
-    def from_distribution(distribution):
+    @classmethod
+    def from_distribution(cls, distribution):
         """
         Create a CustomHypercylindricalDistribution from another AbstractHypercylindricalDistribution.
 
@@ -41,10 +41,7 @@ class CustomHypercylindricalDistribution(
         chhd (CustomHypercylindricalDistribution)
             The created CustomHypercylindricalDistribution
         """
-        chhd = CustomHypercylindricalDistribution(
-            distribution.pdf, distribution.bound_dim, distribution.lin_dim
-        )
-        return chhd
+        return cls(distribution.pdf, distribution.bound_dim, distribution.lin_dim)
 
     def integrate(self, integration_boundaries=None):
         # Call the integrate method from the superclass
