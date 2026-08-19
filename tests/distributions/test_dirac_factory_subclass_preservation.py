@@ -41,18 +41,14 @@ class DiracFactorySubclassPreservationTest(unittest.TestCase):
     def test_linear_conversion_factory_preserves_requested_subclass(self):
         source = LinearDiracDistribution(array([0.0, 1.0]))
 
-        converted = convert_distribution(
-            source, _LinearDiracSubclass, n_particles=2
-        )
+        converted = convert_distribution(source, _LinearDiracSubclass, n_particles=2)
 
         self.assertIsInstance(converted, _LinearDiracSubclass)
 
     def test_circular_conversion_factory_preserves_requested_subclass(self):
         source = CircularDiracDistribution(array([0.0, 1.0]))
 
-        converted = convert_distribution(
-            source, _CircularDiracSubclass, n_particles=2
-        )
+        converted = convert_distribution(source, _CircularDiracSubclass, n_particles=2)
 
         self.assertIsInstance(converted, _CircularDiracSubclass)
 
@@ -73,9 +69,7 @@ class DiracFactorySubclassPreservationTest(unittest.TestCase):
         self.assertIsInstance(converted, _SE2DiracSubclass)
 
     def test_se3_conversion_factory_preserves_requested_subclass(self):
-        source = SE3DiracDistribution(
-            array([[1.0, 0.0, 0.0, 0.0, 1.0, 2.0, 3.0]])
-        )
+        source = SE3DiracDistribution(array([[1.0, 0.0, 0.0, 0.0, 1.0, 2.0, 3.0]]))
 
         converted = convert_distribution(source, _SE3DiracSubclass, n_particles=2)
 
