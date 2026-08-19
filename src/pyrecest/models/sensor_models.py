@@ -372,9 +372,7 @@ def range_bearing_model(
     return AdditiveNoiseMeasurementModel(
         measurement_function=range_bearing_measurement,
         noise_covariance=noise_covariance,
-        jacobian=lambda state: range_bearing_jacobian(
-            state, sensor_position=sensor_position, position_indices=position_indices
-        ),
+        jacobian=range_bearing_jacobian,
         function_args={
             "sensor_position": sensor_position,
             "position_indices": tuple(position_indices),
