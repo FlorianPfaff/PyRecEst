@@ -245,11 +245,13 @@ class VonMisesFisherDistribution(AbstractHypersphericalDistribution):
         if pyrecest.backend.__backend_name__ != "numpy":
             raise NotImplementedError("sample is only supported on the NumPy backend.")
 
-        if self.kappa <= self._KAPPA_EPS:
-            from .hyperspherical_uniform_distribution import (
-                HypersphericalUniformDistribution,
-            )
+        from .hyperspherical_uniform_distribution import (  # pylint: disable=protected-access
+            HypersphericalUniformDistribution,
+            _validate_positive_sample_count,
+        )
 
+        n = _validate_positive_sample_count(n)
+        if self.kappa <= self._KAPPA_EPS:
             return HypersphericalUniformDistribution(self.dim).sample(n)
 
         from scipy.stats import vonmises_fisher
