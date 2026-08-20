@@ -10,6 +10,9 @@ from pyrecest.distributions.circle.circular_grid_distribution import (
 )
 from pyrecest.distributions.circle.von_mises_distribution import VonMisesDistribution
 from pyrecest.distributions.conversion import convert_distribution
+from pyrecest.distributions.hypertorus.hypertoroidal_dirac_distribution import (
+    HypertoroidalDiracDistribution,
+)
 from pyrecest.distributions.nonperiodic.linear_dirac_distribution import (
     LinearDiracDistribution,
 )
@@ -26,6 +29,10 @@ class _CircularDiracSubclass(CircularDiracDistribution):
 
 
 class _CircularGridSubclass(CircularGridDistribution):
+    pass
+
+
+class _HypertoroidalDiracSubclass(HypertoroidalDiracDistribution):
     pass
 
 
@@ -64,6 +71,17 @@ class DiracFactorySubclassPreservationTest(unittest.TestCase):
         )
 
         self.assertIsInstance(converted, _CircularGridSubclass)
+
+    def test_hypertoroidal_conversion_factory_preserves_requested_subclass(self):
+        source = HypertoroidalDiracDistribution(
+            array([[0.0, 0.5], [1.0, 1.5]])
+        )
+
+        converted = convert_distribution(
+            source, _HypertoroidalDiracSubclass, n_particles=2
+        )
+
+        self.assertIsInstance(converted, _HypertoroidalDiracSubclass)
 
     def test_se2_conversion_factory_preserves_requested_subclass(self):
         source = SE2DiracDistribution(array([[0.0, 1.0, 2.0]]))
