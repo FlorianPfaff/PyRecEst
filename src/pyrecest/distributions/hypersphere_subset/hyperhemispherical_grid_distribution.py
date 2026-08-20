@@ -134,8 +134,9 @@ class HyperhemisphericalGridDistribution(
             hemi_grid, hemi_values, enforce_pdf_nonnegative=True
         )
 
-    @staticmethod
+    @classmethod
     def from_function(
+        cls,
         fun,
         no_of_grid_points,
         dim=2,
@@ -148,8 +149,6 @@ class HyperhemisphericalGridDistribution(
             )
         grid, _ = get_grid_hyperhemisphere(grid_type, no_of_grid_points, dim=dim)
         grid_values = fun(grid)
-        sgd = HyperhemisphericalGridDistribution(
-            grid, grid_values, enforce_pdf_nonnegative=enforce_pdf_nonnegative
-        )
+        sgd = cls(grid, grid_values, enforce_pdf_nonnegative=enforce_pdf_nonnegative)
         sgd.grid_type = grid_type
         return sgd
