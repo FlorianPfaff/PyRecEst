@@ -366,16 +366,18 @@ class DirichletProcessBirthMultiBernoulliTracker(MultiBernoulliTracker):
             if parsed_intensity < 0.0:
                 raise ValueError(validation_message)
             return max(parsed_intensity, 1e-300)
+
+        fallback_message = "clutter_intensity must be finite and non-negative"
+        fallback_clutter_intensity = self.tracker_param["clutter_intensity"]
+        if np.asarray(fallback_clutter_intensity).dtype.kind == "b":
+            raise ValueError(fallback_message)
         try:
-            clutter_intensity = self._get_clutter_intensity(
-                self.tracker_param["clutter_intensity"]
-            )
+            clutter_intensity = self._get_clutter_intensity(fallback_clutter_intensity)
         except ValueError as exc:
             raise ValueError(
                 "Set dp_birth_clutter_intensity when clutter_intensity is measurement-dependent."
             ) from exc
 
-        fallback_message = "clutter_intensity must be finite and non-negative"
         parsed_intensity = _as_finite_real_scalar(
             clutter_intensity,
             fallback_message,
