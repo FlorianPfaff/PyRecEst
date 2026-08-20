@@ -26,6 +26,7 @@ from pyrecest.backend import (
     outer,
     pi,
     stack,
+    where,
     zeros,
     zeros_like,
 )
@@ -493,9 +494,11 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
                 raise ValueError("likelihoods entries must be finite.")
             if pyrecest.backend.any(likelihoods < 0.0):
                 raise ValueError("likelihoods must be nonnegative.")
-            log_likelihoods = full(self.n_models, -float("inf"))
             positive = likelihoods > 0.0
-            log_likelihoods[positive] = log(likelihoods[positive])
+            safe_likelihoods = where(positive, likelihoods, 1.0)
+            log_likelihoods = where(
+                positive, log(safe_likelihoods), -float("inf")
+            )
             self.latest_model_likelihoods = likelihoods
         else:
             _reject_complex_values(log_likelihoods, "log_likelihoods")
@@ -513,9 +516,11 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
             self.latest_model_likelihoods = exp(log_likelihoods)
 
         prior_probabilities = asarray(self.mode_probabilities, dtype=float).reshape(-1)
-        log_prior = full(self.n_models, -float("inf"))
         positive = prior_probabilities > 0.0
-        log_prior[positive] = log(prior_probabilities[positive])
+        safe_prior_probabilities = where(positive, prior_probabilities, 1.0)
+        log_prior = where(
+            positive, log(safe_prior_probabilities), -float("inf")
+        )
 
         log_posterior_unnormalized = log_prior + log_likelihoods
         if not isfinite(log_posterior_unnormalized).any():
