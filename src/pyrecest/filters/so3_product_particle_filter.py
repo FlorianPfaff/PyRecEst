@@ -194,7 +194,8 @@ class SO3ProductParticleFilter(HyperhemisphereCartProdParticleFilter):
         max_weight = max(weights)
         if max_weight <= 0.0:
             raise ValueError("At least one particle weight must be positive.")
-        scaled_weights = weights / max_weight
+        scale_root = sqrt(max_weight)
+        scaled_weights = (weights / scale_root) / scale_root
         weight_sum = sum(scaled_weights)
         if not isfinite(weight_sum) or weight_sum <= 0.0:
             raise ValueError("At least one particle weight must be positive.")
