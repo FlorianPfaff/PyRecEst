@@ -63,7 +63,7 @@ class LinearDiracDistribution(AbstractDiracDistribution, AbstractLinearDistribut
         transformed = super().apply_function(
             f, function_is_vectorized=function_is_vectorized
         )
-        return LinearDiracDistribution(transformed.d, transformed.w)
+        return type(self)(transformed.d, transformed.w)
 
     def set_mean(self, new_mean):
         new_mean = asarray(new_mean)
