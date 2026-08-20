@@ -54,6 +54,18 @@ def _normalize_list_index(indices, target_ndim, axis, jnp):
 
     if not isinstance(indices, list) or not indices:
         return None
+
+    try:
+        list_array = jnp.asarray(indices)
+    except (TypeError, ValueError):
+        list_array = None
+    if (
+        list_array is not None
+        and list_array.ndim == target_ndim
+        and list_array.dtype == jnp.bool_
+    ):
+        return list_array
+
     if not _is_coordinate_list_index(indices):
         return jnp.asarray(indices)
 
