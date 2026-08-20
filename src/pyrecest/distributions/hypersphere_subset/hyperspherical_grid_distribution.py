@@ -288,9 +288,14 @@ class HypersphericalGridDistribution(
     # ------------------------------------------------------------------
     # Construction from function handle
     # ------------------------------------------------------------------
-    @staticmethod
+    @classmethod
     def from_function(
-        fun, no_of_grid_points, dim, grid_type="leopardi", enforce_pdf_nonnegative=True
+        cls,
+        fun,
+        no_of_grid_points,
+        dim,
+        grid_type="leopardi",
+        enforce_pdf_nonnegative=True,
     ):
         """
         Construct a HypersphericalGridDistribution from a callable.
@@ -319,7 +324,7 @@ class HypersphericalGridDistribution(
         # Call user pdf with X of shape (batch_dim, space_dim) = (n_points, dim + 1)
         grid_values = fun(grid)
 
-        return HypersphericalGridDistribution(
+        return cls(
             grid,
             grid_values,
             enforce_pdf_nonnegative=enforce_pdf_nonnegative,
