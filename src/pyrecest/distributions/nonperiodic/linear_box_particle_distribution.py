@@ -280,21 +280,19 @@ class LinearBoxParticleDistribution(AbstractLinearDistribution):
         box_densities = where(volumes > 0, self.w / safe_volumes, zeros_like(self.w))
         return self.centers()[int(argmax(box_densities))]
 
-    @staticmethod
+    @classmethod
     def from_distribution(
-        distribution, n_particles=None, n_samples=None, n=None, box_half_width=0.5
+        cls, distribution, n_particles=None, n_samples=None, n=None, box_half_width=0.5
     ):
         """Create equally sized boxes around samples from another distribution."""
-        particle_count = LinearBoxParticleDistribution._resolve_particle_count(
+        particle_count = cls._resolve_particle_count(
             n_particles=n_particles,
             n_samples=n_samples,
             n=n,
         )
         samples = distribution.sample(particle_count)
-        half_width = LinearBoxParticleDistribution._coerce_half_width(
-            box_half_width, distribution.dim
-        )
-        return LinearBoxParticleDistribution(
+        half_width = cls._coerce_half_width(box_half_width, distribution.dim)
+        return cls(
             samples - reshape(half_width, (1, -1)),
             samples + reshape(half_width, (1, -1)),
             ones(particle_count) / particle_count,
