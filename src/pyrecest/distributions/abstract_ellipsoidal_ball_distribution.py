@@ -10,6 +10,7 @@ from pyrecest.backend import (
     linalg,
     log,
     pi,
+    sqrt,
     transpose,
 )
 from pyrecest.exceptions import ShapeError, ValidationError
@@ -61,7 +62,17 @@ class AbstractEllipsoidalBallDistribution(AbstractBoundedNonPeriodicDistribution
             raise ValidationError("shape_matrix must contain only finite values")
         if not bool(allclose(shape_matrix, transpose(shape_matrix))):
             raise ValidationError("shape_matrix must be symmetric")
-        if not bool(backend_all(linalg.eigvalsh(shape_matrix) > 0.0)):
+
+        shape_diagonal = diagonal(shape_matrix)
+        if not bool(backend_all(shape_diagonal > 0.0)):
+            raise ValidationError("shape_matrix must be positive definite")
+        diagonal_scale = sqrt(shape_diagonal)
+        scaled_shape_matrix = (
+            shape_matrix / diagonal_scale[:, None] / diagonal_scale[None, :]
+        )
+        if not bool(backend_all(isfinite(scaled_shape_matrix))) or not bool(
+            backend_all(linalg.eigvalsh(scaled_shape_matrix) > 0.0)
+        ):
             raise ValidationError("shape_matrix must be positive definite")
 
         self.center = center
