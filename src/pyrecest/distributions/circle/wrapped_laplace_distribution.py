@@ -111,12 +111,13 @@ class WrappedLaplaceDistribution(AbstractCircularDistribution):
             raise ValueError("n must be an integer.")
         n = int(n)
         if n == 0:
-            return self.lambda_ * 0.0 + 1.0
+            return asarray(self.lambda_ * 0.0 + 1.0)
         positive_rate = self.lambda_ * self.kappa
         negative_rate = self.lambda_ / self.kappa
-        return _first_order_moment_factor(
+        moment = _first_order_moment_factor(
             positive_rate, -n
         ) * _first_order_moment_factor(negative_rate, n)
+        return asarray(moment)
 
     def pdf(self, xs):
         xs = _validate_pdf_points(xs)
