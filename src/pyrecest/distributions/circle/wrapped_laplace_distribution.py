@@ -114,9 +114,10 @@ class WrappedLaplaceDistribution(AbstractCircularDistribution):
             return self.lambda_ * 0.0 + 1.0
         positive_rate = self.lambda_ * self.kappa
         negative_rate = self.lambda_ / self.kappa
-        return _first_order_moment_factor(
-            positive_rate, -n
-        ) * _first_order_moment_factor(negative_rate, n)
+        return asarray(
+            _first_order_moment_factor(positive_rate, -n)
+            * _first_order_moment_factor(negative_rate, n)
+        )
 
     def pdf(self, xs):
         xs = _validate_pdf_points(xs)
