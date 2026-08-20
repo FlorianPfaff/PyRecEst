@@ -516,11 +516,12 @@ def _validate_multivariate_normal_cov(cov, mean_dim):
         raise ValueError("cov must be a 2-dimensional square matrix")
     if cov.shape != (mean_dim, mean_dim):
         raise ValueError("cov must have shape (mean.size, mean.size)")
-    if not bool(_jnp.allclose(cov, cov.T)):
+    cov_np = _np.asarray(cov)
+    if not _np.allclose(cov_np, cov_np.T):
         raise ValueError("cov must be symmetric")
-    cov_float = cov.astype(_jnp.result_type(cov, _jnp.float32))
+    cov_float = cov_np.astype(_np.result_type(cov_np.dtype, _np.float32), copy=False)
     eigenvalue_tolerance = 1e-8
-    if bool(_jnp.any(_jnp.linalg.eigvalsh(cov_float) < -eigenvalue_tolerance)):
+    if _np.any(_np.linalg.eigvalsh(cov_float) < -eigenvalue_tolerance):
         raise ValueError("cov must be positive semidefinite")
     return cov
 
