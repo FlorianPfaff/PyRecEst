@@ -123,8 +123,9 @@ class SphericalGridDistribution(
     # ------------------------------------------------------------------
     # Factory methods
     # ------------------------------------------------------------------
-    @staticmethod
+    @classmethod
     def from_distribution(
+        cls,
         distribution,
         no_of_grid_points: int,
         grid_type: str = "leopardi",
@@ -137,7 +138,7 @@ class SphericalGridDistribution(
             raise ValueError(
                 "SphericalGridDistribution can only approximate two-dimensional S^2 distributions."
             )
-        return SphericalGridDistribution.from_function(
+        return cls.from_function(
             distribution.pdf,
             no_of_grid_points,
             grid_type=grid_type,
@@ -145,8 +146,9 @@ class SphericalGridDistribution(
         )
 
     # pylint: disable=too-many-locals
-    @staticmethod
+    @classmethod
     def from_function(
+        cls,
         fun,
         no_of_grid_points: int,
         dim=2,
@@ -191,7 +193,7 @@ class SphericalGridDistribution(
 
         # fun expects (batch, 3)
         grid_values = fun(grid)
-        return SphericalGridDistribution(
+        return cls(
             grid,
             grid_values,
             enforce_pdf_nonnegative=enforce_pdf_nonnegative,
