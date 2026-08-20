@@ -272,7 +272,8 @@ class SO3ProductDiracDistribution(HyperhemisphereCartProdDiracDistribution):
             array(rotation_b)
         )
         dot_products = sum(quaternion_a * quaternion_b, axis=-1)
-        return 2.0 * arccos(clip(abs(dot_products), -1.0, 1.0))
+        distances = 2.0 * arccos(clip(abs(dot_products), -1.0, 1.0))
+        return float(distances) if ndim(distances) == 0 else distances
 
     def distance_to(self, rotations, reduce=True):
         """Return component-wise or summed geodesic distances to ``rotations``."""
