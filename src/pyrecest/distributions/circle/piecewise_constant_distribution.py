@@ -14,9 +14,11 @@ from pyrecest.backend import (
     mod,
     pi,
     random,
+    sqrt,
     sum,
     zeros,
 )
+from pyrecest.backend import max as backend_max
 
 from .abstract_circular_distribution import AbstractCircularDistribution
 
@@ -145,11 +147,21 @@ class PiecewiseConstantDistribution(AbstractCircularDistribution):
         if any(bool(weight < 0.0) for weight in w):
             raise ValueError("Weights must be nonnegative")
 
-        mean_weight = mean(w)
-        if not bool(mean_weight > 0.0):
+        max_weight = backend_max(w)
+        if not bool(max_weight > 0.0):
             raise ValueError("Weights must have positive total mass")
 
-        self.w = w / (mean_weight * 2.0 * pi)
+        # Normalize only after scaling by the largest weight. A direct mean(w)
+        # can overflow for perfectly valid finite inputs near the dtype maximum.
+        # Split the scale division at sqrt(max_weight) so XLA-style backends do
+        # not lower division by a huge scale through an underflowing reciprocal.
+        scale_root = sqrt(max_weight)
+        scaled_w = (w / scale_root) / scale_root
+        mean_scaled_weight = mean(scaled_w)
+        if not bool(isfinite(mean_scaled_weight)) or not bool(mean_scaled_weight > 0.0):
+            raise ValueError("Weights must have positive finite total mass")
+
+        self.w = scaled_w / (mean_scaled_weight * 2.0 * pi)
 
     def pdf(self, xs):
         """Evaluate the pdf at each point in xs.
