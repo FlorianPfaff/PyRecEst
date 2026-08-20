@@ -234,7 +234,10 @@ class MerweScaledSigmaPoints:
         U = linalg.cholesky(scale * P)  # lower-triangular
 
         positive = [x + U[:, i] for i in range(n)]
-        negative = [x - U[:, i] for i in range(n)]
+        # Reuse the representable positive displacement for the negative point.
+        # Computing x-U independently can introduce a one-ULP asymmetry which is
+        # strongly amplified by the large weights used for small alpha values.
+        negative = [x - (point - x) for point in positive]
         return stack([x, *positive, *negative])
 
 
