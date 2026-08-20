@@ -190,7 +190,7 @@ def _aggregate_summary_metric(
     return _base_aggregate_summary_metric(key, values, counts)
 
 
-def _aggregate_std_metric(
+def _stable_aggregate_std_metric(
     stds: np.ndarray,
     means: np.ndarray,
     counts: np.ndarray,
@@ -229,7 +229,7 @@ _time_offset_module._as_real_numeric_array = _as_real_numeric_array
 _time_offset_module._as_summary_scalar = _as_summary_scalar
 _time_offset_module._as_nonnegative_summary_count = _as_nonnegative_summary_count
 _time_offset_module._aggregate_summary_metric = _aggregate_summary_metric
-_time_offset_module._aggregate_std_metric = _aggregate_std_metric
+_time_offset_module._aggregate_std_metric = _stable_aggregate_std_metric
 
 from . import bias as _bias_module  # noqa: E402
 
