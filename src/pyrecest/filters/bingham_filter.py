@@ -41,6 +41,27 @@ def _is_complex_array(value):
     return bool(is_complex()) if callable(is_complex) else False
 
 
+def _has_invalid_real_numeric_value(value):
+    """Return whether ``value`` contains booleans, text, or complex values."""
+    if isinstance(value, (bool, str, bytes, bytearray, complex)):
+        return True
+
+    dtype = getattr(value, "dtype", None)
+    dtype_kind = getattr(dtype, "kind", None)
+    if dtype_kind in {"b", "c", "S", "U"}:
+        return True
+    if dtype_kind == "O":
+        return any(_has_invalid_real_numeric_value(item) for item in value.flat)
+
+    dtype_name = str(dtype).lower() if dtype is not None else ""
+    if "bool" in dtype_name or "complex" in dtype_name:
+        return True
+
+    if isinstance(value, (list, tuple)):
+        return any(_has_invalid_real_numeric_value(item) for item in value)
+    return False
+
+
 def _validate_bingham_distribution(distribution, role):
     if not isinstance(distribution, BinghamDistribution):
         raise ValueError(f"{role} must be a BinghamDistribution.")
@@ -77,6 +98,8 @@ def _validate_compatible_bingham(distribution, reference, role):
 
 
 def _validate_bingham_measurement(z, input_dim):
+    if _has_invalid_real_numeric_value(z):
+        raise ValueError("measurement z must contain real numeric values.")
     measurement = asarray(z)
     if measurement.shape != (input_dim,):
         raise ValueError(f"measurement z must have shape ({input_dim},).")
@@ -90,6 +113,8 @@ def _validate_bingham_measurement(z, input_dim):
 
 
 def _validate_bingham_system_output(value, input_dim):
+    if _has_invalid_real_numeric_value(value):
+        raise ValueError("system function output must contain real numeric values.")
     propagated = asarray(value)
     if propagated.shape != (input_dim,):
         raise ValueError(f"system function output must have shape ({input_dim},).")
