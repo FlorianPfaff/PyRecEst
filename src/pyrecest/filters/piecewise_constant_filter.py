@@ -196,7 +196,8 @@ class PiecewiseConstantFilter(AbstractFilter, CircularFilterMixin):
                 def integrand(x, w, _l2=l2, _r2=r2):
                     ax = mod(a(x, w), 2.0 * pi)
                     in_interval = 1.0 if _l2 <= ax < _r2 else 0.0
-                    return float(noise_distribution.pdf(array([w]))) * in_interval
+                    noise_density = noise_distribution.pdf(array([w]))
+                    return float(noise_density[0]) * in_interval
 
                 A[j, i] = (
                     nquad(integrand, [[l1, r1], [0.0, 2.0 * pi]])[0] * L / (2.0 * pi)
@@ -251,7 +252,8 @@ class PiecewiseConstantFilter(AbstractFilter, CircularFilterMixin):
                 def integrand(x, v, _l1=l1, _r1=r1):
                     hx = mod(h(x, v), 2.0 * pi)
                     in_interval = 1.0 if _l1 <= hx < _r1 else 0.0
-                    return float(noise_distribution.pdf(array([v]))) * in_interval
+                    noise_density = noise_distribution.pdf(array([v]))
+                    return float(noise_density[0]) * in_interval
 
                 H[i, j] = (
                     nquad(integrand, [[l2, r2], [0.0, 2.0 * pi]])[0] * L / (2.0 * pi)

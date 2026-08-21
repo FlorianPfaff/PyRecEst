@@ -145,19 +145,82 @@ _base_aggregate_summary_metric = getattr(
 )
 
 
+def _scaled_weighted_average(values: np.ndarray, weights: np.ndarray) -> float:
+    """Return a weighted mean without overflowing on large finite operands."""
+    value_scale = float(np.max(np.abs(values)))
+    if value_scale == 0.0:
+        return 0.0
+    weight_scale = float(np.max(weights))
+    scaled_weights = weights / weight_scale
+    normalized_mean = np.sum((values / value_scale) * scaled_weights) / np.sum(
+        scaled_weights
+    )
+    return float(value_scale * normalized_mean)
+
+
 def _aggregate_summary_metric(
     key: str,
     values: np.ndarray,
     counts: np.ndarray,
 ) -> float:
-    """Aggregate composable metrics without inventing pooled percentiles."""
-    if key != "p95":
-        return _base_aggregate_summary_metric(key, values, counts)
-
+    """Aggregate composable metrics without overflow or invented percentiles."""
     valid = np.isfinite(values) & (counts > 0.0)
-    if np.count_nonzero(valid) == 1:
-        return float(values[valid][0])
-    return float("nan")
+    if not valid.any():
+        return float("nan")
+
+    valid_values = values[valid]
+    valid_counts = counts[valid]
+    if key == "p95":
+        if np.count_nonzero(valid) == 1:
+            return float(valid_values[0])
+        return float("nan")
+    if key == "rmse":
+        scale = float(np.max(np.abs(valid_values)))
+        if scale == 0.0:
+            return 0.0
+        scaled_weights = valid_counts / np.max(valid_counts)
+        normalized_mse = np.sum(
+            (valid_values / scale) ** 2 * scaled_weights
+        ) / np.sum(scaled_weights)
+        return float(scale * np.sqrt(normalized_mse))
+    if key == "max":
+        return float(np.max(valid_values))
+    if key == "mean":
+        return _scaled_weighted_average(valid_values, valid_counts)
+    return _base_aggregate_summary_metric(key, values, counts)
+
+
+def _stable_aggregate_std_metric(
+    stds: np.ndarray,
+    means: np.ndarray,
+    counts: np.ndarray,
+) -> float:
+    """Pool standard deviations using scaled centered moments."""
+    valid = np.isfinite(stds) & np.isfinite(means) & (counts > 0.0)
+    if not valid.any():
+        return float("nan")
+
+    valid_stds = stds[valid]
+    valid_means = means[valid]
+    valid_counts = counts[valid]
+    pooled_mean = _scaled_weighted_average(valid_means, valid_counts)
+    scale = float(
+        max(
+            np.max(np.abs(valid_stds)),
+            np.max(np.abs(valid_means)),
+            abs(pooled_mean),
+        )
+    )
+    if scale == 0.0:
+        return 0.0
+
+    scaled_weights = valid_counts / np.max(valid_counts)
+    centered_means = valid_means / scale - pooled_mean / scale
+    normalized_variances = (valid_stds / scale) ** 2 + centered_means**2
+    pooled_variance = np.sum(normalized_variances * scaled_weights) / np.sum(
+        scaled_weights
+    )
+    return float(scale * np.sqrt(max(0.0, float(pooled_variance))))
 
 
 _time_offset_module._as_finite_float = _as_finite_float
@@ -166,6 +229,7 @@ _time_offset_module._as_real_numeric_array = _as_real_numeric_array
 _time_offset_module._as_summary_scalar = _as_summary_scalar
 _time_offset_module._as_nonnegative_summary_count = _as_nonnegative_summary_count
 _time_offset_module._aggregate_summary_metric = _aggregate_summary_metric
+_time_offset_module._aggregate_std_metric = _stable_aggregate_std_metric
 
 from . import bias as _bias_module  # noqa: E402
 
