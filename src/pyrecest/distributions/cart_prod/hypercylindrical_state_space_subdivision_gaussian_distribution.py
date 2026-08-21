@@ -6,6 +6,7 @@ from pyrecest.backend import (
     array,
     atleast_2d,
     concatenate,
+    log,
 )
 from pyrecest.backend import sum as backend_sum
 from pyrecest.backend import (
@@ -139,20 +140,21 @@ class HypercylindricalStateSpaceSubdivisionGaussianDistribution(
         return concatenate([trig_mom_real, self.linear_mean().reshape(-1)])
 
     def mode(self):
-        periodic_mode = self.gd.mode()
         grid_points = self._grid_points()
+        weights = self._weights()
 
-        mode_index = None
-        for idx, grid_point in enumerate(grid_points):
-            if allclose(grid_point.reshape(-1), periodic_mode.reshape(-1)):
-                mode_index = idx
-                break
+        mode_scores = []
+        for grid_idx, gaussian in enumerate(self.gaussians):
+            if bool(weights[grid_idx] > 0.0):
+                conditional_log_peak = array(
+                    gaussian.ln_pdf(gaussian.mode())
+                ).reshape(-1)[0]
+                mode_scores.append(log(weights[grid_idx]) + conditional_log_peak)
+            else:
+                mode_scores.append(-float("inf"))
 
-        if mode_index is None:
-            weights = self._weights()
-            mode_index = int(array(weights).argmax())
-            periodic_mode = grid_points[mode_index]
-
+        mode_index = int(array(mode_scores).argmax())
+        periodic_mode = grid_points[mode_index]
         return concatenate(
             [periodic_mode.reshape(-1), self.gaussians[mode_index].mode().reshape(-1)]
         )
