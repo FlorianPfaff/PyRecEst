@@ -119,11 +119,11 @@ class AbstractSE3Distribution(AbstractLinBoundedCartProdDistribution):
         optAx = (pos // 5) * 5
 
         # Adjust axis limits if necessary
-        if xl[0] < needed_boundaries[0, 0] or xl[1] > needed_boundaries[0, 1]:
+        if xl[0] > needed_boundaries[0, 0] or xl[1] < needed_boundaries[0, 1]:
             ax.set_xlim([optAx[0] - 5, optAx[0] + 5])
-        if yl[0] < needed_boundaries[1, 0] or yl[1] > needed_boundaries[1, 1]:
+        if yl[0] > needed_boundaries[1, 0] or yl[1] < needed_boundaries[1, 1]:
             ax.set_ylim([optAx[1] - 5, optAx[1] + 5])
-        if zl[0] < needed_boundaries[2, 0] or zl[1] > needed_boundaries[2, 1]:
+        if zl[0] > needed_boundaries[2, 0] or zl[1] < needed_boundaries[2, 1]:
             ax.set_zlim([optAx[2] - 5, optAx[2] + 5])
 
         return h
