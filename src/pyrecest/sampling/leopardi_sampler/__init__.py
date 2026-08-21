@@ -32,7 +32,10 @@ def get_equal_area_caps(dim, N, symmetric: bool = False):
     ratio_half = 0.5 * (_legacy_globals["pi"] - 2 * c_polar) / ideal_angle
     # A symmetric partition needs at least one collar in each hemisphere.
     n_half = _legacy_globals["max"](
-        _legacy_globals["array"]((1, _legacy_globals["round"](ratio_half)))
+        _legacy_globals["array"](
+            (1, _legacy_globals["round"](ratio_half)),
+            dtype=_legacy_globals["int32"],
+        )
     )
     n_collars = int(2 * n_half)
 
