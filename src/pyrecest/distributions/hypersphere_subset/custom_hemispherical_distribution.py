@@ -17,15 +17,15 @@ class CustomHemisphericalDistribution(
         AbstractHemisphericalDistribution.__init__(self)
         CustomHyperhemisphericalDistribution.__init__(self, f, 2)
 
-    @staticmethod
-    def from_distribution(distribution: "AbstractHypersphericalDistribution"):
+    @classmethod
+    def from_distribution(cls, distribution: "AbstractHypersphericalDistribution"):
         if distribution.dim != 2:
             raise ValueError("Dimension of the distribution should be 2.")
 
         if isinstance(distribution, AbstractHyperhemisphericalDistribution):
-            return CustomHemisphericalDistribution(distribution.pdf)
+            return cls(distribution.pdf)
         if isinstance(distribution, BinghamDistribution):
-            chsd = CustomHemisphericalDistribution(distribution.pdf)
+            chsd = cls(distribution.pdf)
             chsd.scale_by = 2
             return chsd
         if isinstance(distribution, AbstractHypersphericalDistribution):
@@ -38,7 +38,7 @@ class CustomHemisphericalDistribution(
                 distribution.pdf, distribution.dim
             )
             norm_const_inv = chhd_unnorm.integrate()
-            chsd = CustomHemisphericalDistribution(distribution.pdf)
+            chsd = cls(distribution.pdf)
             chsd.scale_by = 1 / norm_const_inv
             return chsd
 

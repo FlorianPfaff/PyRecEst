@@ -52,8 +52,8 @@ class CustomHyperhemisphericalDistribution(
             self, integration_boundaries
         )
 
-    @staticmethod
-    def from_distribution(distribution: "AbstractHypersphericalDistribution"):
+    @classmethod
+    def from_distribution(cls, distribution: "AbstractHypersphericalDistribution"):
         """
         Create a CustomHyperhemisphericalDistribution from another distribution.
 
@@ -62,21 +62,15 @@ class CustomHyperhemisphericalDistribution(
         :raises ValueError: if the type of dist is not supported.
         """
         if isinstance(distribution, AbstractHyperhemisphericalDistribution):
-            return CustomHyperhemisphericalDistribution(
-                distribution.pdf, distribution.dim
-            )
+            return cls(distribution.pdf, distribution.dim)
 
         if isinstance(distribution, BinghamDistribution):
-            chhd = CustomHyperhemisphericalDistribution(
-                distribution.pdf, distribution.dim
-            )
+            chhd = cls(distribution.pdf, distribution.dim)
             chhd.scale_by = 2
             return chhd
 
         if isinstance(distribution, AbstractHypersphericalDistribution):
-            chhd = CustomHyperhemisphericalDistribution(
-                distribution.pdf, distribution.dim
-            )
+            chhd = cls(distribution.pdf, distribution.dim)
             norm_const_inv = chhd.integrate()
             chhd.scale_by = 1 / norm_const_inv
             return chhd
