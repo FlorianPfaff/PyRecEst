@@ -184,8 +184,6 @@ def _validate_boundary(name: str, value, dim: int):
 
 
 def _validate_boundary_order(left, right) -> None:
-    if ndim(left) == 0 and ndim(right) == 0:
-        return
     if not bool(backend_all(right >= left)):
         raise ValueError("integration boundaries must be increasing in every dimension")
 
