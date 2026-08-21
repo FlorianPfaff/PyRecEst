@@ -146,6 +146,26 @@ def _validate_sigma_inputs(x, P, n: int):
     return x, P
 
 
+def _symmetric_sigma_points(x, U, n: int):
+    """Build sigma-point pairs with exactly matching floating-point offsets."""
+
+    positive = []
+    negative = []
+    for i in range(n):
+        # First realize the positive displacement, then realize its opposite.
+        # Rebuilding the positive point from that final negative displacement
+        # removes the one-ULP asymmetry that can arise from cancellation when
+        # the mean and the two points lie on different floating-point grids.
+        positive_point = x + U[:, i]
+        realized_offset = positive_point - x
+        negative_point = x - realized_offset
+        realized_offset = x - negative_point
+        positive_point = x + realized_offset
+        positive.append(positive_point)
+        negative.append(negative_point)
+    return stack([x, *positive, *negative])
+
+
 class MerweScaledSigmaPoints:
     """Merwe scaled sigma points (van der Merwe, 2004).
 
@@ -232,10 +252,7 @@ class MerweScaledSigmaPoints:
         x, P = _validate_sigma_inputs(x, P, n)
 
         U = linalg.cholesky(scale * P)  # lower-triangular
-
-        positive = [x + U[:, i] for i in range(n)]
-        negative = [x - U[:, i] for i in range(n)]
-        return stack([x, *positive, *negative])
+        return _symmetric_sigma_points(x, U, n)
 
 
 class JulierSigmaPoints:
@@ -289,7 +306,4 @@ class JulierSigmaPoints:
         x, P = _validate_sigma_inputs(x, P, n)
 
         U = linalg.cholesky(k * P)  # lower-triangular
-
-        positive = [x + U[:, i] for i in range(n)]
-        negative = [x - U[:, i] for i in range(n)]
-        return stack([x, *positive, *negative])
+        return _symmetric_sigma_points(x, U, n)
