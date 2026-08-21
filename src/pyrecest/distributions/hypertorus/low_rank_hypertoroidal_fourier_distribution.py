@@ -207,7 +207,7 @@ class LowRankHypertoroidalFourierDistribution(AbstractHypertoroidalDistribution)
             np.exp(-1j * _freqs(axis_size) * float(shift_by[axis]))
             for axis, axis_size in enumerate(self.coeff_shape)
         ]
-        return LowRankHypertoroidalFourierDistribution(
+        return type(self)(
             self.coefficients.multiply_axis_factors(factors),
             self.transformation,
             normalize=False,
@@ -253,7 +253,7 @@ class LowRankHypertoroidalFourierDistribution(AbstractHypertoroidalDistribution)
             atol=atol,
             max_entries=max_entries,
         )
-        return LowRankHypertoroidalFourierDistribution(
+        return type(self)(
             coefficients,
             "identity",
             normalize=True,
@@ -273,7 +273,7 @@ class LowRankHypertoroidalFourierDistribution(AbstractHypertoroidalDistribution)
             other.coefficients, target_shape=target_shape
         )
         coeffs = coeffs.round(max_rank=max_rank, rtol=rtol, atol=atol)
-        return LowRankHypertoroidalFourierDistribution(coeffs, self.transformation)
+        return type(self)(coeffs, self.transformation)
 
     def convolve(
         self, other, n_coefficients=None, *, max_rank=None, rtol=0.0, atol=0.0
@@ -293,7 +293,7 @@ class LowRankHypertoroidalFourierDistribution(AbstractHypertoroidalDistribution)
         coeffs = self.coefficients.hadamard_product(other.coefficients)
         coeffs = coeffs.scaled((2.0 * np.pi) ** self.dim)
         coeffs = coeffs.round(max_rank=max_rank, rtol=rtol, atol=atol)
-        return LowRankHypertoroidalFourierDistribution(coeffs, "identity")
+        return type(self)(coeffs, "identity")
 
     def mean_direction(self):
         if self.transformation != "identity":
@@ -325,7 +325,7 @@ class LowRankHypertoroidalFourierDistribution(AbstractHypertoroidalDistribution)
         if isinstance(other, LowRankHypertoroidalFourierDistribution):
             return other
         if isinstance(other, HypertoroidalFourierDistribution):
-            return LowRankHypertoroidalFourierDistribution.from_dense(other)
+            return type(self).from_dense(other)
         raise TypeError(
             "Expected a dense or low-rank hypertoroidal Fourier distribution."
         )
