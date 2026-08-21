@@ -71,9 +71,11 @@ class HypertoroidalDiracDistribution(
         AbstractHypertoroidalDistribution.__init__(self, dim)
         AbstractDiracDistribution.__init__(self, atleast_1d(mod(d, 2.0 * pi)), w=w)
 
-    @staticmethod
+    @classmethod
     def from_distribution(
-        distribution: AbstractHypertoroidalDistribution, n_particles: int | None = None
+        cls,
+        distribution: AbstractHypertoroidalDistribution,
+        n_particles: int | None = None,
     ):
         """Create a hypertoroidal Dirac approximation from a distribution.
 
@@ -93,16 +95,12 @@ class HypertoroidalDiracDistribution(
             weights = AbstractDiracDistribution._normalized_weights(
                 reshape(distribution.grid_values, (-1,))
             )
-            return HypertoroidalDiracDistribution(
-                get_grid(), weights, dim=distribution.dim
-            )
+            return cls(get_grid(), weights, dim=distribution.dim)
 
         if n_particles is None:
             raise ValueError("n_particles is required for sampling-based conversion.")
-        n_particles = HypertoroidalDiracDistribution._validate_particle_count(
-            n_particles
-        )
-        return HypertoroidalDiracDistribution(
+        n_particles = cls._validate_particle_count(n_particles)
+        return cls(
             distribution.sample(n_particles),
             ones(n_particles) / n_particles,
             dim=distribution.dim,

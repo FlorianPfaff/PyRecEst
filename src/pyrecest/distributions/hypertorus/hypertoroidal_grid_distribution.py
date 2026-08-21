@@ -334,9 +334,10 @@ class HypertoroidalGridDistribution(
         grid_values_flat = reshape(self.grid_values, (-1,))
         return grid_values_flat[min_inds]
 
-    @staticmethod
+    @classmethod
     @beartype
     def from_distribution(
+        cls,
         distribution: AbstractHypertoroidalDistribution,
         n_grid_points: int | tuple | list,
         grid_type: str = "cartesian_prod",
@@ -352,17 +353,17 @@ class HypertoroidalGridDistribution(
             n_grid_points, distribution.dim, "n_grid_points"
         )
         # Generic case: sample pdf of the given distribution on a grid.
-        hgd = HypertoroidalGridDistribution.from_function(
+        return cls.from_function(
             distribution.pdf,
             n_grid_points,
             grid_type=grid_type,
             enforce_pdf_nonnegative=enforce_pdf_nonnegative,
         )
-        return hgd
 
-    @staticmethod
+    @classmethod
     @beartype
     def from_function(
+        cls,
         fun,
         n_grid_points: int | tuple | list,
         grid_type: str = "cartesian_prod",
@@ -385,9 +386,7 @@ class HypertoroidalGridDistribution(
             n_grid_points = _normalize_hypertoroidal_grid_shape(
                 n_grid_points, "n_grid_points"
             )
-            grid = HypertoroidalGridDistribution.generate_cartesian_product_grid(
-                n_grid_points
-            )
+            grid = cls.generate_cartesian_product_grid(n_grid_points)
         else:
             raise ValueError("Grid scheme not recognized")
 
@@ -395,13 +394,12 @@ class HypertoroidalGridDistribution(
         grid_values = fun(grid)
         grid_values = reshape(grid_values, n_grid_points)
 
-        sgd = HypertoroidalGridDistribution(
+        return cls(
             grid_values=grid_values,
             grid_type=grid_type,
             grid=grid,
             enforce_pdf_nonnegative=enforce_pdf_nonnegative,
         )
-        return sgd
 
     def to_dirac_distribution(self):
         """Return a weighted Dirac distribution on the grid points."""
