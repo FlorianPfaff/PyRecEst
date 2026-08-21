@@ -8,14 +8,14 @@ from pyrecest.distributions.cart_prod.hypercylindrical_state_space_subdivision_g
 from pyrecest.distributions.circle.circular_dirac_distribution import (
     CircularDiracDistribution,
 )
-from pyrecest.distributions.nonperiodic.gaussian_distribution import GaussianDistribution
+from pyrecest.distributions.nonperiodic.gaussian_distribution import (
+    GaussianDistribution,
+)
 
 
 class TestHypercylindricalStateSpaceSubdivisionGaussianDistribution(unittest.TestCase):
     def test_mode_uses_joint_peak_not_periodic_marginal_weight(self):
-        periodic = CircularDiracDistribution(
-            array([0.25, 1.25]), array([0.6, 0.4])
-        )
+        periodic = CircularDiracDistribution(array([0.25, 1.25]), array([0.6, 0.4]))
         broad = GaussianDistribution(array([0.0]), array([[100.0]]))
         narrow = GaussianDistribution(array([5.0]), array([[0.01]]))
         distribution = HypercylindricalStateSpaceSubdivisionGaussianDistribution(

@@ -34,9 +34,7 @@ class HyperhemisphericalParticleFilter(
         """
         n_particles = _validate_positive_integer(n_particles, "n_particles")
         dim = _validate_positive_integer(dim, "dim")
-        initial_particles = hstack(
-            (zeros((n_particles, dim)), ones((n_particles, 1)))
-        )
+        initial_particles = hstack((zeros((n_particles, dim)), ones((n_particles, 1))))
         initial_filter_state = HyperhemisphericalDiracDistribution(initial_particles)
         HyperhemisphericalFilterMixin.__init__(self)
         AbstractParticleFilter.__init__(self, initial_filter_state=initial_filter_state)

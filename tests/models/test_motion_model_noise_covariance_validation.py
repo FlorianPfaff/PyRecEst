@@ -7,11 +7,11 @@ import unittest
 import numpy as np
 from pyrecest.models import (
     coordinated_turn_model,
+    motion_models,
     nearly_constant_speed_model,
     se2_unicycle_model,
     se3_pose_twist_model,
 )
-from pyrecest.models import motion_models
 
 
 class TestMotionModelNoiseCovarianceValidation(unittest.TestCase):
