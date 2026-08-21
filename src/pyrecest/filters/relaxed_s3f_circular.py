@@ -33,6 +33,7 @@ from pyrecest.backend import (
     mod,
     pi,
     sin,
+    sqrt,
     stack,
 )
 from pyrecest.backend import sum as backend_sum
@@ -243,7 +244,8 @@ def grid_probability_masses(grid_values: Any) -> Any:
     scale = values.max()
     if float(scale) <= 0.0:
         raise ValueError("grid values must have positive total mass.")
-    scaled_values = values / scale
+    scale_root = sqrt(scale)
+    scaled_values = (values / scale_root) / scale_root
     return scaled_values / backend_sum(scaled_values)
 
 

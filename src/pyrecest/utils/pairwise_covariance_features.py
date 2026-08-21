@@ -172,8 +172,8 @@ def pairwise_covariance_shape_components(
 
     traces_a = _positive_floor(_batch_trace(moved_covariances_a), epsilon)
     traces_b = _positive_floor(_batch_trace(moved_covariances_b), epsilon)
-    normalized_a = moved_covariances_a / traces_a[:, None, None]
-    normalized_b = moved_covariances_b / traces_b[:, None, None]
+    normalized_a = _divide_by_positive_batch_scale(moved_covariances_a, traces_a)
+    normalized_b = _divide_by_positive_batch_scale(moved_covariances_b, traces_b)
 
     shape_differences = normalized_a[:, None, :, :] - normalized_b[None, :, :, :]
     frobenius_squared = backend_sum(
@@ -253,7 +253,15 @@ def _validate_covariance_stack(name: str, covariances: Any) -> Any:
         raise ValueError(f"{name} must contain only finite values")
 
     if covariances.shape[0] > 0 and covariances.shape[2] > 0:
-        eigenvalues = linalg.eigvalsh(_symmetrized_covariance_batch(covariances))
+        symmetric_covariances = _symmetrized_covariance_batch(covariances)
+        matrix_scale = backend_max(
+            backend_max(abs(symmetric_covariances), axis=-1), axis=-1
+        )
+        safe_matrix_scale = where(matrix_scale > 0.0, matrix_scale, 1.0)
+        scaled_covariances = _divide_by_positive_batch_scale(
+            symmetric_covariances, safe_matrix_scale
+        )
+        eigenvalues = linalg.eigvalsh(scaled_covariances)
         eigenvalue_scale = maximum(backend_max(abs(eigenvalues), axis=-1), 1.0)
         tolerance = 1.0e-10 * eigenvalue_scale
         if not bool(backend_all(eigenvalues >= -tolerance[:, None])):
@@ -271,6 +279,12 @@ def _symmetrized_covariance_batch(covariances: Any) -> Any:
     safe_scale = where(scale == 0.0, 1.0, scale)
     normalized_average = 0.5 * (moved / safe_scale + transposed / safe_scale)
     return scale * normalized_average
+
+
+def _divide_by_positive_batch_scale(matrices: Any, scales: Any) -> Any:
+    """Divide matrix batches by positive scales without reciprocal underflow."""
+    scale_roots = sqrt(scales)
+    return (matrices / scale_roots[:, None, None]) / scale_roots[:, None, None]
 
 
 def _batch_trace(matrices: Any) -> Any:
