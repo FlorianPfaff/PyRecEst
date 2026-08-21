@@ -177,10 +177,21 @@ class LinearBoxParticleDistribution(AbstractLinearDistribution):
                 f"new_mean must have shape ({self.dim},), got {new_mean.shape}."
             )
 
-        offset = reshape(new_mean - self.mean(), (1, -1))
+        # Compute half the translation first.  ``new_mean - self.mean()`` can
+        # overflow for opposite-sign finite values even when every translated
+        # box boundary is itself representable.  The half-scaled form is
+        # algebraically identical while keeping all intermediate differences in
+        # range whenever the final shifted support is representable.
+        half_offset = 0.5 * new_mean - 0.5 * self.mean()
+        half_offset = reshape(half_offset, (1, -1))
+        new_lower = 2.0 * (0.5 * self.lower + half_offset)
+        new_upper = 2.0 * (0.5 * self.upper + half_offset)
+        if not bool(all(isfinite(new_lower))) or not bool(all(isfinite(new_upper))):
+            raise ValueError("new_mean would move box supports outside the finite range")
+
         dist = copy.deepcopy(self)
-        dist.lower = self.lower + offset
-        dist.upper = self.upper + offset
+        dist.lower = new_lower
+        dist.upper = new_upper
         return dist
 
     def sample(self, n: Union[int, int32, int64]):
