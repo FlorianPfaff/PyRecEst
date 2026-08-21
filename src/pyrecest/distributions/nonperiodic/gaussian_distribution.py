@@ -325,7 +325,7 @@ class GaussianDistribution(AbstractLinearDistribution):
         new_mu = linalg.solve(new_precision, information_vector)
         new_C = linalg.solve(new_precision, identity)
         new_C = 0.5 * (new_C + transpose(new_C))
-        return GaussianDistribution(new_mu, new_C, check_validity=False)
+        return type(self)(new_mu, new_C, check_validity=False)
 
     def convolve(self, other):
         """Convolve two independent Gaussian distributions.
@@ -343,7 +343,7 @@ class GaussianDistribution(AbstractLinearDistribution):
         _validate_same_dimension(self, other, "convolve")
         new_mu = self.mu + other.mu
         new_C = self.C + other.C
-        return GaussianDistribution(new_mu, new_C, check_validity=False)
+        return type(self)(new_mu, new_C, check_validity=False)
 
     def marginalize_out(self, dimensions):
         """Return the marginal distribution after dropping dimensions.
