@@ -2,6 +2,7 @@
 import copy
 import math
 from numbers import Integral
+from operator import index as _operator_index
 
 import numpy as np
 from pyrecest.backend import (
@@ -26,6 +27,27 @@ from scipy.special import iv, ive
 from scipy.stats import vonmises
 
 from .abstract_circular_distribution import AbstractCircularDistribution
+
+
+def _validate_moment_order(n) -> int:
+    """Return a scalar integer trigonometric-moment order."""
+    message = "n must be an integer."
+    if isinstance(n, (bool, np.bool_)):
+        raise ValueError(message)
+
+    ndim = getattr(n, "ndim", None)
+    if ndim not in (None, 0):
+        raise ValueError(message)
+
+    dtype = getattr(n, "dtype", None)
+    if getattr(dtype, "kind", None) == "b" or str(dtype) == "torch.bool":
+        raise ValueError(message)
+
+    try:
+        order = _operator_index(n)
+    except (OverflowError, TypeError, ValueError) as exc:
+        raise ValueError(message) from exc
+    return int(order)
 
 
 class VonMisesDistribution(AbstractCircularDistribution):
@@ -257,11 +279,13 @@ class VonMisesDistribution(AbstractCircularDistribution):
         return result
 
     def trigonometric_moment(self, n: int):
+        n = _validate_moment_order(n)
         if n in (0, 1, 2):
             return self.trigonometric_moment_analytic(n)
         return self.trigonometric_moment_numerical(n)
 
     def trigonometric_moment_analytic(self, n: int):
+        n = _validate_moment_order(n)
         if n == 0:
             m = array(1.0 + 0.0j)
         elif self.kappa == 0.0:
