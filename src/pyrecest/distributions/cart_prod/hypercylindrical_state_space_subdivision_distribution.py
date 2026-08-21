@@ -219,8 +219,8 @@ class HypercylindricalStateSpaceSubdivisionDistribution(
 
         return column_stack([samples_bounded, samples_linear])
 
-    @staticmethod
-    def from_distribution(distribution, no_of_grid_points, grid_type="cartesian_prod"):
+    @classmethod
+    def from_distribution(cls, distribution, no_of_grid_points, grid_type="cartesian_prod"):
         """
         Create a HypercylindricalStateSpaceSubdivisionDistribution from an
         AbstractHypercylindricalDistribution.
@@ -235,7 +235,7 @@ class HypercylindricalStateSpaceSubdivisionDistribution(
         -------
         HypercylindricalStateSpaceSubdivisionDistribution
         """
-        return HypercylindricalStateSpaceSubdivisionDistribution.from_function(
+        return cls.from_function(
             distribution.pdf,
             no_of_grid_points,
             distribution.lin_dim,
@@ -244,8 +244,9 @@ class HypercylindricalStateSpaceSubdivisionDistribution(
         )
 
     # pylint: disable=too-many-positional-arguments,too-many-locals
-    @staticmethod
+    @classmethod
     def from_function(
+        cls,
         fun,
         no_of_grid_points,
         dim_lin,
@@ -339,4 +340,4 @@ class HypercylindricalStateSpaceSubdivisionDistribution(
             grid=grid,
             enforce_pdf_nonnegative=False,
         )
-        return HypercylindricalStateSpaceSubdivisionDistribution(gd, cds)
+        return cls(gd, cds)
