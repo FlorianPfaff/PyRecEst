@@ -166,17 +166,25 @@ class WatsonDistribution(AbstractHypersphericalDistribution):
         return self.ln_norm_const + self.kappa * (xs @ self.mu) ** 2
 
     def to_bingham(self) -> BinghamDistribution:
-        if self.kappa < 0:
-            raise NotImplementedError(
-                "Conversion to Bingham is not implemented for kappa<0"
-            )
-
         M = tile(self.mu.reshape(-1, 1), (1, self.input_dim))
         E = diag(array(concatenate((array([0]), ones(self.input_dim - 1)))))
         M = M + E
         Q, _ = linalg.qr(M)
-        M = hstack([Q[:, 1:], Q[:, 0].reshape(-1, 1)])
-        Z = hstack((full((self.dim,), -self.kappa), array(0.0)))
+
+        if self.kappa >= 0:
+            # Bingham concentrations must be ascending with a final zero.  Put
+            # the Watson axis last and shift the exponent by -kappa, which does
+            # not change the normalized density.
+            M = hstack([Q[:, 1:], Q[:, 0].reshape(-1, 1)])
+            Z = hstack((full((self.dim,), -self.kappa), array(0.0)))
+        else:
+            # For negative kappa the Watson axis is the least likely direction.
+            # Keeping it as the first Bingham eigenvector gives the exponent
+            # kappa * (mu.T @ x)^2 directly, while the orthogonal complement
+            # receives zero concentration.
+            M = Q
+            Z = hstack((array([self.kappa]), zeros(self.dim)))
+
         return BinghamDistribution(Z, M)
 
     def sample(self, n):
