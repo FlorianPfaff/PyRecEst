@@ -391,8 +391,8 @@ class GaussianDistribution(AbstractLinearDistribution):
         n = _validate_positive_sample_count(n)
         return random.multivariate_normal(mean=self.mu, cov=self.C, size=n)
 
-    @staticmethod
-    def from_distribution(distribution, check_validity=False):
+    @classmethod
+    def from_distribution(cls, distribution, check_validity=False):
         """Approximate or convert another distribution as a Gaussian.
 
         Gaussian mixtures are converted with ``to_gaussian``. Other
@@ -404,23 +404,23 @@ class GaussianDistribution(AbstractLinearDistribution):
 
         if isinstance(distribution, GaussianMixture):
             gaussian = distribution.to_gaussian(check_validity=check_validity)
-        else:
-            try:
-                mean = distribution.mean
-                covariance = distribution.covariance
-            except AttributeError as exc:
-                raise ConversionError(
-                    "GaussianDistribution.from_distribution requires the source "
-                    "distribution to expose mean() and covariance()."
-                ) from exc
+            if cls is GaussianDistribution:
+                return gaussian
+            return cls(gaussian.mu, gaussian.C, check_validity=check_validity)
 
-            if callable(mean):
-                mean = mean()
+        try:
+            mean = distribution.mean
+            covariance = distribution.covariance
+        except AttributeError as exc:
+            raise ConversionError(
+                "GaussianDistribution.from_distribution requires the source "
+                "distribution to expose mean() and covariance()."
+            ) from exc
 
-            if callable(covariance):
-                covariance = covariance()
+        if callable(mean):
+            mean = mean()
 
-            gaussian = GaussianDistribution(
-                mean, covariance, check_validity=check_validity
-            )
-        return gaussian
+        if callable(covariance):
+            covariance = covariance()
+
+        return cls(mean, covariance, check_validity=check_validity)
