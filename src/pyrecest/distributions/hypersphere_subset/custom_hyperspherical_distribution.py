@@ -9,13 +9,12 @@ class CustomHypersphericalDistribution(
         AbstractCustomDistribution.__init__(self, f, scale_by)
         AbstractHypersphericalDistribution.__init__(self, dim)
 
-    @staticmethod
-    def from_distribution(distribution):
+    @classmethod
+    def from_distribution(cls, distribution):
         if not isinstance(distribution, AbstractHypersphericalDistribution):
             raise ValueError("Input variable distribution is of the wrong class.")
 
-        chd = CustomHypersphericalDistribution(distribution.pdf, distribution.dim)
-        return chd
+        return cls(distribution.pdf, distribution.dim)
 
     def integrate(self, integration_boundaries=None):
         return AbstractHypersphericalDistribution.integrate(

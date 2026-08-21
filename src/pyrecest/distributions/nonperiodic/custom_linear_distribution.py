@@ -83,8 +83,8 @@ class CustomLinearDistribution(
             p = reshape(p, xs.shape[:-1])
         return p
 
-    @staticmethod
-    def from_distribution(distribution):
+    @classmethod
+    def from_distribution(cls, distribution):
         """
         Creates a CustomLinearDistribution from some other distribution
 
@@ -96,8 +96,7 @@ class CustomLinearDistribution(
         chd (CustomLinearDistribution)
             CustomLinearDistribution with identical pdf
         """
-        chd = CustomLinearDistribution(distribution.pdf, distribution.dim)
-        return chd
+        return cls(distribution.pdf, distribution.dim)
 
     def integrate(self, left=None, right=None):
         return AbstractLinearDistribution.integrate(self, left, right)
