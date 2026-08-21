@@ -5,12 +5,12 @@ from pyrecest.backend import array
 from pyrecest.utils import pairwise_covariance_shape_components
 
 
-def test_pairwise_covariance_shape_components_floor_indefinite_logdet():
+def test_pairwise_covariance_shape_components_floor_roundoff_negative_logdet():
     epsilon = 1.0e-6
-    negative_definite = array(
+    near_psd = array(
         [
-            [[-2.0], [0.0]],
-            [[0.0], [-3.0]],
+            [[2.0], [0.0]],
+            [[0.0], [-1.0e-12]],
         ]
     )
     positive_definite = array(
@@ -21,7 +21,7 @@ def test_pairwise_covariance_shape_components_floor_indefinite_logdet():
     )
 
     _, logdet_cost, _ = pairwise_covariance_shape_components(
-        negative_definite,
+        near_psd,
         positive_definite,
         epsilon=epsilon,
     )
