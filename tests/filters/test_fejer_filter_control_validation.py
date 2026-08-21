@@ -1,6 +1,6 @@
 import numpy as np
-import pytest
 import pyrecest.backend
+import pytest
 from pyrecest.filters import FejerIdentityFilter
 
 
