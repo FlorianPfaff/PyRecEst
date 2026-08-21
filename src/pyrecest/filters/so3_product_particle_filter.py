@@ -312,10 +312,17 @@ class SO3ProductParticleFilter(HyperhemisphereCartProdParticleFilter):
         if exponent <= 0.0 or not math.isfinite(exponent):
             raise ValueError("confidence_exponent must be positive and finite.")
 
-        variance = min_sigma * min_sigma + (1.0 - confidence) ** exponent * (
-            max_sigma * max_sigma - min_sigma * min_sigma
+        relative_min_sigma = min_sigma / max_sigma
+        relative_min_variance = relative_min_sigma * relative_min_sigma
+        confidence_variance = (1.0 - confidence) ** exponent
+        relative_variance = relative_min_variance + confidence_variance * (
+            1.0 - relative_min_variance
         )
-        sigma = sqrt(maximum(variance, 1e-16))
+        sigma = max_sigma * sqrt(maximum(relative_variance, 0.0))
+        # If the scale ratio is so small that its square underflows, preserve the
+        # exact confidence-one endpoint explicitly.
+        sigma = where(confidence == 1.0, min_sigma, sigma)
+        sigma = maximum(sigma, 1e-8)
         if mask is not None:
             mask = SO3ProductParticleFilter._as_component_mask(mask, num_rotations)
             sigma = where(mask > 0.0, sigma, max_sigma)
