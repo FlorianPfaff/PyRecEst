@@ -302,14 +302,14 @@ class VonMisesFisherDistribution(AbstractHypersphericalDistribution):
         r = self.a_d(self.input_dim, self.kappa) * self.mu
         return r
 
-    @staticmethod
-    def from_distribution(d):
+    @classmethod
+    def from_distribution(cls, d):
         """Fit a von Mises-Fisher distribution to mean-resultant information."""
         if d.input_dim < 2:
             raise ValueError("mu must be at least 2-D for the circular case")
 
         m = d.mean_resultant_vector()
-        return VonMisesFisherDistribution.from_mean_resultant_vector(m)
+        return cls.from_mean_resultant_vector(m)
 
     @staticmethod
     def _default_mean_direction(input_dim: Union[int, int32, int64]):
@@ -317,8 +317,8 @@ class VonMisesFisherDistribution(AbstractHypersphericalDistribution):
         input_dim = int(input_dim)
         return array([1.0] + [0.0] * (input_dim - 1))
 
-    @staticmethod
-    def from_mean_resultant_vector(m):
+    @classmethod
+    def from_mean_resultant_vector(cls, m):
         """Create a distribution from a mean resultant vector.
 
         Parameters
@@ -337,16 +337,13 @@ class VonMisesFisherDistribution(AbstractHypersphericalDistribution):
             raise ValueError("mu must contain only finite values")
 
         mean_res_length = linalg.norm(m)
-        if mean_res_length <= VonMisesFisherDistribution._KAPPA_EPS:
-            return VonMisesFisherDistribution(
-                VonMisesFisherDistribution._default_mean_direction(m.shape[0]), 0.0
-            )
+        if mean_res_length <= cls._KAPPA_EPS:
+            return cls(cls._default_mean_direction(m.shape[0]), 0.0)
 
         mean_res_vector = m / mean_res_length
-        kappa_ = VonMisesFisherDistribution.a_d_inverse(m.shape[0], mean_res_length)
+        kappa_ = cls.a_d_inverse(m.shape[0], mean_res_length)
 
-        V = VonMisesFisherDistribution(mean_res_vector, kappa_)
-        return V
+        return cls(mean_res_vector, kappa_)
 
     def mode(self):
         """Return the modal direction, equal to ``mu``."""
@@ -378,11 +375,9 @@ class VonMisesFisherDistribution(AbstractHypersphericalDistribution):
         mu_ = self.kappa * self.mu + other.kappa * other.mu
         kappa_ = linalg.norm(mu_)
         if kappa_ <= self._KAPPA_EPS:
-            return VonMisesFisherDistribution(
-                self._default_mean_direction(self.input_dim), 0.0
-            )
+            return type(self)(self._default_mean_direction(self.input_dim), 0.0)
         mu_ = mu_ / kappa_
-        return VonMisesFisherDistribution(mu_, kappa_)
+        return type(self)(mu_, kappa_)
 
     def convolve(self, other: "VonMisesFisherDistribution"):
         """Convolve with a zonal vMF distribution.
@@ -393,9 +388,7 @@ class VonMisesFisherDistribution(AbstractHypersphericalDistribution):
         if self.mu.shape != other.mu.shape:
             raise ValueError("Dimensions must match")
         if self.kappa <= self._KAPPA_EPS or other.kappa <= self._KAPPA_EPS:
-            return VonMisesFisherDistribution(
-                self._default_mean_direction(self.input_dim), 0.0
-            )
+            return type(self)(self._default_mean_direction(self.input_dim), 0.0)
 
         if not _as_python_bool(abs(other.mu[-1] - 1.0) < 1e-8):
             raise ValueError("Other is not zonal")
@@ -407,7 +400,7 @@ class VonMisesFisherDistribution(AbstractHypersphericalDistribution):
             VonMisesFisherDistribution.a_d(d, self.kappa)
             * VonMisesFisherDistribution.a_d(d, other.kappa),
         )
-        return VonMisesFisherDistribution(mu_, kappa_)
+        return type(self)(mu_, kappa_)
 
     @staticmethod
     def a_d(d: Union[int, int32, int64], kappa):
