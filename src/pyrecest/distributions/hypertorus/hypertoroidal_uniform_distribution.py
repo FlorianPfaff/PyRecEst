@@ -224,7 +224,7 @@ class HypertoroidalUniformDistribution(
         """
         Returns the entropy of the distribution
 
-        :returns: Entropy of the distribution
+        :returns: Entropy
         """
         return self.dim * log(2.0 * pi)
 
