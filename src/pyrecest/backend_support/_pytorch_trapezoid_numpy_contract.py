@@ -113,6 +113,73 @@ def patch_pytorch_trapezoid_numpy_contract() -> None:
         backend.trapezoid = trapezoid
 
 
+def _patch_pytorch_triangular_indices_numpy_contract() -> None:
+    """Patch PyTorch triangular index helpers to follow NumPy's API contract."""
+    try:
+        import pyrecest._backend.pytorch as raw_pytorch  # pylint: disable=import-outside-toplevel
+        import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
+        import torch  # pylint: disable=import-outside-toplevel
+    except ModuleNotFoundError:  # pragma: no cover - PyTorch backend may be unavailable
+        return
+
+    active_pytorch_backend = getattr(backend, "__backend_name__", None) == "pytorch"
+
+    def _make_triangular_indices(helper_name, torch_index_helper, original_helper):
+        def triangular_indices(
+            n,
+            k=0,
+            m=None,
+            *,
+            dtype=None,
+            device=None,
+            layout=None,
+        ):
+            n = _operator_index(n)
+            k = _operator_index(k)
+            m = n if m is None else _operator_index(m)
+
+            kwargs = {}
+            if dtype is not None:
+                kwargs["dtype"] = dtype
+            if device is not None:
+                kwargs["device"] = device
+            if layout is not None:
+                kwargs["layout"] = layout
+
+            indices = torch_index_helper(
+                row=max(n, 0),
+                col=max(m, 0),
+                offset=k,
+                **kwargs,
+            )
+            return tuple(indices.unbind(0))
+
+        triangular_indices.__name__ = getattr(
+            original_helper, "__name__", helper_name
+        )
+        triangular_indices.__doc__ = getattr(original_helper, "__doc__", None)
+        triangular_indices._pyrecest_numpy_contract = True
+        return triangular_indices
+
+    for helper_name, torch_index_helper in (
+        ("tril_indices", torch.tril_indices),
+        ("triu_indices", torch.triu_indices),
+    ):
+        original_helper = getattr(raw_pytorch, helper_name, None)
+        if original_helper is None:
+            continue
+        if getattr(original_helper, "_pyrecest_numpy_contract", False):
+            if active_pytorch_backend:
+                setattr(backend, helper_name, original_helper)
+            continue
+        helper = _make_triangular_indices(
+            helper_name, torch_index_helper, original_helper
+        )
+        setattr(raw_pytorch, helper_name, helper)
+        if active_pytorch_backend:
+            setattr(backend, helper_name, helper)
+
+
 def _patch_rectangular_pytorch_triangular_vector_contract() -> None:
     """Patch PyTorch triangular vector helpers for rectangular matrices."""
     try:
@@ -204,5 +271,6 @@ def _patch_rectangular_jax_triangular_vector_contract() -> None:
             setattr(backend, helper_name, helper)
 
 
+_patch_pytorch_triangular_indices_numpy_contract()
 _patch_rectangular_pytorch_triangular_vector_contract()
 _patch_rectangular_jax_triangular_vector_contract()
