@@ -153,7 +153,7 @@ class HypersphericalGridDistribution(
         grid_values_half = 0.5 * (self.grid_values[:half] + self.grid_values[half:])
         new_values = concatenate([grid_values_half, grid_values_half])
 
-        return HypersphericalGridDistribution(
+        return type(self)(
             copy.deepcopy(self.grid),
             new_values,
             enforce_pdf_nonnegative=True,
