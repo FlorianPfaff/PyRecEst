@@ -384,7 +384,7 @@ class GaussianDistribution(AbstractLinearDistribution):
         new_C = self.C[remaining_indices][
             :, remaining_indices
         ]  # Instead of np.ix_ for interface compatibility
-        return GaussianDistribution(new_mu, new_C, check_validity=False)
+        return type(self)(new_mu, new_C, check_validity=False)
 
     def sample(self, n):
         """Draw ``n`` random samples with shape ``(n, dim)``."""
