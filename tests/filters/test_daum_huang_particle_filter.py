@@ -71,6 +71,84 @@ class DaumHuangParticleFlowFilterTest(unittest.TestCase):
             to_numpy(actual_covariance), to_numpy(expected_covariance), atol=1e-10
         )
 
+    def test_bridge_rejects_nonsymmetric_covariances(self):
+        mean = array([0.0, 0.0])
+        identity_covariance = array([[1.0, 0.0], [0.0, 1.0]])
+        nonsymmetric_covariance = array([[1.0, 0.5], [0.0, 1.0]])
+
+        with self.assertRaisesRegex(ValueError, "symmetric"):
+            gaussian_bridge_moments(
+                mean,
+                nonsymmetric_covariance,
+                array([[1.0, 0.0]]),
+                array([0.0]),
+                array([[1.0]]),
+                1.0,
+                jitter=0.0,
+            )
+
+        with self.assertRaisesRegex(ValueError, "symmetric"):
+            gaussian_bridge_moments(
+                mean,
+                identity_covariance,
+                identity_covariance,
+                array([0.0, 0.0]),
+                nonsymmetric_covariance,
+                1.0,
+                jitter=0.0,
+            )
+
+    def test_bridge_rejects_complex_numpy_inputs_without_truncation(self):
+        real_vector = array([0.0])
+        real_matrix = array([[1.0]])
+
+        invalid_cases = [
+            (np.array([1.0 + 2.0j]), real_matrix),
+            (real_vector, np.array([[1.0 + 2.0j]])),
+        ]
+        for mean, covariance in invalid_cases:
+            with self.subTest(mean=mean, covariance=covariance):
+                with self.assertRaisesRegex(ValueError, "real-valued"):
+                    gaussian_bridge_moments(
+                        mean,
+                        covariance,
+                        real_matrix,
+                        real_vector,
+                        real_matrix,
+                        1.0,
+                        jitter=0.0,
+                    )
+
+    def test_bridge_exponent_must_be_finite_nonnegative_scalar(self):
+        mean = array([0.0])
+        covariance = array([[1.0]])
+        measurement_matrix = array([[1.0]])
+        measurement = array([0.0])
+        measurement_noise = array([[1.0]])
+
+        for delta_lambda in (float("nan"), float("inf"), -0.1, True, [1.0]):
+            with self.subTest(delta_lambda=delta_lambda):
+                with self.assertRaisesRegex(ValueError, "delta_lambda"):
+                    gaussian_bridge_moments(
+                        mean,
+                        covariance,
+                        measurement_matrix,
+                        measurement,
+                        measurement_noise,
+                        delta_lambda,
+                    )
+
+        with self.assertRaisesRegex(ValueError, "delta_lambda"):
+            gaussian_flow_affine_increment(
+                array([[0.0], [1.0]]),
+                mean,
+                covariance,
+                measurement_matrix,
+                measurement,
+                measurement_noise,
+                float("nan"),
+            )
+
     def test_edh_filter_linear_update_matches_bridge_moments(self):
         particles = array(
             [
