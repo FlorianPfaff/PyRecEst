@@ -228,7 +228,7 @@ class SO3TangentGaussianDistribution(AbstractBoundedDomainDistribution):
 
         return _to_python_bool(all(linalg.eigvalsh(self.C) > 0.0))
 
-    @staticmethod
-    def from_covariance_diagonal(mu, covariance_diagonal):
+    @classmethod
+    def from_covariance_diagonal(cls, mu, covariance_diagonal):
         """Create a tangent Gaussian from a diagonal covariance vector."""
-        return SO3TangentGaussianDistribution(mu, diag(covariance_diagonal))
+        return cls(mu, diag(covariance_diagonal))
