@@ -170,10 +170,8 @@ def pairwise_covariance_shape_components(
     moved_covariances_a = _symmetrized_covariance_batch(covariances_a)
     moved_covariances_b = _symmetrized_covariance_batch(covariances_b)
 
-    traces_a = _positive_floor(_batch_trace(moved_covariances_a), epsilon)
-    traces_b = _positive_floor(_batch_trace(moved_covariances_b), epsilon)
-    normalized_a = _divide_by_positive_batch_scale(moved_covariances_a, traces_a)
-    normalized_b = _divide_by_positive_batch_scale(moved_covariances_b, traces_b)
+    normalized_a = _trace_normalized_covariance_batch(moved_covariances_a, epsilon)
+    normalized_b = _trace_normalized_covariance_batch(moved_covariances_b, epsilon)
 
     shape_differences = normalized_a[:, None, :, :] - normalized_b[None, :, :, :]
     frobenius_squared = backend_sum(
@@ -285,6 +283,17 @@ def _divide_by_positive_batch_scale(matrices: Any, scales: Any) -> Any:
     """Divide matrix batches by positive scales without reciprocal underflow."""
     scale_roots = sqrt(scales)
     return (matrices / scale_roots[:, None, None]) / scale_roots[:, None, None]
+
+
+def _trace_normalized_covariance_batch(matrices: Any, epsilon: float) -> Any:
+    """Trace-normalize covariance batches without large-scale overflow or drift."""
+    matrix_scale = backend_max(backend_max(abs(matrices), axis=-1), axis=-1)
+    common_scale = maximum(matrix_scale, epsilon)
+    scaled_matrices = _divide_by_positive_batch_scale(matrices, common_scale)
+    scaled_traces = _batch_trace(scaled_matrices)
+    scaled_trace_floor = epsilon / common_scale
+    safe_traces = maximum(scaled_traces, scaled_trace_floor)
+    return scaled_matrices / safe_traces[:, None, None]
 
 
 def _batch_trace(matrices: Any) -> Any:

@@ -1,5 +1,7 @@
 import unittest
 
+import pyrecest.backend
+
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import ones
 from pyrecest.distributions.conversion import convert_distribution
@@ -15,6 +17,10 @@ class _SphericalGridSubclass(SphericalGridDistribution):
     pass
 
 
+@unittest.skipIf(
+    pyrecest.backend.__backend_name__ == "jax",
+    reason="LeopardiSampler is not supported on the JAX backend",
+)
 class SphericalGridFactorySubclassPreservationTest(unittest.TestCase):
     def test_conversion_factory_preserves_requested_subclass(self):
         source = HypersphericalUniformDistribution(2)

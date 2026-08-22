@@ -59,17 +59,23 @@ def test_multivariate_normal_rejects_nonfinite_covariance(bad_cov):
 
 
 @pytest.mark.parametrize(
-    ("bad_cov", "message"),
+    ("bad_cov", "message", "kwargs"),
     [
-        ([1.0, 1.0], "cov must be a 2-dimensional square matrix"),
-        (jnp.ones((2, 3)), "cov must have shape"),
-        ([[1.0, 0.1], [0.0, 1.0]], "cov must be symmetric"),
-        ([[1.0, 0.0], [0.0, -0.1]], "cov must be positive semidefinite"),
+        ([1.0, 1.0], "cov must be a 2-dimensional square matrix", {}),
+        (jnp.ones((2, 3)), "cov must have shape", {}),
+        ([[1.0, 0.1], [0.0, 1.0]], "cov must be symmetric", {}),
+        (
+            [[1.0, 0.0], [0.0, -0.1]],
+            "cov must be positive semidefinite",
+            {"check_valid": "raise"},
+        ),
     ],
 )
-def test_multivariate_normal_rejects_invalid_covariance_geometry(bad_cov, message):
+def test_multivariate_normal_rejects_invalid_covariance_geometry(
+    bad_cov, message, kwargs
+):
     with pytest.raises(ValueError, match=message):
-        random.multivariate_normal(jnp.zeros(2), bad_cov)
+        random.multivariate_normal(jnp.zeros(2), bad_cov, **kwargs)
 
 
 @pytest.mark.parametrize("size", [None, 3, (2, 3)])
