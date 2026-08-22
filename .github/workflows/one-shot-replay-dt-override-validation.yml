@@ -1,0 +1,93 @@
+name: One-shot replay dt override validation
+
+permissions:
+  contents: write
+
+on:
+  push:
+    branches:
+      - fix/replay-probability-validation-20260823
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Apply replay dt override validation and regressions
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(text, old, new, *, label):
+              count = text.count(old)
+              if count != 1:
+                  raise RuntimeError(f"{label}: expected one match, found {count}")
+              return text.replace(old, new, 1)
+
+          base_path = Path("src/pyrecest/filters/goal_conditioned_replay_particle_filter.py")
+          source = base_path.read_text()
+          source = replace_once(
+              source,
+              '''        try:\n            dt = float(dt)\n        except (TypeError, ValueError, OverflowError) as exc:\n            raise ValueError("dt must be a finite positive scalar") from exc\n        if not python_isfinite(dt) or dt <= 0.0:\n            raise ValueError("dt must be a finite positive scalar")\n\n        self.position_dim = position_dim\n''',
+              '''        dt = self._validate_dt(dt)\n\n        self.position_dim = position_dim\n''',
+              label="constructor dt validation",
+          )
+          source = replace_once(
+              source,
+              '''    @staticmethod\n    def _to_scalar(value) -> float:\n        if hasattr(value, "item"):\n            return float(value.item())\n        return float(value)\n\n    def _validate_probability(self, probability: float, name: str):\n''',
+              '''    @staticmethod\n    def _to_scalar(value) -> float:\n        if hasattr(value, "item"):\n            return float(value.item())\n        return float(value)\n\n    @staticmethod\n    def _validate_dt(value) -> float:\n        try:\n            dt = float(value)\n        except (TypeError, ValueError, OverflowError) as exc:\n            raise ValueError("dt must be a finite positive scalar") from exc\n        if not python_isfinite(dt) or dt <= 0.0:\n            raise ValueError("dt must be a finite positive scalar")\n        return dt\n\n    def _validate_probability(self, probability: float, name: str):\n''',
+              label="dt helper",
+          )
+          source = replace_once(
+              source,
+              "        dt = self.dt if dt is None else float(dt)\n",
+              "        dt = self.dt if dt is None else self._validate_dt(dt)\n",
+              label="base predict dt override",
+          )
+          base_path.write_text(source)
+
+          imm_path = Path("src/pyrecest/filters/goal_conditioned_replay_particle_imm_filter.py")
+          imm_source = imm_path.read_text()
+          imm_source = replace_once(
+              imm_source,
+              "        dt = self.dt if dt is None else float(dt)\n",
+              "        dt = self.dt if dt is None else self._validate_dt(dt)\n",
+              label="particle IMM predict dt override",
+          )
+          imm_path.write_text(imm_source)
+
+          test_path = Path("tests/filters/test_goal_conditioned_replay_particle_filter.py")
+          tests = test_path.read_text()
+          tests = replace_once(
+              tests,
+              '''    def test_candidate_goal_weights_reject_nonfinite_values(self):\n''',
+              '''    def test_predict_replay_rejects_nonfinite_dt_override(self):\n        filt = GoalConditionedReplayParticleFilter(\n            n_particles=4,\n            position_dim=2,\n        )\n\n        for dt in (np.nan, np.inf):\n            with self.subTest(dt=dt), self.assertRaisesRegex(\n                ValueError, "finite positive scalar"\n            ):\n                filt.predict_replay(dt=dt)\n\n    def test_candidate_goal_weights_reject_nonfinite_values(self):\n''',
+              label="base predict regression",
+          )
+          test_path.write_text(tests)
+
+          imm_test_path = Path("tests/filters/test_goal_conditioned_replay_particle_imm_filter.py")
+          imm_tests = imm_test_path.read_text()
+          imm_tests = replace_once(
+              imm_tests,
+              '''    def test_goal_directed_mode_moves_velocity_toward_goal(self):\n''',
+              '''    def test_predict_replay_rejects_nonfinite_dt_override(self):\n        filt = GoalConditionedReplayParticleIMMFilter(\n            n_particles=4,\n            spatial_dim=2,\n        )\n\n        for dt in (float("nan"), float("inf")):\n            with self.subTest(dt=dt), self.assertRaisesRegex(\n                ValueError, "finite positive scalar"\n            ):\n                filt.predict_replay(dt=dt)\n\n    def test_goal_directed_mode_moves_velocity_toward_goal(self):\n''',
+              label="particle IMM predict regression",
+          )
+          imm_test_path.write_text(imm_tests)
+
+          Path(".github/workflows/one-shot-replay-dt-override-validation.yml").unlink()
+          PY
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Validate replay dt overrides"
+          git push origin HEAD:${GITHUB_REF_NAME}
