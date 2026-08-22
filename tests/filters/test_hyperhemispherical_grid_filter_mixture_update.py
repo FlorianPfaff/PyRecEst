@@ -8,6 +8,9 @@ from pyrecest.distributions.hypersphere_subset.hyperspherical_mixture import (
 from pyrecest.distributions.hypersphere_subset.von_mises_fisher_distribution import (
     VonMisesFisherDistribution,
 )
+from pyrecest.distributions.hypersphere_subset.watson_distribution import (
+    WatsonDistribution,
+)
 from pyrecest.filters.hyperhemispherical_grid_filter import (
     HyperhemisphericalGridFilter,
 )
@@ -72,6 +75,18 @@ class TestHyperhemisphericalGridFilterMixtureUpdate(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "normalized"):
             filt.update_identity(meas_noise, array([2.0, 0.0, 0.0]))
+
+    def test_prediction_rejects_non_vmf_symmetric_mixture(self):
+        d_sys = HypersphericalMixture(
+            [
+                WatsonDistribution(self.pole, 3.0),
+                WatsonDistribution(-self.pole, 3.0),
+            ],
+            array([0.5, 0.5]),
+        )
+
+        with self.assertRaisesRegex(ValueError, "unsupported distribution"):
+            HyperhemisphericalGridFilter.sys_noise_to_transition_density(d_sys, 20)
 
 
 if __name__ == "__main__":
