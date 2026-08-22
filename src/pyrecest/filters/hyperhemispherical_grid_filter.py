@@ -297,7 +297,8 @@ class HyperhemisphericalGridFilter(AbstractGridFilter, HyperhemisphericalFilterM
         ----------
         d_sys : AbstractDistribution
             Supported: :class:`HyperhemisphericalWatsonDistribution`,
-            :class:`WatsonDistribution`, symmetric :class:`HypersphericalMixture`.
+            :class:`WatsonDistribution`, symmetric two-component
+            :class:`HypersphericalMixture` of VMF distributions.
         no_grid_points : int
             Number of grid points on the hemisphere.
 
@@ -323,6 +324,9 @@ class HyperhemisphericalGridFilter(AbstractGridFilter, HyperhemisphericalFilterM
             isinstance(d_sys, HypersphericalMixture)
             and len(d_sys.dists) == 2
             and all(abs(w - 0.5) < 1e-12 for w in d_sys.w)
+            and all(
+                isinstance(dist, VonMisesFisherDistribution) for dist in d_sys.dists
+            )
             and allclose(d_sys.dists[0].mu, -d_sys.dists[1].mu, atol=1e-12)
             and d_sys.dists[0].kappa == d_sys.dists[1].kappa
         ):
