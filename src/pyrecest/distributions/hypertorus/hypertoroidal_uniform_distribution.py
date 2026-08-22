@@ -184,6 +184,10 @@ def _validate_boundary(name: str, value, dim: int):
 
 
 def _validate_boundary_order(left, right) -> None:
+    # Scalar 1-D limits retain the signed-integration convention used by the
+    # circular API. Vector limits describe hyperrectangles and must be ordered.
+    if ndim(left) == 0 and ndim(right) == 0:
+        return
     if not bool(backend_all(right >= left)):
         raise ValueError("integration boundaries must be increasing in every dimension")
 
@@ -220,7 +224,7 @@ class HypertoroidalUniformDistribution(
         """
         Returns the entropy of the distribution
 
-        :returns: Entropy
+        :returns: Entropy of the distribution
         """
         return self.dim * log(2.0 * pi)
 
