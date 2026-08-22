@@ -223,7 +223,7 @@ class SO3BinghamDistribution(HyperhemisphericalBinghamDistribution):
         if not isinstance(B2, SO3BinghamDistribution):
             raise ValueError("B2 must be an SO3BinghamDistribution.")
         product = self.distFullSphere.multiply(B2.distFullSphere)
-        return SO3BinghamDistribution(product.Z, product.M)
+        return type(self)(product.Z, product.M)
 
     def compose(self, B2):
         """Approximate the distribution of the composed rotation ``self * other``."""
@@ -243,7 +243,7 @@ class SO3BinghamDistribution(HyperhemisphericalBinghamDistribution):
             ] * right_matrix @ first_moment @ transpose(right_matrix)
 
         composed_moment = 0.5 * (composed_moment + transpose(composed_moment))
-        return SO3BinghamDistribution.from_bingham_distribution(
+        return type(self).from_bingham_distribution(
             BinghamDistribution.fit_to_moment(composed_moment)
         )
 
