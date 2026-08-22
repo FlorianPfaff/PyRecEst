@@ -260,7 +260,7 @@ class VonMisesDistribution(AbstractCircularDistribution):
         scale = maximum(abs(C), abs(S))
         safe_scale = where(scale > 0.0, scale, 1.0)
         kappa_ = scale * sqrt((C / safe_scale) ** 2 + (S / safe_scale) ** 2)
-        return VonMisesDistribution(mu_, kappa_)
+        return type(self)(mu_, kappa_)
 
     def convolve(self, vm2: "VonMisesDistribution") -> "VonMisesDistribution":
         mu_ = mod(self.mu + vm2.mu, 2.0 * pi)
@@ -268,7 +268,7 @@ class VonMisesDistribution(AbstractCircularDistribution):
             0, self.kappa
         ) * VonMisesDistribution.besselratio(0, vm2.kappa)
         kappa_ = VonMisesDistribution.besselratio_inverse(0, t)
-        return VonMisesDistribution(mu_, kappa_)
+        return type(self)(mu_, kappa_)
 
     def entropy(self):
         result = (
@@ -303,8 +303,8 @@ class VonMisesDistribution(AbstractCircularDistribution):
 
         return m
 
-    @staticmethod
-    def from_moment(m):
+    @classmethod
+    def from_moment(cls, m):
         """
         Obtain a VM distribution from a given first trigonometric moment.
 
@@ -314,12 +314,12 @@ class VonMisesDistribution(AbstractCircularDistribution):
         Returns:
             vm (VMDistribution): Distribution obtained by moment matching.
         """
-        kappa_ = VonMisesDistribution.besselratio_inverse(0, abs(m))
-        if VonMisesDistribution._as_float_scalar(kappa_, "kappa") == 0.0:
+        kappa_ = cls.besselratio_inverse(0, abs(m))
+        if cls._as_float_scalar(kappa_, "kappa") == 0.0:
             mu_ = array(0.0)
         else:
             mu_ = mod(arctan2(imag(m), real(m)), 2.0 * pi)
-        vm = VonMisesDistribution(mu_, kappa_)
+        vm = cls(mu_, kappa_)
         return vm
 
     def __str__(self) -> str:
