@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import copy
 from collections.abc import Callable
+from math import isfinite as python_isfinite
 from numbers import Integral
 from typing import Any
 
@@ -188,14 +189,18 @@ class GoalConditionedReplayParticleFilter(EuclideanParticleFilter):
                     "position_dim and spatial_dim must match when both are provided"
                 )
         n_particles = _as_positive_integer(n_particles, "n_particles")
-        if dt <= 0.0:
-            raise ValueError("dt must be positive")
+        try:
+            dt = float(dt)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError("dt must be a finite positive scalar") from exc
+        if not python_isfinite(dt) or dt <= 0.0:
+            raise ValueError("dt must be a finite positive scalar")
 
         self.position_dim = position_dim
         self.spatial_dim = position_dim
         self.state_dim = 3 * position_dim
 
-        self.dt = float(dt)
+        self.dt = dt
         self.alpha = alpha
         self.beta = beta
         self.attraction_field = (
@@ -397,12 +402,16 @@ class GoalConditionedReplayParticleFilter(EuclideanParticleFilter):
         vector = atleast_1d(array(vector))
         if vector.shape != (expected_size,):
             raise ValueError(f"{name} must have shape ({expected_size},)")
-        if float(sum(vector)) <= 0.0:
-            raise ValueError(f"{name} must have positive total mass")
         for value in vector:
-            if float(value) < 0.0:
+            scalar = float(value)
+            if not python_isfinite(scalar):
+                raise ValueError(f"{name} must contain only finite entries")
+            if scalar < 0.0:
                 raise ValueError(f"{name} must not contain negative entries")
-        return vector / sum(vector)
+        total = float(sum(vector))
+        if not python_isfinite(total) or total <= 0.0:
+            raise ValueError(f"{name} must have finite positive total mass")
+        return vector / total
 
     def _validate_component_distribution(
         self,
@@ -596,16 +605,11 @@ class GoalConditionedReplayParticleFilter(EuclideanParticleFilter):
         if goal_prior_weights is None:
             goal_prior_weights = ones((n_goals,)) / n_goals
         else:
-            goal_prior_weights = atleast_1d(array(goal_prior_weights))
-            if goal_prior_weights.shape != (n_goals,):
-                raise ValueError(
-                    "goal_prior_weights must have one weight per candidate goal"
-                )
-            if self._to_scalar(sum(goal_prior_weights)) <= 0.0:
-                raise ValueError("goal_prior_weights must have positive total mass")
-            if any(self._to_scalar(weight) < 0.0 for weight in goal_prior_weights):
-                raise ValueError("goal_prior_weights must be nonnegative")
-            goal_prior_weights = goal_prior_weights / sum(goal_prior_weights)
+            goal_prior_weights = self._validate_probability_vector(
+                goal_prior_weights,
+                n_goals,
+                "goal_prior_weights",
+            )
 
         self._candidate_goals = candidate_goals
         self._candidate_goal_weights = goal_prior_weights
@@ -649,14 +653,11 @@ class GoalConditionedReplayParticleFilter(EuclideanParticleFilter):
         if goal_prior_weights is None:
             goal_prior_weights = ones((n_goals,)) / n_goals
         else:
-            goal_prior_weights = atleast_1d(array(goal_prior_weights))
-            if goal_prior_weights.shape != (n_goals,):
-                raise ValueError(
-                    "goal_prior_weights must have one weight per candidate goal"
-                )
-            if self._to_scalar(sum(goal_prior_weights)) <= 0.0:
-                raise ValueError("goal_prior_weights must have positive total mass")
-            goal_prior_weights = goal_prior_weights / sum(goal_prior_weights)
+            goal_prior_weights = self._validate_probability_vector(
+                goal_prior_weights,
+                n_goals,
+                "goal_prior_weights",
+            )
 
         indices = random.choice(
             arange(n_goals),

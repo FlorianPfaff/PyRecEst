@@ -41,6 +41,43 @@ class TestGoalConditionedReplayParticleFilter(unittest.TestCase):
             with self.subTest(kwargs=kwargs), self.assertRaises(ValueError):
                 GoalConditionedReplayParticleFilter(**kwargs)
 
+    def test_constructor_rejects_nonfinite_dt(self):
+        for dt in (np.nan, np.inf):
+            with self.subTest(dt=dt), self.assertRaisesRegex(
+                ValueError, "finite positive scalar"
+            ):
+                GoalConditionedReplayParticleFilter(
+                    n_particles=4,
+                    position_dim=2,
+                    dt=dt,
+                )
+
+    def test_candidate_goal_weights_reject_nonfinite_values(self):
+        filt = GoalConditionedReplayParticleFilter(
+            n_particles=8,
+            position_dim=2,
+        )
+        candidate_goals = array([[0.0, 0.0], [1.0, 0.0]])
+
+        for weights in (array([np.nan, 1.0]), array([np.inf, 1.0])):
+            with self.subTest(weights=weights), self.assertRaisesRegex(
+                ValueError, "goal_prior_weights"
+            ):
+                filt.set_candidate_goals(candidate_goals, weights)
+
+    def test_direct_goal_sampling_rejects_negative_weights(self):
+        filt = GoalConditionedReplayParticleFilter(
+            n_particles=8,
+            position_dim=2,
+        )
+        candidate_goals = array([[0.0, 0.0], [1.0, 0.0]])
+
+        with self.assertRaisesRegex(ValueError, "goal_prior_weights"):
+            filt.sample_goals_from_candidates(
+                candidate_goals,
+                array([-0.25, 1.25]),
+            )
+
     def test_predict_replay_moves_velocity_toward_goal(self):
         random.seed(0)
 
