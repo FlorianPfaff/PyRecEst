@@ -80,7 +80,9 @@ class TestLowRankHypertoroidalFourierFilter(unittest.TestCase):
         state.coefficients = LowRankHypertoroidalFourierDistribution.uniform(
             (5,), "identity"
         ).coefficients
-        npt.assert_allclose(low_rank_filter.filter_state.to_dense(), expected, atol=1e-12)
+        npt.assert_allclose(
+            low_rank_filter.filter_state.to_dense(), expected, atol=1e-12
+        )
 
     def test_predict_identity_matches_dense_1d(self):
         dense_filter = HypertoroidalFourierFilter((5,), "identity")

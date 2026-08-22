@@ -220,7 +220,9 @@ class HypercylindricalStateSpaceSubdivisionDistribution(
         return column_stack([samples_bounded, samples_linear])
 
     @classmethod
-    def from_distribution(cls, distribution, no_of_grid_points, grid_type="cartesian_prod"):
+    def from_distribution(
+        cls, distribution, no_of_grid_points, grid_type="cartesian_prod"
+    ):
         """
         Create a HypercylindricalStateSpaceSubdivisionDistribution from an
         AbstractHypercylindricalDistribution.

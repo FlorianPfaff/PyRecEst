@@ -1,7 +1,6 @@
 """Regression tests for dynamic range-bearing model geometry overrides."""
 
 import numpy.testing as npt
-
 from pyrecest.backend import array, diag
 from pyrecest.models import (
     range_bearing_jacobian,
