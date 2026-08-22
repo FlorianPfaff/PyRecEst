@@ -33,12 +33,24 @@ def _to_python_bool(value):
 
 
 def _is_complex_array(value):
-    """Return whether a NumPy/JAX array or PyTorch tensor has complex dtype."""
-    dtype = getattr(value, "dtype", None)
-    if getattr(dtype, "kind", None) == "c":
+    """Return whether a scalar, sequence, array, or tensor contains complex values."""
+    if isinstance(value, complex):
         return True
+
+    dtype = getattr(value, "dtype", None)
+    dtype_kind = getattr(dtype, "kind", None)
+    if dtype_kind == "c":
+        return True
+    if dtype_kind == "O":
+        return any(_is_complex_array(item) for item in value.flat)
+
     is_complex = getattr(value, "is_complex", None)
-    return bool(is_complex()) if callable(is_complex) else False
+    if callable(is_complex) and bool(is_complex()):
+        return True
+
+    if isinstance(value, (list, tuple)):
+        return any(_is_complex_array(item) for item in value)
+    return False
 
 
 def _has_invalid_real_numeric_value(value):
@@ -98,6 +110,8 @@ def _validate_compatible_bingham(distribution, reference, role):
 
 
 def _validate_bingham_measurement(z, input_dim):
+    if _is_complex_array(z):
+        raise ValueError("measurement z must be real-valued.")
     if _has_invalid_real_numeric_value(z):
         raise ValueError("measurement z must contain real numeric values.")
     measurement = asarray(z)
@@ -113,6 +127,8 @@ def _validate_bingham_measurement(z, input_dim):
 
 
 def _validate_bingham_system_output(value, input_dim):
+    if _is_complex_array(value):
+        raise ValueError("system function output must be real-valued.")
     if _has_invalid_real_numeric_value(value):
         raise ValueError("system function output must contain real numeric values.")
     propagated = asarray(value)
