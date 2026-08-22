@@ -1,15 +1,12 @@
 import unittest
 
-from scipy.stats import chi2
-
 from pyrecest.filters import GlobalNearestNeighbor
+from scipy.stats import chi2
 
 
 class GlobalNearestNeighborGatingTest(unittest.TestCase):
     def test_default_gate_matches_distance_representation(self):
-        squared_tracker = GlobalNearestNeighbor(
-            association_param={"square_dist": True}
-        )
+        squared_tracker = GlobalNearestNeighbor(association_param={"square_dist": True})
         unsquared_tracker = GlobalNearestNeighbor(
             association_param={"square_dist": False}
         )

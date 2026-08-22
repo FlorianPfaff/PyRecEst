@@ -1,5 +1,4 @@
 import pytest
-
 from pyrecest import backend
 from pyrecest.distributions import GaussianDistribution
 from pyrecest.filters import KalmanFilter

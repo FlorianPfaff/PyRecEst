@@ -56,9 +56,7 @@ def _validate_kalman_state_covariance(covariance, dim):
         check_symmetric=True,
     )
     eigenvalues = linalg.eigvalsh(covariance)
-    if not bool(
-        backend_all(eigenvalues >= -_STATE_COVARIANCE_EIGENVALUE_ATOL)
-    ):
+    if not bool(backend_all(eigenvalues >= -_STATE_COVARIANCE_EIGENVALUE_ATOL)):
         raise ValueError("state.covariance must be positive semidefinite.")
     return covariance
 

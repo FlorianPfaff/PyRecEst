@@ -152,9 +152,7 @@ class StateSpaceSubdivisionFilter(AbstractFilter, HypercylindricalFilterMixin):
                 )
             return values
 
-        system_matrices = _validated_matrix_argument(
-            system_matrices, "system_matrices"
-        )
+        system_matrices = _validated_matrix_argument(system_matrices, "system_matrices")
         covariance_matrices = _validated_matrix_argument(
             covariance_matrices, "covariance_matrices"
         )
