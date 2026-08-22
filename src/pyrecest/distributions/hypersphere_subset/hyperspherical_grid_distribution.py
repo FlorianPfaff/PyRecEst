@@ -153,7 +153,7 @@ class HypersphericalGridDistribution(
         grid_values_half = 0.5 * (self.grid_values[:half] + self.grid_values[half:])
         new_values = concatenate([grid_values_half, grid_values_half])
 
-        return HypersphericalGridDistribution(
+        return type(self)(
             copy.deepcopy(self.grid),
             new_values,
             enforce_pdf_nonnegative=True,
@@ -288,9 +288,14 @@ class HypersphericalGridDistribution(
     # ------------------------------------------------------------------
     # Construction from function handle
     # ------------------------------------------------------------------
-    @staticmethod
+    @classmethod
     def from_function(
-        fun, no_of_grid_points, dim, grid_type="leopardi", enforce_pdf_nonnegative=True
+        cls,
+        fun,
+        no_of_grid_points,
+        dim,
+        grid_type="leopardi",
+        enforce_pdf_nonnegative=True,
     ):
         """
         Construct a HypersphericalGridDistribution from a callable.
@@ -319,7 +324,7 @@ class HypersphericalGridDistribution(
         # Call user pdf with X of shape (batch_dim, space_dim) = (n_points, dim + 1)
         grid_values = fun(grid)
 
-        return HypersphericalGridDistribution(
+        return cls(
             grid,
             grid_values,
             enforce_pdf_nonnegative=enforce_pdf_nonnegative,
