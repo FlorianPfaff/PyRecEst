@@ -52,6 +52,18 @@ class TestGoalConditionedReplayParticleFilter(unittest.TestCase):
                     dt=dt,
                 )
 
+    def test_predict_replay_rejects_nonfinite_dt_override(self):
+        filt = GoalConditionedReplayParticleFilter(
+            n_particles=4,
+            position_dim=2,
+        )
+
+        for dt in (np.nan, np.inf):
+            with self.subTest(dt=dt), self.assertRaisesRegex(
+                ValueError, "finite positive scalar"
+            ):
+                filt.predict_replay(dt=dt)
+
     def test_candidate_goal_weights_reject_nonfinite_values(self):
         filt = GoalConditionedReplayParticleFilter(
             n_particles=8,

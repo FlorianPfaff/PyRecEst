@@ -189,12 +189,7 @@ class GoalConditionedReplayParticleFilter(EuclideanParticleFilter):
                     "position_dim and spatial_dim must match when both are provided"
                 )
         n_particles = _as_positive_integer(n_particles, "n_particles")
-        try:
-            dt = float(dt)
-        except (TypeError, ValueError, OverflowError) as exc:
-            raise ValueError("dt must be a finite positive scalar") from exc
-        if not python_isfinite(dt) or dt <= 0.0:
-            raise ValueError("dt must be a finite positive scalar")
+        dt = self._validate_dt(dt)
 
         self.position_dim = position_dim
         self.spatial_dim = position_dim
@@ -392,6 +387,16 @@ class GoalConditionedReplayParticleFilter(EuclideanParticleFilter):
         if hasattr(value, "item"):
             return float(value.item())
         return float(value)
+
+    @staticmethod
+    def _validate_dt(value) -> float:
+        try:
+            dt = float(value)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError("dt must be a finite positive scalar") from exc
+        if not python_isfinite(dt) or dt <= 0.0:
+            raise ValueError("dt must be a finite positive scalar")
+        return dt
 
     def _validate_probability(self, probability: float, name: str):
         if not (0.0 <= probability <= 1.0):
@@ -1021,7 +1026,7 @@ class GoalConditionedReplayParticleFilter(EuclideanParticleFilter):
         use_semi_implicit_position_update: bool = False,
     ):
         """Predict one replay step under the goal-conditioned sparse-jump model."""
-        dt = self.dt if dt is None else float(dt)
+        dt = self.dt if dt is None else self._validate_dt(dt)
         alpha = self.alpha if alpha is None else alpha
         beta = self.beta if beta is None else beta
         attraction_field = (
