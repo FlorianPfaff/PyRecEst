@@ -187,7 +187,9 @@ class LinearBoxParticleDistribution(AbstractLinearDistribution):
         new_lower = 2.0 * (0.5 * self.lower + half_offset)
         new_upper = 2.0 * (0.5 * self.upper + half_offset)
         if not bool(all(isfinite(new_lower))) or not bool(all(isfinite(new_upper))):
-            raise ValueError("new_mean would move box supports outside the finite range")
+            raise ValueError(
+                "new_mean would move box supports outside the finite range"
+            )
 
         dist = copy.deepcopy(self)
         dist.lower = new_lower

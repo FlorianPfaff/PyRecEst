@@ -146,9 +146,9 @@ class HypercylindricalStateSpaceSubdivisionGaussianDistribution(
         mode_scores = []
         for grid_idx, gaussian in enumerate(self.gaussians):
             if bool(weights[grid_idx] > 0.0):
-                conditional_log_peak = array(
-                    gaussian.ln_pdf(gaussian.mode())
-                ).reshape(-1)[0]
+                conditional_log_peak = array(gaussian.ln_pdf(gaussian.mode())).reshape(
+                    -1
+                )[0]
                 mode_scores.append(log(weights[grid_idx]) + conditional_log_peak)
             else:
                 mode_scores.append(-float("inf"))

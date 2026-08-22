@@ -2,7 +2,6 @@ import unittest
 
 import numpy.testing as npt
 import pyrecest.backend
-
 from pyrecest.backend import array
 from pyrecest.distributions.circle.piecewise_constant_distribution import (
     PiecewiseConstantDistribution,
