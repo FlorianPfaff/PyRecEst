@@ -274,7 +274,7 @@ class GoalConditionedReplayParticleIMMFilter(  # pylint: disable=too-many-instan
     ):
         """Predict one replay step after Markov switching the particle modes."""
 
-        dt = self.dt if dt is None else float(dt)
+        dt = self.dt if dt is None else self._validate_dt(dt)
         alpha = self.alpha if alpha is None else alpha
         beta = self.beta if beta is None else beta
         attraction_field = (
