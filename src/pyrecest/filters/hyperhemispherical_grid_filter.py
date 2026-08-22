@@ -196,7 +196,8 @@ class HyperhemisphericalGridFilter(AbstractGridFilter, HyperhemisphericalFilterM
 
         Supported noise: :class:`HyperhemisphericalWatsonDistribution`,
         :class:`WatsonDistribution`, :class:`VonMisesFisherDistribution`
-        for measurements on the equator, symmetric :class:`HypersphericalMixture`.
+        for measurements on the equator, symmetric two-component
+        :class:`HypersphericalMixture` of VMF distributions.
 
         Parameters
         ----------
@@ -233,9 +234,22 @@ class HyperhemisphericalGridFilter(AbstractGridFilter, HyperhemisphericalFilterM
             isinstance(meas_noise, HypersphericalMixture)
             and len(meas_noise.dists) == 2
             and all(abs(w - 0.5) < 1e-12 for w in meas_noise.w)
+            and all(
+                isinstance(dist, VonMisesFisherDistribution)
+                for dist in meas_noise.dists
+            )
+            and allclose(
+                meas_noise.dists[0].mu, -meas_noise.dists[1].mu, atol=1e-12
+            )
+            and meas_noise.dists[0].kappa == meas_noise.dists[1].kappa
         ):
-            meas_noise.dists[0].mu = z
-            meas_noise.dists[1].mu = -z
+            meas_noise = HypersphericalMixture(
+                [
+                    meas_noise.dists[0].set_mode(z),
+                    meas_noise.dists[1].set_mode(-z),
+                ],
+                meas_noise.w,
+            )
         else:
             raise ValueError(
                 "UpdateIdentity:UnsupportedNoise: unsupported measurement noise type."
