@@ -155,6 +155,7 @@ def gaussian_flow_affine_increment(
 ):
     """Apply one exact affine Gaussian bridge increment for a linear model."""
     jitter = _validate_nonnegative_float(jitter, "jitter")
+    delta_lambda = _validate_nonnegative_float(delta_lambda, "delta_lambda")
     X = _as_particle_matrix_np(particles)
     m0, P0, H, y, R = _validate_linear_bridge_np(
         mean,
@@ -191,6 +192,7 @@ def gaussian_bridge_moments(
 ):
     """Return Gaussian moments after a likelihood-power increment."""
     jitter = _validate_nonnegative_float(jitter, "jitter")
+    delta_lambda = _validate_nonnegative_float(delta_lambda, "delta_lambda")
     m0, P0, H, y, R = _validate_linear_bridge_np(
         mean,
         covariance,
@@ -575,10 +577,12 @@ def _measurement_matrix(model):
 
 def _try_batch_measurement(function, X):
     try:
-        values = to_numpy(function(asarray(X)))
+        raw_values = np.asarray(to_numpy(function(asarray(X))))
     except (TypeError, ValueError, NotImplementedError, IndexError):
         return None
-    values = np.asarray(values, dtype=float)
+    if np.iscomplexobj(raw_values):
+        raise ValueError("measurement value must be real-valued.")
+    values = np.asarray(raw_values, dtype=float)
     if values.ndim == 1 and X.shape[0] == 1:
         return values.reshape(1, -1)
     if values.ndim == 2 and values.shape[0] == X.shape[0]:
@@ -588,10 +592,12 @@ def _try_batch_measurement(function, X):
 
 def _try_batch_jacobian(function, X):
     try:
-        values = to_numpy(function(asarray(X)))
+        raw_values = np.asarray(to_numpy(function(asarray(X))))
     except (TypeError, ValueError, NotImplementedError, IndexError):
         return None
-    values = np.asarray(values, dtype=float)
+    if np.iscomplexobj(raw_values):
+        raise ValueError("measurement jacobian must be real-valued.")
+    values = np.asarray(raw_values, dtype=float)
     if values.ndim == 2 and X.shape[0] == 1:
         return values.reshape(1, values.shape[0], values.shape[1])
     if values.ndim == 3 and values.shape[0] == X.shape[0]:
@@ -650,7 +656,10 @@ def _weighted_mean_np(particles, weights):
 def _as_particle_matrix_np(value):
     if _contains_masked_value(value):
         raise ValueError("particles must not contain masked values.")
-    X = np.asarray(to_numpy(value), dtype=float)
+    raw = np.asarray(to_numpy(value))
+    if np.iscomplexobj(raw):
+        raise ValueError("particles must be real-valued.")
+    X = np.asarray(raw, dtype=float)
     if X.ndim == 1:
         X = X[None, :]
     if X.ndim != 2:
@@ -665,7 +674,10 @@ def _as_particle_matrix_np(value):
 def _as_weights_np(value, n_particles: int):
     if _contains_masked_value(value):
         raise ValueError("weights must not contain masked values.")
-    weights = np.asarray(to_numpy(value), dtype=float).reshape(-1)
+    raw = np.asarray(to_numpy(value))
+    if np.iscomplexobj(raw):
+        raise ValueError("weights must be real-valued.")
+    weights = np.asarray(raw, dtype=float).reshape(-1)
     if weights.shape != (n_particles,):
         raise ValueError("weights must have one entry per particle.")
     if not np.all(np.isfinite(weights)):
@@ -685,7 +697,10 @@ def _as_weights_np(value, n_particles: int):
 def _as_vector_np(value, name):
     if _contains_masked_value(value):
         raise ValueError(f"{name} must not contain masked values.")
-    vector = np.asarray(to_numpy(value), dtype=float)
+    raw = np.asarray(to_numpy(value))
+    if np.iscomplexobj(raw):
+        raise ValueError(f"{name} must be real-valued.")
+    vector = np.asarray(raw, dtype=float)
     if vector.ndim == 0:
         vector = vector.reshape(1)
     vector = vector.reshape(-1) if vector.ndim == 1 else vector
@@ -699,7 +714,10 @@ def _as_vector_np(value, name):
 def _as_matrix_np(value, name, *, scalar_dim: int | None = None):
     if _contains_masked_value(value):
         raise ValueError(f"{name} must not contain masked values.")
-    matrix = np.asarray(to_numpy(value), dtype=float)
+    raw = np.asarray(to_numpy(value))
+    if np.iscomplexobj(raw):
+        raise ValueError(f"{name} must be real-valued.")
+    matrix = np.asarray(raw, dtype=float)
     if matrix.ndim == 0 and scalar_dim == 1:
         matrix = matrix.reshape(1, 1)
     if matrix.ndim != 2:
@@ -715,7 +733,10 @@ def _lambda_deltas_np(n_steps, step_schedule):
         return np.full(n_steps, 1.0 / float(n_steps))
     if _contains_masked_value(step_schedule):
         raise ValueError("step_schedule must not contain masked values.")
-    deltas = np.asarray(step_schedule, dtype=float).reshape(-1)
+    raw = np.asarray(step_schedule)
+    if np.iscomplexobj(raw):
+        raise ValueError("step_schedule must be real-valued.")
+    deltas = np.asarray(raw, dtype=float).reshape(-1)
     if deltas.size == 0:
         raise ValueError("step_schedule must not be empty.")
     if np.any(deltas <= 0.0):
@@ -731,13 +752,24 @@ def _lambda_deltas_np(n_steps, step_schedule):
 
 
 def _regularize_cov_np(covariance, jitter):
-    covariance = _symmetrize_np(np.asarray(covariance, dtype=float))
+    covariance = np.asarray(covariance, dtype=float)
     if covariance.ndim != 2 or covariance.shape[0] != covariance.shape[1]:
         raise ValueError("covariance must be square.")
     if covariance.shape[0] == 0:
         raise ValueError("covariance must not be empty.")
     if not np.all(np.isfinite(covariance)):
         raise ValueError("covariance must be finite.")
+
+    matrix_scale = max(float(np.max(np.abs(covariance))), 1.0)
+    symmetry_tolerance = (
+        10.0
+        * np.finfo(float).eps
+        * max(covariance.shape[0], 1)
+        * matrix_scale
+    )
+    if float(np.max(np.abs(covariance - covariance.T))) > symmetry_tolerance:
+        raise ValueError("covariance must be symmetric.")
+    covariance = _symmetrize_np(covariance)
 
     eigenvalues = np.linalg.eigvalsh(covariance)
     spectral_scale = max(float(np.max(np.abs(eigenvalues))), 1.0)
