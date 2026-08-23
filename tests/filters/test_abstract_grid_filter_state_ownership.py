@@ -1,5 +1,4 @@
 import numpy.testing as npt
-
 from pyrecest.backend import array
 from pyrecest.distributions.circle.circular_grid_distribution import (
     CircularGridDistribution,
