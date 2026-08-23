@@ -9,6 +9,7 @@ import pyrecest.backend
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
 # pylint: disable=no-name-in-module,no-member
+from pyrecest.backend import any as backend_any
 from pyrecest.backend import (
     array,
     atleast_1d,
@@ -316,6 +317,10 @@ class AbstractLinearDistribution(AbstractManifoldSpecificDistribution):
         right = AbstractLinearDistribution._normalize_static_integration_bound(
             right, dim, "right"
         )
+        if bool(backend_any(left > right)):
+            raise ValueError(
+                "left integration bound must not exceed right integration bound."
+            )
 
         def f_for_nquad(*args):
             # Avoid DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future.

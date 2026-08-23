@@ -63,6 +63,16 @@ class TestAbstractLinearDistribution(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "right integration bound"):
             dist.integrate_numerically([0.0, 0.0], [1.0])
 
+    def test_integrate_rejects_reversed_bounds(self):
+        """Test that probability integration never accepts reversed intervals."""
+        dist_1d = GaussianDistribution(array([0.0]), array([[1.0]]))
+        with self.assertRaisesRegex(ValueError, "left integration bound"):
+            dist_1d.integrate_numerically(1.0, -1.0)
+
+        dist_2d = GaussianDistribution(array([0.0, 0.0]), diag(array([1.0, 1.0])))
+        with self.assertRaisesRegex(ValueError, "left integration bound"):
+            dist_2d.integrate_numerically([-1.0, 1.0], [1.0, -1.0])
+
     def test_integrate_fun_over_domain_1d_accepts_sequence_bounds(self):
         dist = GaussianDistribution(array([0.0]), array([[1.0]]))
 
@@ -89,6 +99,12 @@ class TestAbstractLinearDistribution(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "left integration bound"):
             AbstractLinearDistribution.integrate_fun_over_domain(
                 lambda x: x[0], 2, [0.0], [1.0, 1.0]
+            )
+
+    def test_integrate_fun_over_domain_rejects_reversed_bounds(self):
+        with self.assertRaisesRegex(ValueError, "left integration bound"):
+            AbstractLinearDistribution.integrate_fun_over_domain(
+                lambda x: x[0], 1, 1.0, -1.0
             )
 
     def test_integrate_fun_over_domain(self):
