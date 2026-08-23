@@ -49,6 +49,18 @@ class TestGoalConditionedReplayParticleIMMFilter(unittest.TestCase):
             with self.subTest(mode_indices=mode_indices), self.assertRaises(ValueError):
                 filt.set_mode_indices(mode_indices)
 
+    def test_predict_replay_rejects_nonfinite_dt_override(self):
+        filt = GoalConditionedReplayParticleIMMFilter(
+            n_particles=4,
+            spatial_dim=2,
+        )
+
+        for dt in (float("nan"), float("inf")):
+            with self.subTest(dt=dt), self.assertRaisesRegex(
+                ValueError, "finite positive scalar"
+            ):
+                filt.predict_replay(dt=dt)
+
     def test_goal_directed_mode_moves_velocity_toward_goal(self):
         random.seed(0)
         goal_mode = GoalConditionedReplayParticleIMMFilter.mode_names.index(
