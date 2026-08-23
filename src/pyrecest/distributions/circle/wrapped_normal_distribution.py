@@ -241,8 +241,7 @@ class WrappedNormalDistribution(
         vm1 = self.to_vm()
         vm2 = other.to_vm()
         vm = vm1.multiply(vm2)
-        wn = vm.to_wn()
-        return wn
+        return type(self).from_moment(vm.trigonometric_moment(1))
 
     def multiply_vm(self, other: "WrappedNormalDistribution"):
         """Backward-compatible alias for :meth:`multiply_vm_approximation`."""
@@ -260,7 +259,7 @@ class WrappedNormalDistribution(
         """
         if not isinstance(other, WrappedNormalDistribution):
             raise TypeError("other must be a WrappedNormalDistribution")
-        return WrappedNormalDistribution(
+        return type(self)(
             mod(self.scalar_mu + other.scalar_mu, 2.0 * pi),
             sqrt(squeeze(self.C) + squeeze(other.C)),
         )
@@ -287,22 +286,22 @@ class WrappedNormalDistribution(
 
     def shift(self, shift_by):
         shift_by = as_shift_vector(shift_by, 1)
-        return WrappedNormalDistribution(self.scalar_mu + shift_by[0], self.sigma)
+        return type(self)(self.scalar_mu + shift_by[0], self.sigma)
 
     def to_vm(self) -> VonMisesDistribution:
         # Convert to Von Mises distribution
         kappa = self.sigma_to_kappa(self.sigma)
         return VonMisesDistribution(self.scalar_mu, kappa)
 
-    @staticmethod
-    def from_moment(m) -> "WrappedNormalDistribution":
+    @classmethod
+    def from_moment(cls, m) -> "WrappedNormalDistribution":
         moment = squeeze(array(m))
         if ndim(moment) != 0:
             raise ValueError("First trigonometric moment must be a scalar.")
         moment_abs = float(abs(moment))
         if not isfinite(moment_abs):
             raise ValueError("First trigonometric moment must be finite.")
-        if moment_abs > 1.0 + WrappedNormalDistribution._MOMENT_NORM_TOL:
+        if moment_abs > 1.0 + cls._MOMENT_NORM_TOL:
             raise ValueError(
                 "First trigonometric moment must have magnitude at most 1."
             )
@@ -321,7 +320,7 @@ class WrappedNormalDistribution(
 
         mu = mod(angle(moment), 2.0 * pi)
         sigma = sqrt(-2 * log(moment_abs))
-        return WrappedNormalDistribution(mu, sigma)
+        return cls(mu, sigma)
 
     @staticmethod
     def sigma_to_kappa(sigma):
