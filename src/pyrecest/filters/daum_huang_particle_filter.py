@@ -762,10 +762,7 @@ def _regularize_cov_np(covariance, jitter):
 
     matrix_scale = max(float(np.max(np.abs(covariance))), 1.0)
     symmetry_tolerance = (
-        10.0
-        * np.finfo(float).eps
-        * max(covariance.shape[0], 1)
-        * matrix_scale
+        10.0 * np.finfo(float).eps * max(covariance.shape[0], 1) * matrix_scale
     )
     if float(np.max(np.abs(covariance - covariance.T))) > symmetry_tolerance:
         raise ValueError("covariance must be symmetric.")

@@ -3,8 +3,9 @@ import warnings
 from typing import Callable
 
 import pyrecest.backend
-from pyrecest.backend import atleast_1d, zeros
+from pyrecest.backend import atleast_1d
 from pyrecest.backend import copy as backend_copy
+from pyrecest.backend import zeros
 from pyrecest.distributions import GaussianDistribution
 from pyrecest.models import AdditiveNoiseMeasurementModel, AdditiveNoiseTransitionModel
 from pyrecest.sampling.sigma_points import MerweScaledSigmaPoints

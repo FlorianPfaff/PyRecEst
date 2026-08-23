@@ -10,9 +10,7 @@ class _WrappedNormalSubclass(WrappedNormalDistribution):
 def test_from_moment_preserves_requested_subclass():
     source = WrappedNormalDistribution(array(0.3), array(0.8))
 
-    reconstructed = _WrappedNormalSubclass.from_moment(
-        source.trigonometric_moment(1)
-    )
+    reconstructed = _WrappedNormalSubclass.from_moment(source.trigonometric_moment(1))
 
     assert isinstance(reconstructed, _WrappedNormalSubclass)
 

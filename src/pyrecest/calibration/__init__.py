@@ -179,9 +179,9 @@ def _aggregate_summary_metric(
         if scale == 0.0:
             return 0.0
         scaled_weights = valid_counts / np.max(valid_counts)
-        normalized_mse = np.sum(
-            (valid_values / scale) ** 2 * scaled_weights
-        ) / np.sum(scaled_weights)
+        normalized_mse = np.sum((valid_values / scale) ** 2 * scaled_weights) / np.sum(
+            scaled_weights
+        )
         return float(scale * np.sqrt(normalized_mse))
     if key == "max":
         return float(np.max(valid_values))
