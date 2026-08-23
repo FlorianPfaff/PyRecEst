@@ -29,6 +29,7 @@ from pyrecest.backend import (
     ndim,
     ones,
     pi,
+    reshape,
     sin,
     sqrt,
     tile,
@@ -62,6 +63,45 @@ class AbstractHypercylindricalDistribution(AbstractLinPeriodicCartProdDistributi
     def integrate_numerically(self, integration_boundaries=None):
         if integration_boundaries is None:
             integration_boundaries = self.get_reasonable_integration_boundaries()
+
+        try:
+            n_boundaries = len(integration_boundaries)
+        except TypeError as exc:
+            raise ValueError(
+                "integration_boundaries must contain one [lower, upper] interval "
+                "per input dimension"
+            ) from exc
+        if n_boundaries != self.input_dim:
+            raise ValueError(
+                "integration_boundaries must contain one [lower, upper] interval "
+                "per input dimension"
+            )
+        for boundary in integration_boundaries:
+            if callable(boundary):
+                continue
+            try:
+                interval = asarray(boundary)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    "each integration boundary must be a [lower, upper] interval"
+                ) from exc
+            if interval.ndim != 1 or interval.shape[0] != 2:
+                raise ValueError(
+                    "each integration boundary must be a [lower, upper] interval"
+                )
+            try:
+                contains_nan = bool(any(isnan(interval)))
+                reversed_interval = bool(interval[0] > interval[1])
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    "integration boundaries must be real numeric intervals"
+                ) from exc
+            if contains_nan:
+                raise ValueError("integration boundaries must not contain NaN")
+            if reversed_interval:
+                raise ValueError(
+                    "integration boundary lower bound must not exceed upper bound"
+                )
 
         def f(*args):
             return self.pdf(array(args))
@@ -209,6 +249,7 @@ class AbstractHypercylindricalDistribution(AbstractLinPeriodicCartProdDistributi
             elif xs.ndim == 1:
                 if self.bound_dim != xs.shape[0]:
                     raise ValueError("Input should be of size (bound_dim,).")
+                xs = reshape(xs, (1, self.bound_dim))
                 n_inputs = 1
             else:
                 n_inputs = xs.shape[0]
@@ -261,6 +302,7 @@ class AbstractHypercylindricalDistribution(AbstractLinPeriodicCartProdDistributi
             elif xs.ndim == 1:
                 if self.lin_dim != xs.shape[0]:
                     raise ValueError("Input should be of size (lin_dim,).")
+                xs = reshape(xs, (1, self.lin_dim))
                 n_inputs = 1
             else:
                 n_inputs = xs.shape[0]

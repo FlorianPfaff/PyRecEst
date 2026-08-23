@@ -65,6 +65,18 @@ class AbstractHypercylindricalDistributionTest(unittest.TestCase):
             integration_boundaries, array([[0.0, 2.0 * pi], [-4.0, 8.0]])
         )
 
+    def test_integrate_rejects_wrong_boundary_count(self):
+        dist = DummyHypercylindricalDistribution()
+
+        with self.assertRaisesRegex(ValueError, "one .* interval"):
+            dist.integrate_numerically([[0.0, 1.0]])
+
+    def test_integrate_rejects_reversed_boundaries(self):
+        dist = DummyHypercylindricalDistribution()
+
+        with self.assertRaisesRegex(ValueError, "lower bound"):
+            dist.integrate_numerically([[1.0, 0.0], [-1.0, 1.0]])
+
     def test_constructor_accepts_fully_periodic_dimension(self):
         dist = PartiallyWrappedNormalDistribution(array([1.0]), array([[1.0]]), 1)
 
@@ -100,6 +112,36 @@ class AbstractHypercylindricalDistributionTest(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "bound_dim"):
             hwn.condition_on_periodic(array([1.0]), normalize=False)
+
+    def test_condition_on_linear_accepts_single_multidimensional_periodic_point(self):
+        hwn = PartiallyWrappedNormalDistribution(
+            array([1.0, 2.0, 3.0]),
+            array([[2.0, 0.3, 0.1], [0.3, 1.5, 0.2], [0.1, 0.2, 1.0]]),
+            2,
+        )
+        periodic_point = array([1.5, 2.5])
+
+        dist_cond = hwn.condition_on_linear(array([3.5]), normalize=False)
+
+        npt.assert_allclose(
+            dist_cond.pdf(periodic_point),
+            hwn.pdf(array([periodic_point[0], periodic_point[1], 3.5])),
+        )
+
+    def test_condition_on_periodic_accepts_single_multidimensional_linear_point(self):
+        hwn = PartiallyWrappedNormalDistribution(
+            array([1.0, 2.0, 3.0]),
+            array([[2.0, 0.3, 0.1], [0.3, 1.5, 0.2], [0.1, 0.2, 1.0]]),
+            1,
+        )
+        linear_point = array([2.5, 3.5])
+
+        dist_cond = hwn.condition_on_periodic(array(1.5), normalize=False)
+
+        npt.assert_allclose(
+            dist_cond.pdf(linear_point),
+            hwn.pdf(array([1.5, linear_point[0], linear_point[1]])),
+        )
 
     def test_mode_numerical_rejects_unsupported_backend(self):
         hwn = PartiallyWrappedNormalDistribution(
