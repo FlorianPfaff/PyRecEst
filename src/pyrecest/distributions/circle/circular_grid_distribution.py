@@ -141,7 +141,9 @@ class CircularGridDistribution(AbstractCircularDistribution, AbstractGridDistrib
         return self._pdf_via_fourier(xs)
 
     @classmethod
-    def from_distribution(cls, distribution, no_of_gridpoints, enforce_pdf_nonnegative=True):
+    def from_distribution(
+        cls, distribution, no_of_gridpoints, enforce_pdf_nonnegative=True
+    ):
         return cls.from_function(
             distribution.pdf,
             no_of_gridpoints,

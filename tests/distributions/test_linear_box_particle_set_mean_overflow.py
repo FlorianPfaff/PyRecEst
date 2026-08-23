@@ -16,9 +16,7 @@ def test_set_mean_avoids_overflow_when_finite_shifted_support_exists():
     lower_value = 0.75 * max_finite
     upper_value = max_finite
     target_mean = -0.5 * max_finite
-    dist = LinearBoxParticleDistribution(
-        array([[lower_value]]), array([[upper_value]])
-    )
+    dist = LinearBoxParticleDistribution(array([[lower_value]]), array([[upper_value]]))
 
     with np.errstate(over="raise", invalid="raise"):
         shifted = dist.set_mean(array([target_mean]))

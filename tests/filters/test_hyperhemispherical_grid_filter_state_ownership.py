@@ -3,7 +3,6 @@ import unittest
 
 import numpy.testing as npt
 import pyrecest.backend
-
 from pyrecest.filters.hyperhemispherical_grid_filter import (
     HyperhemisphericalGridFilter,
 )
