@@ -134,7 +134,7 @@ def scaled_emissions(log_likelihood: np.ndarray) -> tuple[np.ndarray, np.ndarray
     -------
     scaled, offsets:
         ``scaled[t, i] = exp(log_likelihood[t, i] - offsets[t])`` for finite
-        emissions. Non-finite entries are returned as zero in ``scaled``.
+        emissions. ``-np.inf`` entries are returned as zero in ``scaled``.
     """
 
     values = np.asarray(log_likelihood, dtype=float)
@@ -144,6 +144,8 @@ def scaled_emissions(log_likelihood: np.ndarray) -> tuple[np.ndarray, np.ndarray
         raise ValueError(
             "log_likelihood must contain at least one time step and one state"
         )
+    if np.any(np.isnan(values) | np.isposinf(values)):
+        raise ValueError("log_likelihood must contain finite values or -np.inf")
     finite = np.isfinite(values)
     if not np.all(np.any(finite, axis=1)):
         raise ValueError("every emission row must contain at least one finite value")
@@ -321,8 +323,15 @@ def sticky_mode_transition_matrix(n_modes: int, stickiness: float) -> np.ndarray
     remaining probability mass is spread uniformly over all other modes.
     """
 
+    try:
+        raw_n_modes = np.asarray(n_modes)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("n_modes must be a positive integer") from exc
+    if raw_n_modes.shape != () or raw_n_modes.dtype.kind not in {"i", "u"}:
+        raise ValueError("n_modes must be a positive integer")
+    n_modes = int(raw_n_modes.item())
     if n_modes < 1:
-        raise ValueError("n_modes must be positive")
+        raise ValueError("n_modes must be a positive integer")
     if not np.isfinite(stickiness) or not 0.0 <= stickiness <= 1.0:
         raise ValueError("stickiness must be finite and in [0, 1]")
     if n_modes == 1:
