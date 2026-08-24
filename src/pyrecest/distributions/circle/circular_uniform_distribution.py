@@ -1,3 +1,4 @@
+import copy
 import math
 
 import numpy as np
@@ -67,7 +68,7 @@ class CircularUniformDistribution(
 
     def shift(self, shift_by):
         as_shift_vector(shift_by, self.dim)
-        return CircularUniformDistribution()
+        return copy.deepcopy(self)
 
     def cdf(self, xa, starting_point=0):
         """
