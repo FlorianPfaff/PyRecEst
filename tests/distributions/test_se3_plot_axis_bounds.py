@@ -3,7 +3,6 @@ from unittest.mock import patch
 
 import numpy as np
 import numpy.testing as npt
-
 from pyrecest.backend import array
 from pyrecest.distributions.abstract_se3_distribution import AbstractSE3Distribution
 

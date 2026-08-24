@@ -46,9 +46,7 @@ class CircularDiracDistribution(
         if n_particles is None:
             raise ValueError("n_particles is required for sampling-based conversion.")
         n_particles = cls._validate_particle_count(n_particles)
-        return cls(
-            distribution.sample(n_particles), ones(n_particles) / n_particles
-        )
+        return cls(distribution.sample(n_particles), ones(n_particles) / n_particles)
 
     def plot_interpolated(self, _=None):
         """Raise because interpolation is unavailable for Dirac distributions."""
