@@ -15,6 +15,7 @@ from pyrecest.backend import (
     sin,
     zeros,
 )
+from pyrecest.numerics import assert_covariance_matrix
 
 from .abstract_extended_object_tracker import AbstractExtendedObjectTracker
 
@@ -113,7 +114,7 @@ class MEMEKFTracker(AbstractExtendedObjectTracker):
             matrix = diag(matrix)
         if matrix.shape != (dim, dim):
             raise ValueError(f"{name} must have shape ({dim}, {dim})")
-        matrix = cls._symmetrize(matrix)
+        matrix = assert_covariance_matrix(matrix, name=name, dim=dim)
         if require_positive_definite:
             cls._validate_positive_definite(matrix, name)
         return matrix
