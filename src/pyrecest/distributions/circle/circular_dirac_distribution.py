@@ -36,12 +36,11 @@ class CircularDiracDistribution(
         get_grid = getattr(distribution, "get_grid", None)
         if hasattr(distribution, "grid_values") and callable(get_grid):
             weights = reshape(distribution.grid_values, (-1,))
-            # CircularDiracDistribution already performs the hardened Dirac-weight
-            # validation and normalization in its constructor. Avoid pre-normalizing
-            # here: direct division by a near-maximum backend value can be lowered
-            # to multiplication by an underflowed reciprocal on JAX/XLA, turning
-            # valid finite grid weights into zeros/NaNs before the robust normalizer
-            # gets a chance to handle them.
+            # Reuse the hardened Dirac-weight normalizer instead of dividing by
+            # the backend maximum directly. On JAX/XLA, division by a near-maximum
+            # finite value can be lowered to multiplication by an underflowed
+            # reciprocal, turning valid grid weights into zeros/NaNs.
+            weights = cls._normalized_weights(weights)
             return cls(get_grid(), weights)
 
         if n_particles is None:
