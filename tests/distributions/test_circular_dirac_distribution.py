@@ -3,12 +3,15 @@ import warnings
 
 import numpy as np
 import numpy.testing as npt
-import pyrecest.backend
-from pyrecest.backend import array, ones, pi
+from pyrecest.backend import array, ones, pi, to_numpy
 from pyrecest.distributions import CircularDiracDistribution, VonMisesDistribution
 from pyrecest.distributions.circle.circular_grid_distribution import (
     CircularGridDistribution,
 )
+
+
+def _active_dtype():
+    return to_numpy(array([0.0], dtype=float)).dtype
 
 
 class TestCircularDiracDistribution(unittest.TestCase):
@@ -46,20 +49,20 @@ class TestCircularDiracDistribution(unittest.TestCase):
         self.assertEqual(wd.w.shape, (n_particles,))
         npt.assert_allclose(wd.w, ones(n_particles) / n_particles)
 
-    @unittest.skipUnless(
-        pyrecest.backend.__backend_name__ == "numpy",
-        reason="Regression exercises NumPy float64 overflow semantics.",
-    )
-    def test_from_grid_distribution_scales_large_finite_weights(self):
-        largest = np.finfo(float).max
-        grid_distribution = CircularGridDistribution(array([largest, largest]))
+    def test_from_grid_distribution_normalizes_extreme_finite_weights(self):
+        largest = np.finfo(_active_dtype()).max
+        grid_distribution = CircularGridDistribution(
+            array([largest, largest / 2.0], dtype=float)
+        )
 
-        with warnings.catch_warnings(), np.errstate(over="raise", invalid="raise"):
+        with warnings.catch_warnings(), np.errstate(
+            over="raise", invalid="raise", divide="raise"
+        ):
             warnings.simplefilter("error", RuntimeWarning)
             wd = CircularDiracDistribution.from_distribution(grid_distribution)
 
         self.assertIsInstance(wd, CircularDiracDistribution)
-        npt.assert_allclose(wd.w, ones(2) / 2.0)
+        npt.assert_allclose(to_numpy(wd.w), [2.0 / 3.0, 1.0 / 3.0])
 
 
 if __name__ == "__main__":

@@ -1,11 +1,16 @@
 import unittest
 
+import numpy as np
 import numpy.testing as npt
-from pyrecest.backend import arange, array, linspace, pi
+from pyrecest.backend import arange, array, linspace, pi, to_numpy
 from pyrecest.distributions import VonMisesDistribution, WrappedNormalDistribution
 from pyrecest.distributions.circle.circular_grid_distribution import (
     CircularGridDistribution,
 )
+
+
+def _active_dtype():
+    return to_numpy(array([0.0], dtype=float)).dtype
 
 
 class CircularGridDistributionTest(unittest.TestCase):
@@ -51,6 +56,19 @@ class CircularGridDistributionTest(unittest.TestCase):
         npt.assert_allclose(
             figd.trigonometric_moment(1), dist.trigonometric_moment(1), atol=1e-6
         )
+
+    def test_trigonometric_moment_preserves_extreme_finite_weight_ratio(self):
+        largest = np.finfo(_active_dtype()).max
+        figd = CircularGridDistribution(
+            array([largest, largest / 2.0], dtype=float)
+        )
+
+        with np.errstate(over="raise", invalid="raise", divide="raise"):
+            moment = figd.trigonometric_moment(1)
+
+        # The two grid points are 0 and pi, so a 2:1 weight ratio gives
+        # 2/3 * exp(i*0) + 1/3 * exp(i*pi) = 1/3.
+        npt.assert_allclose(to_numpy(moment), 1.0 / 3.0, atol=1e-7, rtol=1e-6)
 
     def test_get_grid_point(self):
         dist = CircularGridDistribution(arange(10))
