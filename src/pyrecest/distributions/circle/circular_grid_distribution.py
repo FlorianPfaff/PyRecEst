@@ -26,6 +26,7 @@ from pyrecest.backend import (
     where,
 )
 
+from ..abstract_dirac_distribution import AbstractDiracDistribution
 from ..abstract_grid_distribution import AbstractGridDistribution
 from .abstract_circular_distribution import AbstractCircularDistribution
 from .circular_fourier_distribution import CircularFourierDistribution
@@ -123,7 +124,17 @@ class CircularGridDistribution(AbstractCircularDistribution, AbstractGridDistrib
         return self.grid[indices]
 
     def trigonometric_moment(self, n):
-        weights = self.grid_values / sum(self.grid_values)
+        grid_values = reshape(self.grid_values, (-1,))
+        if bool(all(grid_values >= 0.0)):
+            # For a valid nonnegative grid, use the same hardened normalization
+            # as Dirac distributions. A raw sum can overflow for finite values
+            # near the backend maximum even though their probability ratios are
+            # well defined.
+            weights = AbstractDiracDistribution._normalized_weights(grid_values)
+        else:
+            # Preserve the existing signed-grid behavior when nonnegativity was
+            # deliberately disabled for the interpolant representation.
+            weights = grid_values / sum(grid_values)
         grid = self.get_grid()
         return sum(weights * (sin(pi / 2 + n * grid) + 1j * sin(n * grid)))
 
