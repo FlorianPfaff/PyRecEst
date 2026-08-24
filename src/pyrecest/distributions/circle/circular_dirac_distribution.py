@@ -1,13 +1,4 @@
-from pyrecest.backend import all as backend_all
-from pyrecest.backend import (
-    isfinite,
-)
-from pyrecest.backend import max as backend_max
-from pyrecest.backend import (
-    ones,
-    reshape,
-)
-from pyrecest.backend import sum as backend_sum
+from pyrecest.backend import ones, reshape
 
 from ..hypertorus.hypertoroidal_dirac_distribution import HypertoroidalDiracDistribution
 from .abstract_circular_distribution import AbstractCircularDistribution
@@ -45,15 +36,12 @@ class CircularDiracDistribution(
         get_grid = getattr(distribution, "get_grid", None)
         if hasattr(distribution, "grid_values") and callable(get_grid):
             weights = reshape(distribution.grid_values, (-1,))
-            if (
-                weights.shape[0] > 0
-                and bool(backend_all(isfinite(weights)))
-                and bool(backend_all(weights >= 0.0))
-            ):
-                weight_scale = backend_max(weights)
-                if bool(weight_scale > 0.0):
-                    weights = weights / weight_scale
-                    weights = weights / backend_sum(weights)
+            # CircularDiracDistribution already performs the hardened Dirac-weight
+            # validation and normalization in its constructor. Avoid pre-normalizing
+            # here: direct division by a near-maximum backend value can be lowered
+            # to multiplication by an underflowed reciprocal on JAX/XLA, turning
+            # valid finite grid weights into zeros/NaNs before the robust normalizer
+            # gets a chance to handle them.
             return cls(get_grid(), weights)
 
         if n_particles is None:
