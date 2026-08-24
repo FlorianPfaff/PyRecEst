@@ -43,6 +43,7 @@ from pyrecest.backend import (
     where,
     zeros,
 )
+from pyrecest.numerics import assert_covariance_matrix
 
 from .abstract_extended_object_tracker import AbstractExtendedObjectTracker
 
@@ -248,7 +249,7 @@ class MEMRBPFTracker(AbstractExtendedObjectTracker):
             matrix = diag(matrix)
         if matrix.shape != (dim, dim):
             raise ValueError(f"{name} must have shape ({dim}, {dim})")
-        matrix = cls._symmetrize(matrix)
+        matrix = assert_covariance_matrix(matrix, name=name, dim=dim)
         if require_pd:
             linalg.cholesky(matrix)
         return matrix
@@ -350,10 +351,15 @@ class MEMRBPFTracker(AbstractExtendedObjectTracker):
         if shape_sys_noise is not None:
             shape_sys_noise = array(shape_sys_noise)
             if shape_sys_noise.shape == (3, 3):
+                shape_sys_noise = self._as_covariance(
+                    shape_sys_noise, 3, "shape_sys_noise", require_pd=False
+                )
                 self.orientation_process_variance = float(shape_sys_noise[0, 0])
                 self.axis_sys_noise = shape_sys_noise[1:, 1:]
             elif shape_sys_noise.shape == (2, 2):
-                self.axis_sys_noise = shape_sys_noise
+                self.axis_sys_noise = self._as_covariance(
+                    shape_sys_noise, 2, "shape_sys_noise", require_pd=False
+                )
             else:
                 raise ValueError("shape_sys_noise must be 3x3 or 2x2")
         self.axis = self.axis @ axis_matrix.T
