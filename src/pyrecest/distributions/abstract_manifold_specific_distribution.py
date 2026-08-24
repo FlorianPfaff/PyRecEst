@@ -335,7 +335,9 @@ def sample_metropolis_hastings_jax(
         key, key_prop, key_u = _random.split(key, 3)
 
         # Propose new state
-        x_prop = proposal(key_prop, x)
+        x_prop = _jnp.asarray(proposal(key_prop, x))
+        if x_prop.shape != x.shape:
+            raise ValueError("Proposal must return a vector of same shape as input")
         log_px_prop = _to_scalar(log_pdf(x_prop))
 
         # Metropolis-Hastings acceptance. The proposal correction vanishes for
