@@ -2,6 +2,9 @@ import copy
 import inspect
 from collections.abc import Callable
 
+import numpy as np
+import pyrecest.backend
+
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
 from pyrecest.backend import (
     all,
@@ -59,6 +62,40 @@ def _stack_particle_updates(updates, reference_particles):
     if ndim(reference_particles) == 1:
         return hstack(updates)
     return vstack(updates)
+
+
+def _normalize_nonadditive_noise_weights(weights):
+    """Validate and stably normalize nonadditive-noise probabilities."""
+    if not bool(all(isfinite(weights))):
+        raise ValueError("Noise weights must be finite.")
+    if not bool(all(weights >= 0.0)):
+        raise ValueError("Noise weights must be nonnegative.")
+
+    try:
+        weight_sum = sum(weights)
+    except FloatingPointError:
+        weight_sum = None
+    if (
+        weight_sum is not None
+        and bool(isfinite(weight_sum))
+        and bool(weight_sum > 0.0)
+    ):
+        return weights / weight_sum
+
+    # Backend reductions can overflow for large finite weights, while XLA can
+    # flush representable float64 subnormals to zero during arithmetic. The raw
+    # values are already finite/nonnegative, so recover their ratios after a
+    # bounded host-side max scaling and move only ordinary probabilities back.
+    host_weights = np.asarray(pyrecest.backend.to_numpy(weights), dtype=float)
+    weight_scale = float(np.max(host_weights))
+    if not np.isfinite(weight_scale) or weight_scale <= 0.0:
+        raise ValueError("Noise weights must have positive finite total mass.")
+
+    scaled_weights = host_weights / weight_scale
+    scaled_weight_sum = float(np.sum(scaled_weights))
+    if not np.isfinite(scaled_weight_sum) or scaled_weight_sum <= 0.0:
+        raise ValueError("Noise weights must have positive finite total mass.")
+    return array(scaled_weights / scaled_weight_sum, dtype=float)
 
 
 class AbstractParticleFilter(AbstractFilter):
@@ -248,14 +285,7 @@ class AbstractParticleFilter(AbstractFilter):
         if samples.shape[0] != weights.shape[0]:
             raise ValueError("samples and weights must match in size")
 
-        if not bool(all(isfinite(weights))):
-            raise ValueError("Noise weights must be finite.")
-        if not bool(all(weights >= 0.0)):
-            raise ValueError("Noise weights must be nonnegative.")
-        weight_sum = sum(weights)
-        if not bool(isfinite(weight_sum)) or not bool(weight_sum > 0.0):
-            raise ValueError("Noise weights must have positive finite total mass.")
-        weights = weights / weight_sum
+        weights = _normalize_nonadditive_noise_weights(weights)
         n_particles = self.filter_state.w.shape[0]
         noise_samples = random.choice(samples, n_particles, p=weights)
 
