@@ -7,10 +7,8 @@ import pyrecest.backend
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
 from pyrecest.backend import (
-    all,
     array,
     hstack,
-    isfinite,
     ndim,
     ones_like,
     random,
@@ -66,27 +64,27 @@ def _stack_particle_updates(updates, reference_particles):
 
 def _normalize_nonadditive_noise_weights(weights):
     """Validate and stably normalize nonadditive-noise probabilities."""
-    if not bool(all(isfinite(weights))):
+    host_weights = np.asarray(pyrecest.backend.to_numpy(weights), dtype=float)
+    if not np.all(np.isfinite(host_weights)):
         raise ValueError("Noise weights must be finite.")
-    if not bool(all(weights >= 0.0)):
+    if np.any(host_weights < 0.0):
         raise ValueError("Noise weights must be nonnegative.")
 
     try:
         weight_sum = sum(weights)
+        host_weight_sum = float(np.asarray(pyrecest.backend.to_numpy(weight_sum)))
     except FloatingPointError:
         weight_sum = None
-    if (
-        weight_sum is not None
-        and bool(isfinite(weight_sum))
-        and bool(weight_sum > 0.0)
-    ):
+        host_weight_sum = float("nan")
+    if weight_sum is not None and np.isfinite(host_weight_sum) and host_weight_sum > 0.0:
         return weights / weight_sum
 
     # Backend reductions can overflow for large finite weights, while XLA can
     # flush representable float64 subnormals to zero during arithmetic. The raw
     # values are already finite/nonnegative, so recover their ratios after a
     # bounded host-side max scaling and move only ordinary probabilities back.
-    host_weights = np.asarray(pyrecest.backend.to_numpy(weights), dtype=float)
+    if host_weights.size == 0:
+        raise ValueError("Noise weights must have positive finite total mass.")
     weight_scale = float(np.max(host_weights))
     if not np.isfinite(weight_scale) or weight_scale <= 0.0:
         raise ValueError("Noise weights must have positive finite total mass.")
