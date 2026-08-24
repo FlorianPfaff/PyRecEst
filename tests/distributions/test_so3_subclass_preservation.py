@@ -19,9 +19,7 @@ def _identity_quaternion():
 
 
 def test_so3_bingham_multiply_preserves_left_subclass():
-    left = _SO3BinghamSubclass.from_mode_and_concentration(
-        _identity_quaternion(), 2.0
-    )
+    left = _SO3BinghamSubclass.from_mode_and_concentration(_identity_quaternion(), 2.0)
     right = SO3BinghamDistribution.from_mode_and_concentration(
         _identity_quaternion(), 3.0
     )
@@ -32,9 +30,7 @@ def test_so3_bingham_multiply_preserves_left_subclass():
 
 
 def test_so3_bingham_compose_preserves_left_subclass():
-    left = _SO3BinghamSubclass.from_mode_and_concentration(
-        _identity_quaternion(), 2.0
-    )
+    left = _SO3BinghamSubclass.from_mode_and_concentration(_identity_quaternion(), 2.0)
     right = SO3BinghamDistribution.from_mode_and_concentration(
         _identity_quaternion(), 3.0
     )

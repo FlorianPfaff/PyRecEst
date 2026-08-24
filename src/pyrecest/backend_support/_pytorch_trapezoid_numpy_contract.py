@@ -154,9 +154,7 @@ def _patch_pytorch_triangular_indices_numpy_contract() -> None:
             )
             return tuple(indices.unbind(0))
 
-        triangular_indices.__name__ = getattr(
-            original_helper, "__name__", helper_name
-        )
+        triangular_indices.__name__ = getattr(original_helper, "__name__", helper_name)
         triangular_indices.__doc__ = getattr(original_helper, "__doc__", None)
         triangular_indices._pyrecest_numpy_contract = True
         return triangular_indices
