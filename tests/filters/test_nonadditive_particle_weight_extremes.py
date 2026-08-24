@@ -49,13 +49,17 @@ class NonadditiveParticleWeightExtremesTest(unittest.TestCase):
         ):
             with self.subTest(weights=weights):
                 particle_filter = EuclideanParticleFilter(n_particles=4, dim=1)
-                particle_filter.filter_state = LinearDiracDistribution(initial_particles)
+                particle_filter.filter_state = LinearDiracDistribution(
+                    initial_particles
+                )
                 particle_filter.predict_nonlinear_nonadditive(
                     lambda particle, noise: particle + noise,
                     samples,
                     weights,
                 )
-                self.assertTrue(allclose(particle_filter.filter_state.d, initial_particles))
+                self.assertTrue(
+                    allclose(particle_filter.filter_state.d, initial_particles)
+                )
 
 
 if __name__ == "__main__":

@@ -59,9 +59,7 @@ class CircularGridDistributionTest(unittest.TestCase):
 
     def test_trigonometric_moment_preserves_extreme_finite_weight_ratio(self):
         largest = np.finfo(_active_dtype()).max
-        figd = CircularGridDistribution(
-            array([largest, largest / 2.0], dtype=float)
-        )
+        figd = CircularGridDistribution(array([largest, largest / 2.0], dtype=float))
 
         with np.errstate(over="raise", invalid="raise", divide="raise"):
             moment = figd.trigonometric_moment(1)

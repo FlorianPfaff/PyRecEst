@@ -76,7 +76,11 @@ def _normalize_nonadditive_noise_weights(weights):
     except FloatingPointError:
         weight_sum = None
         host_weight_sum = float("nan")
-    if weight_sum is not None and np.isfinite(host_weight_sum) and host_weight_sum > 0.0:
+    if (
+        weight_sum is not None
+        and np.isfinite(host_weight_sum)
+        and host_weight_sum > 0.0
+    ):
         return weights / weight_sum
 
     # Backend reductions can overflow for large finite weights, while XLA can

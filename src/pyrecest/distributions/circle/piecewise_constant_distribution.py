@@ -10,6 +10,9 @@ from pyrecest.backend import (
     floor,
     isfinite,
     log,
+)
+from pyrecest.backend import max as backend_max
+from pyrecest.backend import (
     mean,
     mod,
     pi,
@@ -18,7 +21,6 @@ from pyrecest.backend import (
     sum,
     zeros,
 )
-from pyrecest.backend import max as backend_max
 
 from .abstract_circular_distribution import AbstractCircularDistribution
 

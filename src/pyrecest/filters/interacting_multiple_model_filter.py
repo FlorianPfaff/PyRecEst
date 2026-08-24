@@ -496,9 +496,7 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
                 raise ValueError("likelihoods must be nonnegative.")
             positive = likelihoods > 0.0
             safe_likelihoods = where(positive, likelihoods, 1.0)
-            log_likelihoods = where(
-                positive, log(safe_likelihoods), -float("inf")
-            )
+            log_likelihoods = where(positive, log(safe_likelihoods), -float("inf"))
             self.latest_model_likelihoods = likelihoods
         else:
             _reject_complex_values(log_likelihoods, "log_likelihoods")
@@ -518,9 +516,7 @@ class InteractingMultipleModelFilter(AbstractFilter, EuclideanFilterMixin):
         prior_probabilities = asarray(self.mode_probabilities, dtype=float).reshape(-1)
         positive = prior_probabilities > 0.0
         safe_prior_probabilities = where(positive, prior_probabilities, 1.0)
-        log_prior = where(
-            positive, log(safe_prior_probabilities), -float("inf")
-        )
+        log_prior = where(positive, log(safe_prior_probabilities), -float("inf"))
 
         log_posterior_unnormalized = log_prior + log_likelihoods
         if not isfinite(log_posterior_unnormalized).any():
