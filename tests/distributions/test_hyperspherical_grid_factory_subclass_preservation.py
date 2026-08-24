@@ -23,14 +23,20 @@ class HypersphericalGridFactorySubclassPreservationTest(unittest.TestCase):
         source = HypersphericalUniformDistribution(2)
 
         converted = convert_distribution(
-            source, _HypersphericalGridSubclass, no_of_grid_points=12
+            source,
+            _HypersphericalGridSubclass,
+            no_of_grid_points=12,
+            grid_type="fibonacci",
         )
 
         self.assertIsInstance(converted, _HypersphericalGridSubclass)
 
     def test_from_function_preserves_requested_subclass(self):
         converted = _HypersphericalGridSubclass.from_function(
-            lambda xs: ones(xs.shape[0]), no_of_grid_points=12, dim=2
+            lambda xs: ones(xs.shape[0]),
+            no_of_grid_points=12,
+            dim=2,
+            grid_type="fibonacci",
         )
 
         self.assertIsInstance(converted, _HypersphericalGridSubclass)
