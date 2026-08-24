@@ -10,7 +10,15 @@ _module_globals = runpy.run_path(
     run_name=__name__,
 )
 _original_get_equal_area_caps = _module_globals["get_equal_area_caps"]
+_original_get_cap_colatitudes = _module_globals["get_cap_colatitudes"]
 _legacy_globals = _original_get_equal_area_caps.__globals__
+
+
+def get_cap_colatitudes(dim, N, c_polar, n_regions):
+    """Compute cap colatitudes without mutating backend scalar views."""
+    # PyTorch scalar indexing returns a view.  The legacy implementation uses
+    # ``+=`` for its running subtotal, which otherwise mutates n_regions[0].
+    return _original_get_cap_colatitudes(dim, N, c_polar, n_regions + 0)
 
 
 def get_equal_area_caps(dim, N, symmetric: bool = False):
@@ -46,8 +54,10 @@ def get_equal_area_caps(dim, N, symmetric: bool = False):
 
 
 # Legacy functions resolve global names through their original execution dictionary.
-# Patch that dictionary so internal calls use the corrected implementation as well.
+# Patch that dictionary so internal calls use the corrected implementations as well.
+_legacy_globals["get_cap_colatitudes"] = get_cap_colatitudes
 _legacy_globals["get_equal_area_caps"] = get_equal_area_caps
+_module_globals["get_cap_colatitudes"] = get_cap_colatitudes
 _module_globals["get_equal_area_caps"] = get_equal_area_caps
 for _name, _value in _module_globals.items():
     if not _name.startswith("__"):
