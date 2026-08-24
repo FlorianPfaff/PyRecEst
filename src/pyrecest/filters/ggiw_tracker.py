@@ -18,6 +18,7 @@ from pyrecest.backend import (
     sin,
     zeros,
 )
+from pyrecest.numerics import assert_covariance_matrix
 
 from .abstract_extended_object_tracker import AbstractExtendedObjectTracker
 
@@ -27,6 +28,16 @@ def _validate_bool_flag(value, name: str) -> bool:
     if value_array.shape != () or not np.issubdtype(value_array.dtype, np.bool_):
         raise TypeError(f"{name} must be a boolean")
     return bool(value_array.item())
+
+
+def _validate_finite_scalar(value, name: str) -> float:
+    try:
+        scalar = float(value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{name} must be a finite scalar") from exc
+    if not np.isfinite(scalar):
+        raise ValueError(f"{name} must be finite")
+    return scalar
 
 
 class GGIWTracker(
@@ -81,11 +92,18 @@ class GGIWTracker(
         )
 
         extent = array(extent)
+        if extent.ndim != 2 or extent.shape[0] != extent.shape[1]:
+            raise ValueError("extent must be a square matrix")
         self.measurement_dim = extent.shape[0]
-        self.extent_degrees_of_freedom = float(extent_degrees_of_freedom)
-        self.gamma_shape = float(gamma_shape)
-        self.gamma_rate = float(gamma_rate)
-        self.extent_innovation_weight = float(extent_innovation_weight)
+        self.extent_degrees_of_freedom = _validate_finite_scalar(
+            extent_degrees_of_freedom, "extent_degrees_of_freedom"
+        )
+        self.gamma_shape = _validate_finite_scalar(gamma_shape, "gamma_shape")
+        self.gamma_rate = _validate_finite_scalar(gamma_rate, "gamma_rate")
+        self.extent_innovation_weight = _validate_finite_scalar(
+            extent_innovation_weight, "extent_innovation_weight"
+        )
+        extent_is_scale = _validate_bool_flag(extent_is_scale, "extent_is_scale")
         self.subtract_measurement_noise_from_scatter = _validate_bool_flag(
             subtract_measurement_noise_from_scatter,
             "subtract_measurement_noise_from_scatter",
@@ -102,7 +120,9 @@ class GGIWTracker(
             self.measurement_matrix = array(measurement_matrix)
             self._validate_measurement_matrix(self.measurement_matrix)
 
-        self.extent_scale = self._symmetrize(extent)
+        self.extent_scale = assert_covariance_matrix(
+            extent, name="extent", dim=self.measurement_dim
+        )
         if not extent_is_scale:
             self.extent_scale = self.extent_scale * self._extent_mean_denominator()
         self._validate_positive_definite(self.extent_scale, "extent_scale")
@@ -124,14 +144,17 @@ class GGIWTracker(
             matrix = matrix * eye(dim)
         if matrix.shape != (dim, dim):
             raise ValueError(f"{name} must have shape ({dim}, {dim})")
-        matrix = cls._symmetrize(matrix)
+        matrix = assert_covariance_matrix(matrix, name=name, dim=dim)
         cls._validate_positive_definite(matrix, name)
         return matrix
 
     def _extent_mean_denominator(self, degrees_of_freedom=None):
         if degrees_of_freedom is None:
             degrees_of_freedom = self.extent_degrees_of_freedom
-        denominator = float(degrees_of_freedom) - 2.0 * self.measurement_dim - 2.0
+        degrees_of_freedom = _validate_finite_scalar(
+            degrees_of_freedom, "extent_degrees_of_freedom"
+        )
+        denominator = degrees_of_freedom - 2.0 * self.measurement_dim - 2.0
         if denominator <= 0.0:
             raise ValueError(
                 "extent_degrees_of_freedom must be larger than 2 * measurement_dim + 2"
@@ -331,6 +354,9 @@ class GGIWTracker(
         meas_noise_cov = self._get_measurement_noise(meas_noise_cov)
         if extent_innovation_weight is None:
             extent_innovation_weight = self.extent_innovation_weight
+        extent_innovation_weight = _validate_finite_scalar(
+            extent_innovation_weight, "extent_innovation_weight"
+        )
         if extent_innovation_weight < 0.0:
             raise ValueError("extent_innovation_weight must be non-negative")
 
