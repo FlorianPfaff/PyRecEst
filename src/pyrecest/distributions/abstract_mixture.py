@@ -131,6 +131,20 @@ def _validate_mixture_weight_values(weights) -> None:
             raise ValueError("Mixture weights must be nonnegative")
 
 
+def _normalize_mixture_weights_on_host(host_weights):
+    """Normalize finite nonnegative weights when backend reductions lose scale."""
+    weight_scale = float(np.max(host_weights))
+    if not np.isfinite(weight_scale) or weight_scale <= 0.0:
+        raise ValueError("Mixture weights must have positive finite total mass")
+
+    scaled_weights = host_weights / weight_scale
+    scaled_weight_sum = float(np.sum(scaled_weights))
+    if not np.isfinite(scaled_weight_sum) or scaled_weight_sum <= 0.0:
+        raise ValueError("Mixture weights must have positive finite total mass")
+
+    return asarray(scaled_weights / scaled_weight_sum)
+
+
 class AbstractMixture(AbstractDistributionType):
     """
     Abstract base class for mixture distributions.
@@ -162,29 +176,56 @@ class AbstractMixture(AbstractDistributionType):
         if not all(dists[0].input_dim == dist.input_dim for dist in dists):
             raise ValueError("All distributions must have the same input dimension")
 
-        non_zero_indices = [i for i, weight in enumerate(weights) if bool(weight != 0)]
+        # XLA may flush subnormal operands during comparisons and reductions even
+        # though device_get preserves their stored float64 values. Determine exact
+        # zero support from the already validated host representation so valid tiny
+        # components are not pruned before normalization.
+        host_weights = np.asarray(pyrecest.backend.to_numpy(weights))
+        non_zero_indices = np.flatnonzero(host_weights != 0.0).tolist()
 
         if len(non_zero_indices) == 0:
             raise ValueError("At least one mixture weight must be nonzero")
 
-        weight_sum = sum(weights)
-        if bool(pyrecest.backend.isfinite(weight_sum)) and bool(weight_sum > 0.0):
+        try:
+            weight_sum = sum(weights)
+        except FloatingPointError:
+            weight_sum = None
+        if (
+            weight_sum is not None
+            and bool(pyrecest.backend.isfinite(weight_sum))
+            and bool(weight_sum > 0.0)
+        ):
             normalized_weights = weights / weight_sum
             weights_sum_to_one = bool(abs(weight_sum - 1.0) <= 1e-10)
         else:
             weight_scale = pyrecest.backend.max(weights)
-            scale_root = pyrecest.backend.sqrt(weight_scale)
-            # JAX may lower ``weights / weight_scale`` to multiplication by an
-            # underflowed reciprocal when ``weight_scale`` is near float64.max.
-            # Splitting the division across two square-root-sized factors keeps
-            # the scaled weights and their sum finite without changing ratios.
-            scaled_weights = (weights / scale_root) / scale_root
-            scaled_weight_sum = sum(scaled_weights)
-            if not bool(pyrecest.backend.isfinite(scaled_weight_sum)) or not bool(
-                scaled_weight_sum > 0.0
+            scaled_weight_sum = None
+            if bool(pyrecest.backend.isfinite(weight_scale)) and bool(
+                weight_scale > 0.0
             ):
-                raise ValueError("Mixture weights must have positive finite total mass")
-            normalized_weights = scaled_weights / scaled_weight_sum
+                scale_root = pyrecest.backend.sqrt(weight_scale)
+                # JAX may lower ``weights / weight_scale`` to multiplication by an
+                # underflowed reciprocal when ``weight_scale`` is near float64.max.
+                # Splitting the division across two square-root-sized factors keeps
+                # the scaled weights and their sum finite without changing ratios.
+                scaled_weights = (weights / scale_root) / scale_root
+                try:
+                    scaled_weight_sum = sum(scaled_weights)
+                except FloatingPointError:
+                    scaled_weight_sum = None
+
+            if (
+                scaled_weight_sum is not None
+                and bool(pyrecest.backend.isfinite(scaled_weight_sum))
+                and bool(scaled_weight_sum > 0.0)
+            ):
+                normalized_weights = scaled_weights / scaled_weight_sum
+            else:
+                # JAX/XLA can flush subnormal values to zero during arithmetic.
+                # Normalize those rare inputs on the host, where their stored
+                # float64 ratios are still available, then return ordinary-sized
+                # probabilities to the active backend.
+                normalized_weights = _normalize_mixture_weights_on_host(host_weights)
             weights_sum_to_one = False
 
         if len(non_zero_indices) < len(weights):
