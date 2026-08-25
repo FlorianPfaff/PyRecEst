@@ -6,6 +6,8 @@ import pytest
 from pyrecest.backend import array, cos, eye, sin, to_numpy
 from pyrecest.smoothers import SO3ChordalMeanSmoother
 
+# pylint: disable=protected-access
+
 
 def _active_dtype():
     return to_numpy(array([0.0], dtype=float)).dtype
