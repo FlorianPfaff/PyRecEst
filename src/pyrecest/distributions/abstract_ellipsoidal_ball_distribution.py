@@ -1,3 +1,5 @@
+from math import lgamma, log as scalar_log, pi as scalar_pi
+
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import all as backend_all
 from pyrecest.backend import (
@@ -14,7 +16,6 @@ from pyrecest.backend import (
     transpose,
 )
 from pyrecest.exceptions import ShapeError, ValidationError
-from scipy.special import gamma
 
 from .abstract_bounded_nonperiodic_distribution import (
     AbstractBoundedNonPeriodicDistribution,
@@ -97,8 +98,17 @@ class AbstractEllipsoidalBallDistribution(AbstractBoundedNonPeriodicDistribution
         elif self.dim == 4:
             c = 0.5 * pi**2
         else:
-            c = (pi ** (self.dim / 2)) / gamma((self.dim / 2) + 1)
+            half_dim = self.dim / 2
+            # Keep the unit-ball volume in log space. gamma(half_dim + 1)
+            # overflows starting around dim=342 even while the volume itself
+            # is still representable in float64.
+            log_unit_ball_volume = half_dim * scalar_log(scalar_pi) - lgamma(
+                half_dim + 1
+            )
+
+        if self.dim <= 4:
+            log_unit_ball_volume = log(array(c))
 
         cholesky_factor = linalg.cholesky(self.shape_matrix)
-        log_volume = log(array(c)) + log(diagonal(cholesky_factor)).sum()
+        log_volume = log_unit_ball_volume + log(diagonal(cholesky_factor)).sum()
         return exp(log_volume)
