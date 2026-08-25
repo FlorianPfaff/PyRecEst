@@ -283,10 +283,19 @@ def _validated_probability_vector(
     mask = _module_globals["_coerce_valid_state_mask"](valid_state_mask, n_entries)
     if mask is not None:
         values[~mask] = 0.0
-    total = float(values.sum())
-    if total <= 0.0:
+
+    # Summing finite, non-negative weights directly can overflow even though the
+    # normalized probability vector is perfectly well-defined. Scale by the
+    # largest entry first so both very large and subnormal priors preserve their
+    # relative mass without overflowing or flushing the total to zero.
+    value_scale = float(np.max(values))
+    if value_scale <= 0.0:
         raise ValueError(f"{name} must contain positive probability mass")
-    return values / total
+    scaled_values = values / value_scale
+    scaled_total = float(scaled_values.sum())
+    if not np.isfinite(scaled_total) or scaled_total <= 0.0:
+        raise ValueError(f"{name} must contain positive probability mass")
+    return scaled_values / scaled_total
 
 
 @wraps(_original_sticky_mode_transition_matrix)
