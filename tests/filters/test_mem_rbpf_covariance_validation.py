@@ -4,7 +4,6 @@ from pyrecest import backend
 from pyrecest.backend import array, diag, eye
 from pyrecest.filters.mem_rbpf_tracker import MEMRBPFTracker
 
-
 pytestmark = pytest.mark.skipif(
     backend.__backend_name__ == "jax",
     reason="MEMRBPFTracker is unsupported on JAX.",
