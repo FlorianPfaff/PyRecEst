@@ -403,6 +403,11 @@ _module_globals["sticky_mode_transition_matrix"] = sticky_mode_transition_matrix
 _module_globals["mode_transition_matrix"] = sticky_mode_transition_matrix
 _module_globals["sparse_gaussian_transition_matrix"] = sparse_gaussian_transition_matrix
 _module_globals["_normalize_probability_vector"] = _validated_probability_vector
+# ``runpy.run_path`` returns a copy of the executed module globals. Functions
+# retain the original execution dictionary, so patch that dictionary as well.
+_original_discrete_forward_backward.__globals__["_normalize_probability_vector"] = (
+    _validated_probability_vector
+)
 for name in _module_globals["__all__"]:
     globals()[name] = _module_globals[name]
 __all__ = _module_globals["__all__"]
