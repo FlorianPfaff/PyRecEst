@@ -254,9 +254,10 @@ def adaptive_position_proposal_probability(
 
 
 def grid_proposal_weights(log_likelihood) -> np.ndarray:
-    """Convert finite grid log likelihoods to normalized proposal weights."""
+    """Convert valid grid log likelihoods to normalized proposal weights."""
 
     values = np.asarray(log_likelihood, dtype=float)
+    _validate_grid_log_likelihood_values(values)
     finite = np.isfinite(values)
     if not np.any(finite):
         raise ValueError("all grid log-likelihoods are non-finite")
@@ -356,7 +357,13 @@ def _coerce_grid_values(values, expected_size: int) -> np.ndarray:
     values = np.asarray(values, dtype=float)
     if values.shape != (expected_size,):
         raise ValueError(f"log_likelihood must have shape ({expected_size},)")
+    _validate_grid_log_likelihood_values(values)
     return values
+
+
+def _validate_grid_log_likelihood_values(values: np.ndarray) -> None:
+    if np.any(np.isnan(values) | np.isposinf(values)):
+        raise ValueError("log_likelihood must contain finite values or -np.inf")
 
 
 def _linear_rectilinear_grid_values(
@@ -433,8 +440,8 @@ def _nearest_grid_values(
 
     indices = _nearest_bin_indices(positions[finite_positions], bin_tree)
     nearest_values = values[indices]
-    # A non-finite grid value represents zero or undefined likelihood. Borrowing
-    # the minimum finite value from another bin would create spurious mass.
+    # A -inf grid value represents zero likelihood. Borrowing the minimum finite
+    # value from another bin would create spurious mass.
     nearest_values = np.where(
         np.isfinite(nearest_values), nearest_values, float(log_zero)
     )
