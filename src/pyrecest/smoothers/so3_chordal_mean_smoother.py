@@ -5,9 +5,10 @@ from __future__ import annotations
 from operator import index as operator_index
 from typing import Sequence
 
+import numpy as np
+
 # pylint: disable=no-member
-from pyrecest import backend
-from pyrecest.backend import asarray, diag, isfinite, linalg, ndim, zeros
+from pyrecest.backend import asarray, diag, linalg, ndim, to_numpy, zeros
 
 from .abstract_smoother import AbstractSmoother
 
@@ -101,20 +102,32 @@ class SO3ChordalMeanSmoother(AbstractSmoother):
             raise ValueError(f"{name} must be one-dimensional.")
         if weights_array.shape[0] != length:
             raise ValueError(f"{name} must have length {length}.")
-        if not bool(backend.all(isfinite(weights_array))):
+
+        # Validate and scale using the stored host values. Some XLA operations
+        # flush subnormal operands, and division by a near-maximum finite value
+        # can be lowered through a reciprocal that underflows to zero. Moving
+        # only the resulting O(1) ratios back to the active backend avoids both
+        # failure modes while preserving the intended relative weights.
+        try:
+            host_weights = np.asarray(to_numpy(weights_array))
+            finite_weights = np.isfinite(host_weights)
+        except (TypeError, ValueError, OverflowError, RuntimeError) as exc:
+            raise ValueError(f"{name} must contain real numeric values.") from exc
+        if np.iscomplexobj(host_weights):
+            raise ValueError(f"{name} must contain real numeric values.")
+        if not np.all(finite_weights):
             raise ValueError(f"{name} must contain only finite values.")
+        if np.any(host_weights < 0.0):
+            raise ValueError(f"{name} must be nonnegative.")
 
-        for idx in range(length):
-            if weights_array[idx] < 0.0:
-                raise ValueError(f"{name} must be nonnegative.")
-
-        weight_scale = backend.max(weights_array)
+        weight_scale = float(np.max(host_weights))
         if weight_scale <= 0.0:
             raise ValueError(f"{name} must contain at least one positive entry.")
 
-        scaled_weights = weights_array / weight_scale
+        scaled_host_weights = host_weights / weight_scale
+        scaled_weights = asarray(scaled_host_weights)
         if normalize:
-            return scaled_weights / backend.sum(scaled_weights)
+            return scaled_weights / float(np.sum(scaled_host_weights))
         return scaled_weights
 
     @staticmethod
