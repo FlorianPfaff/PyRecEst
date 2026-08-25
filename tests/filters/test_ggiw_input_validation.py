@@ -1,9 +1,8 @@
 import numpy as np
-import pytest
 import pyrecest.backend
+import pytest
 from pyrecest.backend import array, diag, eye
 from pyrecest.filters import GGIWTracker
-
 
 pytestmark = pytest.mark.skipif(
     pyrecest.backend.__backend_name__ != "numpy",
