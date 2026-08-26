@@ -14,9 +14,7 @@ class TestReplayGridLogLikelihoodValidation(unittest.TestCase):
         for invalid_value in (np.nan, np.inf):
             log_likelihood = np.asarray([0.0, invalid_value])
             with self.subTest(invalid_value=invalid_value, api="lookup"):
-                with self.assertRaisesRegex(
-                    ValueError, "finite values or -np.inf"
-                ):
+                with self.assertRaisesRegex(ValueError, "finite values or -np.inf"):
                     replay_grid_log_likelihood_values(
                         positions,
                         log_likelihood,
@@ -24,9 +22,7 @@ class TestReplayGridLogLikelihoodValidation(unittest.TestCase):
                         interpolation="nearest",
                     )
             with self.subTest(invalid_value=invalid_value, api="proposal"):
-                with self.assertRaisesRegex(
-                    ValueError, "finite values or -np.inf"
-                ):
+                with self.assertRaisesRegex(ValueError, "finite values or -np.inf"):
                     grid_proposal_weights(log_likelihood)
 
     def test_negative_infinity_remains_zero_likelihood(self):
