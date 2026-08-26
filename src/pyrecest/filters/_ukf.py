@@ -7,12 +7,14 @@ from collections import namedtuple
 from copy import deepcopy
 
 # pylint: disable=no-name-in-module,no-member
+from pyrecest.backend import all as backend_all
 from pyrecest.backend import (
     asarray,
     einsum,
     expand_dims,
     eye,
     float64,
+    isfinite,
     linalg,
     reshape,
     stack,
@@ -36,14 +38,16 @@ __all__ = [
 
 
 def _as_vector(value, description):
-    """Return scalar or vector input without silently flattening matrices."""
+    """Return a finite scalar or vector without silently flattening matrices."""
     value = asarray(value, dtype=float64)
     if len(value.shape) == 0:
-        return reshape(value, (1,))
-    if len(value.shape) != 1:
+        value = reshape(value, (1,))
+    elif len(value.shape) != 1:
         raise ValueError(
             f"{description} must be scalar or one-dimensional; got shape {value.shape}"
         )
+    if not bool(backend_all(isfinite(value))):
+        raise ValueError(f"{description} must contain only finite values")
     return value
 
 
@@ -137,13 +141,16 @@ class UnscentedKalmanFilter:
         P_pred = P_pred + process_noise_covariance
         P_pred = 0.5 * (P_pred + transpose(P_pred))
 
-        self.x = x_pred
-        self.P = P_pred
         # ``sigmas_f`` represents only the deterministic transition.  Process
         # noise is added analytically above, so regenerate the cached sigma
         # points from the complete predicted covariance before the measurement
         # update; otherwise additive process noise is ignored in Pz and Pxz.
-        self._sigmas_f = points.sigma_points(self.x, self.P)
+        # Build the cache before committing x/P so failed covariance validation
+        # cannot leave the filter in a partially-updated state.
+        predicted_sigmas = points.sigma_points(x_pred, P_pred)
+        self.x = x_pred
+        self.P = P_pred
+        self._sigmas_f = predicted_sigmas
 
     def _innovation_matrices(  # pylint: disable=too-many-positional-arguments
         self, sigmas_f, sigmas_h, z_pred, R, Wc
