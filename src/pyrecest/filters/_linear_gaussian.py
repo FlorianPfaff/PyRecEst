@@ -56,6 +56,15 @@ def _contains_complex_value(x):
     return False
 
 
+def _ensure_finite(x, name):
+    try:
+        values = np.asarray(to_numpy(x), dtype=float)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{name} must contain only finite values") from exc
+    if not np.all(np.isfinite(values)):
+        raise ValueError(f"{name} must contain only finite values")
+
+
 def _as_vector(x, name):
     if _contains_boolean_value(x):
         raise ValueError(f"{name} must contain numeric values, not booleans")
@@ -64,6 +73,7 @@ def _as_vector(x, name):
     x = atleast_1d(asarray(x, dtype=float64))
     if len(x.shape) != 1:
         raise ValueError(f"{name} must be one-dimensional after coercion")
+    _ensure_finite(x, name)
     return x
 
 
@@ -75,6 +85,7 @@ def _as_matrix(x, name):
     x = atleast_2d(asarray(x, dtype=float64))
     if len(x.shape) != 2:
         raise ValueError(f"{name} must be two-dimensional after coercion")
+    _ensure_finite(x, name)
     return x
 
 
