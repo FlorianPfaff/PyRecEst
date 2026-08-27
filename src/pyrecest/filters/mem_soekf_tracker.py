@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from math import isfinite
+
 # pylint: disable=no-name-in-module,no-member,duplicate-code,too-many-locals
 from pyrecest.backend import (
     array,
@@ -29,8 +31,8 @@ class MEMSOEKFTracker(MEMEKFTracker):
     def __init__(self, *args, finite_difference_step=1e-5, **kwargs):
         super().__init__(*args, **kwargs)
         self.finite_difference_step = float(finite_difference_step)
-        if self.finite_difference_step <= 0.0:
-            raise ValueError("finite_difference_step must be positive")
+        if not isfinite(self.finite_difference_step) or self.finite_difference_step <= 0.0:
+            raise ValueError("finite_difference_step must be finite and positive")
 
     @staticmethod
     def _extent_transform_from_shape(shape_state):
