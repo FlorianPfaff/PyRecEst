@@ -31,7 +31,10 @@ class MEMSOEKFTracker(MEMEKFTracker):
     def __init__(self, *args, finite_difference_step=1e-5, **kwargs):
         super().__init__(*args, **kwargs)
         self.finite_difference_step = float(finite_difference_step)
-        if not isfinite(self.finite_difference_step) or self.finite_difference_step <= 0.0:
+        if (
+            not isfinite(self.finite_difference_step)
+            or self.finite_difference_step <= 0.0
+        ):
             raise ValueError("finite_difference_step must be finite and positive")
 
     @staticmethod

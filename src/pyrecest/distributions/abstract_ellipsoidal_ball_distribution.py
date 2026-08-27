@@ -1,4 +1,6 @@
-from math import lgamma, log as scalar_log, pi as scalar_pi
+from math import lgamma
+from math import log as scalar_log
+from math import pi as scalar_pi
 
 # pylint: disable=no-name-in-module,no-member
 from pyrecest.backend import all as backend_all
