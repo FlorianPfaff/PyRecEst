@@ -1,4 +1,5 @@
 # pylint: disable=duplicate-code,no-member,no-name-in-module,too-many-lines
+from math import isfinite
 from numbers import Integral
 
 from pyrecest.backend import (
@@ -125,8 +126,8 @@ class EKFSplineTracker(AbstractExtendedObjectTracker):
             "closest_point_iterations",
             0,
         )
-        if self.finite_difference_step <= 0.0:
-            raise ValueError("finite_difference_step must be positive")
+        if not isfinite(self.finite_difference_step) or self.finite_difference_step <= 0.0:
+            raise ValueError("finite_difference_step must be finite and positive")
         self.last_quadratic_form = None
         self._sync_state_views()
 
