@@ -1,5 +1,4 @@
 import numpy as np
-
 from pyrecest.filters.discrete_state import (
     discrete_forward_backward,
     imm_forward_backward,

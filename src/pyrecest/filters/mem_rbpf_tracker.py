@@ -368,8 +368,7 @@ class MEMRBPFTracker(AbstractExtendedObjectTracker):
         if inputs is not None:
             next_kinematic_state = next_kinematic_state + inputs
         next_covariance = self._symmetrize(
-            next_system_matrix @ self.covariance @ next_system_matrix.T
-            + next_sys_noise
+            next_system_matrix @ self.covariance @ next_system_matrix.T + next_sys_noise
         )
         next_axis = self.axis @ axis_matrix.T
         next_axis_covariances = self._symmetrize_stack(
