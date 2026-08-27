@@ -2,9 +2,8 @@ import unittest
 
 import numpy as np
 import numpy.testing as npt
-
 from pyrecest.backend import array, zeros
-from pyrecest.filters._ukf import _UKFModel, UnscentedKalmanFilter
+from pyrecest.filters._ukf import UnscentedKalmanFilter, _UKFModel
 from pyrecest.sampling.sigma_points import MerweScaledSigmaPoints
 
 

@@ -5,7 +5,6 @@ from pyrecest import backend
 from pyrecest.backend import array, diag, eye
 from pyrecest.filters.mem_rbpf_tracker import MEMRBPFTracker
 
-
 pytestmark = pytest.mark.skipif(
     backend.__backend_name__ == "jax",
     reason="MEMRBPFTracker is unsupported on JAX.",
@@ -48,9 +47,7 @@ def _assert_snapshot_equal(tracker, snapshot):
     npt.assert_array_equal(
         _to_numpy_copy(tracker.kinematic_state), snapshot["kinematic_state"]
     )
-    npt.assert_array_equal(
-        _to_numpy_copy(tracker.covariance), snapshot["covariance"]
-    )
+    npt.assert_array_equal(_to_numpy_copy(tracker.covariance), snapshot["covariance"])
     npt.assert_array_equal(
         _to_numpy_copy(tracker.system_matrix), snapshot["system_matrix"]
     )
@@ -63,8 +60,7 @@ def _assert_snapshot_equal(tracker, snapshot):
         _to_numpy_copy(tracker.axis_sys_noise), snapshot["axis_sys_noise"]
     )
     assert (
-        tracker.orientation_process_variance
-        == snapshot["orientation_process_variance"]
+        tracker.orientation_process_variance == snapshot["orientation_process_variance"]
     )
 
 
