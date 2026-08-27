@@ -238,28 +238,43 @@ class DirichletProcessBirthMultiBernoulliTracker(MultiBernoulliTracker):
             birth_mean,
             birth_covariance,
         )
-        self.last_birth_diagnostics.append(decision)
         if decision["action"] == "clutter":
+            self.last_birth_diagnostics.append(decision)
             return None
 
+        pruning_threshold = self._normalize_birth_atom_pruning_threshold()
+        maximum_number_of_birth_atoms = self._normalize_maximum_number_of_birth_atoms()
+
+        atom_index = decision["atom_index"]
         if decision["action"] == "new_atom":
             atom = DirichletProcessBirthAtom(birth_mean, birth_covariance)
-            self.birth_atoms.append(atom)
-            decision["atom_index"] = len(self.birth_atoms) - 1
+            atom_index = len(self.birth_atoms)
+            decision["atom_index"] = atom_index
         else:
-            atom = self.birth_atoms[decision["atom_index"]]
+            atom = self.birth_atoms[atom_index].copy()
             atom.update_from_measurement(
                 measurement,
                 measurement_matrix,
                 measurement_covariance,
             )
 
-        self._prune_and_cap_birth_atoms()
-        return BernoulliComponent(
+        birth_component = BernoulliComponent(
             decision["existence_probability"],
             GaussianDistribution(atom.mean, atom.covariance),
             label=label,
         )
+
+        if decision["action"] == "new_atom":
+            self.birth_atoms.append(atom)
+        else:
+            self.birth_atoms[atom_index] = atom
+
+        self._prune_and_cap_birth_atoms(
+            pruning_threshold=pruning_threshold,
+            maximum_number_of_birth_atoms=maximum_number_of_birth_atoms,
+        )
+        self.last_birth_diagnostics.append(decision)
+        return birth_component
 
     def _resolve_birth_covariance(
         self,
