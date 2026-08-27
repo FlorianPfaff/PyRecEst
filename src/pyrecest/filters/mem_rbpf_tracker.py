@@ -325,19 +325,17 @@ class MEMRBPFTracker(AbstractExtendedObjectTracker):
                 raise ValueError(
                     f"inputs must have shape {expected_shape}, got {inputs.shape}"
                 )
+
+        next_system_matrix = self.system_matrix
         if system_matrix is not None:
-            self.system_matrix = array(system_matrix)
-            self._validate_system_matrix(self.system_matrix)
+            next_system_matrix = array(system_matrix)
+            self._validate_system_matrix(next_system_matrix)
+
+        next_sys_noise = self.sys_noise
         if sys_noise is not None:
-            self.sys_noise = self._as_covariance(
+            next_sys_noise = self._as_covariance(
                 sys_noise, self.state_dim, "sys_noise", require_pd=False
             )
-        self.kinematic_state = self.system_matrix @ self.kinematic_state
-        if inputs is not None:
-            self.kinematic_state = self.kinematic_state + inputs
-        self.covariance = self._symmetrize(
-            self.system_matrix @ self.covariance @ self.system_matrix.T + self.sys_noise
-        )
 
         axis_matrix = eye(2)
         if shape_system_matrix is not None:
@@ -348,26 +346,48 @@ class MEMRBPFTracker(AbstractExtendedObjectTracker):
                 axis_matrix = shape_system_matrix
             else:
                 raise ValueError("shape_system_matrix must be 3x3 or 2x2")
+
+        next_orientation_process_variance = self.orientation_process_variance
+        next_axis_sys_noise = self.axis_sys_noise
         if shape_sys_noise is not None:
             shape_sys_noise = array(shape_sys_noise)
             if shape_sys_noise.shape == (3, 3):
                 shape_sys_noise = self._as_covariance(
                     shape_sys_noise, 3, "shape_sys_noise", require_pd=False
                 )
-                self.orientation_process_variance = float(shape_sys_noise[0, 0])
-                self.axis_sys_noise = shape_sys_noise[1:, 1:]
+                next_orientation_process_variance = float(shape_sys_noise[0, 0])
+                next_axis_sys_noise = shape_sys_noise[1:, 1:]
             elif shape_sys_noise.shape == (2, 2):
-                self.axis_sys_noise = self._as_covariance(
+                next_axis_sys_noise = self._as_covariance(
                     shape_sys_noise, 2, "shape_sys_noise", require_pd=False
                 )
             else:
                 raise ValueError("shape_sys_noise must be 3x3 or 2x2")
-        self.axis = self.axis @ axis_matrix.T
-        self.axis_covariances = self._symmetrize_stack(
-            axis_matrix @ self.axis_covariances @ axis_matrix.T
-            + self.axis_sys_noise.reshape((1, 2, 2))
+
+        next_kinematic_state = next_system_matrix @ self.kinematic_state
+        if inputs is not None:
+            next_kinematic_state = next_kinematic_state + inputs
+        next_covariance = self._symmetrize(
+            next_system_matrix @ self.covariance @ next_system_matrix.T
+            + next_sys_noise
         )
-        self._apply_axis_floor()
+        next_axis = self.axis @ axis_matrix.T
+        next_axis_covariances = self._symmetrize_stack(
+            axis_matrix @ self.axis_covariances @ axis_matrix.T
+            + next_axis_sys_noise.reshape((1, 2, 2))
+        )
+        if self.axis_floor is not None:
+            next_axis = maximum(next_axis, float(self.axis_floor))
+
+        self.system_matrix = next_system_matrix
+        self.sys_noise = next_sys_noise
+        self.orientation_process_variance = next_orientation_process_variance
+        self.axis_sys_noise = next_axis_sys_noise
+        self.kinematic_state = next_kinematic_state
+        self.covariance = next_covariance
+        self.axis = next_axis
+        self.axis_covariances = next_axis_covariances
+
         if self.log_prior_estimates:
             self.store_prior_estimates()
         if self.log_prior_extents:
