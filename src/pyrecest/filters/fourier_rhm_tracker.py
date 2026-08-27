@@ -131,8 +131,7 @@ class FourierRHMTracker(
             covariance, self.state_dim, "covariance"
         )
         self._validate_positive_definite(
-            self.covariance
-            + self.covariance_regularization * eye(self.state_dim),
+            self.covariance + self.covariance_regularization * eye(self.state_dim),
             "covariance",
         )
 
@@ -362,8 +361,7 @@ class FourierRHMTracker(
         augmented_covariance = linalg.block_diag(self.covariance, noise_covariance)
         augmented_dim = augmented_mean.shape[0]
         augmented_covariance = self._symmetrize(
-            augmented_covariance
-            + self.covariance_regularization * eye(augmented_dim)
+            augmented_covariance + self.covariance_regularization * eye(augmented_dim)
         )
 
         sigma_points = MerweScaledSigmaPoints(

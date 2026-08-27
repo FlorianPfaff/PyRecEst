@@ -17,9 +17,7 @@ class TestEllipsoidalBallHighDimensionalVolume(unittest.TestCase):
         )
 
         with mpmath.workdps(80):
-            expected_volume = float(
-                mpmath.pi ** (dim / 2) / mpmath.gamma(dim / 2 + 1)
-            )
+            expected_volume = float(mpmath.pi ** (dim / 2) / mpmath.gamma(dim / 2 + 1))
 
         volume = dist.get_manifold_size()
         npt.assert_allclose(volume, expected_volume, rtol=1e-12, atol=0.0)
