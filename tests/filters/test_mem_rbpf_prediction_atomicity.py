@@ -45,16 +45,27 @@ def _snapshot(tracker):
 
 
 def _assert_snapshot_equal(tracker, snapshot):
-    npt.assert_array_equal(_to_numpy_copy(tracker.kinematic_state), snapshot["kinematic_state"])
-    npt.assert_array_equal(_to_numpy_copy(tracker.covariance), snapshot["covariance"])
-    npt.assert_array_equal(_to_numpy_copy(tracker.system_matrix), snapshot["system_matrix"])
+    npt.assert_array_equal(
+        _to_numpy_copy(tracker.kinematic_state), snapshot["kinematic_state"]
+    )
+    npt.assert_array_equal(
+        _to_numpy_copy(tracker.covariance), snapshot["covariance"]
+    )
+    npt.assert_array_equal(
+        _to_numpy_copy(tracker.system_matrix), snapshot["system_matrix"]
+    )
     npt.assert_array_equal(_to_numpy_copy(tracker.sys_noise), snapshot["sys_noise"])
     npt.assert_array_equal(_to_numpy_copy(tracker.axis), snapshot["axis"])
     npt.assert_array_equal(
         _to_numpy_copy(tracker.axis_covariances), snapshot["axis_covariances"]
     )
-    npt.assert_array_equal(_to_numpy_copy(tracker.axis_sys_noise), snapshot["axis_sys_noise"])
-    assert tracker.orientation_process_variance == snapshot["orientation_process_variance"]
+    npt.assert_array_equal(
+        _to_numpy_copy(tracker.axis_sys_noise), snapshot["axis_sys_noise"]
+    )
+    assert (
+        tracker.orientation_process_variance
+        == snapshot["orientation_process_variance"]
+    )
 
 
 @pytest.mark.parametrize(
