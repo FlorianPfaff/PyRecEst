@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from math import isfinite as python_isfinite
 from numbers import Integral
 
+import numpy as np
 import pyrecest.backend
 
 # pylint: disable=no-name-in-module,no-member,redefined-builtin,duplicate-code
@@ -21,6 +23,7 @@ from pyrecest.backend import (
     zeros,
     zeros_like,
 )
+from pyrecest.numerics import assert_covariance_matrix
 from pyrecest.sampling.sigma_points import MerweScaledSigmaPoints
 
 from .abstract_extended_object_tracker import AbstractExtendedObjectTracker
@@ -28,6 +31,19 @@ from .abstract_extended_object_tracker import AbstractExtendedObjectTracker
 
 def _pol2cart(phi, radius=1.0):
     return radius * stack((cos(phi), sin(phi)))
+
+
+def _ensure_finite_real_array(value, name):
+    """Reject non-finite or complex arrays before they enter the RHM recursion."""
+    try:
+        host_value = np.asarray(pyrecest.backend.to_numpy(value))
+        if np.iscomplexobj(host_value):
+            raise ValueError
+        finite = bool(np.all(np.isfinite(host_value)))
+    except (TypeError, ValueError, OverflowError, RuntimeError) as exc:
+        raise ValueError(f"{name} must contain only finite real values") from exc
+    if not finite:
+        raise ValueError(f"{name} must contain only finite real values")
 
 
 class FourierRHMTracker(
@@ -78,10 +94,16 @@ class FourierRHMTracker(
         self.n_harmonics = self._as_integer(n_harmonics, "n_harmonics", 0)
         self.n_fourier_coefficients = 2 * self.n_harmonics + 1
         self.state_dim = self.n_fourier_coefficients + 2
+        self.covariance_regularization = self._as_finite_float(
+            covariance_regularization, "covariance_regularization"
+        )
+        if self.covariance_regularization < 0.0:
+            raise ValueError("covariance_regularization must be non-negative")
 
         if fourier_coefficients is None:
+            initial_radius = self._as_finite_float(initial_radius, "initial_radius")
             fourier_coefficients = zeros(self.n_fourier_coefficients)
-            fourier_coefficients[0] = 2.0 * float(initial_radius)
+            fourier_coefficients[0] = 2.0 * initial_radius
         self.fourier_coefficients = self._as_vector(
             fourier_coefficients,
             self.n_fourier_coefficients,
@@ -109,21 +131,19 @@ class FourierRHMTracker(
             covariance, self.state_dim, "covariance"
         )
         self._validate_positive_definite(
-            self.covariance + covariance_regularization * eye(self.state_dim),
+            self.covariance
+            + self.covariance_regularization * eye(self.state_dim),
             "covariance",
         )
 
-        self.scale_mean = float(scale_mean)
-        self.scale_variance = float(scale_variance)
+        self.scale_mean = self._as_finite_float(scale_mean, "scale_mean")
+        self.scale_variance = self._as_finite_float(scale_variance, "scale_variance")
         if self.scale_variance < 0.0:
             raise ValueError("scale_variance must be non-negative")
 
-        self.ukf_alpha = float(ukf_alpha)
-        self.ukf_beta = float(ukf_beta)
-        self.ukf_kappa = float(ukf_kappa)
-        self.covariance_regularization = float(covariance_regularization)
-        if self.covariance_regularization < 0.0:
-            raise ValueError("covariance_regularization must be non-negative")
+        self.ukf_alpha = self._as_finite_float(ukf_alpha, "ukf_alpha")
+        self.ukf_beta = self._as_finite_float(ukf_beta, "ukf_beta")
+        self.ukf_kappa = self._as_finite_float(ukf_kappa, "ukf_kappa")
 
         self.latest_pseudo_measurement = None
         self.latest_innovation_covariance = None
@@ -160,10 +180,21 @@ class FourierRHMTracker(
         return integer
 
     @staticmethod
+    def _as_finite_float(value, name):
+        try:
+            scalar = float(value)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError(f"{name} must be a finite scalar") from exc
+        if not python_isfinite(scalar):
+            raise ValueError(f"{name} must be a finite scalar")
+        return scalar
+
+    @staticmethod
     def _as_vector(value, dim, name):
         vector = array(value).reshape(-1)
         if vector.shape != (dim,):
             raise ValueError(f"{name} must have shape ({dim},)")
+        _ensure_finite_real_array(vector, name)
         return vector
 
     @classmethod
@@ -177,7 +208,7 @@ class FourierRHMTracker(
             matrix = diag(matrix)
         if matrix.shape != (dim, dim):
             raise ValueError(f"{name} must have shape ({dim}, {dim})")
-        return cls._symmetrize(matrix)
+        return assert_covariance_matrix(matrix, name=name, dim=dim)
 
     @staticmethod
     def _normalize_measurements(measurements):
@@ -185,14 +216,17 @@ class FourierRHMTracker(
         if measurements.ndim == 1:
             if measurements.shape[0] != 2:
                 raise ValueError("A single measurement vector must have shape (2,)")
-            return reshape(measurements, (2, 1))
-        if measurements.ndim != 2:
+            normalized = reshape(measurements, (2, 1))
+        elif measurements.ndim != 2:
             raise ValueError("measurements must be a vector or a two-dimensional array")
-        if measurements.shape[0] == 2:
-            return measurements
-        if measurements.shape[1] == 2:
-            return measurements.T
-        raise ValueError("measurements must have shape (2, n) or (n, 2)")
+        elif measurements.shape[0] == 2:
+            normalized = measurements
+        elif measurements.shape[1] == 2:
+            normalized = measurements.T
+        else:
+            raise ValueError("measurements must have shape (2, n) or (n, 2)")
+        _ensure_finite_real_array(normalized, "measurements")
+        return normalized
 
     def _state_vector(self):
         return concatenate([self.fourier_coefficients, self.kinematic_state])
@@ -243,9 +277,12 @@ class FourierRHMTracker(
     def predict_identity(self, sys_noise=None):
         if sys_noise is None:
             sys_noise = zeros((self.state_dim, self.state_dim))
-        self.covariance = self._symmetrize(
-            self.covariance
-            + self._as_square_matrix(sys_noise, self.state_dim, "sys_noise")
+        sys_noise = self._as_square_matrix(sys_noise, self.state_dim, "sys_noise")
+        predicted_covariance = self._symmetrize(self.covariance + sys_noise)
+        self.covariance = assert_covariance_matrix(
+            predicted_covariance,
+            name="predicted_covariance",
+            dim=self.state_dim,
         )
         if self.log_prior_estimates:
             self.store_prior_estimates()
@@ -258,16 +295,30 @@ class FourierRHMTracker(
             raise ValueError(
                 f"system_matrix must have shape ({self.state_dim}, {self.state_dim})"
             )
+        _ensure_finite_real_array(system_matrix, "system_matrix")
+
         state = system_matrix @ self._state_vector()
         if inputs is not None:
             state = state + self._as_vector(inputs, self.state_dim, "inputs")
-        self._set_state_vector(state)
+        state = self._as_vector(state, self.state_dim, "predicted_state")
+
         if sys_noise is None:
             sys_noise = zeros((self.state_dim, self.state_dim))
-        self.covariance = self._symmetrize(
-            system_matrix @ self.covariance @ system_matrix.T
-            + self._as_square_matrix(sys_noise, self.state_dim, "sys_noise")
+        sys_noise = self._as_square_matrix(sys_noise, self.state_dim, "sys_noise")
+        predicted_covariance = self._symmetrize(
+            system_matrix @ self.covariance @ system_matrix.T + sys_noise
         )
+        predicted_covariance = assert_covariance_matrix(
+            predicted_covariance,
+            name="predicted_covariance",
+            dim=self.state_dim,
+        )
+
+        # Commit only after every failure-prone validation succeeds.  In particular,
+        # invalid process noise must not leave the state advanced while covariance
+        # remains at the previous time step.
+        self._set_state_vector(state)
+        self.covariance = predicted_covariance
         if self.log_prior_estimates:
             self.store_prior_estimates()
         if self.log_prior_extents:
@@ -311,7 +362,8 @@ class FourierRHMTracker(
         augmented_covariance = linalg.block_diag(self.covariance, noise_covariance)
         augmented_dim = augmented_mean.shape[0]
         augmented_covariance = self._symmetrize(
-            augmented_covariance + self.covariance_regularization * eye(augmented_dim)
+            augmented_covariance
+            + self.covariance_regularization * eye(augmented_dim)
         )
 
         sigma_points = MerweScaledSigmaPoints(
@@ -378,6 +430,8 @@ class FourierRHMTracker(
             scale_mean = self.scale_mean
         if scale_variance is None:
             scale_variance = self.scale_variance
+        scale_mean = self._as_finite_float(scale_mean, "scale_mean")
+        scale_variance = self._as_finite_float(scale_variance, "scale_variance")
         if scale_variance < 0.0:
             raise ValueError("scale_variance must be non-negative")
 
@@ -386,8 +440,8 @@ class FourierRHMTracker(
             self._update_single(
                 measurements[:, measurement_index],
                 meas_noise_cov,
-                float(scale_mean),
-                float(scale_variance),
+                scale_mean,
+                scale_variance,
             )
 
         if self.log_posterior_estimates:
