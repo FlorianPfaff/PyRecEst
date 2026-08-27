@@ -1,9 +1,8 @@
 import numpy as np
-import pytest
 import pyrecest.backend
+import pytest
 from pyrecest.backend import array, diag, eye
 from pyrecest.filters import MEMEKFTracker, MEMQKFTracker
-
 
 pytestmark = pytest.mark.skipif(
     pyrecest.backend.__backend_name__ != "numpy",
@@ -99,6 +98,4 @@ def test_mem_qkf_inherits_measurement_noise_validation():
     )
 
     with pytest.raises(ValueError, match="meas_noise_cov"):
-        tracker.set_default_measurement_noise_cov(
-            array([[1.0, 2.0], [2.0, 1.0]])
-        )
+        tracker.set_default_measurement_noise_cov(array([[1.0, 2.0], [2.0, 1.0]]))
