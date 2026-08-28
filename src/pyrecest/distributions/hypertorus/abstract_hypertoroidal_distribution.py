@@ -108,7 +108,7 @@ class AbstractHypertoroidalDistribution(AbstractPeriodicDistribution):
             )
 
         integration_boundaries = atleast_2d(integration_boundaries)
-        if self.dim not in (1, integration_boundaries.shape[0]):
+        if integration_boundaries.shape[0] != self.dim:
             raise ValueError(
                 "integration_boundaries must contain one row per dimension."
             )
