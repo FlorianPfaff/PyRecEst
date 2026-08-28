@@ -5,6 +5,7 @@ from numbers import Integral
 # pylint: disable=no-name-in-module,no-member
 # pylint: disable=too-many-instance-attributes,too-many-arguments
 # pylint: disable=too-many-positional-arguments,too-many-locals
+from pyrecest.backend import all as backend_all
 from pyrecest.backend import (
     array,
     concatenate,
@@ -133,15 +134,18 @@ class VBRMTracker(AbstractExtendedObjectTracker):
             )
 
         self.num_iterations = _as_positive_integer(num_iterations, "num_iterations")
-        self.forgetting_factor = float(forgetting_factor)
-        if self.forgetting_factor <= 0.0:
-            raise ValueError("forgetting_factor must be positive")
-        self.extent_scale = float(extent_scale)
-        if self.extent_scale <= 0.0:
-            raise ValueError("extent_scale must be positive")
-        self.covariance_regularization = float(covariance_regularization)
-        if self.covariance_regularization < 0.0:
-            raise ValueError("covariance_regularization must be non-negative")
+        self.forgetting_factor = float(
+            self._as_positive_scalar(forgetting_factor, "forgetting_factor")
+        )
+        self.extent_scale = float(
+            self._as_positive_scalar(extent_scale, "extent_scale")
+        )
+        self.covariance_regularization = float(
+            self._as_nonnegative_scalar(
+                covariance_regularization,
+                "covariance_regularization",
+            )
+        )
 
     @staticmethod
     def _symmetrize(matrix):
@@ -171,29 +175,34 @@ class VBRMTracker(AbstractExtendedObjectTracker):
             matrix = diag(matrix)
         if matrix.shape != (dim, dim):
             raise ValueError(f"{name} must have shape ({dim}, {dim})")
+        if not bool(backend_all(isfinite(matrix))):
+            raise ValueError(f"{name} must contain only finite values")
         matrix = cls._symmetrize(matrix)
         if require_positive_definite:
             cls._validate_positive_definite(matrix, name)
         return matrix
 
     @staticmethod
-    def _as_positive_scalar(value, name):
+    def _as_finite_scalar(value, name):
         scalar = array(value)
         if scalar.ndim == 1 and scalar.shape == (1,):
             scalar = scalar[0]
         if scalar.shape != ():
             raise ValueError(f"{name} must be scalar")
+        if not bool(isfinite(scalar)):
+            raise ValueError(f"{name} must be finite")
+        return scalar
+
+    @classmethod
+    def _as_positive_scalar(cls, value, name):
+        scalar = cls._as_finite_scalar(value, name)
         if float(scalar) <= 0.0:
             raise ValueError(f"{name} must be positive")
         return scalar
 
-    @staticmethod
-    def _as_nonnegative_scalar(value, name):
-        scalar = array(value)
-        if scalar.ndim == 1 and scalar.shape == (1,):
-            scalar = scalar[0]
-        if scalar.shape != ():
-            raise ValueError(f"{name} must be scalar")
+    @classmethod
+    def _as_nonnegative_scalar(cls, value, name):
+        scalar = cls._as_finite_scalar(value, name)
         if float(scalar) < 0.0:
             raise ValueError(f"{name} must be non-negative")
         return scalar
@@ -205,6 +214,8 @@ class VBRMTracker(AbstractExtendedObjectTracker):
             vector = vector * array([1.0] * dim)
         if vector.shape != (dim,):
             raise ValueError(f"{name} must be scalar or have shape ({dim},)")
+        if not bool(backend_all(isfinite(vector))):
+            raise ValueError(f"{name} entries must be finite")
         for index in range(dim):
             if float(vector[index]) <= 0.0:
                 raise ValueError(f"{name} entries must be positive")
@@ -214,6 +225,8 @@ class VBRMTracker(AbstractExtendedObjectTracker):
     def _validate_shape_state(shape_state):
         if shape_state.shape != (3,):
             raise ValueError("shape_state must have shape (3,)")
+        if not bool(backend_all(isfinite(shape_state))):
+            raise ValueError("shape_state must contain only finite values")
         if float(shape_state[1]) <= 0.0 or float(shape_state[2]) <= 0.0:
             raise ValueError("shape semi-axis lengths must be positive")
 
@@ -457,39 +470,51 @@ class VBRMTracker(AbstractExtendedObjectTracker):
                 require_positive_definite=False,
             )
 
-        self.kinematic_state = system_matrix @ self.kinematic_state
-        if inputs is not None:
-            self.kinematic_state = self.kinematic_state + array(inputs)
-        self.covariance = self._symmetrize(
-            system_matrix @ self.covariance @ system_matrix.T + sys_noise
+        orientation_system_matrix = float(
+            self._as_finite_scalar(
+                orientation_system_matrix,
+                "orientation_system_matrix",
+            )
         )
-
-        orientation_system_matrix = float(orientation_system_matrix)
         orientation_sys_noise = self._as_nonnegative_scalar(
             orientation_sys_noise,
             "orientation_sys_noise",
         )
-        self.orientation = orientation_system_matrix * self.orientation
-        self.orientation_variance = (
-            orientation_system_matrix**2 * self.orientation_variance
-            + orientation_sys_noise
-        )
-
         gamma = (
             self.forgetting_factor
             if forgetting_factor is None
-            else float(forgetting_factor)
+            else float(
+                self._as_positive_scalar(forgetting_factor, "forgetting_factor")
+            )
         )
-        if gamma <= 0.0:
-            raise ValueError("forgetting_factor must be positive")
-        self.alpha = gamma * self.alpha
-        self.beta = gamma * self.beta
-        if float(self.alpha[0]) <= 1.0 or float(self.alpha[1]) <= 1.0:
+
+        next_alpha = gamma * self.alpha
+        next_beta = gamma * self.beta
+        if float(next_alpha[0]) <= 1.0 or float(next_alpha[1]) <= 1.0:
             raise ValueError(
                 "The prediction made inverse-gamma alpha <= 1, so the extent "
                 "mean is undefined. Increase inverse_gamma_shape or use a larger "
                 "forgetting_factor."
             )
+
+        next_kinematic_state = system_matrix @ self.kinematic_state
+        if inputs is not None:
+            next_kinematic_state = next_kinematic_state + array(inputs)
+        next_covariance = self._symmetrize(
+            system_matrix @ self.covariance @ system_matrix.T + sys_noise
+        )
+        next_orientation = orientation_system_matrix * self.orientation
+        next_orientation_variance = (
+            orientation_system_matrix**2 * self.orientation_variance
+            + orientation_sys_noise
+        )
+
+        self.kinematic_state = next_kinematic_state
+        self.covariance = next_covariance
+        self.orientation = next_orientation
+        self.orientation_variance = next_orientation_variance
+        self.alpha = next_alpha
+        self.beta = next_beta
 
         if self.log_prior_estimates:
             self.store_prior_estimates()
@@ -540,10 +565,10 @@ class VBRMTracker(AbstractExtendedObjectTracker):
         measurement_matrix = self._get_measurement_matrix(meas_mat)
         meas_noise_cov = self._get_measurement_noise(meas_noise_cov)
         num_iterations = (
-            self.num_iterations if num_iterations is None else int(num_iterations)
+            self.num_iterations
+            if num_iterations is None
+            else _as_positive_integer(num_iterations, "num_iterations")
         )
-        if num_iterations <= 0:
-            raise ValueError("num_iterations must be positive")
 
         self._update_vbrm(
             measurements.T,
