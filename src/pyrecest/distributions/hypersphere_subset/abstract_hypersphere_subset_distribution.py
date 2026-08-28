@@ -173,38 +173,13 @@ class AbstractHypersphereSubsetDistribution(AbstractBoundedDomainDistribution):
 
             return f
 
-        def g_gen(f_hypersph_coords, dim):
-            if dim == 1:
-
-                def g_1d(phi):
-                    return f_hypersph_coords(array(phi))
-
-                return g_1d
-            if dim == 2:
-
-                def g_2d(phi1, phi2):
-                    return f_hypersph_coords(array(phi1), array(phi2)) * sin(phi2)
-
-                return g_2d
-            if dim == 3:
-
-                def g_3d(phi1, phi2, phi3):
-                    return (
-                        f_hypersph_coords(array(phi1), array(phi2), array(phi3))
-                        * sin(phi2)
-                        * sin(phi3) ** 2
-                    )
-
-                return g_3d
-
-            raise ValueError("Dimension not supported.")
-
         for i in range(self.dim + 1):
             for j in range(self.dim + 1):
                 f_curr = f_gen(i, j)
                 fangles = self.__class__.gen_fun_hyperspherical_coords(f_curr, self.dim)
-                g_curr = g_gen(fangles, self.dim)
-                m[i, j] = self.__class__.integrate_fun_over_domain(g_curr, self.dim)
+                # integrate_fun_over_domain() already applies the hyperspherical
+                # surface-element Jacobian through integrate_fun_over_domain_part().
+                m[i, j] = self.__class__.integrate_fun_over_domain(fangles, self.dim)
 
         return m
 
