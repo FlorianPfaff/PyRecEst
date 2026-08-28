@@ -3,6 +3,7 @@ from numbers import Integral
 from typing import Union
 
 import matplotlib.pyplot as plt
+import numpy as np
 
 # pylint: disable=redefined-builtin,no-name-in-module,no-member
 # pylint: disable=no-name-in-module,no-member
@@ -50,6 +51,21 @@ def _validate_odd_n(n) -> int | None:
 
 def _ensure_odd_n(n) -> None:
     _validate_odd_n(n)
+
+
+def _validate_scaling_flag(value, name: str) -> bool:
+    """Return a real boolean scaling flag without accepting truthy values."""
+    if np.ma.is_masked(value):
+        raise TypeError(f"{name} must be a boolean.")
+    if isinstance(value, (bool, np.bool_)):
+        return bool(value)
+    try:
+        value_array = np.asarray(value)
+    except (TypeError, ValueError, RuntimeError, OverflowError) as exc:
+        raise TypeError(f"{name} must be a boolean.") from exc
+    if value_array.shape == () and value_array.dtype == np.bool_:
+        return bool(value_array.item())
+    raise TypeError(f"{name} must be a boolean.")
 
 
 class CircularFourierDistribution(AbstractCircularDistribution):
@@ -120,7 +136,9 @@ class CircularFourierDistribution(AbstractCircularDistribution):
         else:
             raise ValueError("Need to provide either c or a and b.")
 
-        self.multiplied_by_n = multiplied_by_n
+        self.multiplied_by_n = _validate_scaling_flag(
+            multiplied_by_n, "multiplied_by_n"
+        )
         self.transformation = transformation
 
     def __sub__(
@@ -365,6 +383,9 @@ class CircularFourierDistribution(AbstractCircularDistribution):
         transformation: str = "sqrt",
         store_values_multiplied_by_n: bool = True,
     ) -> "CircularFourierDistribution":
+        store_values_multiplied_by_n = _validate_scaling_flag(
+            store_values_multiplied_by_n, "store_values_multiplied_by_n"
+        )
         n = _validate_odd_n(n)
         if isinstance(distribution, CircularDiracDistribution):
             if transformation != "identity":
@@ -412,6 +433,9 @@ class CircularFourierDistribution(AbstractCircularDistribution):
         transformation: str = "sqrt",
         store_values_multiplied_by_n: bool = True,
     ) -> "CircularFourierDistribution":
+        store_values_multiplied_by_n = _validate_scaling_flag(
+            store_values_multiplied_by_n, "store_values_multiplied_by_n"
+        )
         n_values = fvals.shape[0]
         _ensure_odd_n(n_values)
         c = fft.rfft(fvals)
