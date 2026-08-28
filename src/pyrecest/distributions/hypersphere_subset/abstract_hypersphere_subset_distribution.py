@@ -339,8 +339,10 @@ class AbstractHypersphereSubsetDistribution(AbstractBoundedDomainDistribution):
             )
         )
 
-        distance_integral = self.__class__.integrate_fun_over_domain(
-            fangles_hellinger, self.dim
+        distance_integral = (
+            AbstractHypersphereSubsetDistribution.integrate_fun_over_domain_part(
+                fangles_hellinger, integration_boundaries
+            )
         )
 
         return sqrt(0.5 * distance_integral)
@@ -365,8 +367,10 @@ class AbstractHypersphereSubsetDistribution(AbstractBoundedDomainDistribution):
             )
         )
 
-        distance_integral = self.__class__.integrate_fun_over_domain(
-            fangles_total_variation, self.dim
+        distance_integral = (
+            AbstractHypersphereSubsetDistribution.integrate_fun_over_domain_part(
+                fangles_total_variation, integration_boundaries
+            )
         )
 
         return 0.5 * distance_integral
