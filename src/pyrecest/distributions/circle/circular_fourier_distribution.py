@@ -25,6 +25,7 @@ from pyrecest.backend import (
     sqrt,
     sum,
 )
+from pyrecest.models.validation import _validate_bool_flag
 
 from .abstract_circular_distribution import AbstractCircularDistribution
 from .circular_dirac_distribution import CircularDiracDistribution
@@ -120,7 +121,9 @@ class CircularFourierDistribution(AbstractCircularDistribution):
         else:
             raise ValueError("Need to provide either c or a and b.")
 
-        self.multiplied_by_n = multiplied_by_n
+        self.multiplied_by_n = _validate_bool_flag(
+            multiplied_by_n, "multiplied_by_n"
+        )
         self.transformation = transformation
 
     def __sub__(
@@ -365,6 +368,9 @@ class CircularFourierDistribution(AbstractCircularDistribution):
         transformation: str = "sqrt",
         store_values_multiplied_by_n: bool = True,
     ) -> "CircularFourierDistribution":
+        store_values_multiplied_by_n = _validate_bool_flag(
+            store_values_multiplied_by_n, "store_values_multiplied_by_n"
+        )
         n = _validate_odd_n(n)
         if isinstance(distribution, CircularDiracDistribution):
             if transformation != "identity":
@@ -412,6 +418,9 @@ class CircularFourierDistribution(AbstractCircularDistribution):
         transformation: str = "sqrt",
         store_values_multiplied_by_n: bool = True,
     ) -> "CircularFourierDistribution":
+        store_values_multiplied_by_n = _validate_bool_flag(
+            store_values_multiplied_by_n, "store_values_multiplied_by_n"
+        )
         n_values = fvals.shape[0]
         _ensure_odd_n(n_values)
         c = fft.rfft(fvals)
