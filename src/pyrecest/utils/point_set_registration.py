@@ -262,6 +262,22 @@ def _validate_positive_integer(value, name: str, *, minimum: int = 1) -> int:
     return value_int
 
 
+def _validate_boolean_flag(value, name: str) -> bool:
+    """Return a real boolean flag without accepting merely truthy values."""
+    error_message = f"{name} must be a boolean."
+    if np.ma.is_masked(value):
+        raise TypeError(error_message)
+    if isinstance(value, (bool, np.bool_)):
+        return bool(value)
+    try:
+        value_array = np.asarray(value)
+    except (TypeError, ValueError, RuntimeError, OverflowError) as exc:
+        raise TypeError(error_message) from exc
+    if value_array.shape == () and value_array.dtype == np.bool_:
+        return bool(value_array.item())
+    raise TypeError(error_message)
+
+
 def estimate_transform(  # pylint: disable=too-many-locals
     source_points,
     target_points,
@@ -289,6 +305,7 @@ def estimate_transform(  # pylint: disable=too-many-locals
             "estimate_transform is not supported on the JAX backend."
         )
 
+    allow_reflection = _validate_boolean_flag(allow_reflection, "allow_reflection")
     source, target = _validate_pair(source_points, target_points)
     n_points, dim = source.shape
     min_matches = _minimum_required_matches(model, dim)
@@ -405,6 +422,7 @@ def joint_registration_assignment(  # pylint: disable=too-many-arguments,too-man
             "joint_registration_assignment is not supported on the JAX backend."
         )
 
+    allow_reflection = _validate_boolean_flag(allow_reflection, "allow_reflection")
     max_iterations = _validate_positive_integer(max_iterations, "max_iterations")
 
     reference = _as_point_array(reference_points)
