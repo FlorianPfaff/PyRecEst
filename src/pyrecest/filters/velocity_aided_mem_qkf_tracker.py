@@ -1,10 +1,38 @@
 from __future__ import annotations
 
+from math import isfinite
+
+import numpy as np
+
 # pylint: disable=no-name-in-module,no-member,too-many-arguments
 # pylint: disable=too-many-positional-arguments,too-many-locals
 from pyrecest.backend import arctan2, array, cos, maximum, sin
 
 from .mem_qkf_tracker import MEMQKFTracker
+
+
+def _as_finite_float(value, name: str) -> float:
+    """Return a finite scalar float without accepting boolean controls."""
+    value_array = np.asarray(value)
+    if value_array.shape != () or value_array.dtype == np.bool_:
+        raise ValueError(f"{name} must be a finite scalar")
+    scalar = value_array.item()
+    if isinstance(scalar, (bool, np.bool_)):
+        raise ValueError(f"{name} must be a finite scalar")
+    try:
+        parsed = float(scalar)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{name} must be a finite scalar") from exc
+    if not isfinite(parsed):
+        raise ValueError(f"{name} must be a finite scalar")
+    return parsed
+
+
+def _as_bool_flag(value, name: str) -> bool:
+    """Return a strict Python boolean for public configuration flags."""
+    if isinstance(value, (bool, np.bool_)):
+        return bool(value)
+    raise ValueError(f"{name} must be a boolean")
 
 
 class VelocityAidedMEMQKFTracker(MEMQKFTracker):
@@ -66,21 +94,36 @@ class VelocityAidedMEMQKFTracker(MEMQKFTracker):
         super().__init__(*args, **kwargs)
 
         self.velocity_indices = self._normalize_velocity_indices(velocity_indices)
-        self.speed_threshold = float(speed_threshold)
+        self.speed_threshold = _as_finite_float(speed_threshold, "speed_threshold")
         if self.speed_threshold < 0.0:
             raise ValueError("speed_threshold must be non-negative")
 
-        self.orientation_offset = float(orientation_offset)
-        self.heading_noise_variance = float(heading_noise_variance)
+        self.orientation_offset = _as_finite_float(
+            orientation_offset,
+            "orientation_offset",
+        )
+        self.heading_noise_variance = _as_finite_float(
+            heading_noise_variance,
+            "heading_noise_variance",
+        )
         if self.heading_noise_variance < 0.0:
             raise ValueError("heading_noise_variance must be non-negative")
 
-        self.minimum_heading_variance = float(minimum_heading_variance)
+        self.minimum_heading_variance = _as_finite_float(
+            minimum_heading_variance,
+            "minimum_heading_variance",
+        )
         if self.minimum_heading_variance <= 0.0:
             raise ValueError("minimum_heading_variance must be positive")
 
-        self.apply_heading_on_prediction = bool(apply_heading_on_prediction)
-        self.use_heading_constraint = bool(use_heading_constraint)
+        self.apply_heading_on_prediction = _as_bool_flag(
+            apply_heading_on_prediction,
+            "apply_heading_on_prediction",
+        )
+        self.use_heading_constraint = _as_bool_flag(
+            use_heading_constraint,
+            "use_heading_constraint",
+        )
         self._heading_update_pending = False
 
     def _normalize_velocity_indices(self, velocity_indices):
@@ -211,7 +254,10 @@ class VelocityAidedMEMQKFTracker(MEMQKFTracker):
         """Update and fuse the velocity-heading pseudo-measurement once per scan."""
         old_use_heading_constraint = self.use_heading_constraint
         if use_heading_constraint is not None:
-            self.use_heading_constraint = bool(use_heading_constraint)
+            self.use_heading_constraint = _as_bool_flag(
+                use_heading_constraint,
+                "use_heading_constraint",
+            )
         self._heading_update_pending = True
         try:
             super().update(
