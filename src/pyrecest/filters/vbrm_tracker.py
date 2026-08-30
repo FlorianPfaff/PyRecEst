@@ -483,9 +483,7 @@ class VBRMTracker(AbstractExtendedObjectTracker):
         gamma = (
             self.forgetting_factor
             if forgetting_factor is None
-            else float(
-                self._as_positive_scalar(forgetting_factor, "forgetting_factor")
-            )
+            else float(self._as_positive_scalar(forgetting_factor, "forgetting_factor"))
         )
 
         next_alpha = gamma * self.alpha
