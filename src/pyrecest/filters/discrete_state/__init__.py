@@ -341,6 +341,18 @@ def sparse_gaussian_transition_matrix(
     valid_state_mask=None,
 ):
     states = _validated_state_vectors(state_vectors)
+    if states.ndim == 1:
+        states = states[:, None]
+    elif states.ndim != 2:
+        raise ValueError(
+            "state_vectors must have shape (n_states,) or (n_states, state_dim)"
+        )
+    n_states = states.shape[0]
+    if n_states == 0:
+        raise ValueError("state_vectors must contain at least one state")
+    if states.shape[1] == 0:
+        raise ValueError("state_vectors must contain at least one coordinate per state")
+
     sigma = _validated_positive_scalar(sigma, "sigma")
     max_step_sigma = _validated_positive_scalar(
         max_step_sigma,
@@ -348,9 +360,6 @@ def sparse_gaussian_transition_matrix(
         allow_infinite=True,
     )
 
-    if states.ndim == 1:
-        states = states[:, None]
-    n_states = states.shape[0]
     valid_mask = _module_globals["_coerce_valid_state_mask"](
         valid_state_mask,
         n_states,
