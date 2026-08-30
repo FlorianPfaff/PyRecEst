@@ -249,6 +249,25 @@ def _validated_positive_integer(value: Any, name: str) -> int:
     return parsed
 
 
+def _validated_unit_interval_scalar(value: Any, name: str) -> float:
+    try:
+        raw_value = np.asarray(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{name} must be a finite real scalar in [0, 1]") from exc
+    if raw_value.shape != () or raw_value.dtype.kind in _REJECTED_STATE_KINDS:
+        raise ValueError(f"{name} must be a finite real scalar in [0, 1]")
+    scalar = raw_value.item()
+    if isinstance(scalar, _TEXT_TYPES + _BOOLEAN_TYPES + _COMPLEX_TYPES):
+        raise ValueError(f"{name} must be a finite real scalar in [0, 1]")
+    try:
+        parsed = float(scalar)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{name} must be a finite real scalar in [0, 1]") from exc
+    if not np.isfinite(parsed) or not 0.0 <= parsed <= 1.0:
+        raise ValueError(f"{name} must be a finite real scalar in [0, 1]")
+    return parsed
+
+
 def _validated_probability_vector(
     probabilities: Any,
     n_entries: int,
@@ -301,6 +320,7 @@ def _validated_probability_vector(
 @wraps(_original_sticky_mode_transition_matrix)
 def sticky_mode_transition_matrix(n_modes, stickiness):
     n_modes = _validated_positive_integer(n_modes, "n_modes")
+    stickiness = _validated_unit_interval_scalar(stickiness, "stickiness")
     return _original_sticky_mode_transition_matrix(n_modes, stickiness)
 
 
