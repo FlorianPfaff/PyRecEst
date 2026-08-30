@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest import backend
 from pyrecest.filters import KalmanFilter
 
