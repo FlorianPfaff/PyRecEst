@@ -21,7 +21,7 @@ from pyrecest.backend import (
     cos,
     int32,
     int64,
-    isnan,
+    isfinite,
     linspace,
     log,
     meshgrid,
@@ -171,8 +171,10 @@ class AbstractHypertoroidalDistribution(AbstractPeriodicDistribution):
         Returns:
             float or numpy array: The angular error(s) in radians.
         """
-        if bool(isnan(alpha).any()) or bool(isnan(beta).any()):
-            raise ValueError("Angles must not contain NaN values.")
+        if bool(backend_any(~isfinite(alpha))) or bool(backend_any(~isfinite(beta))):
+            raise ValueError(
+                "Angles must contain only finite values; NaN and infinite values are invalid."
+            )
         # Ensure the angles are between 0 and 2*pi
         alpha = mod(alpha, 2.0 * pi)
         beta = mod(beta, 2.0 * pi)
@@ -312,7 +314,12 @@ class AbstractHypertoroidalDistribution(AbstractPeriodicDistribution):
                 proposal = proposal_np
 
         if start_point is None:
-            start_point = self.mean_direction()
+            try:
+                start_point = self.mean_direction()
+            except ValueError:
+                # Uniform and other symmetric hypertoroidal distributions can have
+                # no unique mean direction even though MH sampling is well-defined.
+                start_point = zeros(self.dim)
 
         # pylint: disable=duplicate-code
         s = AbstractManifoldSpecificDistribution.sample_metropolis_hastings(
