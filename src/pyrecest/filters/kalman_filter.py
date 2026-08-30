@@ -46,19 +46,27 @@ def _get_optional_model_attribute(model, *names):
     return None
 
 
-def _validate_kalman_state_covariance(covariance, dim):
+def _validate_kalman_covariance(covariance, *, name, dim=None):
     """Validate a Kalman covariance without leaving the active backend."""
     covariance = validate_covariance_matrix(
         covariance,
-        name="state.covariance",
+        name=name,
         dim=dim,
         allow_scalar=True,
         check_symmetric=True,
     )
     eigenvalues = linalg.eigvalsh(covariance)
     if not bool(backend_all(eigenvalues >= -_STATE_COVARIANCE_EIGENVALUE_ATOL)):
-        raise ValueError("state.covariance must be positive semidefinite.")
+        raise ValueError(f"{name} must be positive semidefinite.")
     return covariance
+
+
+def _validate_kalman_state_covariance(covariance, dim):
+    return _validate_kalman_covariance(
+        covariance,
+        name="state.covariance",
+        dim=dim,
+    )
 
 
 class KalmanFilter(AbstractFilter, EuclideanFilterMixin):
@@ -168,6 +176,11 @@ class KalmanFilter(AbstractFilter, EuclideanFilterMixin):
         sys_input : array-like, shape (n,), optional
             Additive deterministic input ``u``.
         """
+        sys_noise_cov = _validate_kalman_covariance(
+            sys_noise_cov,
+            name="sys_noise_cov",
+            dim=self.dim,
+        )
         new_mean, new_covariance = linear_gaussian_predict(
             mean=self._filter_state.mu,
             covariance=self._filter_state.C,
@@ -246,6 +259,10 @@ class KalmanFilter(AbstractFilter, EuclideanFilterMixin):
 
     def innovation_linear(self, measurement, measurement_matrix, meas_noise):
         """Return innovation and innovation covariance for a linear measurement."""
+        meas_noise = _validate_kalman_covariance(
+            meas_noise,
+            name="meas_noise",
+        )
         return linear_gaussian_innovation(
             self._filter_state.mu,
             self._filter_state.C,
@@ -298,6 +315,10 @@ class KalmanFilter(AbstractFilter, EuclideanFilterMixin):
         action : str, optional
             Caller-defined diagnostic label for the update action.
         """
+        meas_noise = _validate_kalman_covariance(
+            meas_noise,
+            name="meas_noise",
+        )
         result = linear_gaussian_update(
             mean=self._filter_state.mu,
             covariance=self._filter_state.C,
@@ -341,6 +362,10 @@ class KalmanFilter(AbstractFilter, EuclideanFilterMixin):
         ``"none"``. With ``robust_update=None`` and ``gate_threshold`` set,
         measurements above the gate are rejected and the prior state is kept.
         """
+        meas_noise = _validate_kalman_covariance(
+            meas_noise,
+            name="meas_noise",
+        )
         result = linear_gaussian_update_robust(
             mean=self._filter_state.mu,
             covariance=self._filter_state.C,
