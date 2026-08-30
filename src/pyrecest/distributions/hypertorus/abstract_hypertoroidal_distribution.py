@@ -21,7 +21,7 @@ from pyrecest.backend import (
     cos,
     int32,
     int64,
-    isnan,
+    isfinite,
     linspace,
     log,
     meshgrid,
@@ -171,8 +171,8 @@ class AbstractHypertoroidalDistribution(AbstractPeriodicDistribution):
         Returns:
             float or numpy array: The angular error(s) in radians.
         """
-        if bool(isnan(alpha).any()) or bool(isnan(beta).any()):
-            raise ValueError("Angles must not contain NaN values.")
+        if bool(backend_any(~isfinite(alpha))) or bool(backend_any(~isfinite(beta))):
+            raise ValueError("Angles must contain only finite values.")
         # Ensure the angles are between 0 and 2*pi
         alpha = mod(alpha, 2.0 * pi)
         beta = mod(beta, 2.0 * pi)
