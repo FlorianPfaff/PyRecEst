@@ -114,7 +114,7 @@ class AbstractManifoldSpecificDistribution(ABC):
     """
 
     def __init__(self, dim: int):
-        self._dim = dim
+        self.dim = dim
 
     @abstractmethod
     def get_manifold_size(self) -> float:
