@@ -93,3 +93,10 @@ with Path('docs/backend-compatibility.md').open('a') as stream:
 path = Path('tests/filters/test_cheap_joint_probabilistic_data_association_filter.py')
 text = path.read_text()
 path.write_text('# pylint: disable=protected-access,no-name-in-module,no-member\n' + text)
+replace_once(
+    path,
+    '    tracker.filter_state = []\n',
+    '    # Isolate association caches from the inherited empty-bank history logger.\n'
+    '    tracker.log_prior_estimates = False\n'
+    '    tracker.filter_state = []\n',
+)
