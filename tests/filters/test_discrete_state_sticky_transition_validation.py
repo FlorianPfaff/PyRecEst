@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.filters.discrete_state import sticky_mode_transition_matrix
 
 

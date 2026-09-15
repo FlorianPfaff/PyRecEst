@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from pyrecest.filters.discrete_state import sparse_gaussian_transition_matrix
 
 
