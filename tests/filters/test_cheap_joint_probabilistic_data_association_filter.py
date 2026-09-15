@@ -1,3 +1,4 @@
+# pylint: disable=protected-access,no-name-in-module,no-member
 """Cheap JPDA reference cases, normalization, and Gaussian-update contracts."""
 
 import numpy as np
@@ -93,8 +94,10 @@ def test_randomized_formula_rows_and_measurement_exclusivity():
         weights[rng.random(weights.shape) < 0.5] = 0.0
         beta = _marginals(weights)
         denominator = (
-            1 + weights.sum(axis=1, keepdims=True)
-            + weights.sum(axis=0, keepdims=True) - weights
+            1
+            + weights.sum(axis=1, keepdims=True)
+            + weights.sum(axis=0, keepdims=True)
+            - weights
         )
         npt.assert_allclose(beta[:, 1:], weights / denominator, atol=1e-14)
         npt.assert_allclose(beta.sum(axis=1), 1.0, atol=1e-14)
@@ -144,7 +147,9 @@ def test_greedy_diagnostic_is_feasible_but_not_claimed_to_be_map():
     npt.assert_array_equal(tracker.latest_greedy_association, diagnostic)
     npt.assert_allclose(tracker.latest_association_probabilities, beta)
     assert tracker.latest_map_association is None
-    npt.assert_array_equal(tracker.find_association(np.zeros((2, 1)), np.eye(2), np.eye(2)), diagnostic)
+    npt.assert_array_equal(
+        tracker.find_association(np.zeros((2, 1)), np.eye(2), np.eye(2)), diagnostic
+    )
 
 
 def test_exact_event_limit_is_not_used(monkeypatch):
@@ -178,6 +183,8 @@ def test_no_measurements_leave_state_and_covariance_unchanged():
 def test_empty_bank_clears_cached_diagnostics():
     tracker = _tracker()
     tracker.find_association_probabilities(np.zeros((2, 1)), np.eye(2), np.eye(2))
+    # Isolate association caches from the inherited empty-bank history logger.
+    tracker.log_prior_estimates = False
     tracker.filter_state = []
     with pytest.warns(UserWarning, match="zero targets"):
         beta, diagnostic = tracker.find_association_probabilities(
@@ -204,12 +211,16 @@ def test_all_measurements_outside_gate_leave_priors_unchanged():
 
 def test_heterogeneous_covariances_and_vector_clutter_match_exact_single_track():
     parameters = {"clutter_intensity": np.array([0.01, 0.04])}
-    cheap, exact = (_tracker(cls, means=(0.0,), **parameters) for cls in (CheapJPDAF, JPDAF))
+    cheap, exact = (
+        _tracker(cls, means=(0.0,), **parameters) for cls in (CheapJPDAF, JPDAF)
+    )
     measurements = np.array([[-0.5, 1.0], [0.1, -0.2]])
     covariances = np.stack([0.2 * np.eye(2), 2 * np.eye(2)], axis=2)
     for tracker in (cheap, exact):
         tracker.update_linear(measurements, np.eye(2), covariances)
-    npt.assert_allclose(cheap.latest_association_probabilities, exact.latest_association_probabilities)
+    npt.assert_allclose(
+        cheap.latest_association_probabilities, exact.latest_association_probabilities
+    )
     npt.assert_allclose(cheap.get_point_estimate(), exact.get_point_estimate())
     npt.assert_allclose(cheap.filter_state[0].C, exact.filter_state[0].C)
 
@@ -271,4 +282,6 @@ def test_invalid_covariance_shape_and_pairwise_costs_rejected():
     with pytest.raises(ValueError, match="cov_mats_meas must have shape"):
         tracker.find_association_probabilities(measurements, np.eye(2), np.ones((1, 1)))
     with pytest.raises(NotImplementedError, match="pairwise_cost_matrix"):
-        tracker.update_linear(measurements, np.eye(2), np.eye(2), pairwise_cost_matrix=np.zeros((2, 1)))
+        tracker.update_linear(
+            measurements, np.eye(2), np.eye(2), pairwise_cost_matrix=np.zeros((2, 1))
+        )

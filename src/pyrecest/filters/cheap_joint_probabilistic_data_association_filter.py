@@ -143,7 +143,9 @@ class CheapJointProbabilisticDataAssociationFilter(
         """Replace the exact event solver, leaving Gaussian updates unchanged."""
         del eligible_measurements  # The gated log-likelihood matrix encodes these.
         if np.any(np.isnan(log_likelihoods)) or np.any(np.isposinf(log_likelihoods)):
-            raise ValueError("Gated log likelihoods must be finite or negative infinity.")
+            raise ValueError(
+                "Gated log likelihoods must be finite or negative infinity."
+            )
         log_weights = (
             log_likelihoods
             + log(detection_probability)
