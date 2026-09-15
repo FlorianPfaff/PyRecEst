@@ -269,6 +269,30 @@ class JointProbabilisticDataAssociationFilter(AbstractNearestNeighborTracker):
                 "JPDAF: No measurement was within the gating threshold for at least one target."
             )
 
+        association_probabilities, map_association = (
+            self._compute_association_probabilities(
+                log_likelihoods,
+                eligible_measurements,
+                detection_probability,
+                clutter_intensity,
+            )
+        )
+
+        self.latest_association_probabilities = association_probabilities
+        self.latest_map_association = map_association
+        self._latest_posterior_hypotheses = posterior_hypotheses
+
+        return association_probabilities, map_association
+
+    def _compute_association_probabilities(
+        self,
+        log_likelihoods,
+        eligible_measurements,
+        detection_probability,
+        clutter_intensity,
+    ):
+        """Solve the gated association problem by exact joint-event enumeration."""
+        n_targets, n_meas = log_likelihoods.shape
         track_order = sorted(
             range(n_targets), key=lambda idx: len(eligible_measurements[idx])
         )
@@ -332,10 +356,6 @@ class JointProbabilisticDataAssociationFilter(AbstractNearestNeighborTracker):
                     ] += event_weight
 
         map_association = event_assignments[int(argmax(normalized_event_weights))]
-
-        self.latest_association_probabilities = association_probabilities
-        self.latest_map_association = map_association
-        self._latest_posterior_hypotheses = posterior_hypotheses
 
         return association_probabilities, map_association
 
