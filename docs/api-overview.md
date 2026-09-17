@@ -205,3 +205,11 @@ Common starting points include:
   dedicated tutorials.
 - Use module docstrings and class docstrings for detailed mathematical notes
   where they are available.
+
+## Cheap joint probabilistic data association
+
+`CheapJPDAF` / `CJPDAF` provides normalized soft association for
+linear-Gaussian tracking without joint-event enumeration. It reuses
+the exact `JPDAF` Gaussian update and is explicitly NumPy-only.
+See [Cheap JPDAF](cheap-jpdaf.md) for usage, normalization,
+complexity, and the non-MAP greedy diagnostic.
