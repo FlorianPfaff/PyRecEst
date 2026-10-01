@@ -175,3 +175,10 @@ When adding or changing an API with backend-specific behavior:
 - mention the restriction in the relevant tutorial, example, or API notes;
 - prefer implementing missing backend facade functions over direct imports when
   the operation should be portable.
+
+### Cheap JPDAF
+
+`CheapJPDAF`, `CJPDAF`, and
+`CheapJointProbabilisticDataAssociationFilter` are NumPy-only.
+Association and measurement updates reject other backends explicitly.
+See [Cheap JPDAF](cheap-jpdaf.md) for the approximation contract.
