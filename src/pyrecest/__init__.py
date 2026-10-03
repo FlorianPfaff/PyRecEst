@@ -302,67 +302,6 @@ def _patch_pytorch_clip_facade() -> None:
     backend.clip = clip
 
 
-def _pytorch_tile_repetition(repetition) -> int:
-    """Return one NumPy-style tile repetition as an integer."""
-
-    try:
-        return _operator_index(repetition)
-    except TypeError as exc:
-        raise TypeError("tile repetitions must be integers") from exc
-
-
-def _pytorch_tile_repetitions(reps, numpy_module, torch_module) -> tuple[int, ...]:
-    """Normalize NumPy-style tile repetitions for ``torch.Tensor.repeat``."""
-
-    if torch_module.is_tensor(reps):
-        reps = reps.detach().cpu().numpy()
-    reps_array = numpy_module.asarray(reps)
-    if reps_array.shape == ():
-        repetitions = (_pytorch_tile_repetition(reps_array.item()),)
-    else:
-        repetitions = tuple(
-            _pytorch_tile_repetition(one_repetition)
-            for one_repetition in reps_array.tolist()
-        )
-    if any(one_repetition < 0 for one_repetition in repetitions):
-        raise ValueError("negative dimensions are not allowed")
-    return repetitions
-
-
-def _patch_pytorch_tile_facade() -> None:
-    """Make public and raw PyTorch ``tile`` follow NumPy repetition semantics."""
-
-    import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
-
-    active_pytorch_backend = getattr(backend, "__backend_name__", None) == "pytorch"
-
-    try:
-        import numpy as _np  # pylint: disable=import-outside-toplevel
-        import pyrecest._backend.pytorch as _pytorch_backend  # pylint: disable=import-outside-toplevel
-        import torch as _torch  # pylint: disable=import-outside-toplevel
-    except (
-        ModuleNotFoundError
-    ):  # pragma: no cover - backend import fails first in practice
-        return
-
-    def tile(x, reps):
-        x = _pytorch_backend.array(x)
-        repetitions = _pytorch_tile_repetitions(reps, _np, _torch)
-        if not repetitions:
-            return x.clone()
-        if x.ndim < len(repetitions):
-            x = x.reshape((1,) * (len(repetitions) - x.ndim) + tuple(x.shape))
-        elif x.ndim > len(repetitions):
-            repetitions = (1,) * (x.ndim - len(repetitions)) + repetitions
-        return x.repeat(repetitions)
-
-    tile.__name__ = "tile"
-    tile.__doc__ = getattr(_np.tile, "__doc__", None)
-    _pytorch_backend.tile = tile
-    if active_pytorch_backend:
-        backend.tile = tile
-
-
 def _patch_pytorch_stack_helpers_facade() -> None:
     """Make public PyTorch stack helpers accept NumPy-style array-like inputs."""
 
@@ -639,7 +578,6 @@ def _patch_jax_matmul_out_facade() -> None:
 
 _patch_pytorch_comparison_facade()
 _patch_pytorch_clip_facade()
-_patch_pytorch_tile_facade()
 _patch_pytorch_stack_helpers_facade()
 _patch_pytorch_linear_helpers_facade()
 _patch_raw_pytorch_cumulative_facade()
