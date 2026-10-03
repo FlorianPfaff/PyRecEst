@@ -107,9 +107,12 @@ def _patch_shared_numpy_squeeze_facade() -> None:
 
 
 def _patch_set_diag_arraylike_facade() -> None:
-    """Make public and raw PyTorch set_diag accept array-like matrix inputs."""
+    """Preserve array-like inputs and public ``set_diag`` keyword names."""
 
     import pyrecest.backend as backend  # pylint: disable=import-outside-toplevel
+
+    if getattr(backend, "__backend_name__", None) == "pytorch":
+        return
 
     original_set_diag = backend.set_diag
 
@@ -121,36 +124,6 @@ def _patch_set_diag_arraylike_facade() -> None:
     set_diag.__name__ = getattr(original_set_diag, "__name__", "set_diag")
     set_diag.__doc__ = getattr(original_set_diag, "__doc__", None)
     backend.set_diag = set_diag
-
-    try:
-        import pyrecest._backend.pytorch as pytorch_backend  # pylint: disable=import-outside-toplevel
-        import torch as _torch  # pylint: disable=import-outside-toplevel
-    except ModuleNotFoundError:  # pragma: no cover - PyTorch may be unavailable
-        return
-
-    raw_set_diag = getattr(pytorch_backend, "set_diag", None)
-    if raw_set_diag is None:
-        return
-    if getattr(raw_set_diag, "_pyrecest_arraylike_contract", False):
-        if getattr(backend, "__backend_name__", None) == "pytorch":
-            backend.set_diag = raw_set_diag
-        return
-
-    def raw_pytorch_set_diag(x, new_diag):
-        x = pytorch_backend.array(x)
-        diag_len = min(x.shape[-2], x.shape[-1])
-        result = x.clone()
-        diag_indices = _torch.arange(diag_len, device=x.device)
-        values = _torch.as_tensor(new_diag, dtype=x.dtype, device=x.device)
-        result[..., diag_indices, diag_indices] = values
-        return result
-
-    raw_pytorch_set_diag.__name__ = getattr(raw_set_diag, "__name__", "set_diag")
-    raw_pytorch_set_diag.__doc__ = getattr(raw_set_diag, "__doc__", None)
-    raw_pytorch_set_diag._pyrecest_arraylike_contract = True
-    pytorch_backend.set_diag = raw_pytorch_set_diag
-    if getattr(backend, "__backend_name__", None) == "pytorch":
-        backend.set_diag = raw_pytorch_set_diag
 
 
 def _patch_pytorch_one_hot_integer_label_facade() -> None:
