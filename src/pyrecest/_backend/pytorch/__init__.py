@@ -933,10 +933,46 @@ def triu_indices(n, k=0, m=None):
     return indices[0], indices[1]
 
 
-def tile(x, y):
-    if not _torch.is_tensor(x):
-        x = _torch.tensor(x)
-    return x.repeat(y)
+def _pytorch_tile_repetition(repetition) -> int:
+    """Return one NumPy-style tile repetition as an integer."""
+
+    try:
+        return _operator_index(repetition)
+    except TypeError as exc:
+        raise TypeError("tile repetitions must be integers") from exc
+
+
+def _pytorch_tile_repetitions(reps) -> tuple[int, ...]:
+    """Normalize NumPy-style tile repetitions for ``torch.Tensor.repeat``."""
+
+    if _torch.is_tensor(reps):
+        reps = reps.detach().cpu().numpy()
+    reps_array = _np.asarray(reps)
+    if reps_array.shape == ():
+        repetitions = (_pytorch_tile_repetition(reps_array.item()),)
+    else:
+        repetitions = tuple(
+            _pytorch_tile_repetition(one_repetition)
+            for one_repetition in reps_array.tolist()
+        )
+    if _builtins.any(one_repetition < 0 for one_repetition in repetitions):
+        raise ValueError("negative dimensions are not allowed")
+    return repetitions
+
+
+def tile(x, reps):
+    x = array(x)
+    repetitions = _pytorch_tile_repetitions(reps)
+    if not repetitions:
+        return x.clone()
+    if x.ndim < len(repetitions):
+        x = x.reshape((1,) * (len(repetitions) - x.ndim) + tuple(x.shape))
+    elif x.ndim > len(repetitions):
+        repetitions = (1,) * (x.ndim - len(repetitions)) + repetitions
+    return x.repeat(repetitions)
+
+
+tile.__doc__ = _np.tile.__doc__
 
 
 def atleast_1d(*arys):
