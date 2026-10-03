@@ -27,9 +27,7 @@ def _subprocess_pythonpath(existing_pythonpath: str | None) -> str:
         return _SRC_PATH
 
     paths = existing_pythonpath.split(os.pathsep)
-    if _SRC_PATH in paths:
-        return existing_pythonpath
-    return os.pathsep.join([_SRC_PATH, existing_pythonpath])
+    return os.pathsep.join([_SRC_PATH, *(path for path in paths if path != _SRC_PATH)])
 
 
 def run_backend_code(
