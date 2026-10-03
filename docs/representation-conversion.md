@@ -6,6 +6,10 @@ series, mixtures, and moment-matched approximations.
 
 Use `convert_distribution` to make these conversions explicit and discoverable.
 
+The legacy `pyrecest.distributions.nonperiodic.conversion` import path re-exports
+the same API for compatibility. Prefer `pyrecest.distributions.conversion` in new
+code, as in the examples below.
+
 ```python
 from pyrecest.backend import array, eye
 from pyrecest.distributions import GaussianDistribution
