@@ -356,9 +356,10 @@ jobs:
     if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
     strategy:
       fail-fast: false
+      # The ten regular test jobs plus these two cover all twelve combinations.
       matrix:
-        backend: [numpy, pytorch, jax]
-        python-version: ["3.11", "3.12", "3.13", "3.14"]
+        backend: [pytorch, jax]
+        python-version: ["3.14"]
     permissions:
       checks: write
       pull-requests: write
