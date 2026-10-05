@@ -1021,24 +1021,26 @@ def diagonal(x, offset=0, axis1=0, axis2=1):
 
 
 def set_diag(x, new_diag):
-    """Set the diagonal along the last two axis.
+    """Return a copy with the diagonal along the last two axes replaced.
 
     Parameters
     ----------
-    x : array-like, shape=[dim]
+    x : array-like, shape=[..., m, n]
         Initial array.
-    new_diag : array-like, shape=[dim[-2]]
-        Values to set on the diagonal.
+    new_diag : array-like
+        Values broadcastable to the diagonal shape [..., min(m, n)].
 
     Returns
     -------
-    None
+    torch.Tensor
+        A new tensor with the diagonal updated. The input is not modified.
 
     Notes
     -----
-    This mimics tensorflow.linalg.set_diag(x, new_diag), when new_diag is a
-    1-D array, but modifies x instead of creating a copy.
+    The result preserves the dtype and device of the converted input.
+    Diagonal values are converted to that dtype and device.
     """
+    x = array(x)
     diag_len = _builtins.min(x.shape[-2], x.shape[-1])
     result = x.clone()
     diag_indices = _torch.arange(diag_len, device=x.device)

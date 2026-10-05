@@ -292,7 +292,8 @@ def set_diag(x, new_diag):
 
     Returns
     -------
-    None
+    array-like
+        The input array, with its diagonal updated in place.
 
     Notes
     -----
