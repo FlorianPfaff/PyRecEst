@@ -67,6 +67,24 @@ BACKEND_CAPABILITIES: Final = {
 }
 
 API_BACKEND_CAPABILITIES: Final = {
+    "CheapJointProbabilisticDataAssociationFilter": {
+        "numpy": "supported",
+        "pytorch": "unsupported",
+        "jax": "unsupported",
+        "notes": "Normalized cheap JPDA for linear-Gaussian models; no joint-event enumeration.",
+    },
+    "CheapJPDAF": {
+        "numpy": "supported",
+        "pytorch": "unsupported",
+        "jax": "unsupported",
+        "notes": "Normalized cheap JPDA for linear-Gaussian models; no joint-event enumeration.",
+    },
+    "CJPDAF": {
+        "numpy": "supported",
+        "pytorch": "unsupported",
+        "jax": "unsupported",
+        "notes": "Normalized cheap JPDA for linear-Gaussian models; no joint-event enumeration.",
+    },
     "KalmanFilter": {
         "numpy": "supported",
         "pytorch": "supported",

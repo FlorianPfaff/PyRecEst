@@ -12,6 +12,24 @@ PUBLIC_API_CATEGORIES: Final = (
 )
 
 PUBLIC_API_REGISTRY: Final = {
+    "CheapJointProbabilisticDataAssociationFilter": {
+        "module": "pyrecest.filters",
+        "category": "experimental",
+        "backend_contract": "CheapJointProbabilisticDataAssociationFilter",
+        "notes": "Fitzgerald-style cheap JPDA with complementary missed-detection mass; NumPy only.",
+    },
+    "CheapJPDAF": {
+        "module": "pyrecest.filters",
+        "category": "experimental",
+        "backend_contract": "CheapJPDAF",
+        "notes": "Fitzgerald-style cheap JPDA with complementary missed-detection mass; NumPy only.",
+    },
+    "CJPDAF": {
+        "module": "pyrecest.filters",
+        "category": "experimental",
+        "backend_contract": "CJPDAF",
+        "notes": "Fitzgerald-style cheap JPDA with complementary missed-detection mass; NumPy only.",
+    },
     "BackendFacade": {
         "module": "pyrecest.backend",
         "category": "backend-specific",
