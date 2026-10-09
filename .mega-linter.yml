@@ -19,7 +19,6 @@ DISABLE_LINTERS:
   - REPOSITORY_OSV_SCANNER # Dependency vulnerability tracking is handled outside this patch PR.
   - REPOSITORY_TRUFFLEHOG # MegaLinter 10's Lob detector reports false positives inside vendored SciPy/virtualenv wheels; Betterleaks and Secretlint remain enabled.
   - JSON_JSONLINT # Disable because there is only .devcontainer.json, for which it throws an unwanted warning
-  - MAKEFILE_CHECKMAKE # Not using a Makefile
   - SPELL_LYCHEE # Takes pretty long
   - REPOSITORY_GRYPE # Throws false positives
 
