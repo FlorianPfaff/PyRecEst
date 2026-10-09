@@ -207,7 +207,7 @@ description = "Efficiently computes derivatives of NumPy code."
 optional = true
 python-versions = ">=3.10"
 groups = ["main"]
-markers = "extra == \"jax-support\" or extra == \"all-support\""
+markers = "extra == \"all-support\" or extra == \"jax-support\""
 files = [
     {file = "autograd-1.9.1-py3-none-any.whl", hash = "sha256:b788bae3fa010cbffb4cfb7b8ba2a3f0daa6072a8506da6164c779fe9cf3e05a"},
     {file = "autograd-1.9.1.tar.gz", hash = "sha256:7818c5c69ddf9efb7da74097bd741a4c7920133f41966f68537223a15ef798bc"},
@@ -708,7 +708,7 @@ description = "Python bindings for CUDA"
 optional = true
 python-versions = ">=3.10"
 groups = ["main"]
-markers = "(extra == \"pytorch-support\" or extra == \"all-support\") and platform_system == \"Linux\""
+markers = "(extra == \"all-support\" or extra == \"pytorch-support\") and platform_system == \"Linux\""
 files = [
     {file = "cuda_bindings-13.2.0-cp310-cp310-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:08b395f79cb89ce0cd8effff07c4a1e20101b873c256a1aeb286e8fd7bd0f556"},
     {file = "cuda_bindings-13.2.0-cp310-cp310-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:d6f3682ec3c4769326aafc67c2ba669d97d688d0b7e63e659d36d2f8b72f32d6"},
@@ -743,7 +743,7 @@ description = "Pathfinder for CUDA components"
 optional = true
 python-versions = ">=3.10"
 groups = ["main"]
-markers = "(extra == \"pytorch-support\" or extra == \"all-support\") and platform_system == \"Linux\""
+markers = "(extra == \"all-support\" or extra == \"pytorch-support\") and platform_system == \"Linux\""
 files = [
     {file = "cuda_pathfinder-1.5.4-py3-none-any.whl", hash = "sha256:9563d3175ce1828531acf4b94e1c1c7d67208c347ca002493e2654878b26f4b7"},
 ]
@@ -755,7 +755,7 @@ description = "CUDA Toolkit meta-package"
 optional = true
 python-versions = "*"
 groups = ["main"]
-markers = "platform_system == \"Linux\" and (extra == \"pytorch-support\" or extra == \"all-support\")"
+markers = "platform_system == \"Linux\" and (extra == \"all-support\" or extra == \"pytorch-support\")"
 files = [
     {file = "cuda_toolkit-13.0.3.0-py2.py3-none-any.whl", hash = "sha256:d693caaa261214ddd7dbb60d68e71cbed884e68c2be7509778f3051da0b91c3f"},
 ]
@@ -858,7 +858,7 @@ files = [
     {file = "filelock-3.29.0-py3-none-any.whl", hash = "sha256:96f5f6344709aa1572bbf631c640e4ebeeb519e08da902c39a001882f30ac258"},
     {file = "filelock-3.29.0.tar.gz", hash = "sha256:69974355e960702e789734cb4871f884ea6fe50bd8404051a3530bc07809cf90"},
 ]
-markers = {main = "extra == \"pytorch-support\" or extra == \"all-support\""}
+markers = {main = "extra == \"all-support\" or extra == \"pytorch-support\""}
 
 [[package]]
 name = "fonttools"
@@ -940,7 +940,7 @@ description = "File-system specification"
 optional = true
 python-versions = ">=3.10"
 groups = ["main"]
-markers = "extra == \"pytorch-support\" or extra == \"all-support\""
+markers = "extra == \"all-support\" or extra == \"pytorch-support\""
 files = [
     {file = "fsspec-2026.9.0-py3-none-any.whl", hash = "sha256:8dd6e646e99ea382bd85f97a45e6b526a442d79423a7dc673f1e2756d05fcb5f"},
     {file = "fsspec-2026.9.0.tar.gz", hash = "sha256:0f08147951c8cb31d844c3547d631053b127863b60be04cf06e121333ee0e2fe"},
@@ -954,24 +954,24 @@ dask = ["dask", "distributed"]
 dev = ["pre-commit", "ruff (>=0.5)"]
 doc = ["numpydoc", "sphinx", "sphinx-design", "sphinx-rtd-theme", "yarl"]
 dropbox = ["dropbox", "dropboxdrivefs", "requests"]
-full = ["adlfs", "aiohttp (!=4.0.0a0,!=4.0.0a1)", "dask", "distributed", "dropbox", "dropboxdrivefs", "fusepy", "gcsfs (>2024.2.0)", "libarchive-c", "ocifs", "panel", "paramiko", "pyarrow (>=1)", "pygit2", "requests", "s3fs (>2024.2.0)", "smbprotocol", "tqdm"]
+full = ["adlfs", "aiohttp (!=4.0.0a0,!=4.0.0a1)", "dask", "distributed", "dropbox", "dropboxdrivefs", "fusepy", "gcsfs (>=2026.4.0)", "libarchive-c", "ocifs", "panel", "paramiko", "pyarrow (>=1)", "pygit2", "requests", "s3fs (>=2026.6.0)", "smbprotocol", "tqdm"]
 fuse = ["fusepy"]
-gcs = ["gcsfs (>2024.2.0)"]
+gcs = ["gcsfs (>=2026.4.0)"]
 git = ["pygit2"]
 github = ["requests"]
-gs = ["gcsfs"]
+gs = ["gcsfs (>=2026.4.0)"]
 gui = ["panel"]
 hdfs = ["pyarrow (>=1)"]
 http = ["aiohttp (!=4.0.0a0,!=4.0.0a1)"]
 libarchive = ["libarchive-c"]
 oci = ["ocifs"]
-s3 = ["s3fs (>2024.2.0)"]
+s3 = ["s3fs (>=2026.6.0)"]
 sftp = ["paramiko"]
 smb = ["smbprotocol"]
 ssh = ["paramiko"]
 test = ["aiohttp (!=4.0.0a0,!=4.0.0a1)", "numpy", "pytest", "pytest-asyncio (!=0.22.0)", "pytest-benchmark", "pytest-cov", "pytest-mock", "pytest-recording", "pytest-rerunfailures", "requests"]
-test-downstream = ["aiobotocore (>=2.5.4,<3.0.0)", "dask[dataframe,test]", "moto[server] (>4,<5)", "pytest-timeout", "xarray"]
-test-full = ["adlfs", "aiohttp (!=4.0.0a0,!=4.0.0a1)", "backports-zstd ; python_version < \"3.14\"", "cloudpickle", "dask", "distributed", "dropbox", "dropboxdrivefs", "fastparquet", "fusepy", "gcsfs", "jinja2", "kerchunk", "libarchive-c", "lz4", "notebook", "numpy", "ocifs", "pandas (<3.0.0)", "panel", "paramiko", "pyarrow", "pyarrow (>=1)", "pyftpdlib", "pygit2", "pytest", "pytest-asyncio (!=0.22.0)", "pytest-benchmark", "pytest-cov", "pytest-mock", "pytest-recording", "pytest-rerunfailures", "python-snappy", "requests", "smbprotocol", "tqdm", "urllib3", "zarr", "zstandard ; python_version < \"3.14\""]
+test-downstream = ["aiobotocore (>=2.5.4,<3.0.0)", "dask[dataframe,test]", "moto[server] (>4,<5)", "pytest-timeout", "xarray", "zarr"]
+test-full = ["adlfs", "aiohttp (!=4.0.0a0,!=4.0.0a1)", "backports-zstd ; python_version < \"3.14\"", "cloudpickle", "dask", "distributed", "dropbox", "dropboxdrivefs", "fastparquet", "fusepy", "gcsfs (>=2026.4.0)", "jinja2", "kerchunk", "libarchive-c", "lz4", "notebook", "numpy", "ocifs", "pandas (<3.0.0)", "panel", "paramiko", "pyarrow (>=1)", "pyftpdlib", "pygit2", "pytest", "pytest-asyncio (!=0.22.0)", "pytest-benchmark", "pytest-cov", "pytest-mock", "pytest-recording", "pytest-rerunfailures", "python-snappy", "requests", "s3fs (>=2026.6.0)", "smbprotocol", "tqdm", "urllib3", "zarr (<3.2.0)", "zstandard ; python_version < \"3.14\""]
 tqdm = ["tqdm"]
 
 [[package]]
@@ -1009,49 +1009,49 @@ pypi = ["pip (>=24.0)", "platformdirs (>=4.2)", "wheel (>=0.42)"]
 
 [[package]]
 name = "healpy"
-version = "1.20.0"
+version = "1.20.1"
 description = "Healpix tools package for Python"
 optional = true
 python-versions = ">=3.10"
 groups = ["main"]
-markers = "extra == \"healpy-support\" or extra == \"all-support\""
+markers = "extra == \"all-support\" or extra == \"healpy-support\""
 files = [
-    {file = "healpy-1.20.0-cp310-cp310-macosx_13_0_x86_64.whl", hash = "sha256:b0a7b4a326e6346429115c9d6916137d5473c841e5b3321dc452c837e30d5897"},
-    {file = "healpy-1.20.0-cp310-cp310-macosx_14_0_arm64.whl", hash = "sha256:7146a59bbae929a7a928bdc24363f2b8ce8e682fdecdd39b08fce8592840759a"},
-    {file = "healpy-1.20.0-cp310-cp310-macosx_15_0_arm64.whl", hash = "sha256:3eb90e1320ae558e5f15b64f509d7b6c214b855e563776b8ddcea10af6acfd88"},
-    {file = "healpy-1.20.0-cp310-cp310-manylinux_2_28_aarch64.whl", hash = "sha256:38c91e40ee5d41da3c0fb631892cfaeff43d1bfb9d92f313522695048a2cdaba"},
-    {file = "healpy-1.20.0-cp310-cp310-manylinux_2_28_x86_64.whl", hash = "sha256:4f0748eba181d443e605bc3f4d9312e2ff8038e256d350d45076a4d1a71d20fb"},
-    {file = "healpy-1.20.0-cp310-cp310-musllinux_1_2_aarch64.whl", hash = "sha256:b2d1bc41e2de8326a65cbffb39733e2cecfdddb7317b7f59b9ad183fa2a63182"},
-    {file = "healpy-1.20.0-cp310-cp310-musllinux_1_2_x86_64.whl", hash = "sha256:5bcb39484bf63bf0508986265af6dd90258e73ec34b8931a325639d7db87cfc6"},
-    {file = "healpy-1.20.0-cp311-cp311-macosx_13_0_x86_64.whl", hash = "sha256:563cbd71fff614170a145d2cd39b32a27a1ef137224debbb76723c5a288ff93a"},
-    {file = "healpy-1.20.0-cp311-cp311-macosx_14_0_arm64.whl", hash = "sha256:f0456d69040c272f05cc4fb5967ac4cb5b82fb849d8a3e4de51507ba108a0a99"},
-    {file = "healpy-1.20.0-cp311-cp311-macosx_15_0_arm64.whl", hash = "sha256:a592b760f65f1cb1d9bfa2f5293be8c8421309c89c4f350c34c7efd90f92eaa0"},
-    {file = "healpy-1.20.0-cp311-cp311-manylinux_2_28_aarch64.whl", hash = "sha256:aa7070fc081580cf5a30f1035b9f8f8fce7ba0e44ac19cdd58f0c852af375b04"},
-    {file = "healpy-1.20.0-cp311-cp311-manylinux_2_28_x86_64.whl", hash = "sha256:35c598050df47d907c082612753a2c9cbfe78893b27a1cb09e0acd5878111eea"},
-    {file = "healpy-1.20.0-cp311-cp311-musllinux_1_2_aarch64.whl", hash = "sha256:9e74e8a51681af92a5b9e12005fca966b2f89551c8815c5b57416d3cbf8a3e43"},
-    {file = "healpy-1.20.0-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:c77051e42a270cbe8f5772c250219c23624354bf373f0e37666593af7efaa712"},
-    {file = "healpy-1.20.0-cp312-cp312-macosx_13_0_x86_64.whl", hash = "sha256:3e662a31261d32fb38eaea55364576547132657ed5a8d5d075baf6c15f39a0a2"},
-    {file = "healpy-1.20.0-cp312-cp312-macosx_14_0_arm64.whl", hash = "sha256:e7e5caa8fbf35037a19cb4d656af2752ab543126879e6855572c2d751a536d50"},
-    {file = "healpy-1.20.0-cp312-cp312-macosx_15_0_arm64.whl", hash = "sha256:ed709d88f5bd71894950bf0dd98ddf80b65b1085fe28199b8ce759a98a7a4445"},
-    {file = "healpy-1.20.0-cp312-cp312-manylinux_2_28_aarch64.whl", hash = "sha256:18b6495eb7416dca382e66656134f3a192ebe98b44ff9d38ab1169d3afb83cc5"},
-    {file = "healpy-1.20.0-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:b261afa9fdb82af891aa16a708babf3a38209f0e05a93c777e2d5b9dc6397b27"},
-    {file = "healpy-1.20.0-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:96f475f05d0d55183393a19ca5ee2e615958ec4a5a92f8e2640bc7511d635c64"},
-    {file = "healpy-1.20.0-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:3d0a025ce4229272e3bf1ec1ae6dbc61de7bfc4966c8351ebc009434842f353d"},
-    {file = "healpy-1.20.0-cp313-cp313-macosx_13_0_x86_64.whl", hash = "sha256:a15dfceea17e6370f9ab34e725bfc3f42abb46a16b9ba0dd1af19b907ab8f8e5"},
-    {file = "healpy-1.20.0-cp313-cp313-macosx_14_0_arm64.whl", hash = "sha256:03f735923f2d116f87ec9f5547dfd429b7d0739c244544be10b6173e701d5a17"},
-    {file = "healpy-1.20.0-cp313-cp313-macosx_15_0_arm64.whl", hash = "sha256:356af0ed99d903862bd74b24bafaee98d6f9d1d16927472b0647447f4ea1a5e4"},
-    {file = "healpy-1.20.0-cp313-cp313-manylinux_2_28_aarch64.whl", hash = "sha256:4fe942685346e577aff37c309a089313e652907a48231a50cb6b260663ae116e"},
-    {file = "healpy-1.20.0-cp313-cp313-manylinux_2_28_x86_64.whl", hash = "sha256:1408a6b6da26a9adf2b03915c8a0eefaf4bfa83b2179aa10490f85378545cabf"},
-    {file = "healpy-1.20.0-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:5b707a03a4f2dc5f0225c7ff41d4aaeac05ac239fc80e41543d397b42ab68984"},
-    {file = "healpy-1.20.0-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:a13c0294c3eec67656a1a706c4dc7c41484e9c58fe80af7a2c9e1a2b02e92cfc"},
-    {file = "healpy-1.20.0-cp314-cp314-macosx_13_0_x86_64.whl", hash = "sha256:bcf4c736103c1d330f700ecaa1cd73167f6c17cf7e9c2b8ac849b44ec63ef77a"},
-    {file = "healpy-1.20.0-cp314-cp314-macosx_14_0_arm64.whl", hash = "sha256:7e527d8b8033602a401e44d95d850d7d8518ab980c54bc04589c95e379f67139"},
-    {file = "healpy-1.20.0-cp314-cp314-macosx_15_0_arm64.whl", hash = "sha256:53cfa9cd9f4df24dc032c6f296b26f3cba64070f080c468ff0477d9437c58b36"},
-    {file = "healpy-1.20.0-cp314-cp314-manylinux_2_28_aarch64.whl", hash = "sha256:6fc791aa5c8c4b43f30e7d40abe390aa3c24b35accd4ba7322b7b2f9951638fb"},
-    {file = "healpy-1.20.0-cp314-cp314-manylinux_2_28_x86_64.whl", hash = "sha256:3a5572d87a0a75e05a2db7446f14a0447996ef680e55f82eb9c667a79e39e935"},
-    {file = "healpy-1.20.0-cp314-cp314-musllinux_1_2_aarch64.whl", hash = "sha256:108f493c0b183c5752e65115a82419391139b57d20b8d94acf7ec590794d3901"},
-    {file = "healpy-1.20.0-cp314-cp314-musllinux_1_2_x86_64.whl", hash = "sha256:8c217389ad8c80ac31428d53b92ea691793c4311e9e32842e6ed8687045b9b87"},
-    {file = "healpy-1.20.0.tar.gz", hash = "sha256:03b0e1551ae235c7290e9bfdf69fa9cdc194f8a2be51198c1924b15d826102ed"},
+    {file = "healpy-1.20.1-cp310-cp310-macosx_13_0_x86_64.whl", hash = "sha256:57a15a3b026eb7b1fc700894c35e504904a888b8686f702140e53bc867e53fa6"},
+    {file = "healpy-1.20.1-cp310-cp310-macosx_14_0_arm64.whl", hash = "sha256:2be3b9c59e30c89e239eae6025814dfa574eef53b871993b0a58e0b9ca2313ee"},
+    {file = "healpy-1.20.1-cp310-cp310-macosx_15_0_arm64.whl", hash = "sha256:670c2f8bcc7e7cb9e580fd745cb3a4b5444c98a591e94554d05013cc4c4fd8bb"},
+    {file = "healpy-1.20.1-cp310-cp310-manylinux_2_28_aarch64.whl", hash = "sha256:36c193e49f00aa66c256070f109a237881a583aedfac2f240353abca7119aeda"},
+    {file = "healpy-1.20.1-cp310-cp310-manylinux_2_28_x86_64.whl", hash = "sha256:99c7b51c21c0e820d4b7ae95f7adbb08bccb187f986511da8de2552ffcd08224"},
+    {file = "healpy-1.20.1-cp310-cp310-musllinux_1_2_aarch64.whl", hash = "sha256:3c10139c6e8269355a91d1f464f3ca80d085f3fee8d798a735d376824b9f74eb"},
+    {file = "healpy-1.20.1-cp310-cp310-musllinux_1_2_x86_64.whl", hash = "sha256:4ea45accc68327b9031a6d310d81cf733326047542f67bedeb4113a6b07ce7ec"},
+    {file = "healpy-1.20.1-cp311-cp311-macosx_13_0_x86_64.whl", hash = "sha256:a5d11a013640ec8c94216e212908fa21dcbec6527611f1529698b78405e68a82"},
+    {file = "healpy-1.20.1-cp311-cp311-macosx_14_0_arm64.whl", hash = "sha256:978636049aca1890f29540289a1ffbeeaee4422ffd3cca1c03b2d1eef87712fc"},
+    {file = "healpy-1.20.1-cp311-cp311-macosx_15_0_arm64.whl", hash = "sha256:702c0d15260bce8192b264c6e5d5863fffc76e5e55343788ee7619484f85484e"},
+    {file = "healpy-1.20.1-cp311-cp311-manylinux_2_28_aarch64.whl", hash = "sha256:d9476a0363ce1a75095cb0952c63757e7e0a4ba3a374883efca46df451e64f4e"},
+    {file = "healpy-1.20.1-cp311-cp311-manylinux_2_28_x86_64.whl", hash = "sha256:865bd8b959a48e1c9b98f2aa5b886b71fab06285590a5031e52428736a868df4"},
+    {file = "healpy-1.20.1-cp311-cp311-musllinux_1_2_aarch64.whl", hash = "sha256:1a834c7c3d842b894753c1626b90fea374a432a9d1c487e92bb3a17a120678f3"},
+    {file = "healpy-1.20.1-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:045cd5df2f3598041f3748f0d7d582b65f5d24dd2c5e4354b87c50315666444b"},
+    {file = "healpy-1.20.1-cp312-cp312-macosx_13_0_x86_64.whl", hash = "sha256:2adaf76e32bed435995f0c2019e69e9084999adf5c74dd63e850e232428d1c5a"},
+    {file = "healpy-1.20.1-cp312-cp312-macosx_14_0_arm64.whl", hash = "sha256:2dffb54b23e03c44abe5681c02fbedb337648b2e10175d723db2b4c6ab10a303"},
+    {file = "healpy-1.20.1-cp312-cp312-macosx_15_0_arm64.whl", hash = "sha256:8d43557c3d0f4c4e9bb223211cd1450052fc38b9fc5c0bc4d4d12ee0734bc308"},
+    {file = "healpy-1.20.1-cp312-cp312-manylinux_2_28_aarch64.whl", hash = "sha256:a93e5930fecb5889b60797d83af3e1bfdee3d5217ac9228495b7b58a7cc8468e"},
+    {file = "healpy-1.20.1-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:81f60d946881a795fdbc5666e94db6b6140db211fa0eac6343fbf800dd335e8a"},
+    {file = "healpy-1.20.1-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:373a2c63f6d128d55bbf3aaa47be64e8878e65e4c8bd2d1fca0f1f04c54060b7"},
+    {file = "healpy-1.20.1-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:8c76b88caf1ac7b266c69b7f008308b8d8c2a5838bed5fa46cb1c4bccb92b26e"},
+    {file = "healpy-1.20.1-cp313-cp313-macosx_13_0_x86_64.whl", hash = "sha256:5dc301ae3f0be5249de005d4b5a0938a23d1736cf3a9bca9f5a0722926122c1b"},
+    {file = "healpy-1.20.1-cp313-cp313-macosx_14_0_arm64.whl", hash = "sha256:e36bfa437f4c1225968b6b975e126511351e66b99405c3860329f22e5e7af538"},
+    {file = "healpy-1.20.1-cp313-cp313-macosx_15_0_arm64.whl", hash = "sha256:86c50c1fa3ecccdc5d941a20082fcfc204153682d7f41f53166f29a1eabca5aa"},
+    {file = "healpy-1.20.1-cp313-cp313-manylinux_2_28_aarch64.whl", hash = "sha256:1d1318aaf655c02d67e6529179ec033b2d3199f687ca9b8022d85a22dbbd8647"},
+    {file = "healpy-1.20.1-cp313-cp313-manylinux_2_28_x86_64.whl", hash = "sha256:4bc6cced86a14868d74df7ca3cb9240715437477bc5e5c087a714679dc7b5119"},
+    {file = "healpy-1.20.1-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:f80701159141adcd9ab527d12dfff4dfff2635cb8e023141282812816f1f8a7d"},
+    {file = "healpy-1.20.1-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:28f9ba31bcd071b4aaa57c99a9baa8c61cbd32e1ca6c25d915f2a68d10694e94"},
+    {file = "healpy-1.20.1-cp314-cp314-macosx_13_0_x86_64.whl", hash = "sha256:df8b677696c8f8629af9e5ded1c915ce2ba119eb6449d325be220ba8fc42a29f"},
+    {file = "healpy-1.20.1-cp314-cp314-macosx_14_0_arm64.whl", hash = "sha256:98e45deb0e780490d908581ae3cb8afee54c0adf2cd6a427d4ac2f72ca9d8a6b"},
+    {file = "healpy-1.20.1-cp314-cp314-macosx_15_0_arm64.whl", hash = "sha256:d38457b90aa6a0fded551b10a8b2bfbabc21e94143b908016eb5841d264fc544"},
+    {file = "healpy-1.20.1-cp314-cp314-manylinux_2_28_aarch64.whl", hash = "sha256:aa8d2cb94fcc077ea15664c01c636514dd4c09dce75503fba2df453417945bc3"},
+    {file = "healpy-1.20.1-cp314-cp314-manylinux_2_28_x86_64.whl", hash = "sha256:5afede003c1233a04a712aebbea69ddb1b59b1d10198a78ab16150b2131192c0"},
+    {file = "healpy-1.20.1-cp314-cp314-musllinux_1_2_aarch64.whl", hash = "sha256:00911a0547ee5ad6ccb5f9dfa63f05f844464effa9d41cbf9122ee529c7f8c8f"},
+    {file = "healpy-1.20.1-cp314-cp314-musllinux_1_2_x86_64.whl", hash = "sha256:a0456cc1118187dcd3386cc5c3abf3ef4d2568bbeae89f281026fe53b04c74dd"},
+    {file = "healpy-1.20.1.tar.gz", hash = "sha256:000203dafd09f6cb864147b8308661b405a0f8a9dba10bc0842b7ddfb40717fe"},
 ]
 
 [package.dependencies]
@@ -1136,7 +1136,7 @@ description = "Differentiate, compile, and transform Numpy code."
 optional = true
 python-versions = ">=3.11"
 groups = ["main"]
-markers = "extra == \"jax-support\" or extra == \"all-support\""
+markers = "extra == \"all-support\" or extra == \"jax-support\""
 files = [
     {file = "jax-0.10.2-py3-none-any.whl", hash = "sha256:724d73c4678d8b06f6a6ab4db1b8a2fea8cd4f1e2c2564f99601634ec7b8d1c6"},
     {file = "jax-0.10.2.tar.gz", hash = "sha256:bf77428a8c2e6904c4f46d5ab12aa5cfc6cad2179f07f7e4c0fc75ac86ef0639"},
@@ -1169,7 +1169,7 @@ description = "XLA library for JAX"
 optional = true
 python-versions = ">=3.11"
 groups = ["main"]
-markers = "extra == \"jax-support\" or extra == \"all-support\""
+markers = "extra == \"all-support\" or extra == \"jax-support\""
 files = [
     {file = "jaxlib-0.10.2-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:5a98873fc867623b81f2bee15d554b8edd6588a183d01fa50d21b1e3db96ff2b"},
     {file = "jaxlib-0.10.2-cp311-cp311-manylinux_2_27_aarch64.whl", hash = "sha256:d44565dcfd1b4f60f76d911c6512118a8a4fc764bdef92663fecb8bfccd54f23"},
@@ -1211,7 +1211,7 @@ files = [
     {file = "jinja2-3.1.6-py3-none-any.whl", hash = "sha256:85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67"},
     {file = "jinja2-3.1.6.tar.gz", hash = "sha256:0137fb05990d35f1275a587e9aee6d56da821fc83491a0fb838183be43f66d6d"},
 ]
-markers = {main = "extra == \"pytorch-support\" or extra == \"all-support\""}
+markers = {main = "extra == \"all-support\" or extra == \"pytorch-support\""}
 
 [package.dependencies]
 MarkupSafe = ">=2.0"
@@ -1472,7 +1472,7 @@ files = [
     {file = "markupsafe-3.0.3-cp39-cp39-win_arm64.whl", hash = "sha256:38664109c14ffc9e7437e86b4dceb442b0096dfe3541d7864d9cbe1da4cf36c8"},
     {file = "markupsafe-3.0.3.tar.gz", hash = "sha256:722695808f4b6457b320fdc131280796bdceb04ab50fe1795cd540799ebe1698"},
 ]
-markers = {main = "extra == \"pytorch-support\" or extra == \"all-support\""}
+markers = {main = "extra == \"all-support\" or extra == \"pytorch-support\""}
 
 [[package]]
 name = "matplotlib"
@@ -1675,7 +1675,7 @@ description = "ml_dtypes is a stand-alone implementation of several NumPy dtype 
 optional = true
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "extra == \"jax-support\" or extra == \"all-support\""
+markers = "extra == \"all-support\" or extra == \"jax-support\""
 files = [
     {file = "ml_dtypes-0.5.4-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:b95e97e470fe60ed493fd9ae3911d8da4ebac16bd21f87ffa2b7c588bf22ea2c"},
     {file = "ml_dtypes-0.5.4-cp310-cp310-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:b4b801ebe0b477be666696bda493a9be8356f1f0057a57f1e35cd26928823e5a"},
@@ -1753,7 +1753,7 @@ description = "Python package for creating and manipulating graphs and networks"
 optional = true
 python-versions = ">=3.11"
 groups = ["main"]
-markers = "python_version == \"3.14\" and (extra == \"pytorch-support\" or extra == \"all-support\")"
+markers = "python_version == \"3.14\" and (extra == \"all-support\" or extra == \"pytorch-support\")"
 files = [
     {file = "networkx-3.6-py3-none-any.whl", hash = "sha256:cdb395b105806062473d3be36458d8f1459a4e4b98e236a66c3a48996e07684f"},
     {file = "networkx-3.6.tar.gz", hash = "sha256:285276002ad1f7f7da0f7b42f004bcba70d381e936559166363707fdad3d72ad"},
@@ -1777,7 +1777,7 @@ description = "Python package for creating and manipulating graphs and networks"
 optional = true
 python-versions = "!=3.14.1,>=3.11"
 groups = ["main"]
-markers = "(extra == \"pytorch-support\" or extra == \"all-support\") and python_version < \"3.14\""
+markers = "(extra == \"all-support\" or extra == \"pytorch-support\") and python_version < \"3.14\""
 files = [
     {file = "networkx-3.6.1-py3-none-any.whl", hash = "sha256:d47fbf302e7d9cbbb9e2555a0d267983d2aa476bac30e90dfbe5669bd57f3762"},
     {file = "networkx-3.6.1.tar.gz", hash = "sha256:26b7c357accc0c8cde558ad486283728b65b6a95d85ee1cd66bafab4c8168509"},
@@ -1911,7 +1911,7 @@ description = "CUBLAS native runtime libraries"
 optional = true
 python-versions = ">=3"
 groups = ["main"]
-markers = "platform_system == \"Linux\" and (extra == \"pytorch-support\" or extra == \"all-support\")"
+markers = "platform_system == \"Linux\" and (extra == \"all-support\" or extra == \"pytorch-support\")"
 files = [
     {file = "nvidia_cublas-13.1.1.3-py3-none-manylinux_2_27_aarch64.whl", hash = "sha256:b7a210458267ac818974c53038fbec2e969d5c99f305ab15c72522fa9f001dd5"},
     {file = "nvidia_cublas-13.1.1.3-py3-none-manylinux_2_27_x86_64.whl", hash = "sha256:37936a16db8fe4ac1f065c2139360608a543a09275cb1a1af612e08cfa065436"},
@@ -1928,7 +1928,7 @@ description = "CUDA profiling tools runtime libs."
 optional = true
 python-versions = ">=3"
 groups = ["main"]
-markers = "(sys_platform == \"linux\" or sys_platform == \"win32\") and (sys_platform == \"linux\" or platform_machine == \"x86_64\") and (extra == \"pytorch-support\" or extra == \"all-support\") and platform_system == \"Linux\" and (platform_machine == \"aarch64\" or platform_machine == \"x86_64\")"
+markers = "(sys_platform == \"linux\" or sys_platform == \"win32\") and (sys_platform == \"linux\" or platform_machine == \"x86_64\") and (extra == \"all-support\" or extra == \"pytorch-support\") and platform_system == \"Linux\" and (platform_machine == \"aarch64\" or platform_machine == \"x86_64\")"
 files = [
     {file = "nvidia_cuda_cupti-13.0.85-py3-none-manylinux_2_25_aarch64.whl", hash = "sha256:796bd679890ee55fb14a94629b698b6db54bcfd833d391d5e94017dd9d7d3151"},
     {file = "nvidia_cuda_cupti-13.0.85-py3-none-manylinux_2_25_x86_64.whl", hash = "sha256:4eb01c08e859bf924d222250d2e8f8b8ff6d3db4721288cf35d14252a4d933c8"},
@@ -1942,7 +1942,7 @@ description = "NVRTC native runtime libraries"
 optional = true
 python-versions = ">=3"
 groups = ["main"]
-markers = "platform_system == \"Linux\" and (extra == \"pytorch-support\" or extra == \"all-support\")"
+markers = "platform_system == \"Linux\" and (extra == \"all-support\" or extra == \"pytorch-support\")"
 files = [
     {file = "nvidia_cuda_nvrtc-13.0.88-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl", hash = "sha256:ad9b6d2ead2435f11cbb6868809d2adeeee302e9bb94bcf0539c7a40d80e8575"},
     {file = "nvidia_cuda_nvrtc-13.0.88-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:d27f20a0ca67a4bb34268a5e951033496c5b74870b868bacd046b1b8e0c3267b"},
@@ -1956,7 +1956,7 @@ description = "CUDA Runtime native Libraries"
 optional = true
 python-versions = ">=3"
 groups = ["main"]
-markers = "(sys_platform == \"linux\" or sys_platform == \"win32\") and (sys_platform == \"linux\" or platform_machine == \"x86_64\") and (extra == \"pytorch-support\" or extra == \"all-support\") and platform_system == \"Linux\" and (platform_machine == \"aarch64\" or platform_machine == \"x86_64\")"
+markers = "(sys_platform == \"linux\" or sys_platform == \"win32\") and (sys_platform == \"linux\" or platform_machine == \"x86_64\") and (extra == \"all-support\" or extra == \"pytorch-support\") and platform_system == \"Linux\" and (platform_machine == \"aarch64\" or platform_machine == \"x86_64\")"
 files = [
     {file = "nvidia_cuda_runtime-13.0.96-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:ef9bcbe90493a2b9d810e43d249adb3d02e98dd30200d86607d8d02687c43f55"},
     {file = "nvidia_cuda_runtime-13.0.96-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:7f82250d7782aa23b6cfe765ecc7db554bd3c2870c43f3d1821f1d18aebf0548"},
@@ -1970,7 +1970,7 @@ description = "cuDNN runtime libraries"
 optional = true
 python-versions = ">=3"
 groups = ["main"]
-markers = "platform_system == \"Linux\" and (extra == \"pytorch-support\" or extra == \"all-support\")"
+markers = "platform_system == \"Linux\" and (extra == \"all-support\" or extra == \"pytorch-support\")"
 files = [
     {file = "nvidia_cudnn_cu13-9.24.0.43-py3-none-manylinux_2_27_aarch64.whl", hash = "sha256:a6812a554a1ff0413e9c52b84c26c050380649ab9615f9c16bded368ce9f421f"},
     {file = "nvidia_cudnn_cu13-9.24.0.43-py3-none-manylinux_2_27_x86_64.whl", hash = "sha256:71f181cd810e90f9b6023b01186fe82d13d65f0ec098581ee201d39fad769e4b"},
@@ -1987,7 +1987,7 @@ description = "CUFFT native runtime libraries"
 optional = true
 python-versions = ">=3"
 groups = ["main"]
-markers = "(sys_platform == \"linux\" or sys_platform == \"win32\") and (sys_platform == \"linux\" or platform_machine == \"x86_64\") and (extra == \"pytorch-support\" or extra == \"all-support\") and platform_system == \"Linux\" and (platform_machine == \"aarch64\" or platform_machine == \"x86_64\")"
+markers = "(sys_platform == \"linux\" or sys_platform == \"win32\") and (sys_platform == \"linux\" or platform_machine == \"x86_64\") and (extra == \"all-support\" or extra == \"pytorch-support\") and platform_system == \"Linux\" and (platform_machine == \"aarch64\" or platform_machine == \"x86_64\")"
 files = [
     {file = "nvidia_cufft-12.0.0.61-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:2708c852ef8cd89d1d2068bdbece0aa188813a0c934db3779b9b1faa8442e5f5"},
     {file = "nvidia_cufft-12.0.0.61-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:6c44f692dce8fd5ffd3e3df134b6cdb9c2f72d99cf40b62c32dde45eea9ddad3"},
@@ -2004,7 +2004,7 @@ description = "cuFile GPUDirect libraries"
 optional = true
 python-versions = ">=3"
 groups = ["main"]
-markers = "sys_platform == \"linux\" and (extra == \"pytorch-support\" or extra == \"all-support\") and (platform_machine == \"aarch64\" or platform_machine == \"x86_64\") and platform_system == \"Linux\""
+markers = "sys_platform == \"linux\" and (extra == \"all-support\" or extra == \"pytorch-support\") and (platform_machine == \"aarch64\" or platform_machine == \"x86_64\") and platform_system == \"Linux\""
 files = [
     {file = "nvidia_cufile-1.15.1.6-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:08a3ecefae5a01c7f5117351c64f17c7c62efa5fffdbe24fc7d298da19cd0b44"},
     {file = "nvidia_cufile-1.15.1.6-py3-none-manylinux_2_27_aarch64.whl", hash = "sha256:bdc0deedc61f548bddf7733bdc216456c2fdb101d020e1ab4b88d232d5e2f6d1"},
@@ -2017,7 +2017,7 @@ description = "CURAND native runtime libraries"
 optional = true
 python-versions = ">=3"
 groups = ["main"]
-markers = "(sys_platform == \"linux\" or sys_platform == \"win32\") and (sys_platform == \"linux\" or platform_machine == \"x86_64\") and (extra == \"pytorch-support\" or extra == \"all-support\") and platform_system == \"Linux\" and (platform_machine == \"aarch64\" or platform_machine == \"x86_64\")"
+markers = "(sys_platform == \"linux\" or sys_platform == \"win32\") and (sys_platform == \"linux\" or platform_machine == \"x86_64\") and (extra == \"all-support\" or extra == \"pytorch-support\") and platform_system == \"Linux\" and (platform_machine == \"aarch64\" or platform_machine == \"x86_64\")"
 files = [
     {file = "nvidia_curand-10.4.0.35-py3-none-manylinux_2_27_aarch64.whl", hash = "sha256:133df5a7509c3e292aaa2b477afd0194f06ce4ea24d714d616ff36439cee349a"},
     {file = "nvidia_curand-10.4.0.35-py3-none-manylinux_2_27_x86_64.whl", hash = "sha256:1aee33a5da6e1db083fe2b90082def8915f30f3248d5896bcec36a579d941bfc"},
@@ -2031,7 +2031,7 @@ description = "CUDA solver native runtime libraries"
 optional = true
 python-versions = ">=3"
 groups = ["main"]
-markers = "(sys_platform == \"linux\" or sys_platform == \"win32\") and (sys_platform == \"linux\" or platform_machine == \"x86_64\") and (extra == \"pytorch-support\" or extra == \"all-support\") and platform_system == \"Linux\" and (platform_machine == \"aarch64\" or platform_machine == \"x86_64\")"
+markers = "(sys_platform == \"linux\" or sys_platform == \"win32\") and (sys_platform == \"linux\" or platform_machine == \"x86_64\") and (extra == \"all-support\" or extra == \"pytorch-support\") and platform_system == \"Linux\" and (platform_machine == \"aarch64\" or platform_machine == \"x86_64\")"
 files = [
     {file = "nvidia_cusolver-12.0.4.66-py3-none-manylinux_2_27_aarch64.whl", hash = "sha256:02c2457eaa9e39de20f880f4bd8820e6a1cfb9f9a34f820eb12a155aa5bc92d2"},
     {file = "nvidia_cusolver-12.0.4.66-py3-none-manylinux_2_27_x86_64.whl", hash = "sha256:0a759da5dea5c0ea10fd307de75cdeb59e7ea4fcb8add0924859b944babf1112"},
@@ -2050,7 +2050,7 @@ description = "CUSPARSE native runtime libraries"
 optional = true
 python-versions = ">=3"
 groups = ["main"]
-markers = "(sys_platform == \"linux\" or sys_platform == \"win32\") and (sys_platform == \"linux\" or platform_machine == \"x86_64\") and (extra == \"pytorch-support\" or extra == \"all-support\") and platform_system == \"Linux\" and (platform_machine == \"aarch64\" or platform_machine == \"x86_64\")"
+markers = "(sys_platform == \"linux\" or sys_platform == \"win32\") and (sys_platform == \"linux\" or platform_machine == \"x86_64\") and (extra == \"all-support\" or extra == \"pytorch-support\") and platform_system == \"Linux\" and (platform_machine == \"aarch64\" or platform_machine == \"x86_64\")"
 files = [
     {file = "nvidia_cusparse-12.6.3.3-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:80bcc4662f23f1054ee334a15c72b8940402975e0eab63178fc7e670aa59472c"},
     {file = "nvidia_cusparse-12.6.3.3-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:2b3c89c88d01ee0e477cb7f82ef60a11a4bcd57b6b87c33f789350b59759360b"},
@@ -2067,7 +2067,7 @@ description = "NVIDIA cuSPARSELt"
 optional = true
 python-versions = "*"
 groups = ["main"]
-markers = "platform_system == \"Linux\" and (extra == \"pytorch-support\" or extra == \"all-support\")"
+markers = "platform_system == \"Linux\" and (extra == \"all-support\" or extra == \"pytorch-support\")"
 files = [
     {file = "nvidia_cusparselt_cu13-0.8.1-py3-none-manylinux2014_aarch64.whl", hash = "sha256:4dca476c50bf4780d46cd0bfbd82e2bc10a08e4fef7950917ce8d7578d22a23f"},
     {file = "nvidia_cusparselt_cu13-0.8.1-py3-none-manylinux2014_x86_64.whl", hash = "sha256:786ce87568c303fadb5afcc7102d454cd3040d75f6f8626f5db460d1871f4dd0"},
@@ -2081,7 +2081,7 @@ description = "NVIDIA Collective Communication Library (NCCL) Runtime"
 optional = true
 python-versions = ">=3"
 groups = ["main"]
-markers = "platform_system == \"Linux\" and (extra == \"pytorch-support\" or extra == \"all-support\")"
+markers = "platform_system == \"Linux\" and (extra == \"all-support\" or extra == \"pytorch-support\")"
 files = [
     {file = "nvidia_nccl_cu13-2.30.7-py3-none-manylinux_2_18_aarch64.whl", hash = "sha256:ca786ffa5a647c75d4d1f5cc72a6c4f537947e2ba8823d7c8aaf768e7a7b9f77"},
     {file = "nvidia_nccl_cu13-2.30.7-py3-none-manylinux_2_18_x86_64.whl", hash = "sha256:cefa7fdb9710efd0f39c5f1be1d61ff6fc9a996c451265bd7fbdcf9455ed4b50"},
@@ -2094,7 +2094,7 @@ description = "Nvidia JIT LTO Library"
 optional = true
 python-versions = ">=3"
 groups = ["main"]
-markers = "(sys_platform == \"linux\" or sys_platform == \"win32\") and (sys_platform == \"linux\" or platform_machine == \"x86_64\") and (extra == \"pytorch-support\" or extra == \"all-support\") and platform_system == \"Linux\" and (platform_machine == \"aarch64\" or platform_machine == \"x86_64\")"
+markers = "(sys_platform == \"linux\" or sys_platform == \"win32\") and (sys_platform == \"linux\" or platform_machine == \"x86_64\") and (extra == \"all-support\" or extra == \"pytorch-support\") and platform_system == \"Linux\" and (platform_machine == \"aarch64\" or platform_machine == \"x86_64\")"
 files = [
     {file = "nvidia_nvjitlink-13.0.88-py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl", hash = "sha256:13a74f429e23b921c1109976abefacc69835f2f433ebd323d3946e11d804e47b"},
     {file = "nvidia_nvjitlink-13.0.88-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:e931536ccc7d467a98ba1d8b89ff7fa7f1fa3b13f2b0069118cd7f47bff07d0c"},
@@ -2108,7 +2108,7 @@ description = "NVSHMEM creates a global address space that provides efficient an
 optional = true
 python-versions = ">=3"
 groups = ["main"]
-markers = "platform_system == \"Linux\" and (extra == \"pytorch-support\" or extra == \"all-support\")"
+markers = "platform_system == \"Linux\" and (extra == \"all-support\" or extra == \"pytorch-support\")"
 files = [
     {file = "nvidia_nvshmem_cu13-3.4.5-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:6dc2a197f38e5d0376ad52cd1a2a3617d3cdc150fd5966f4aee9bcebb1d68fe9"},
     {file = "nvidia_nvshmem_cu13-3.4.5-py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:290f0a2ee94c9f3687a02502f3b9299a9f9fe826e6d0287ee18482e78d495b80"},
@@ -2121,7 +2121,7 @@ description = "NVIDIA Tools Extension"
 optional = true
 python-versions = ">=3"
 groups = ["main"]
-markers = "(sys_platform == \"linux\" or sys_platform == \"win32\") and (sys_platform == \"linux\" or platform_machine == \"x86_64\") and (extra == \"pytorch-support\" or extra == \"all-support\") and platform_system == \"Linux\" and (platform_machine == \"aarch64\" or platform_machine == \"x86_64\")"
+markers = "(sys_platform == \"linux\" or sys_platform == \"win32\") and (sys_platform == \"linux\" or platform_machine == \"x86_64\") and (extra == \"all-support\" or extra == \"pytorch-support\") and platform_system == \"Linux\" and (platform_machine == \"aarch64\" or platform_machine == \"x86_64\")"
 files = [
     {file = "nvidia_nvtx-13.0.85-py3-none-manylinux1_x86_64.manylinux_2_5_x86_64.whl", hash = "sha256:4936d1d6780fbe68db454f5e72a42ff64d1fd6397df9f363ae786930fd5c1cd4"},
     {file = "nvidia_nvtx-13.0.85-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:cb7780edb6b14107373c835bf8b72e7a178bac7367e23da7acb108f973f157a6"},
@@ -2135,7 +2135,7 @@ description = "Path optimization of einsum functions."
 optional = true
 python-versions = ">=3.8"
 groups = ["main"]
-markers = "extra == \"jax-support\" or extra == \"all-support\""
+markers = "extra == \"all-support\" or extra == \"jax-support\""
 files = [
     {file = "opt_einsum-3.4.0-py3-none-any.whl", hash = "sha256:69bb92469f86a1565195ece4ac0323943e83477171b91d24c35afe028a90d7cd"},
     {file = "opt_einsum-3.4.0.tar.gz", hash = "sha256:96ca72f1b886d148241348783498194c577fa30a8faac108586b14f1ba4473ac"},
@@ -2945,7 +2945,7 @@ description = "Most extensible Python build backend with support for C/C++ exten
 optional = true
 python-versions = ">=3.10"
 groups = ["main"]
-markers = "extra == \"pytorch-support\" or extra == \"all-support\""
+markers = "extra == \"all-support\" or extra == \"pytorch-support\""
 files = [
     {file = "setuptools-84.0.0-py3-none-any.whl", hash = "sha256:51a52592b3b99e102b609654876bd65f19f999935166d1352678931132b0c670"},
     {file = "setuptools-84.0.0.tar.gz", hash = "sha256:f4695c21257f0d9b537ec2692c941d02ee143b7cc1276941349a546573b2ef73"},
@@ -3053,7 +3053,7 @@ description = "Computer algebra system (CAS) in Python"
 optional = true
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "extra == \"pytorch-support\" or extra == \"all-support\""
+markers = "extra == \"all-support\" or extra == \"pytorch-support\""
 files = [
     {file = "sympy-1.14.0-py3-none-any.whl", hash = "sha256:e091cc3e99d2141a0ba2847328f5479b05d94a6635cb96148ccb3f34671bd8f5"},
     {file = "sympy-1.14.0.tar.gz", hash = "sha256:d3d3fe8df1e5a0b42f0e7bdf50541697dbe7d23746e894990c030e2b05e72517"},
@@ -3087,7 +3087,7 @@ description = "Tensors and Dynamic neural networks in Python with strong GPU acc
 optional = true
 python-versions = ">=3.10"
 groups = ["main"]
-markers = "extra == \"pytorch-support\" or extra == \"all-support\""
+markers = "extra == \"all-support\" or extra == \"pytorch-support\""
 files = [
     {file = "torch-2.14.0-cp310-cp310-macosx_14_0_arm64.whl", hash = "sha256:2fb30099be1fec9d163a6dd05ace176305ce8cf914b4d7a5f4f6d7a326aa4b60"},
     {file = "torch-2.14.0-cp310-cp310-manylinux_2_28_aarch64.whl", hash = "sha256:96383c62423c3f2767023c4a94774b6435e2c006691daf396e9ddb55d412fbc6"},
@@ -3165,7 +3165,7 @@ description = "A language and compiler for custom Deep Learning operations"
 optional = true
 python-versions = "<3.15,>=3.10"
 groups = ["main"]
-markers = "(extra == \"pytorch-support\" or extra == \"all-support\") and platform_system == \"Linux\""
+markers = "(extra == \"all-support\" or extra == \"pytorch-support\") and platform_system == \"Linux\""
 files = [
     {file = "triton-3.8.0-cp310-cp310-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:398f4b009c7ab08ed9aeb1d1282dee822945b53f399a5e12a4fecb643cf2007d"},
     {file = "triton-3.8.0-cp310-cp310-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:6d914c52f89dc942b1819db959e7c07a5999f678ec760f677625c706b7e0d743"},
@@ -3188,7 +3188,7 @@ description = "Backported and Experimental Type Hints for Python 3.9+"
 optional = true
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "extra == \"pytorch-support\" or extra == \"all-support\""
+markers = "extra == \"all-support\" or extra == \"pytorch-support\""
 files = [
     {file = "typing_extensions-4.15.0-py3-none-any.whl", hash = "sha256:f0fa19c6845758ab08074a0cfa8b7aecb71c999ca73d62883bc25cc018c4e548"},
     {file = "typing_extensions-4.15.0.tar.gz", hash = "sha256:0cea48d173cc12fa28ecabc3b837ea3cf6f38c6d1136f85cbaaf598984861466"},
