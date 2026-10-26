@@ -1796,14 +1796,14 @@ test-extras = ["pytest-mpl", "pytest-randomly"]
 
 [[package]]
 name = "nox"
-version = "2026.8.17"
+version = "2026.10.20"
 description = "Flexible test automation."
 optional = false
 python-versions = ">=3.10"
 groups = ["dev"]
 files = [
-    {file = "nox-2026.8.17-py3-none-any.whl", hash = "sha256:a96a5286007cbc0d1eb1930e85738668f6722adba1ffaa48287296a96963086e"},
-    {file = "nox-2026.8.17.tar.gz", hash = "sha256:8d9c69c9b996a59db1eb2c6968deaebc2edbc55317d205981bbc4a37351d3f2e"},
+    {file = "nox-2026.10.20-py3-none-any.whl", hash = "sha256:7aff12bb01471f5b087ada34cf0dbe452b02d840593f2e2afecc4bf6e6d6cd3f"},
+    {file = "nox-2026.10.20.tar.gz", hash = "sha256:5da57c009c3dfdd762c068d9079b17966ec967a9eb02cd8ebcf016a946eaf67f"},
 ]
 
 [package.dependencies]
@@ -1819,6 +1819,7 @@ virtualenv = {version = ">=20.15", markers = "python_version < \"3.15\""}
 
 [package.extras]
 pbs = ["pbs-installer[all] (>=2025.1.6)"]
+rattler = ["py-rattler (>=0.26)"]
 tox-to-nox = ["jinja2", "tox (>=4)"]
 uv = ["uv (>=0.1.6)"]
 
