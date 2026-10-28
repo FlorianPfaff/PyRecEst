@@ -259,9 +259,9 @@ class ComplexWatsonDistribution:
             raise ValueError("Z must contain only finite values")
         N, D = Z.shape
 
-        # Build the Hermitian scatter matrix S (D x D)
+        # Build the Hermitian scatter sum_i z_i z_i^H from row samples (D x D).
         if weights is None:
-            S = conj(Z).T @ Z
+            S = Z.T @ conj(Z)
         else:
             weights = asarray(weights, dtype=float)
             if weights.ndim != 1:
@@ -280,9 +280,9 @@ class ComplexWatsonDistribution:
             scaled_weights = weights / weight_scale
             scaled_weight_sum = sum(scaled_weights)
             # Weighted scatter: Σ_i w_i·z_i·z_i^H, normalised so uniform
-            # weights (w_i=1) reproduce the unweighted result Z^H Z. Scaling
+            # weights (w_i=1) reproduce the unweighted scatter. Scaling
             # by max(weights) preserves the estimate while avoiding overflow.
-            S = (Z * scaled_weights[:, None]).conj().T @ Z * (N / scaled_weight_sum)
+            S = (Z * scaled_weights[:, None]).T @ conj(Z) * (N / scaled_weight_sum)
 
         # Force Hermitian
         S = 0.5 * (S + conj(S).T)
