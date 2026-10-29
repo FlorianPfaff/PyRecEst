@@ -3,9 +3,8 @@
 
 import numpy as np
 import numpy.testing as npt
-import pytest
-
 import pyrecest.backend
+import pytest
 from pyrecest.distributions import GaussianDistribution
 from pyrecest.filters import (
     CJPDAF,
