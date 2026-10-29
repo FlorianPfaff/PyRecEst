@@ -1,7 +1,7 @@
 # pylint: disable=no-name-in-module,no-member
 import numpy as np
-import pytest
 import pyrecest.backend
+import pytest
 from pyrecest.backend import array, complex128, conj, float64, sum
 from pyrecest.distributions import ComplexWatsonDistribution
 
