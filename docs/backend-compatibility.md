@@ -47,6 +47,13 @@ unless a focused backend test covers the exact helper being used.
 
 ## Capability Metadata
 
+The experimental `MEMEKFStar3DTracker` estimates an ellipsoid orientation on
+SO(3) and three semi-axis lengths. NumPy supports its full eager workflow.
+PyTorch and JAX provide partial support for eager CPU workflows: covariance
+validation crosses through NumPy and scalar decisions use Python. Automatic
+differentiation, JAX JIT compilation, and GPU device preservation are not
+guaranteed. See the [3-D MEM-EKF* guide](mem-ekf-star-3d.md).
+
 Backend limitations are tracked in `src/pyrecest/_backend/capabilities.py`. The
 metadata distinguishes unsupported facade functions from partial support, such
 as PyTorch helpers that bridge through NumPy/SciPy and may not preserve device

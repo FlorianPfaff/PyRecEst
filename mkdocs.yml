@@ -46,6 +46,7 @@ nav:
       - Backend-Portable Workflows: tutorials/backend-portable-workflows.md
       - Robust Kalman Updates: tutorials/robust-kalman-update.md
       - Run a Tracker: tutorials/run-a-tracker.md
+      - Track a 3D Ellipsoid with MEM-EKF*: mem-ekf-star-3d.md
       - Evaluate a Simulation: tutorials/evaluate-a-simulation.md
   - API Overview: api-overview.md
   - API Reference:

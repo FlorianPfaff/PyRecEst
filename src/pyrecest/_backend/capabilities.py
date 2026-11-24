@@ -67,6 +67,18 @@ BACKEND_CAPABILITIES: Final = {
 }
 
 API_BACKEND_CAPABILITIES: Final = {
+    "MEMEKFStar3DTracker": {
+        "numpy": "supported",
+        "pytorch": "partial",
+        "jax": "partial",
+        "notes": "Experimental SO(3) ellipsoid tracker; eager CPU use, NumPy covariance validation, no autodiff or JIT guarantee.",
+    },
+    "MemEkfStar3DTracker": {
+        "numpy": "supported",
+        "pytorch": "partial",
+        "jax": "partial",
+        "notes": "Alias of MEMEKFStar3DTracker; eager CPU use, NumPy covariance validation, no autodiff or JIT guarantee.",
+    },
     "CheapJointProbabilisticDataAssociationFilter": {
         "numpy": "supported",
         "pytorch": "unsupported",

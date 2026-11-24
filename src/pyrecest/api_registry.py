@@ -12,6 +12,18 @@ PUBLIC_API_CATEGORIES: Final = (
 )
 
 PUBLIC_API_REGISTRY: Final = {
+    "MEMEKFStar3DTracker": {
+        "module": "pyrecest.filters",
+        "category": "experimental",
+        "backend_contract": "MEMEKFStar3DTracker",
+        "notes": "Spatial MEM-EKF* approximation with SO(3) orientation and three semi-axes; local shape uncertainty.",
+    },
+    "MemEkfStar3DTracker": {
+        "module": "pyrecest.filters",
+        "category": "experimental",
+        "backend_contract": "MemEkfStar3DTracker",
+        "notes": "Compatibility naming alias of MEMEKFStar3DTracker; use the canonical spelling in new code.",
+    },
     "CheapJointProbabilisticDataAssociationFilter": {
         "module": "pyrecest.filters",
         "category": "experimental",
