@@ -16,6 +16,7 @@ caught outside editable mode.
 | Nonlinear additive-noise filtering                    | `examples/basic/ukf_with_models.py`                                                          | Follows `UnscentedKalmanFilter` backend limitations.  | Nonlinear Euclidean examples.                           |
 | Particle filtering                                    | `examples/basic/particle_filter_with_models.py`                                              | Requires sampleable transition and likelihood models. | Monte Carlo filter loops.                               |
 | Multi-target tracking with clutter                    | `examples/basic/multi_target_tracking.py`                                                    | NumPy backend.                                        | Missed detections, clutter, and labeled tracks.         |
+| 3D ellipsoid tracking with MEM-EKF*                    | `examples/basic/mem_ekf_star_3d_tracking.py`                                                   | NumPy simulation; eager backend tracker operations.    | Full spatial orientation, axes, and kinematics.         |
 | Directional distribution algebra                      | `examples/basic/von_mises_fisher_multiplication.py`                                          | Manifold/domain-specific APIs.                        | Unit-sphere probability operations.                     |
 | User-defined protocols                                | `examples/basic/custom_distribution_protocol.py`, `examples/basic/custom_filter_protocol.py` | Backend-independent protocol shape.                   | Extending PyRecEst without subclassing.                 |
 
@@ -27,6 +28,22 @@ rather than an exploratory script. The first scenario is
 `scenarios/linear_gaussian_cv_1d`.
 
 ## Basic Examples
+
+### 3D MEM Ellipsoid Tracking
+
+`examples/basic/mem_ekf_star_3d_tracking.py` tracks a translating and rotating
+ellipsoid from noisy points sampled uniformly throughout its volume. It starts
+with errors in orientation, axes, position, and velocity, and reports the final
+estimation errors. The [3D MEM-EKF* guide](mem-ekf-star-3d.md) explains the body
+rotation error and covariance conventions.
+
+Select `--tracker qkf` or `--tracker rbpf` to run the same observations
+through the [3D MEM-QKF or MEM-RBPF](mem-qkf-rbpf-3d.md).
+
+```bash
+python examples/basic/mem_ekf_star_3d_tracking.py
+python examples/basic/mem_ekf_star_3d_tracking.py --output tracking-3d.png
+```
 
 ### Gaussian Multiplication
 
