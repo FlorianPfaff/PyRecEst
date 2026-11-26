@@ -12,6 +12,30 @@ PUBLIC_API_CATEGORIES: Final = (
 )
 
 PUBLIC_API_REGISTRY: Final = {
+    "MEMQKF3DTracker": {
+        "module": "pyrecest.filters",
+        "category": "experimental",
+        "backend_contract": "MEMQKF3DTracker",
+        "notes": "Decoupled quadratic filter for a spatial ellipsoid with a local Gaussian orientation error.",
+    },
+    "MemQkf3DTracker": {
+        "module": "pyrecest.filters",
+        "category": "experimental",
+        "backend_contract": "MemQkf3DTracker",
+        "notes": "Alias of MEMQKF3DTracker.",
+    },
+    "MEMRBPF3DTracker": {
+        "module": "pyrecest.filters",
+        "category": "experimental",
+        "backend_contract": "MEMRBPF3DTracker",
+        "notes": "SO(3) orientation particles with a conditional Gaussian semi-axis estimate per particle.",
+    },
+    "MemRbpf3DTracker": {
+        "module": "pyrecest.filters",
+        "category": "experimental",
+        "backend_contract": "MemRbpf3DTracker",
+        "notes": "Alias of MEMRBPF3DTracker.",
+    },
     "MEMEKFStar3DTracker": {
         "module": "pyrecest.filters",
         "category": "experimental",

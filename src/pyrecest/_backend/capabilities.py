@@ -67,6 +67,30 @@ BACKEND_CAPABILITIES: Final = {
 }
 
 API_BACKEND_CAPABILITIES: Final = {
+    "MEMQKF3DTracker": {
+        "numpy": "supported",
+        "pytorch": "partial",
+        "jax": "partial",
+        "notes": "Eager CPU arrays and host-side covariance validation. The orientation update uses Gauss-Hermite quadrature.",
+    },
+    "MemQkf3DTracker": {
+        "numpy": "supported",
+        "pytorch": "partial",
+        "jax": "partial",
+        "notes": "Alias of MEMQKF3DTracker.",
+    },
+    "MEMRBPF3DTracker": {
+        "numpy": "supported",
+        "pytorch": "unsupported",
+        "jax": "unsupported",
+        "notes": "Uses NumPy particle arrays, batched linear algebra and a local NumPy random generator.",
+    },
+    "MemRbpf3DTracker": {
+        "numpy": "supported",
+        "pytorch": "unsupported",
+        "jax": "unsupported",
+        "notes": "Alias of MEMRBPF3DTracker.",
+    },
     "MEMEKFStar3DTracker": {
         "numpy": "supported",
         "pytorch": "partial",

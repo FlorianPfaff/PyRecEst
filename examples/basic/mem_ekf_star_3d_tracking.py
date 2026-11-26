@@ -1,4 +1,4 @@
-"""Track a moving and rotating 3-D ellipsoid with MEM-EKF*.
+"""Track a moving and rotating 3-D ellipsoid with a spatial MEM filter.
 
 Run from an installed development checkout with
 ``python examples/basic/mem_ekf_star_3d_tracking.py``. The example uses NumPy
@@ -13,7 +13,13 @@ from pathlib import Path
 import numpy as np
 from scipy.spatial.transform import Rotation
 
-from pyrecest.filters import MEMEKFStar3DTracker
+from pyrecest.filters import MEMEKFStar3DTracker, MEMQKF3DTracker, MEMRBPF3DTracker
+
+TRACKERS = {
+    "ekf-star": MEMEKFStar3DTracker,
+    "qkf": MEMQKF3DTracker,
+    "rbpf": MEMRBPF3DTracker,
+}
 
 
 def sample_unit_ball(rng: np.random.Generator, count: int) -> np.ndarray:
@@ -33,7 +39,9 @@ def orientation_error_degrees(estimated: np.ndarray, reference: np.ndarray) -> f
     return float(np.rad2deg(min(angles)))
 
 
-def run_example(seed: int = 7, n_steps: int = 60, n_measurements: int = 50):
+def run_example(
+    seed: int = 7, n_steps: int = 60, n_measurements: int = 50, tracker_name="ekf-star"
+):
     """Return the final tracker and simulation histories for a seeded scenario."""
     if n_steps <= 0 or n_measurements <= 0:
         raise ValueError("n_steps and n_measurements must be positive")
@@ -50,13 +58,16 @@ def run_example(seed: int = 7, n_steps: int = 60, n_measurements: int = 50):
     increment_matrix = Rotation.from_rotvec(rotation_increment).as_matrix()
     measurement_noise_cov = 0.08**2 * np.eye(3)
 
-    tracker = MEMEKFStar3DTracker(
+    # Keep particle sampling independent of the common simulated observations.
+    particle_options = {"rng": seed} if tracker_name == "rbpf" else {}
+    tracker = TRACKERS[tracker_name](
         kinematic_state=true_state + np.array([0.4, -0.3, 0.25, 0.04, -0.03, 0.02]),
         covariance=np.diag([0.5**2] * 3 + [0.15**2] * 3),
         orientation=true_orientation
         @ Rotation.from_rotvec([0.1, -0.08, 0.09]).as_matrix(),
         semi_axes=np.array([3.5, 2.15, 1.25]),
         shape_covariance=np.diag([0.15**2] * 3 + [0.6**2, 0.4**2, 0.25**2]),
+        **particle_options,
     )
     true_extent = true_orientation @ np.diag(true_axes**2) @ true_orientation.T
     initial_relative_extent_error = np.linalg.norm(
@@ -185,13 +196,14 @@ def save_plot(tracker, history, output: Path) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seed", type=int, default=7)
+    parser.add_argument("--tracker", choices=TRACKERS, default="ekf-star")
     parser.add_argument(
         "--output",
         type=Path,
         help="Optional path for a saved figure, such as tracking-3d.png",
     )
     args = parser.parse_args()
-    tracker, history = run_example(seed=args.seed)
+    tracker, history = run_example(seed=args.seed, tracker_name=args.tracker)
     print("Scans: 60; measurements per scan: 50")
     print(f"Center error: {history['center_error'][-1]:.4f}")
     print(

@@ -47,6 +47,7 @@ nav:
       - Robust Kalman Updates: tutorials/robust-kalman-update.md
       - Run a Tracker: tutorials/run-a-tracker.md
       - Track a 3D Ellipsoid with MEM-EKF*: mem-ekf-star-3d.md
+      - Track a 3D Ellipsoid with MEM-QKF or MEM-RBPF: mem-qkf-rbpf-3d.md
       - Evaluate a Simulation: tutorials/evaluate-a-simulation.md
   - API Overview: api-overview.md
   - API Reference:

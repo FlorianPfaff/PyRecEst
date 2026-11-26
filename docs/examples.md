@@ -29,13 +29,16 @@ rather than an exploratory script. The first scenario is
 
 ## Basic Examples
 
-### 3D MEM-EKF* Ellipsoid Tracking
+### 3D MEM Ellipsoid Tracking
 
 `examples/basic/mem_ekf_star_3d_tracking.py` tracks a translating and rotating
 ellipsoid from noisy points sampled uniformly throughout its volume. It starts
 with errors in orientation, axes, position, and velocity, and reports the final
 estimation errors. The [3D MEM-EKF* guide](mem-ekf-star-3d.md) explains the body
 rotation error and covariance conventions.
+
+Select `--tracker qkf` or `--tracker rbpf` to run the same observations
+through the [3D MEM-QKF or MEM-RBPF](mem-qkf-rbpf-3d.md).
 
 ```bash
 python examples/basic/mem_ekf_star_3d_tracking.py
